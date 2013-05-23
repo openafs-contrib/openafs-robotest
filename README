@@ -1,0 +1,7 @@
+OpenAFS Robo Test
+=================
+
+This is the start of a Robot Framework based test-suite for OpenAFS. This
+initial version is limited to providing a basic smoke test of a single OpenAFS
+server and client.
+
