@@ -1,0 +1,4 @@
+*.pyc
+*.keytab
+settings
+output/
