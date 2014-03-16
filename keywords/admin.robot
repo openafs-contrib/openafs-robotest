@@ -108,6 +108,14 @@ mount read-write volume
     [arguments]  ${dir}  ${vol}
     run command    ${AFS_FS} mkmount -dir ${dir} -vol ${vol} -rw
 
+cellular mount
+    [arguments]  ${dir}  ${vol}  ${cell}
+    run command    ${AFS_FS} mkmount -dir ${dir} -vol ${vol} -cell ${cell}
+
+cellular read-write mount
+    [arguments]  ${dir}  ${vol}  ${cell}
+    run command    ${AFS_FS} mkmount -dir ${dir} -vol ${vol} -cell ${cell} -rw
+
 unmount volume
     [arguments]  ${dir}  ${vol}
     run command    ${AFS_FS} rmmount -dir ${dir}
@@ -138,7 +146,7 @@ not logged in as admin
     ${rc}    ${output}    run and return rc and output  ${AFS_TOKENS}
     log  ${output}
     should be equal as integers  ${rc}  0
-    should not contain    ${output}    User's (AFS ID 1) tokens
+    should not contain    ${output}    User's (AFS ID 1)
 
 log in as admin
     ${name}=    replace string    ${AFS_SUPERUSER}    .    /
@@ -149,5 +157,5 @@ logged in as admin
     ${rc}  ${output}  run and return rc and output  ${AFS_TOKENS}
     log  ${output}
     should be equal as integers  ${rc}  0
-    should contain  ${output}  User's (AFS ID 1) tokens
+    should contain  ${output}  User's (AFS ID 1)
 

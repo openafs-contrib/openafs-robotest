@@ -33,8 +33,8 @@ mount cell volume
     and logged in as admin
     and directory should exist         /afs/.:mount
     and directory should not exist     /afs/.:mount/${AFS_CELL}:root.afs/${AFS_CELL}
-    when mount volume                  /afs/.:mount/${AFS_CELL}:root.afs/${AFS_CELL}     root.cell
-    and mount read-write volume        /afs/.:mount/${AFS_CELL}:root.afs/.${AFS_CELL}    root.cell
+    when cellular mount                /afs/.:mount/${AFS_CELL}:root.afs/${AFS_CELL}     root.cell    ${AFS_CELL}
+    and cellular read-write mount      /afs/.:mount/${AFS_CELL}:root.afs/.${AFS_CELL}    root.cell    ${AFS_CELL}
     then directory should exist        /afs/.:mount/${AFS_CELL}:root.afs/${AFS_CELL}
     and directory should exist         /afs/.:mount/${AFS_CELL}:root.afs/.${AFS_CELL}
 
