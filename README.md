@@ -218,10 +218,8 @@ is perferred, see "Appendix B: Installing Robot Framework with virtualenv".
 
 3. Install openafs-robotest.
 
-    $ git clone git://scm.devlab.sinenomine.net/sna-openafs-robotest.git
-    $ cd sna-openafs-robotest
-    $ git checkout -b smoke-test origin/smoke-test
-
+    $ git clone https://github.com/openafs-contrib/openafs-robotest.git
+    $ cd openafs-robotest
 
 4. Install the keytab files.
 
