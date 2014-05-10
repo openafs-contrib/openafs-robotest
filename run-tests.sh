@@ -54,6 +54,13 @@ __EOF__
     done
 }
 
+check_error() {
+    if [ $1 != 0 ]; then
+        echo testcase $2 failed. Terminating.
+        exit $1
+    fi
+}
+
 # Custom settings are overwiden by command line options.
 if [ -f ./settings ]; then
     . ./settings
@@ -105,16 +112,29 @@ do
     fi
 done
 
-for _tag in `echo $RUN_TAGS | sed 's/[,:]/ /g'`
+
+_tags="precheck install($ENV_DIST)"
+
+for _tag_file in `ls tests/smoke`
 do
-    if [ "$_tag" = "install" ]; then
-        _tag="install($ENV_DIST)"
-    fi
-    _tags="$_tags -i $_tag"
+    for _tag in `echo $RUN_TAGS | sed 's/[,:]/ /g'`
+    do
+        if [ `grep DefaultTags tests/smoke/$_tag_file |awk '{print $NF}'`  != $_tag ]; then
+            continue
+        fi
+        if [ "x$_tag" != "x" ]; then 
+            if [ `echo -- $_tags | grep -c -w $_tag` = 0 ] ;then 
+               _tags="$_tags $_tag"
+            fi
+        fi
+    done
 done
 
-RUNTESTS="pybot --exitonfailure --outputdir $RUN_OUTPUT_DIR $_tags $_vars tests"
+for _tag in $_tags
+do
+    RUNTEST="pybot --exitonfailure --outputdir $RUN_OUTPUT_DIR -i $_tag $_vars tests"
+    echo "running: $RUNTEST"
+    $RUNTEST
+    check_error $? $_tag
+done
 
-# echo "running: $RUNTESTS"
-$RUNTESTS
-echo "Code:    $?"
