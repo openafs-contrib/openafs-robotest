@@ -13,17 +13,17 @@ Resource       keywords/utility.robot
 
 *** Test Case ***
 OpenAFS server installation
-    sudo    mkdir /usr/afs
+    sudo    mkdir -p /usr/afs
     sudo    cp -r -p ${IBM_DEST}/root.server/usr/afs/bin /usr/afs
 
 OpenAFS cache manager installation
-    sudo    mkdir /usr/vice
-    sudo    mkdir /usr/vice/cache
-    sudo    mkdir /usr/vice/etc
+    sudo    mkdir -p /usr/vice
+    sudo    mkdir -p /usr/vice/cache
+    sudo    mkdir -p /usr/vice/etc
     sudo    cp -r -p ${IBM_DEST}/root.client/usr/vice/etc /usr/vice
 
 OpenAFS workstation installation
-    sudo    mkdir /usr/afsws
+    sudo    mkdir -p /usr/afsws
     sudo    cp -r -p ${IBM_DEST}/bin /usr/afsws
     sudo    cp -r -p ${IBM_DEST}/etc /usr/afsws
     sudo    cp -r -p ${IBM_DEST}/include /usr/afsws
