@@ -25,7 +25,7 @@ afs kernel module should not be loaded
 afs directories should not exist
     directory should not exist    /afs
     directory should not exist    /usr/afs
-    directory should not exist    /usr/vice
+    directory should not exist    /usr/vice/etc
 
 empty afs vice partition should exist
     directory should exist    /vicepa
