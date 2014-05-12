@@ -1,13 +1,12 @@
+OpenAFS RoboTest
+================
 
-OpenAFS Robo Test
-=================
+This is a Robot Framework (RF) based test suite for OpenAFS. This initial
+version is a limited, basic smoke test of a single host OpenAFS server and
+client.  This test will install the OpenAFS client and server binaries and
+setup a simple test cell.  The following files are needed to run the test:
 
-This is a Robot Framework based test-suite for OpenAFS. This initial version is
-a limited, basic smoke test of a single host OpenAFS server and client.  This
-test will install the OpenAFS client and server binaries and setup a simple
-test cell.  The following files are needed to run the test:
-
-* OpenAFS RPM files
+* OpenAFS RPM (or dest-style binary) files
 * Kerberos keytab files containing the AFS service key(s) and user keys
 
 The results of the tests are a set of html files indicating pass or fail
