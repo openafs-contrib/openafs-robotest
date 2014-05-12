@@ -135,9 +135,7 @@ Install the python package installer and docutils packages.
 
 5. Install Robot framework (global)
 
-Use the python pip installer to install the Robot Framework. Alternatively, to
-avoid a global installation, see "Appendix B: Installing Robot Framework with
-virtualenv".
+Use the python pip installer to install the Robot Framework.
 
      $ sudo pip install robotframework
 
@@ -211,10 +209,6 @@ account which is to run the tests.  Root access is not required.
 
 
 2. [Optional] Install of Robot Framework (local)
-
-If the Robot Framework has not been globally installed or a local installation
-is perferred, see "Appendix B: Installing Robot Framework with virtualenv".
-
 
 3. Install openafs-robotest.
 
@@ -291,53 +285,4 @@ Example:
 
 Where <REALM> is the name of the test realm, and <principal> is a principal
 with Kerberos admin privileges.
-
-
-Appendix B: Installing Robot Framework with virtualenv
-======================================================
-
-Robot Framework is available as a python package.  The recommended method for
-installing python packages is to install the package in a python 'virtualenv'
-isolation environment, instead of a global installation. This prevents
-conflicts as other packages are installed, upgraded, and removed from the
-system.
-
-1. Install the python virtualenv tool. This is available as a yum package
-in the EPEL repository.
-
-    $ sudo yum -y install python-virtualenv
-
-2. Login as the robotest user.
-
-    $ sudo su - robotest
-
-3. Create the virtualenv directory for Robot Framework.
-
-Create the virtualenv directory in the robotest user home directory
-and install the Robot Framework package.
-
-    $ virtualenv --no-site-packages robotframework
-    $ . robotframework/bin/activate
-    (robotframework) $ pip install robotframework
-    ...
-    Successfully installed robotframework
-
-Check Robot Framework is correctly installed by running the pybot command.
-
-    (robotframework) $ pybot --version
-    Robot Framework 2.8.1 (Python 2.6.6 on linux2)
-
-    (robotframework) $ which pybot
-    ~/robotframework/bin/pybot
-
-Deactivate the virtualenv until the rest of the setup has been completed.
-
-    (robotframework) $ deactivate
-    $
-
-Before running the openafs-robotest, activate the virtualenv.
-
-    $ cd ~/sna-openafs-robotest
-    $ . ~/robotframework/bin/activate
-    (robotframework) $ ./run-test.sh <options>
 
