@@ -10,7 +10,7 @@ cell can be created.
 DefaultTags    install(redhat)
 Library    OperatingSystem
 Resource    keywords/utility.robot
-Resource    keywords/rpm.robot
+Resource    keywords/redhat/rpm.robot
 
 *** Test Case ***
 OpenAFS common package installation

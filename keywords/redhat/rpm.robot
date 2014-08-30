@@ -1,7 +1,7 @@
 *** Setting ***
 Library    OperatingSystem
 Library    String
-Variables    variables/rpm.py
+Variables    variables/redhat/rpm.py
 
 *** Keywords ***
 get package file
