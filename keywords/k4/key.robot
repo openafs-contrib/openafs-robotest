@@ -2,16 +2,17 @@
 Library        OperatingSystem
 Library        libraries/Kerberos.py
 Resource       keywords/utility.robot
+Variables      variables/${ENV_DIST}/pathes.py
 
 *** Keywords ***
 afs service keytab should exist
     file should exist    ${KRB_AFS_KEYTAB}
 
 afs service key should exist
-    file should exist    /usr/afs/etc/KeyFile
+    file should exist    ${AFS_SERVER_ETC_DIR}/KeyFile
 
 afs service key should not exist
-    file should not exist    /usr/afs/etc/KeyFile
+    file should not exist    ${AFS_SERVER_ETC_DIR}/KeyFile
 
 import afs service key
     ${kvno}    read des kvno    ${KRB_AFS_KEYTAB}    ${AFS_CELL}    ${KRB_REALM}

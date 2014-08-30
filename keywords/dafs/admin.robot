@@ -4,6 +4,7 @@ Library        String
 Library        libraries/Kerberos.py
 Resource       keywords/utility.robot
 Variables      variables/${ENV_DIST}/commands.py
+Variables      variables/${ENV_DIST}/pathes.py
 
 *** Keywords ***
 fileserver is running
@@ -19,10 +20,10 @@ fileserver is not running
     program is not running    salvageserver
 
 create fileserver
-    ${fs}    set variable    -cmd "/usr/afs/bin/dafileserver"
-    ${vs}    set variable    -cmd "/usr/afs/bin/davolserver"
-    ${ss}    set variable    -cmd "/usr/afs/bin/salvageserver"
-    ${s}     set variable    -cmd "/usr/afs/bin/salvager"
+    ${fs}    set variable    -cmd "${AFS_SERVER_LIBEXEC_DIR}/dafileserver"
+    ${vs}    set variable    -cmd "$[AFS_SERVER_LIBEXEC_DIR}/davolserver"
+    ${ss}    set variable    -cmd "$[AFS_SERVER_LIBEXEC_DIR}/salvageserver"
+    ${s}     set variable    -cmd "$[AFS_SERVER_LIBEXEC_DIR}/salvager"
     sudo    ${AFS_BOS} create ${AFS_HOST} dafs dafs ${fs} ${vs} ${ss} ${s} -localauth
     wait until keyword succeeds    1 min    5 sec    fileserver is running
 

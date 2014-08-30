@@ -11,6 +11,7 @@ Library    libraries/Kerberos.py
 Resource     keywords/utility.robot
 Resource     keywords/kerberos.robot
 Resource     keywords/${ENV_KEY}/key.robot
+Variables    variables/${ENV_DIST}/pathes.py
 
 *** Test Case ***
 afs should not be mounted
@@ -24,8 +25,8 @@ afs kernel module should not be loaded
 
 afs directories should not exist
     directory should not exist    /afs
-    directory should not exist    /usr/afs
-    directory should not exist    /usr/vice
+    directory should not exist    ${AFS_SERVER_LIBEXEC_DIR}
+    directory should not exist    ${AFS_CLIENT_ETC_DIR}
 
 empty afs vice partition should exist
     directory should exist    /vicepa
