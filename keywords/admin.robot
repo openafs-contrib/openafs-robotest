@@ -4,6 +4,7 @@ Library        String
 Library        libraries/Kerberos.py
 Resource       keywords/utility.robot
 Variables      variables/${ENV_DIST}/commands.py
+Variables      variables/${ENV_DIST}/pathes.py
 
 *** Keywords ***
 server is alive
@@ -47,12 +48,12 @@ set cell name
     sudo    ${AFS_BOS} setcell -server ${AFS_HOST} -name ${cellname} -localauth
 
 create protection server
-    sudo    ${AFS_BOS} create ${AFS_HOST} ptserver simple /usr/afs/bin/ptserver -localauth
+    sudo    ${AFS_BOS} create ${AFS_HOST} ptserver simple ${AFS_SERVER_LIBEXEC_DIR}/ptserver -localauth
     wait until keyword succeeds    1 min    1 sec    server is alive    7002
     wait until keyword succeeds    1 min    1 sec    database has quorum    7002
 
 create volume location server
-    sudo    ${AFS_BOS} create ${AFS_HOST} vlserver simple /usr/afs/bin/vlserver -localauth
+    sudo    ${AFS_BOS} create ${AFS_HOST} vlserver simple ${AFS_SERVER_LIBEXEC_DIR}/vlserver -localauth
     wait until keyword succeeds    1 min    1 sec    server is alive    7003
     wait until keyword succeeds    1 min    1 sec    database has quorum    7003
 

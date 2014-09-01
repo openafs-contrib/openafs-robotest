@@ -10,6 +10,7 @@ AFS_CELL
 AFS_HOST
 AFS_SUPERUSER
 AFS_TESTUSER
+AFS_IP
 ENV_FS
 ENV_DIST
 ENV_KEY
@@ -28,6 +29,7 @@ AFS_CELL="robotest"
 AFS_HOST=`hostname -f`
 AFS_SUPERUSER="robotest.admin"
 AFS_TESTUSER="robotest"
+AFS_IP="127.0.0.1"
 ENV_FS="fs"
 ENV_DIST="redhat"
 ENV_KEY="k5"
