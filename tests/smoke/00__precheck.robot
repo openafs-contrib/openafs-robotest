@@ -41,7 +41,7 @@ kerberos keytab check
 
 kerberos ticket check
     should not have kerberos tickets
-    run command    kinit -k -t ${KRB_USER_KEYTAB} ${AFS_TESTUSER}@${KRB_REALM}
+    run command    kinit -5 -k -t ${KRB_USER_KEYTAB} ${AFS_TESTUSER}@${KRB_REALM}
     should have kerberos tickets
     run command    kdestroy
     should not have kerberos tickets
