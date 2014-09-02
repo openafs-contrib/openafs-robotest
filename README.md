@@ -260,6 +260,14 @@ Example:
     $ ./run-test.sh --afsversion 1.6.5
 
 
+Publishing Results
+==================
+ 
+To see the actual test-results, setup a webserver as explained above.
+Also, you can just run tools/webserver.py.
+The results are then available under http://<hostname>:8000
+
+
 Appendix A: Creating Keytabs, MIT Kerberos 5
 ============================================
 
