@@ -150,7 +150,7 @@ not logged in as admin
 
 log in as admin
     ${name}=    replace string    ${AFS_SUPERUSER}    .    /
-    run command    kinit -k -t ${KRB_USER_KEYTAB} ${name}@${KRB_REALM}
+    run command    kinit -5 -k -t ${KRB_USER_KEYTAB} ${name}@${KRB_REALM}
     run command    ${AFS_AKLOG} -d -c ${AFS_CELL} -k ${KRB_REALM}
 
 logged in as admin
