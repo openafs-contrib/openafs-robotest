@@ -59,6 +59,9 @@ fileserver creation
     when create fileserver
     then fileserver is running
 
+client configuration
+    set client configuration
+
 afs root volume creation
     given volume does not exist    root.afs
     when create volume as root   root.afs
