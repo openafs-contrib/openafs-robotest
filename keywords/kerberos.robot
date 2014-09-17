@@ -1,6 +1,6 @@
 *** Setting ***
 Library    OperatingSystem
-Variables  variables/${ENV_DIST}/pathes.py
+Variables  variables/${ENV_DIST}/paths.py
 
 
 *** Keywords ***
