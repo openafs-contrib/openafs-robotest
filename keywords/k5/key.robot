@@ -2,7 +2,7 @@
 Library        OperatingSystem
 Library        libraries/Kerberos.py
 Resource       keywords/utility.robot
-Variables      variables/${ENV_DIST}/pathes.py
+Variables      variables/${ENV_DIST}/paths.py
 
 *** Keywords ***
 afs service keytab should exist
