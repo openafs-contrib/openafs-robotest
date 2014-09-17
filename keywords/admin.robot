@@ -4,7 +4,7 @@ Library        String
 Library        libraries/Kerberos.py
 Resource       keywords/utility.robot
 Variables      variables/${ENV_DIST}/commands.py
-Variables      variables/${ENV_DIST}/pathes.py
+Variables      variables/${ENV_DIST}/paths.py
 
 *** Keywords ***
 server is alive

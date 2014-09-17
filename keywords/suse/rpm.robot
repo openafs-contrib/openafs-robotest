@@ -2,7 +2,7 @@
 Library    OperatingSystem
 Library    String
 Variables    variables/suse/rpm.py
-Variables    variables/suse/pathes.py
+Variables    variables/suse/paths.py
 
 *** Keywords ***
 get package file

@@ -1,6 +1,6 @@
 *** Setting ***
 Resource       keywords/utility.robot
-Variables      variables/suse/pathes.py
+Variables      variables/suse/paths.py
 
 *** Keywords ***
 set client configuration
