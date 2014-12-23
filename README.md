@@ -2,27 +2,20 @@ OpenAFS RoboTest
 ================
 
 This is a Robot Framework (RF) based test suite for OpenAFS. This initial
-version is a limited, basic smoke test of a single host OpenAFS server and
-client.  This test will install the OpenAFS client and server binaries and
-setup a simple test cell.  The following files are needed to run the test:
-
-* OpenAFS RPM (or dest-style binary) files
-* Kerberos keytab files containing the AFS service key(s) and user keys
-
-The results of the tests are a set of html files indicating pass or fail
-status.
-
+version is a limited, basic test of a single host OpenAFS server and client.
+This test will install the OpenAFS client and server binaries and setup a
+simple test cell.  The results of the tests are a set of html files indicating
+pass or fail status.
 
 System Requirements
 ===================
 
-* a Kerberos 5 realm
-* RHEL/CentOS 6 Linux
+* Linux
 * Python 2.6.x
 * Robot Framework 2.7+
+* Kerberos 5 servers (local or remote)
 * Kerberos client utilities (kinit, kdestroy, klist, kvno)
 * Clock synchronization (required by Kerberos)
-
 
 Kerberos Setup
 ==============
@@ -145,7 +138,7 @@ Use the python pip installer to install the Robot Framework.
 6. Setup a regular user to run the tests.
 
 The test suite is designed to be run under a regular user account. This user
-should have limited sudo access in order to complete the installation portion
+should have sudo access in order to complete the installation portion
 of the test suite.
 
 Any valid username can be used.  In the following example instructions, the
@@ -251,18 +244,13 @@ Running Tests
 
 3. Run the tests.
 
-    $ ./run-tests.sh <options>
+    $ ./run-tests
 
-See ./run-tests.sh --help for a list of options.
-
-Example:
-
-    $ ./run-test.sh --afsversion 1.6.5
 
 
 Publishing Results
 ==================
- 
+
 To see the actual test-results, setup a webserver as explained above.
 Also, you can just run tools/webserver.py.
 The results are then available under http://<hostname>:8000

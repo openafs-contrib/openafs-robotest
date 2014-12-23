@@ -1,0 +1,39 @@
+#!/usr/bin/env python
+# Copyright (c) 2014, Sine Nomine Associates
+# See LICENSE
+#
+# usage: ./run-tests [--reconfigure]
+#
+# Must be run in the top level openafs-robotest directory.
+#
+
+import os
+import sys
+import tools.run
+import tools.setup
+
+if not os.path.exists('./resources') or not os.path.exists('./libraries'):
+   sys.stderr.write("Must be run in the top level directory.")
+   sys.exit(1)
+sys.path.append('./resources')
+sys.path.append('./libraries')
+
+def usage():
+    print "usage: run setup"
+    print "       run tests"
+    print "       run webserver"
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        usage()
+        rc = 1
+    elif sys.argv[1] == 'setup':
+        rc = tools.setup.main(sys.argv[2:])
+    elif sys.argv[1] == 'tests':
+        rc = tools.run.main(sys.argv[2:])
+    elif sys.argv[1] == 'webserver':
+        print "todo"
+    else:
+        usage()
+        rc = 2
+    sys.exit(rc)

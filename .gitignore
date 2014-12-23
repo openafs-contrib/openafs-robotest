@@ -1,4 +1,5 @@
 *.pyc
-*.keytab
-settings
-output/
+*.swp
+/settings.py
+/output
+/site
