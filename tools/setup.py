@@ -72,6 +72,7 @@ SETTINGS = {
    'RPM_PACKAGE_DIR':  {'t':'path', 'dv':"",               'desc':"Path the RPM packages"},
    'TRANSARC_DEST':    {'t':'path', 'dv':"",               'desc':"Directory for binaries when AFS_DIST is 'transarc'."},
    'TRANSARC_TARBALL': {'t':'path', 'dv':"",               'desc':"Tarball filename when AFS_DIST is 'transarc'."},
+   'WEBSERVER_PORT':   {'t':'int',  'dv':8000,             'desc':"Results webserver port number."},
 }
 
 
@@ -99,6 +100,8 @@ class Setting:
                 self.value = False
             else:
                 sys.stderr.write("Expected 'true' or 'false' for %s.\n" % (self.name))
+        elif self.t == 'int':
+            self.value = int(value)
         else:
             self.value = value
 
@@ -112,6 +115,11 @@ class Setting:
                 v = 'True'
             else:
                 v = 'False'
+        elif self.t == 'int':
+            if self.value:
+                v = '%d' % self.value
+            else:
+                v = '0'
         else:
             if self.value:
                 v = '"%s"' % self.value.replace('"', '\\"')

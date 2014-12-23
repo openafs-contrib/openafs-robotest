@@ -1,28 +1,26 @@
 #!/usr/bin/env python
 
 import os
+import sys
 import SimpleHTTPServer
 import SocketServer
 
-PORT = 8000
-RUN_OUTPUT_DIR="output"
+def main(args):
+    try:
+        import settings
+    except ImportError:
+        print "Please run setup first."
+        sys.exit(1)
+    Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
+    if not os.path.exists(settings.RF_OUTPUT):
+        os.makedirs(settings.RF_OUTPUT)
+    os.chdir(settings.RF_OUTPUT)
+    httpd = SocketServer.TCPServer(("", settings.WEBSERVER_PORT), Handler)
+    print "Serving at port %d, use <Ctrl-C> to stop." % settings.WEBSERVER_PORT
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        pass
 
-# parse settings to get custom RUN_OUTPUT_DIR
-f=file("settings", "r")
-while 1 :
-    line = f.readline()
-    if not line : break
-    line = line.strip()
-    if line.startswith("RUN_OUTPUT_DIR") :
-         RUN_OUTPUT_DIR = line.split("#")[0].split("=")[1].replace("\"","")
-         break
-f.close()
-
-Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
-
-os.chdir(RUN_OUTPUT_DIR)
-
-httpd = SocketServer.TCPServer(("", PORT), Handler)
-
-print "serving at port", PORT
-httpd.serve_forever()
+if __name__ == "__main__":
+    main(sys.argv[1:])

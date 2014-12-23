@@ -11,6 +11,7 @@ import os
 import sys
 import tools.run
 import tools.setup
+import tools.webserver
 
 if not os.path.exists('./resources') or not os.path.exists('./libraries'):
    sys.stderr.write("Must be run in the top level directory.")
@@ -32,7 +33,7 @@ if __name__ == "__main__":
     elif sys.argv[1] == 'tests':
         rc = tools.run.main(sys.argv[2:])
     elif sys.argv[1] == 'webserver':
-        print "todo"
+        rc = tools.webserver.main(sys.argv[2:])
     else:
         usage()
         rc = 2
