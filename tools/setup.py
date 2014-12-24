@@ -37,7 +37,7 @@ except:
 
 
 INTRO = \
-"""OpenAFS RoboTest Setup Tool
+"""OpenAFS RoboTest Setup
 Type help for information.
 """
 
@@ -213,21 +213,24 @@ class DummyLogger:
 class SetupShell(cmd.Cmd):
 
     def __init__(self, script=None, settings=None):
-        self.prompt = ''
-        self.intro = ''
-        self.doc_header = "Commands"
-        if settings:
-            self.settings = settings
-        else:
-            self.settings = Settings()
-        if script is None:
-            cmd.Cmd.__init__(self)
-            if sys.stdin.isatty():
-                self.prompt = '(setup): '
-                self.intro = INTRO
-        else:
+        if settings is None:
+            settings = Settings()
+        if script:
             cmd.Cmd.__init__(self, stdin=script)
             self.use_rawinput = False
+            self.prompt = ''
+            self.intro = ''
+        else:
+            cmd.Cmd.__init__(self)
+            if sys.stdin.isatty():
+                self.cmdqueue.append('guided')
+                self.prompt = '(setup): '
+                self.intro = INTRO
+            else:
+                self.prompt = ''
+                self.intro = ''
+        self.doc_header = "Commands (Type help <command>)"
+        self.settings = settings
 
     def _set(self, name, value):
         self.settings.set(name,value)
@@ -389,6 +392,7 @@ class SetupShell(cmd.Cmd):
 
     def help_create_partition(self):
         print "Create a fake fileserver partition."
+        self.syntax_create_partition()
     def syntax_create_partition(self):
         print "syntax: create_partition <id>"
         print "where <id> is a..z, aa..iv"
@@ -401,7 +405,6 @@ class SetupShell(cmd.Cmd):
             create_fake_partition(args[0])
         except Exception as e:
             sys.stderr.write("Fail: %s\n" % (e))
-
 
     def help_create_afs_keytab(self):
         print "Create a service key and write it to a keytab file."
@@ -519,7 +522,6 @@ class SetupShell(cmd.Cmd):
             self._set("AFS_USER", principal)
             self._set("KRB_USER_KEYTAB", keytab)
 
-
     def help_download(self):
         print "Download RPM files"
         self.syntax_download()
@@ -560,6 +562,19 @@ class SetupShell(cmd.Cmd):
             self._set('RPM_AFSRELEASE', afsrelease)
         else:
             sys.stderr.write("Failed to find rpm release!\n")
+
+    def help_guided(self):
+        print "Enter guided setup mode"
+        self.syntax_guided(self)
+    def syntax_guided(self):
+        print "syntax: guided"
+    def do_guided(self, line):
+        stop = None
+        while not stop:
+            answer = raw_input("Now what? ")
+            print "Are you kidding?", answer, "?"
+            if "xyzzy" in answer:
+                stop = True
 
 
 def main(args):
