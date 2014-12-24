@@ -79,7 +79,7 @@ def retrieve_rpm_urls(version, platform, **kwargs):
                     urls.append(url)
     if urls:
         sys.stdout.write("%s [%s]\n" % (spacer, "ok"))
-        if not kmod_found:
+        if platform.startswith('rhel') and not kmod_found:
             sys.stderr.write("Warning: kmod not found for kernel version %s\n" % (kernel))
     else:
         sys.stdout.write("%s [%s]\n" % (spacer, "error"))
@@ -120,8 +120,7 @@ def download_files(urls, **kwargs):
     return status
 
 def download(version, platform, **kwargs):
-    # supports just rhel for now.
-    if platform.startswith('rhel'):
+    if platform in ('rhel5', 'rhel6', 'openSUSE_12.3'):
         urls = retrieve_rpm_urls(version, platform, **kwargs)
     else:
         raise ValueError("Unexpected platform: %s" % (platform))

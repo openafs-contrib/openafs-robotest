@@ -528,7 +528,7 @@ class SetupShell(cmd.Cmd):
     def syntax_download(self):
         print "syntax: download <version> <platform> [<directory>]"
         print "where: <version> is the openafs version number; e.g. 1.6.10"
-        print "       <platform> is one of: rhel5, rhel6"
+        print "       <platform> is one of: rhel5, rhel6, openSUSE_12.3"
         print "       <directory> is destination for downloads; default is ./site/rpms"
         print "sets: RPM_AFSRELEASE, RPM_AFSVERSION, RPM_PACKAGE_DIR"
     def do_download(self, line):
