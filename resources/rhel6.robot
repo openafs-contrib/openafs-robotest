@@ -3,6 +3,8 @@
 Documentation  Install the AFS client and server binaries from the RPM
 ...            packages. After this test suite completes, the AFS servers
 ...            and clients can be started and the cell can be created.
+Variables      rpm.py
+
 
 *** Keywords ***
 Get Package File
