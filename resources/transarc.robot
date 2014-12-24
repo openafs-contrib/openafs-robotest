@@ -61,10 +61,6 @@ Stop the bosserver
     Sudo  ${BOS} shutdown localhost -wait -localauth
     Sudo  killall bosserver
 
-Remove Cache Manager Configuration
-    Sudo  rm -rf /usr/vice/etc
-    Sudo  rmdir /afs
-
 Start the Cache Manager
     ${kmod}=  Set Variable  ${AFS_KERNEL_DIR}/modload/libafs-${OS_RELEASE}.mp.ko
     File Should Exist  ${kmod}
@@ -74,4 +70,15 @@ Start the Cache Manager
 Stop the Cache Manager
     Sudo  umount /afs
     Sudo  rmmod libafs
+
+Remove Server Configuration
+    Sudo  rm -rf /usr/afs/etc
+    Sudo  rm -rf /usr/afs/db
+    Sudo  rm -rf /usr/afs/local
+    Sudo  rm -rf /usr/afs/logs
+    Sudo  rmdir /usr/afs
+
+Remove Cache Manager Configuration
+    Sudo  rm -rf /usr/vice/etc
+    Sudo  rmdir /afs
 

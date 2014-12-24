@@ -63,5 +63,12 @@ Remove Packages
     ...  openafs-client-${RPM_AFSVERSION}-${RPM_AFSRELEASE}${RPM_DIST}.${RPM_ARCH}
     ...  kmod-openafs-${RPM_AFSVERSION}-${RPM_AFSRELEASE}.${RPM_KVERSION}   # kversion includes dist and arch
 
+Remove Server Configuration
+    Sudo  rm -rf /usr/afs/etc
+    Sudo  rm -rf /usr/afs/db
+    Sudo  rm -rf /usr/afs/local
+    Sudo  rm -rf /usr/afs/logs
+    Sudo  rmdir /usr/afs
+
 Remove Cache Manager Configuration
     Sudo  rm -rf /usr/vice/etc

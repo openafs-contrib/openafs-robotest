@@ -210,6 +210,7 @@ class OpenAFS:
 
     def _purge_files(self):
         _run_keyword("Remove Cache Manager Configuration")
+        _run_keyword("Remove Server Configuration")
         valid = r'/vicep([a-z]|[a-h][a-z]|i[a-v])$'
         for vicep in glob.glob("/vicep*"):
             if re.match(valid, vicep) and os.path.isdir(vicep):
