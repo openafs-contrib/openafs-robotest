@@ -9,7 +9,7 @@ def main(args):
     try:
         import settings
     except ImportError:
-        print "Please run setup first."
+        print "Please do `./run setup' first."
         sys.exit(1)
     Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
     if not os.path.exists(settings.RF_OUTPUT):

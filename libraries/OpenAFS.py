@@ -81,8 +81,8 @@ class OpenAFS:
             raise AssertionError("File is not executable: %s" % (path))
 
     def get_host_by_name(self, hostname):
-       """Return the ipv4 address of the hostname."""
-       return socket.gethostbyname(hostname)
+        """Return the ipv4 address of the hostname."""
+        return socket.gethostbyname(hostname)
 
     def get_device(self, path):
         """Return the device id of the given path as '(major,minor)'."""
@@ -149,11 +149,13 @@ class OpenAFS:
             _run_keyword("Install Server Binaries")
             _run_keyword("Install Client Binaries")
             _run_keyword("Install Workstation Binaries")
-        elif settings.AFS_DIST == "rhel6":
+        elif settings.AFS_DIST in ('rhel6'):
             _run_keyword("Install OpenAFS Common Packages")
             _run_keyword("Install OpenAFS Kerberos5 Packages")
             _run_keyword("Install OpenAFS Server Packages")
             _run_keyword("Install OpenAFS Client Packages")
+        elif settings.AFS_DIST == 'suse':
+            _run_keyword("Install OpenAFS on SuSE")
         else:
             raise AssertionError("Unsupported AFS_DIST: %s" % settings.AFS_DIST)
 
@@ -205,12 +207,14 @@ class OpenAFS:
             _run_keyword("Remove Workstation Binaries")
         elif settings.AFS_DIST == "rhel6":
             _run_keyword("Remove Packages")
+        elif settings.AFS_DIST == "suse":
+            _run_keyword("Remove Packages")
         else:
             raise AssertionError("Unsupported AFS_DIST: %s" % settings.AFS_DIST)
 
     def _purge_files(self):
-        _run_keyword("Remove Cache Manager Configuration")
         _run_keyword("Remove Server Configuration")
+        _run_keyword("Remove Cache Manager Configuration")
         valid = r'/vicep([a-z]|[a-h][a-z]|i[a-v])$'
         for vicep in glob.glob("/vicep*"):
             if re.match(valid, vicep) and os.path.isdir(vicep):

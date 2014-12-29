@@ -223,7 +223,7 @@ class SetupShell(cmd.Cmd):
         else:
             cmd.Cmd.__init__(self)
             if sys.stdin.isatty():
-                self.cmdqueue.append('guided')
+                #self.cmdqueue.append('guided')
                 self.prompt = '(setup): '
                 self.intro = INTRO
             else:

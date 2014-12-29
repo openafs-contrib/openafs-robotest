@@ -32,7 +32,7 @@ def main(args):
     try:
         import settings
     except ImportError:
-        print "Please run setup first."
+        print "Please do `./run setup' first."
         sys.exit(1)
     try:
         opts, args = getopt.getopt(args, "h", ["help"])

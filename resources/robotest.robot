@@ -11,8 +11,8 @@ Library           Kerberos
 Resource          prechecks.robot
 Resource          newcell.robot
 Variables         sysinfo.py
-Resource          ${AFS_DIST}.robot
 Variables         ${AFS_DIST}.py
+Resource          ${AFS_DIST}.robot
 
 *** Keywords ***
 Run Command

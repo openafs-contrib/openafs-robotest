@@ -11,3 +11,5 @@ OS_VERSION = os.uname()[3]
 OS_MACHINE = os.uname()[4]
 
 HOSTNAME = socket.gethostname()
+HOSTADDRESS = socket.gethostbyname(HOSTNAME)
+
