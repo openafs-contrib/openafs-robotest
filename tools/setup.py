@@ -321,14 +321,19 @@ class SetupShell(cmd.Cmd):
         else:
             print self.doc_header
             print self.ruler*60
-            for name in sorted(self.get_names()):
+            # Overridden methods can be listed multiple times. Create
+            # a unique list of do_ methods.
+            names = {}
+            for name in self.get_names():
                 if name=="do_EOF":
                     continue
                 if name.startswith("do_"):
-                    doc = getattr(self, name).__doc__
-                    if doc:
-                        desc = doc.split('\n')[0].strip()
-                        print "%-8s  %s" % (name[3:], desc)
+                    names[name] = 1
+            for name in sorted(names.keys()):
+                doc = getattr(self, name).__doc__
+                if doc:
+                    desc = doc.split('\n')[0].strip()
+                    print "%-8s  %s" % (name[3:], desc)
 
     def do_shell(self, line):
         """Run a command using the shell.
