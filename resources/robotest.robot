@@ -9,24 +9,34 @@ Library           String
 Library           OpenAFS
 Library           Kerberos
 Resource          prechecks.robot
+Resource          install.robot
 Resource          newcell.robot
 Variables         sysinfo.py
-Variables         ${AFS_DIST}.py
-Resource          ${AFS_DIST}.robot
+Variables         platforms/${AFS_DIST}.py
 
 *** Keywords ***
 Run Command
-    [arguments]  ${cmd}
+    [Arguments]  ${cmd}
     ${rc}  ${output}  Run And Return Rc And Output    ${cmd}
     Should Be Equal As Integers  ${rc}  0
 
 Sudo
-    [arguments]  ${cmd}  @{args}
+    [Arguments]  ${cmd}  @{args}
     ${arg}  Catenate  @{args}
     Run Command  sudo -n ${cmd} ${arg}
 
+Start Service
+    [Arguments]  ${name}
+    Should Not Be Empty  ${name}
+    Sudo  /sbin/service ${name} start
+
+Stop Service
+    [Arguments]  ${name}
+    Should Not Be Empty  ${name}
+    Sudo  /sbin/service ${name} stop
+
 Program Should Be Running
-    [arguments]  ${program}
+    [Arguments]  ${program}
     ${output}  Run   ps --no-headers -o cmd -e
     Should Contain  ${output}  ${program}
 

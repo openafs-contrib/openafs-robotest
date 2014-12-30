@@ -579,6 +579,13 @@ class SetupShell(cmd.Cmd):
 
 def main(args):
     """Command line entry for the setup shell. """
+    # Setup paths for local libraries.
+    for name in ['./libraries']:
+        if not os.path.isdir(name):
+            raise AssertionError("Directory '%s' is missing! (Wrong current working directory?)" % name)
+        else:
+            sys.path.append(name)
+
     if len(args) == 0:
         shell = SetupShell()
         shell.cmdloop()

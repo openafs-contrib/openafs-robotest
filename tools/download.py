@@ -29,7 +29,11 @@ from HTMLParser import HTMLParser
 
 class LinkHTMLParser(HTMLParser):
     """Extract link urls from an html document."""
-    urls = []
+
+    def __init__(self):
+        HTMLParser.__init__(self)
+        self.urls = []
+
     def handle_a_tag(self, attrs):
         """Extract the link url from an a tag.
         Ignore the link name; it is not needed for this tool.

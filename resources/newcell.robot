@@ -5,12 +5,6 @@
 Documentation     Keywords for test cell setup and teardown.
 
 *** Keywords ***
-Purge Volumes On Partition
-    [arguments]    ${vice}
-    Sudo  rm -f ${vice}/V*.vol
-    Sudo  rm -rf ${vice}/AFSIDat
-    Sudo  rm -rf ${vice}/Lock
-
 Set Kerberos Realm Name
     [arguments]    ${realm}
     Should Not Be Empty     ${realm}
@@ -21,8 +15,15 @@ Set Kerberos Realm Name
     Directory Should Exist  ${AFS_CONF_DIR}
     Sudo    cp site/krb.conf ${AFS_CONF_DIR}/krb.conf
 
+Set Machine Interface
+    ${address}=  Get Host By Name  ${HOSTNAME}
+    Sudo  mkdir -p ${AFS_LOCAL_DIR}
+    Sudo  chmod 755 ${AFS_LOCAL_DIR}
+    Create File  site/NetInfo  ${address}
+    Sudo  cp site/NetInfo  ${AFS_LOCAL_DIR}/NetInfo
+
 Create Default Cell Config
-    ${address}=   Get Host By Name  ${HOSTNAME}
+    ${address}=  Get Host By Name  ${HOSTNAME}
     Create File  site/ThisCell  ${AFS_CELL}
     Create File  site/CellServDB  >${AFS_CELL}\t#Test cell\n${address}\t#${HOSTNAME}
     Sudo  mkdir -p ${AFS_CONF_DIR}

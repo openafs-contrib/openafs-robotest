@@ -27,50 +27,8 @@ from robot.api import logger
 from robot.libraries.BuiltIn import BuiltIn
 from robot.libraries.BuiltIn import register_run_keyword
 
-import settings
-
-# Setup and teardown stages.
-_STAGE_INITIAL = 0
-_STAGE_PRECHECK_SYSTEM = 1
-_STAGE_INSTALL_OPENAFS = 2
-_STAGE_CREATE_TEST_CELL = 3
-_STAGE_SHUTDOWN_OPENAFS = 4
-_STAGE_REMOVE_OPENAFS = 5
-_STAGE_PURGE_FILES = 6
-
-def _say(msg):
-    """Display a progress message to the console."""
-    stream = sys.__stdout__
-    stream.write("%s\n" % (msg))
-    stream.flush()
-
-def _run_keyword(name, *args):
-    """Run the named keyword."""
-    BuiltIn().run_keyword(name, *args)
-
-
-class OpenAFS:
-    """OpenAFS test library for basic tests.
-
-    This library provides keywords to install the OpenAFS server and
-    client on a single system, create a small test cell, and then
-    tear it all down for the next test cycle.
-
-    The DO_TEARDOWN setting my be set to False to skip the teardown
-    keywords.  The setup keywords will be skipped on the next test
-    cycle.  This maybe helpful during test development to avoid lengthy
-    setup and teardowns when the software and setup under test is not
-    changed.
-
-    Implementation of many of the setup steps are provided in external
-    robot resource files.  This library determines which keywords
-    are called based on the configuration.
-    """
-    ROBOT_LIBRARY_SCOPE = 'GLOBAL'
-
-    def __init__(self):
-        self._stage = _Stage()
-
+class _Util:
+    """Generic helper keywords."""
     def file_should_be_executable(self, path):
         """Fails if the file does not have execute permissions for the current user."""
         if not path:
@@ -89,33 +47,57 @@ class OpenAFS:
         device = os.stat(path).st_dev
         return "(%d,%d)" % (os.major(device), os.minor(device))
 
+class _Setup:
+    """Test system setup and teardown top-level keywords.
+
+    This library provides keywords to install the OpenAFS server and
+    client on a single system, create a small test cell, and then
+    tear it down for the next test cycle.
+
+    The DO_TEARDOWN setting my be set to False to skip the teardown
+    keywords.  The setup keywords will be skipped on the next test
+    cycle.  This maybe helpful during test development to avoid lengthy
+    setup and teardowns when the software and setup under test is not
+    changed.
+
+    Implementation of many of the setup and teardown steps are provided
+    in external robot resource files.  This library determines which
+    keywords are called based on the settings and saved state.
+    """
+    _stage_filename = 'site/.stage' # Where the last completed stage name is saved.
+
+    def _setup_stage(method):
+        """Setup keyword wrapper to manage the order of setup stages."""
+        def decorator(self):
+            name = method.func_name
+            if self._should_run_stage(name):
+                _say("Setup.%s" % name)
+                method(self)
+                self._set_stage(name)
+        return decorator
+
+    def _teardown_stage(method):
+        """Teardown keyword wrapper to manage the order of teardown stages."""
+        def decorator(self):
+            if _get_var('DO_TEARDOWN') == False:
+                # Do not change the stage so the setup is skipped the
+                # next time the tests harness is run.
+                logger.info("Skipping Teardown: DO_TEARDOWN is False")
+            else:
+                name = method.func_name
+                if self._should_run_stage(name):
+                    _say("Teardown.%s" % name)
+                    method(self)
+                    self._set_stage(name)
+        return decorator
+
+    @_setup_stage
     def precheck_system(self):
         """Verify system prerequisites are met."""
-        self._stage.check(_STAGE_PRECHECK_SYSTEM, self._precheck_system)
-
-    def install_openafs(self):
-        """Install the OpenAFS client and server binaries."""
-        self._stage.check(_STAGE_INSTALL_OPENAFS, self._install_openafs)
-
-    def create_test_cell(self):
-        """Create the OpenAFS test cell."""
-        self._stage.check(_STAGE_CREATE_TEST_CELL, self._create_test_cell)
-
-    def shutdown_openafs(self):
-        """Shutdown the OpenAFS client and servers."""
-        self._stage.check(_STAGE_SHUTDOWN_OPENAFS, self._shutdown_openafs)
-
-    def remove_openafs(self):
-        """Remove the OpenAFS server and client binaries."""
-        self._stage.check(_STAGE_REMOVE_OPENAFS, self._remove_openafs)
-
-    def purge_files(self):
-        """Remove remnant data and configuration files."""
-        self._stage.check(_STAGE_PURGE_FILES, self._purge_files)
-
-    def _precheck_system(self):
+        if not _get_var('AFS_DIST') in ('transarc', 'rhel6', 'suse'):
+            raise AssertionError("Unsupported AFS_DIST: %s" % _get_var('AFS_DIST'))
         _run_keyword("Required Variables Should Not Be Empty")
-        if settings.AFS_DIST == 'transarc':
+        if _get_var('AFS_DIST') == 'transarc':
             _run_keyword("Transarc Variables Should Exist")
         _run_keyword("Host Address Should Not Be Loopback")
         _run_keyword("OpenAFS Servers Should Not Be Running")
@@ -125,144 +107,188 @@ class OpenAFS:
         for id in ['a']:
             _run_keyword("Vice Partition Should Be Empty", id)
             _run_keyword("Vice Partition Should Be Attachable", id)
-        if settings.AFS_CSDB_DIST:
+        if _get_var('AFS_CSDB_DIST'):
             _run_keyword("CellServDB.dist Should Exist")
         _run_keyword("Kerberos Client Must Be Installed")
         _run_keyword("Service Keytab Should Exist",
-            settings.KRB_AFS_KEYTAB, settings.AFS_CELL, settings.KRB_REALM,
-            settings.KRB_AFS_ENCTYPE, settings.AFS_KEY_FILE)
-        _run_keyword("Kerberos Keytab Should Exist", settings.KRB_USER_KEYTAB,
-            "%s" % settings.AFS_USER.replace('.','/'), settings.KRB_REALM)
-        _run_keyword("Kerberos Keytab Should Exist", settings.KRB_ADMIN_KEYTAB,
-            "%s" % settings.AFS_ADMIN.replace('.','/'), settings.KRB_REALM)
-        _run_keyword("Can Get a Kerberos Ticket", settings.KRB_USER_KEYTAB,
-            "%s" % settings.AFS_USER.replace('.','/'), settings.KRB_REALM)
+            _get_var('KRB_AFS_KEYTAB'), _get_var('AFS_CELL'), _get_var('KRB_REALM'),
+            _get_var('KRB_AFS_ENCTYPE'), _get_var('AFS_KEY_FILE'))
+        _run_keyword("Kerberos Keytab Should Exist", _get_var('KRB_USER_KEYTAB'),
+            "%s" % _get_var('AFS_USER').replace('.','/'), _get_var('KRB_REALM'))
+        _run_keyword("Kerberos Keytab Should Exist", _get_var('KRB_ADMIN_KEYTAB'),
+            "%s" % _get_var('AFS_ADMIN').replace('.','/'), _get_var('KRB_REALM'))
+        _run_keyword("Can Get a Kerberos Ticket", _get_var('KRB_USER_KEYTAB'),
+            "%s" % _get_var('AFS_USER').replace('.','/'), _get_var('KRB_REALM'))
 
-
-    def _install_openafs(self):
-        if settings.DO_INSTALL == False:
+    @_setup_stage
+    def install_openafs(self):
+        """Install the OpenAFS client and server binaries."""
+        if _get_var('DO_INSTALL') == False:
             logger.info("Skipping install: DO_INSTALL is False")
             return
-        if settings.AFS_DIST == "transarc":
-            if settings.TRANSARC_TARBALL:
+        if _get_var('AFS_DIST') == "transarc":
+            if _get_var('TRANSARC_TARBALL'):
                 _run_keyword("Untar Binaries")
             _run_keyword("Install Server Binaries")
             _run_keyword("Install Client Binaries")
             _run_keyword("Install Workstation Binaries")
-        elif settings.AFS_DIST in ('rhel6'):
-            _run_keyword("Install OpenAFS Common Packages")
-            _run_keyword("Install OpenAFS Kerberos5 Packages")
-            _run_keyword("Install OpenAFS Server Packages")
-            _run_keyword("Install OpenAFS Client Packages")
-        elif settings.AFS_DIST == 'suse':
-            _run_keyword("Install OpenAFS on SuSE")
-        else:
-            raise AssertionError("Unsupported AFS_DIST: %s" % settings.AFS_DIST)
+        elif _get_var('AFS_DIST') in ('rhel6', 'suse'):
+            _run_keyword("Install OpenAFS Server RPM Files")
+            _run_keyword("Install OpenAFS Client RPM Files")
 
-    def _setup_service_key(self):
-        if settings.AFS_KEY_FILE == 'KeyFile':
-            _run_keyword("Create Key File")
-        elif settings.AFS_KEY_FILE == 'rxkad.keytab':
-            _run_keyword("Install rxkad-k5 Keytab")
-        elif settings.AFS_KEY_FILE == 'KeyFileExt':
-            _run_keyword("Create Extended Key File", settings.KRB_AFS_ENCTYPE)
+    @_setup_stage
+    def create_test_cell(self):
+        """Create the OpenAFS test cell."""
+        hostname = socket.gethostname()
+        if _get_var('KRB_REALM').lower() != _get_var('AFS_CELL').lower():
+            _run_keyword("Set Kerberos Realm Name", _get_var('KRB_REALM'))
+        _run_keyword("Set Machine Interface")
+        self._setup_service_key()
+        if _get_var('AFS_DIST') == "transarc":
+            _run_keyword("Start the bosserver")
         else:
-            raise AssertionError("Unsupported AFS_KEY_FILE! %s" % (settings.AFS_KEY_FILE))
-
-    def _create_test_cell(self):
-        if settings.KRB_REALM.lower() != settings.AFS_CELL.lower():
-            _run_keyword("Set Kerberos Realm Name", settings.KRB_REALM)
-        self. _setup_service_key()
-        _run_keyword("Start the bosserver")
-        _run_keyword("Set the Cell Name", settings.AFS_CELL)
+            _run_keyword("Start Service", "openafs-server")
+        _run_keyword("Set the Cell Name", _get_var('AFS_CELL'))
         _run_keyword("Set the Cell Configuration")
         _run_keyword("Create Database Service", "ptserver", 7002)
         _run_keyword("Create Database Service", "vlserver", 7003)
-        if settings.AFS_DAFS:
+        if _get_var('AFS_DAFS'):
             _run_keyword("Create Demand Attach File Service")
         else:
             _run_keyword("Create File Service")
-        _run_keyword("Create an Admin Account", settings.AFS_ADMIN)
+        _run_keyword("Create an Admin Account", _get_var('AFS_ADMIN'))
         _run_keyword("Create the root.afs Volume")
         _run_keyword("Set Cache Manager Configuration")
-        _run_keyword("Start the Cache Manager")
-        _run_keyword("Login",  settings.AFS_ADMIN)
-        hostname = socket.gethostname()
+        if _get_var('AFS_DIST') == "transarc":
+            _run_keyword("Start the Cache Manager")
+        else:
+            _run_keyword("Start Service", "openafs-client")
+        _run_keyword("Login",  _get_var('AFS_ADMIN'))
         _run_keyword("Create Volume",  hostname, "a", "root.cell")
         _run_keyword("Mount Cell Root Volume")
         _run_keyword("Replicate Volume", hostname, "a", "root.afs")
         _run_keyword("Replicate Volume", hostname, "a", "root.cell")
 
-    def _shutdown_openafs(self):
-        _run_keyword("Stop the Cache Manager")
-        _run_keyword("Stop the bosserver")
+    @_teardown_stage
+    def shutdown_openafs(self):
+        """Shutdown the OpenAFS client and servers."""
+        if _get_var('AFS_DIST') == "transarc":
+            _run_keyword("Stop the Cache Manager")
+            _run_keyword("Stop the bosserver")
+        else:
+            _run_keyword("Stop Service", "openafs-client")
+            _run_keyword("Stop Service", "openafs-server")
 
-    def _remove_openafs(self):
-        if settings.DO_REMOVE == False:
+    @_teardown_stage
+    def remove_openafs(self):
+        """Remove the OpenAFS server and client binaries."""
+        if _get_var('DO_REMOVE') == False:
             logger.info("Skipping remove: DO_REMOVE is False")
             return
-        if settings.AFS_DIST == "transarc":
+        if _get_var('AFS_DIST') == "transarc":
             _run_keyword("Remove Server Binaries")
             _run_keyword("Remove Client Binaries")
             _run_keyword("Remove Workstation Binaries")
-        elif settings.AFS_DIST == "rhel6":
-            _run_keyword("Remove Packages")
-        elif settings.AFS_DIST == "suse":
-            _run_keyword("Remove Packages")
         else:
-            raise AssertionError("Unsupported AFS_DIST: %s" % settings.AFS_DIST)
+            _run_keyword("Remove OpenAFS RPM Packages")
 
-    def _purge_files(self):
-        _run_keyword("Remove Server Configuration")
-        _run_keyword("Remove Cache Manager Configuration")
+    @_teardown_stage
+    def purge_files(self):
+        """Remove remnant data and configuration files."""
+        _run_keyword("Purge Server Configuration")
+        _run_keyword("Purge Cache Manager Configuration")
         valid = r'/vicep([a-z]|[a-h][a-z]|i[a-v])$'
         for vicep in glob.glob("/vicep*"):
             if re.match(valid, vicep) and os.path.isdir(vicep):
                 _run_keyword("Purge Volumes On Partition", vicep)
 
+    def _setup_service_key(self):
+        """Helper method to setup the AFS service key.
 
-class _Stage:
+        Call the correct keyword depending on which key file is being setup in
+        the test cell. Supported types are the lecacy DES KeyFile, the interim
+        rxkad-k5 non-DES enctype, and the modern non-DES KeyFileExt.
+        """
+        if _get_var('AFS_KEY_FILE') == 'KeyFile':
+            _run_keyword("Create Key File")
+        elif _get_var('AFS_KEY_FILE') == 'rxkad.keytab':
+            _run_keyword("Install rxkad-k5 Keytab")
+        elif _get_var('AFS_KEY_FILE') == 'KeyFileExt':
+            _run_keyword("Create Extended Key File", _get_var('KRB_AFS_ENCTYPE'))
+        else:
+            raise AssertionError("Unsupported AFS_KEY_FILE! %s" % (_get_var('AFS_KEY_FILE')))
 
-    def check(self, stage, fn):
-        phase = 'Setup' if stage < _STAGE_SHUTDOWN_OPENAFS else 'Teardown'
-        name = " ".join([w.capitalize() for w in fn.func_name.lstrip("_").split("_")])
+    def _should_run_stage(self, stage):
+        """Returns true if this stage should be run."""
+        sequence = ['', # initial condition
+                    'precheck_system',  'install_openafs', 'create_test_cell',
+                    'shutdown_openafs', 'remove_openafs',  'purge_files']
+        last = self._get_stage()
+        if last == sequence[-1]:
+            last = sequence[0] # next cycle
+        if not stage in sequence[1:]:
+            raise AssertionError("Internal error: invalid stage name '%s'" % stage)
+        if not last in sequence:
+            raise AssertionError("Invalid stage name '%s' in file '%s'" % (last, self._stage_filename))
+        if sequence.index(stage) <= sequence.index(last):
+            logger.info("Skipping %s; already done" % (stage))
+            return False
+        if sequence.index(stage) != sequence.index(last) + 1:
+            logger.info("Skipping %s; out of sequence! last stage was '%s'" % (stage, last))
+            return False
+        return True
 
-        if phase == 'Teardown' and settings.DO_TEARDOWN == False:
-            logger.info("Skipping Teardown: DO_TEARDOWN is False")
-            return
-        current = self.get()
-        if current >= stage:
-            logger.info("Skipping %s; already done (%d)" % (name, current))
-            return
-        if current != (stage - 1):
-            raise AssertionError("Out of Sequence! %s; stage is %d, expected %d." % (name, current, stage-1))
-        _say("%s.%s" % (phase, name))
-        fn()
-        if stage == _STAGE_PURGE_FILES:
-            stage = _STAGE_INITIAL  # back to the start
-        self.set(stage)
-
-    def get(self):
+    def _get_stage(self):
+        """Get the last setup/teardown stage which was completed."""
         try:
-            f = open("site/.stage", "r")
-            stage = int(f.readline().strip())
+            f = open(self._stage_filename, "r")
+            stage = f.readline().strip()
             f.close()
-            logger.debug("get stage: %d" % (stage))
+            logger.debug("get stage: %s" % (stage))
             return stage
         except:
-            self.set(_STAGE_INITIAL)
-            return _STAGE_INITIAL
+            return self._reset_stage()
 
-    def set(self, stage):
+    def _reset_stage(self):
+        """Reset the last stage to the initial state."""
+        return self._set_stage('')
+
+    def _set_stage(self, stage):
+        """Set the last setup/teardown stage completed."""
         try:
-            f = open("site/.stage", "w")
-            f.write("%d\n" % stage)
+            f = open(self._stage_filename, "w")
+            f.write("%s\n" % stage)
             f.close()
-            logger.debug("set stage: %d" % (stage))
+            logger.debug("set stage: %s" % (stage))
         except:
-            raise AssertionError("Unable to save setup stage! %s" % (sys.exc_info()[0]))
+            raise AssertionError("Unable to save setup/teardown stage! %s" % (sys.exc_info()[0]))
+        return stage
+
+
+class OpenAFS(_Util, _Setup):
+    """OpenAFS test library for basic tests.
+    """
+    ROBOT_LIBRARY_SCOPE = 'GLOBAL'
+
+
+# Helpers
+
+def _say(msg):
+    """Display a progress message to the console."""
+    stream = sys.__stdout__
+    stream.write("%s\n" % (msg))
+    stream.flush()
+
+def _run_keyword(name, *args):
+    """Run the named keyword."""
+    BuiltIn().run_keyword(name, *args)
+
+def _get_var(name):
+    """Return the named variable value or None if it does not exist."""
+    return BuiltIn().get_variable_value("${%s}" % name)
 
 def _lookup_keywords(filename):
+    """Lookup the keyword names in the given resource file."""
     keywords = []
     start_of_table = r'\*+\s+'
     start_of_kw_table = r'\*+\s+Keyword'
@@ -286,6 +312,7 @@ def _lookup_keywords(filename):
     return keywords
 
 def _register_keywords():
+    """Register the keywords in all of the resource files."""
     for filename in glob.glob('./resources/*.robot'):
         keywords = _lookup_keywords(filename)
         for keyword in keywords:
