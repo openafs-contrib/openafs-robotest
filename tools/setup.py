@@ -563,19 +563,6 @@ class SetupShell(cmd.Cmd):
         else:
             sys.stderr.write("Failed to find rpm release!\n")
 
-    def help_guided(self):
-        print "Enter guided setup mode"
-        self.syntax_guided(self)
-    def syntax_guided(self):
-        print "syntax: guided"
-    def do_guided(self, line):
-        stop = None
-        while not stop:
-            answer = raw_input("Now what? ")
-            print "Are you kidding?", answer, "?"
-            if "xyzzy" in answer:
-                stop = True
-
 
 def main(args):
     """Command line entry for the setup shell. """
