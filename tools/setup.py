@@ -388,14 +388,14 @@ class SetupShell(cmd.Cmd):
 
     def help_makepart(self):
         print "Create a fake fileserver partition."
-        self.syntax_create_partition()
+        self.syntax_makepart()
     def syntax_makepart(self):
         print "syntax: makepart <id>"
         print "where <id> is a..z, aa..iv"
     def do_makepart(self, line):
         args = line.split()
         if len(args) != 1:
-            self.syntax_create_partition()
+            self.syntax_makepart()
             return
         try:
             create_fake_partition(args[0])
