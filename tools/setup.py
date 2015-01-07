@@ -26,6 +26,7 @@ import cmd
 import glob
 import getopt
 import subprocess
+import traceback
 from tools.download import download
 from tools.partition import create_fake_partition
 from libraries.Kerberos import Kerberos
@@ -64,6 +65,7 @@ SETTINGS = {
    'KRB_AFS_KEYTAB':   {'t':'path', 'dv':"",               'desc':"AFS service keytab file."},
    'KRB_REALM':        {'t':'name', 'dv':"ROBOTEST",       'desc':"The kerberos realm name."},
    'KRB_USER_KEYTAB':  {'t':'path', 'dv':"",               'desc':"Test user keytab."},
+   'KRB_VERBOSE':      {'t':'bool', 'dv':"false",          'desc':"Print kadmin output."},
    'RF_LOGLEVEL':      {'t':'enum', 'dv':"INFO",           'desc':"RF Logging level", 'e':('TRACE','DEBUG','INFO','WARN')},
    'RF_OUTPUT':        {'t':'path', 'dv':"./output/",      'desc':"Location for RF reports and logs."},
    'RF_TESTBED':       {'t':'enum', 'dv':"",               'desc':"System type", 'e':('debian', 'rhel6')},
@@ -211,8 +213,15 @@ class DummyLogger:
             print "DEBUG:", msg
 
 class SetupShell(cmd.Cmd):
-
+    """Console interface to setup the OpenAFS Robotest harness."""
     def __init__(self, script=None, settings=None):
+        """Initialize the command interpreter.
+
+        Read commands from the open filehandle if given, otherwise read
+        commands from stdin.  Show the interactive prompt if getting
+        input from a terminal. This is done to support reading commands
+        from a pipeline.
+        """
         if settings is None:
             settings = Settings()
         if script:
@@ -223,8 +232,7 @@ class SetupShell(cmd.Cmd):
         else:
             cmd.Cmd.__init__(self)
             if sys.stdin.isatty():
-                #self.cmdqueue.append('guided')
-                self.prompt = '(setup): '
+                self.prompt = 'setup: '
                 self.intro = INTRO
             else:
                 self.prompt = ''
@@ -233,23 +241,27 @@ class SetupShell(cmd.Cmd):
         self.settings = settings
 
     def _set(self, name, value):
+        """Helper to set a setting value."""
         self.settings.set(name,value)
 
     def _get(self, name, default=None):
-        """Get a setting value."""
+        """Helper to get a setting value."""
         value = self.settings.get(name)
         if not value and default:
             value = default
         return value
 
     def emptyline(self):
-        pass  # do not repeat last command
+        """Do not repeat the last command."""
+        pass
 
     def default(self, line):
+        """Skip comment lines."""
         if not line.startswith("#"):
             cmd.Cmd.default(self, line)
 
     def _complete_value(self, text, values):
+        """Helper for tab completion of a set of strings."""
         if text:
             completions = [v for v in values if v.startswith(text)]
         else:
@@ -257,7 +269,7 @@ class SetupShell(cmd.Cmd):
         return completions
 
     def _complete_filename(self, text, line, begidx, endidx):
-        """Filename completion.
+        """Helper for filename completion.
 
         Only the 'text' portion of the pathname is returned in the
         completion list. The underlying readline module parses
@@ -285,16 +297,13 @@ class SetupShell(cmd.Cmd):
         return completions
 
     def help_quit(self):
-        print "Quit program."
+        print "Quit this program."
         self.syntax_quit()
     def syntax_quit(self):
         print "syntax: quit"
-        print "alias: quit, exit, ^D"
     def do_quit(self, line):
         self.settings.save()
         return True
-    do_exit = do_quit         # exit is an alias for quit
-    help_exit = help_quit
     do_EOF = do_quit          # end of file implies quit
     help_EOF = help_quit
 
@@ -342,7 +351,6 @@ class SetupShell(cmd.Cmd):
         self.syntax_set()
     def syntax_set(self):
         print "syntax: set <name> <value>"
-        print "sets: <name>"
     def do_set(self, line):
         name,value,line = self.parseline(line)
         if not name or not value:
@@ -370,18 +378,6 @@ class SetupShell(cmd.Cmd):
                 elif t == 'enum':
                     return self._complete_value(text, SETTINGS[name]['e'])
 
-    def help_unset(self):
-        print "Remove a setting."
-        self.syntax_unset()
-    def syntax_unset(self):
-        print "syntax: unset <name>"
-    def do_unset(self, line):
-        name,value,line = self.parseline(line)
-        if not name:
-            self.syntax_unset()
-            return
-        self.settings.unset(name)
-
     def help_reset(self):
         print "Reset all settings to default values."
         self.syntax_reset()
@@ -390,13 +386,13 @@ class SetupShell(cmd.Cmd):
     def do_reset(self, line):
         self.settings.reset()
 
-    def help_create_partition(self):
+    def help_makepart(self):
         print "Create a fake fileserver partition."
         self.syntax_create_partition()
-    def syntax_create_partition(self):
-        print "syntax: create_partition <id>"
+    def syntax_makepart(self):
+        print "syntax: makepart <id>"
         print "where <id> is a..z, aa..iv"
-    def do_create_partition(self, line):
+    def do_makepart(self, line):
         args = line.split()
         if len(args) != 1:
             self.syntax_create_partition()
@@ -406,141 +402,110 @@ class SetupShell(cmd.Cmd):
         except Exception as e:
             sys.stderr.write("Fail: %s\n" % (e))
 
-    def help_create_afs_keytab(self):
-        print "Create a service key and write it to a keytab file."
-        self.syntax_create_afs_keytab()
-    def syntax_create_afs_keytab(self):
-        print "syntax: create_afs_keytab [--keytab=<file>] [--enctype=<enctype>] [--verbose]"
-        print "where <keytab> is keytab filename. default: site/afs.keytab"
-        print "      <enctype> is a krb5 enctype. default: aes256-cts-hmac-sha1-96"
-        print "requires: AFS_CELL, KRB_REALM"
-        print "sets: KRB_AFS_ENCTYPE, KRB_AFS_KEYTAB"
-    def do_create_afs_keytab(self, line):
+    def help_genkey(self):
+        print "Add a kerberos principal and write the keys to a keytab file."
+        self.syntax_genkey()
+    def syntax_genkey(self):
+        print "syntax: genkey afs|user|admin [<enctype>]"
+    def do_genkey(self, line):
         args = line.split()
-        cell = self._get("AFS_CELL")
-        if not cell:
-            sys.stderr.write("AFS_CELL is required\n")
+        if len(args) == 1:
+            args.append(None)
+        if len(args) != 2:
+            self.syntax_genkey()
             return
-        realm = self._get("KRB_REALM")
-        if not realm:
-            sys.stderr.write("KRB_REALM is required\n")
-            return
+        kind,enctype = args
+        if kind == 'afs':
+            self._gen_afs_key(enctype)
+        elif kind == 'user':
+            self._gen_user_key()
+        elif kind == 'admin':
+            self._gen_admin_key()
+        else:
+            self.syntax_genkey()
+    def complete_genkey(self, text, line, begidx, endidx):
+        return self._complete_value(text, ['afs','user','admin'])
+
+    def _gen_afs_key(self, enctype):
+        """Helper to create the AFS service key and keytab."""
+        if not enctype:
+            enctype = self._get("KRB_AFS_ENCTYPE", 'aes256-cts-hmac-sha1-96')
         keytab = self._get("KRB_AFS_KEYTAB", './site/afs.keytab')
-        enctype = self._get("KRB_AFS_ENCTYPE", 'aes256-cts-hmac-sha1-96')
-        verbose = False
-        try:
-            opts, args = getopt.getopt(args, "", ['keytab=','enctype=','verbose'])
-        except getopt.GetoptError as err:
-            sys.stderr.write("error: %s\n" % (str(err)))
-            self.syntax_create_afs_keytab()
+        cell = self._get("AFS_CELL")
+        realm = self._get("KRB_REALM")
+        verbose = self._get("KRB_VERBOSE")
+        if not cell or not realm:
+            sys.stderr.write("AFS_CELL and KRB_REALM are required.\n")
             return
-        for o, a in opts:
-           if '--keytab' == o:
-               keytab = a
-           elif '--enctype' == o:
-               enctype = a
-           elif o == "--verbose":
-               verbose = True
-           else:
-               raise AssertionError("Unhandled option")
         try:
             k = Kerberos()
-            k._set_settings(self.settings.get_dict()) # for path to kadmin.local
+            k._set_settings(self.settings.get_dict())
             k._set_logger(DummyLogger(verbose=verbose))
             k.create_afs_service_keytab(keytab, cell, realm, enctype)
-        except Exception as e:
-            sys.stderr.write("Failed to create keytab: %s\n" % (e))
+        except:
+            sys.stderr.write("Failed to create keytab!")
+            traceback.print_exc(file=sys.stderr)
             return
         self._set("KRB_AFS_KEYTAB", keytab)
         self._set("KRB_AFS_ENCTYPE", enctype)
 
-    def help_create_user_keytab(self):
-        print "Create a principal key and write it to a keytab file."
-        self.syntax_create_user_keytab()
-    def syntax_create_user_keytab(self):
-        print "syntax: create_user_keytab [--principal=<principal>] [--principal=<keytab>] [--admin] [--verbose]"
-        print "where <principal> is the user principal name"
-        print "      <keytab> is keytab filename"
-        print "requires: AFS_CELL, KRB_REALM"
-        print "sets: AFS_USER, KRB_USER_KEYTAB if --admin is not given"
-        print "      AFS_ADMIN, KRB_ADMIN_KEYTAB if --admin is given"
-    def do_create_user_keytab(self, line):
-        args = line.split()
-        principal = None
-        keytab = None
-        admin = False
-        verbose = False
-        cell = self._get("AFS_CELL")
-        if not cell:
-            sys.stderr.write("AFS_CELL is required\n")
-            return
+    def _gen_user_key(self):
+        """Helper to create the user principal and keytab."""
         realm = self._get("KRB_REALM")
+        principal = self._get("AFS_USER", "robotest")
+        keytab = self._get("KRB_USER_KEYTAB", "./site/user.keytab")
+        verbose = self._get("KRB_VERBOSE")
         if not realm:
-            sys.stderr.write("KRB_REALM is required\n")
+            sys.stderr.write("KRB_REALM is required.\n")
             return
-        try:
-            opts, args = getopt.getopt(args, "", ['principal=', 'keytab=','admin','verbose'])
-        except getopt.GetoptError as err:
-            sys.stderr.write("error: %s\n" % (str(err)))
-            self.syntax_create_afs_keytab()
-            return
-        for o, a in opts:
-           if '--principal' == o:
-               principal = a
-           elif '--keytab' == o:
-               keytab = a
-           elif '--enctype' == o:
-               enctype = a
-           elif o == "--admin":
-               admin = True
-           elif o == "--verbose":
-               verbose = True
-           else:
-               raise AssertionError("Unhandled option: %s" % o)
-        if not principal:
-            if admin:
-                principal = self._get("AFS_ADMIN", "robotest/admin")
-            else:
-                principal = self._get("AFS_USER", "robotest")
-        if not keytab:
-            if admin:
-                keytab = self._get("KRB_ADMIN_KEYTAB", "./site/admin.keytab")
-            else:
-                keytab = self._get("KRB_USER_KEYTAB", "./site/user.keytab")
         try:
             k = Kerberos()
-            k._set_settings(self.settings.get_dict()) # for path to kadmin.local
+            k._set_settings(self.settings.get_dict())
             k._set_logger(DummyLogger(verbose=verbose))
             k.create_keytab(keytab, principal, realm)
-        except AssertionError as e:
-            sys.stderr.write("Error: %s\n" % (e))
+        except:
+            sys.stderr.write("Failed to create keytab!")
+            traceback.print_exc(file=sys.stderr)
             return
-        if admin:
-            self._set("AFS_ADMIN", principal)
-            self._set("KRB_ADMIN_KEYTAB", keytab)
-        else:
-            self._set("AFS_USER", principal)
-            self._set("KRB_USER_KEYTAB", keytab)
+        self._set("AFS_USER", principal)
+        self._set("KRB_USER_KEYTAB", keytab)
 
-    def help_download(self):
+    def _gen_admin_key(self):
+        """Helper to create the admin principal and keytab."""
+        realm = self._get("KRB_REALM")
+        principal = self._get("AFS_ADMIN", "robotest/admin")
+        keytab = self._get("KRB_ADMIN_KEYTAB", "./site/admin.keytab")
+        verbose = self._get("KRB_VERBOSE")
+        if not realm:
+            sys.stderr.write("KRB_REALM is required.\n")
+            return
+        try:
+            k = Kerberos()
+            k._set_settings(self.settings.get_dict())
+            k._set_logger(DummyLogger(verbose=verbose))
+            k.create_keytab(keytab, principal, realm)
+        except:
+            sys.stderr.write("Failed to create keytab!")
+            traceback.print_exc(file=sys.stderr)
+            return
+        self._set("AFS_ADMIN", principal)
+        self._set("KRB_ADMIN_KEYTAB", keytab)
+
+
+    def help_getrpms(self):
         print "Download RPM files"
         self.syntax_download()
-    def syntax_download(self):
-        print "syntax: download <version> <platform> [<directory>]"
+    def syntax_getrpms(self):
+        print "syntax: getrpms <version> <platform> <directory>"
         print "where: <version> is the openafs version number; e.g. 1.6.10"
         print "       <platform> is one of: rhel5, rhel6, openSUSE_12.3"
-        print "       <directory> is destination for downloads; default is ./site/rpms"
-        print "sets: RPM_AFSRELEASE, RPM_AFSVERSION, RPM_PACKAGE_DIR"
-    def do_download(self, line):
+        print "       <directory> is the download destination; e.g. site/rpms"
+    def do_getrpms(self, line):
         args = line.split()
-        if len(args) == 2:
-            version,platform = args
-            directory = self._get('RPM_PACKAGE_DIR', './site/rpms')
-        elif len(args) == 3:
-            version,platform,directory = args
-        else:
+        if len(args) != 3:
             self.syntax_download()
             return
+        version,platform,directory = args
         options = {
             'dryrun': False,
             'directory': directory,
