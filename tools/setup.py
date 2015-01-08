@@ -164,7 +164,7 @@ class Settings:
             value = self.settings[name].value
             if value == '':
                value = '(empty)'
-            sys.stdout.write("%18s  %s\n" % (name, value))
+            sys.stdout.write("%-16s  %s\n" % (name, value))
 
     def set(self, name, value):
         name = name.upper()
@@ -232,12 +232,12 @@ class SetupShell(cmd.Cmd):
         else:
             cmd.Cmd.__init__(self)
             if sys.stdin.isatty():
-                self.prompt = 'setup: '
+                self.prompt = '(setup) '
                 self.intro = INTRO
             else:
                 self.prompt = ''
                 self.intro = ''
-        self.doc_header = "Commands (Type help <command>)"
+        self.doc_header = "Commands. Type help <command> for syntax"
         self.settings = settings
 
     def _set(self, name, value):
@@ -296,35 +296,54 @@ class SetupShell(cmd.Cmd):
             completions.append(path.replace(fixed, "", 1))
         return completions
 
-    def help_quit(self):
-        print "Quit this program."
-        self.syntax_quit()
-    def syntax_quit(self):
-        print "syntax: quit"
     def do_quit(self, line):
+        """Quit this program.
+
+        syntax: quit"""
         self.settings.save()
         return True
-    do_EOF = do_quit          # end of file implies quit
-    help_EOF = help_quit
+    do_EOF = do_quit   # end of file implies quit
 
-    def help_shell(self):
-        print "Run a command using the shell."
-        self.syntax_shell()
-    def syntax_shell(self):
-        print "syntax: shell <command-line>"
-        print "alias: ! <command-line>"
+    def do_help(self, arg):
+        """Display command help.
+
+        syntax: help [<command>]"""
+        if arg:
+            try:
+                doc = getattr(self, "do_%s" % arg).__doc__
+            except AttributeError:
+                doc = None
+            if doc:
+                for line in doc.splitlines():
+                    print line.replace(" "*8, "", 1)
+            else:
+                print "No help found for '%s'." % (arg)
+        else:
+            print self.doc_header
+            print self.ruler*60
+            for name in sorted(self.get_names()):
+                if name=="do_EOF":
+                    continue
+                if name.startswith("do_"):
+                    doc = getattr(self, name).__doc__
+                    if doc:
+                        desc = doc.split('\n')[0].strip()
+                        print "%-8s  %s" % (name[3:], desc)
+
     def do_shell(self, line):
+        """Run a command using the shell.
+
+        syntax: shell <command-line>
+        alias: ! <command-line>"""
         subprocess.call(line, shell=True)
 
-    def help_call(self):
-        print "Execute commands in a file."
-        self.syntax_call()
-    def syntax_call(self):
-        print "syntax: call <filename>"
     def do_call(self, line):
+        """Execute commands in a file.
+
+        syntax: call <filename>"""
         args = line.split()
         if len(args) != 1:
-            print "syntax: call <filename>"
+            print "Missing <filename> argument."
             return
         filename = args[0].strip()
         try:
@@ -338,24 +357,22 @@ class SetupShell(cmd.Cmd):
     def complete_call(self, text, line, begidx, endidx):
         return self._complete_filename(text, line, begidx, endidx)
 
-    def help_list(self):
-        print "List setting names and values."
-        self.syntax_list()
-    def syntax_list(self):
-        print "syntax: list"
     def do_list(self, line):
+        """List setting names and values.
+
+        syntax: list"""
         self.settings.list()
 
-    def help_set(self):
-        print "Assign a setting value."
-        self.syntax_set()
-    def syntax_set(self):
-        print "syntax: set <name> <value>"
     def do_set(self, line):
+        """Assign a setting value.
+
+        syntax: set <name> <value>"""
         name,value,line = self.parseline(line)
-        if not name or not value:
-            self.syntax_set()
+        if not name:
+            print "Missing <name> argument."
             return
+        if not value:
+            print "Missing <value> argument."
         self.settings.set(name, value)
     def complete_set(self, text, line, begidx, endidx):
         m = re.match(r'set\s+(\w*)$', line)
@@ -378,41 +395,35 @@ class SetupShell(cmd.Cmd):
                 elif t == 'enum':
                     return self._complete_value(text, SETTINGS[name]['e'])
 
-    def help_reset(self):
-        print "Reset all settings to default values."
-        self.syntax_reset()
-    def syntax_reset(self):
-        print "syntax: reset"
     def do_reset(self, line):
+        """Reset all settings to default values.
+
+        syntax: reset"""
         self.settings.reset()
 
-    def help_makepart(self):
-        print "Create a fake fileserver partition."
-        self.syntax_makepart()
-    def syntax_makepart(self):
-        print "syntax: makepart <id>"
-        print "where <id> is a..z, aa..iv"
     def do_makepart(self, line):
+        """Create a fake fileserver partition.
+
+        syntax: makepart <id>
+        where <id> is a..z, aa..iv"""
         args = line.split()
         if len(args) != 1:
-            self.syntax_makepart()
+            print "Missing partition id argument."
             return
         try:
             create_fake_partition(args[0])
         except Exception as e:
             sys.stderr.write("Fail: %s\n" % (e))
 
-    def help_genkey(self):
-        print "Add a kerberos principal and write the keys to a keytab file."
-        self.syntax_genkey()
-    def syntax_genkey(self):
-        print "syntax: genkey afs|user|admin [<enctype>]"
     def do_genkey(self, line):
+        """Add a kerberos principal then write the keys to a keytab file.
+
+        syntax: genkey afs|user|admin [<enctype>]"""
         args = line.split()
         if len(args) == 1:
             args.append(None)
         if len(args) != 2:
-            self.syntax_genkey()
+            print "Missing key type argument."
             return
         kind,enctype = args
         if kind == 'afs':
@@ -422,7 +433,7 @@ class SetupShell(cmd.Cmd):
         elif kind == 'admin':
             self._gen_admin_key()
         else:
-            self.syntax_genkey()
+            print "Unknown key type argument."
     def complete_genkey(self, text, line, begidx, endidx):
         return self._complete_value(text, ['afs','user','admin'])
 
@@ -491,19 +502,16 @@ class SetupShell(cmd.Cmd):
         self._set("AFS_ADMIN", principal)
         self._set("KRB_ADMIN_KEYTAB", keytab)
 
-
-    def help_getrpms(self):
-        print "Download RPM files"
-        self.syntax_download()
-    def syntax_getrpms(self):
-        print "syntax: getrpms <version> <platform> <directory>"
-        print "where: <version> is the openafs version number; e.g. 1.6.10"
-        print "       <platform> is one of: rhel5, rhel6, openSUSE_12.3"
-        print "       <directory> is the download destination; e.g. site/rpms"
     def do_getrpms(self, line):
+        """Download RPM files.
+
+        syntax: getrpms <version> <platform> <directory>
+        where: <version> is the openafs version number; e.g. 1.6.10
+               <platform> is one of: rhel5, rhel6, openSUSE_12.3
+               <directory> is the download destination; e.g. site/rpms"""
         args = line.split()
         if len(args) != 3:
-            self.syntax_download()
+            print "Missing command arguments."
             return
         version,platform,directory = args
         options = {
@@ -527,7 +535,6 @@ class SetupShell(cmd.Cmd):
             self._set('RPM_AFSRELEASE', afsrelease)
         else:
             sys.stderr.write("Failed to find rpm release!\n")
-
 
 def main(args):
     """Command line entry for the setup shell. """
