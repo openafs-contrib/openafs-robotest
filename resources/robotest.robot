@@ -37,12 +37,12 @@ Stop Service
 
 Program Should Be Running
     [Arguments]  ${program}
-    ${output}  Run   ps --no-headers -o cmd -e
+    ${output}=  Run   ps -ef
     Should Contain  ${output}  ${program}
 
 Program Should Not Be Running
     [Arguments]  ${program}
-    ${output}  Run  ps --no-headers -o cmd -e
+    ${output}=  Run   ps -ef
     Should Not Contain  ${output}  ${program}
 
 Rx Service Should Be Reachable

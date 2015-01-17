@@ -42,9 +42,9 @@ AFS Filesystem Should Not Be Mounted
     Should Not Contain    ${mount}    AFS on /afs
 
 OpenAFS Kernel Module Should Not Be Loaded
-    ${modules}    Get File    /proc/modules
-    Should Not Contain    ${modules}    openafs
-    Should Not Contain    ${modules}    libafs
+    ${modules}=  Get Modules
+    Should Not Contain  ${modules}  openafs
+    Should Not Contain  ${modules}  libafs
 
 OpenAFS Installation Directories Should Not Exist
     Directory Should Not Exist  ${AFS_CONF_DIR}
@@ -118,6 +118,6 @@ Service Keytab Should Exist
 Can Get a Kerberos Ticket
     [Arguments]  ${keytab}  ${principal}  ${realm}
     Run Command  ${KINIT} -5 -c site/krb5cc -k -t ${keytab} ${principal}@${realm}
-    Run Command  ${KDESTROY} -A -c site/krb5cc
+    Run Command  ${KDESTROY} -c site/krb5cc
 
 

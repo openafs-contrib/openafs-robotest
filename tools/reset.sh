@@ -39,9 +39,26 @@ suse)
     rm -rf /var/log/openafs 2>/dev/null
     ;;
 transarc)
-    killall -QUIT bosserver 2>/dev/null
     umount /afs 2>/dev/null
-    rmmod libafs 2>/dev/null
+    test -x /usr/vice/etc/afsd && /usr/vice/etc/afsd -shutdown 2>/dev/null
+    case `uname` in
+    Linux)
+        rmmod libafs 2>/dev/null
+        rmmod openafs 2>/dev/null
+        ;;
+    SunOS)
+        pkill inetd.afs  # may have been started by the afs init script
+        mid=`modinfo | grep afs | awk "{print $1}"`
+        if [ "x$mid" != "x" ]; then
+            modunload $mid
+        fi
+        ;;
+    *)
+        echo "error: unsupported system type: `uname`" >&2
+        exit 1
+        ;;
+    esac
+    pkill bosserver
     rm -rf /usr/afsws 2>/dev/null
     rm -rf /usr/vice/etc 2>/dev/null
     rm -rf /usr/afs 2>/dev/null
@@ -55,7 +72,7 @@ transarc)
 esac
 
 # Just in case bosserver is still here.
-killall bosserver 2>/dev/null
+pkill bosserver
 
 # Try to remove the afs mountpoint
 if [ -d /afs ]; then

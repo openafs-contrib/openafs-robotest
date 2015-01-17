@@ -51,6 +51,14 @@ _KRB_ENCTYPE_NUMBERS = {
     'subkey-keymaterial': 65,
 }
 
+_KRB_ENCTYPE_DESCS = {
+    'aes128-cts-hmac-sha1-96': "AES-128 CTS mode with 96-bit SHA-1 HMAC",
+    'aes256-cts-hmac-sha1-96': "AES-256 CTS mode with 96-bit SHA-1 HMAC",
+    'arcfour-hmac': "ArcFour with HMAC/md5" ,
+    'des3-cbc-sha1': "Triple DES cbc mode with HMAC/sha1",
+    'des-cbc-crc': "DES cbc mode with CRC-32",
+}
+
 
 class Kerberos:
     """Keywords for reading Kerberos keytabs."""
@@ -81,6 +89,14 @@ class Kerberos:
             raise AssertionError("%s not set." % (name))
         return value
 
+    def _normalize_enctype(self, enctype):
+        if enctype in _KRB_ENCTYPE_NUMBERS:
+            return enctype
+        for k in _KRB_ENCTYPE_DESCS:
+            if enctype == _KRB_ENCTYPE_DESCS[k]:
+                return k
+        raise AssertionError("Invalid enctype string: %s" % (enctype))
+
     def _get_keytab_keys(self, keytab):
         """Read the list of (kvno,principal,enctype) tuples from a keytab."""
         entries = []
@@ -96,16 +112,13 @@ class Kerberos:
                 continue
             if line.startswith('----'):
                 continue
-            fields = [x.strip() for x in line.split()]
-            kvno = int(fields[0])
-            if len(fields) == 5:  # newer versions of klist emit a timestamp
-               principal = fields[3]
-               enctype = fields[4].strip('(').strip(')')
-            elif len(fields) == 3:
-               principal = fields[1]
-               enctype = fields[3].strip('(').strip(')')
+            m = re.match(r'^\s*(\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+\((.+)\)', line)
+            if m:
+                kvno = int(m.group(1))
+                principal = m.group(4)
+                enctype = self._normalize_enctype(m.group(5))
             else:
-               raise AssertionError("Unexpected number of fields: %s" % (line))
+               raise AssertionError("Unexpected klist line: %s" % (line))
             entries.append({'kvno':kvno, 'principal':principal, 'enctype':enctype})
         rc = pipe.close()
         if rc:

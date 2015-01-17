@@ -31,6 +31,39 @@ Install Client Binaries
     Sudo    mkdir -p /usr/vice/etc
     Sudo    cp -r -p ${TRANSARC_DEST}/root.client/usr/vice/etc /usr/vice
 
+Install Init Script on Linux
+    [Documentation]  Install the transarc style init script for linux. Do not
+    ...              make it run automatically on reboot.
+    Should Not Be Empty  ${TRANSARC_DEST}
+    Should Not Be Empty  ${AFSD_CONFIG_DIR}
+    Sudo  cp ${TRANSARC_DEST}/root.client/usr/vice/etc/afs.rc /etc/init.d/afs
+    Sudo  chmod +x /etc/init.d/afs
+    # Set the afsd command line options.
+    Sudo  mkdir -p ${AFSD_CONFIG_DIR}
+    Sudo  cp ${TRANSARC_DEST}/root.client/usr/vice/etc/afs.conf ${AFSD_CONFIG_DIR}
+
+Install Init Script on Solaris
+    [Documentation]  Install the transarc style init script for solaris. Do not
+    ...              make it run automatically on reboot.  Patch the init script
+    ...              so the client can be started independently from the server.
+    Should Not Be Empty  ${TRANSARC_DEST}
+    Should Not Be Empty  ${AFSD_CONFIG_DIR}
+    Should Not Be Empty  ${AFSD_OPTIONS}
+    ${afsrc}=  Get File  ${TRANSARC_DEST}/root.client/usr/vice/etc/modload/afs.rc
+    ${afsrc}=  Replace String  ${afsrc}
+    ...  if [ -x /usr/afs/bin/bosserver ]; then
+    ...  if [ "\${AFS_SERVER}" == "on" -a -x /usr/afs/bin/bosserver ]; then
+    ${afsrc}=  Replace String  ${afsrc}
+    ...  if [ "\${bosrunning}" != "" ]; then
+    ...  if [ "\${AFS_SERVER}" == "on" -a "\${bosrunning}" != "" ]; then
+    Create File  site/afs.rc  ${afsrc}
+    Sudo  cp site/afs.rc /etc/init.d/afs
+    Sudo  chmod +x /etc/init.d/afs
+    # Set the afsd command line options.
+    Create File  site/afsd.options  ${AFSD_OPTIONS}
+    Sudo  mkdir -p ${AFSD_CONFIG_DIR}
+    Sudo  cp site/afsd.options ${AFSD_CONFIG_DIR}
+
 Install Workstation Binaries
     [Documentation]  Install transarc style workstation binaries
     Should Not Be Empty     ${TRANSARC_DEST}
@@ -69,17 +102,27 @@ Start the bosserver
 Stop the bosserver
     Program Should Be Running    bosserver
     Sudo  ${BOS} shutdown localhost -wait -localauth
-    Sudo  killall bosserver
+    Sudo  pkill bosserver
 
-Start the Cache Manager
+Start the Cache Manager on Linux
     ${kmod}=  Set Variable  ${AFS_KERNEL_DIR}/modload/libafs-${OS_RELEASE}.mp.ko
     File Should Exist  ${kmod}
     Sudo  insmod ${kmod}
     Sudo  /usr/vice/etc/afsd ${AFSD_OPTIONS}
 
-Stop the Cache Manager
+Stop the Cache Manager on Linux
     Sudo  umount /afs
-    Sudo  rmmod libafs
+    Sudo  /usr/vice/etc/afsd -shutdown
+    Unload Module  libafs
+
+Start the Cache Manager on Solaris
+    Sudo  /etc/init.d/afs start
+
+Stop the Cache Manager on Solaris
+    Sudo  umount /afs
+    Sudo  /usr/vice/etc/afsd -shutdown
+    Unload Module  afs
+
 
 #--------------------------------------------------------------------------------
 # Keywords for RPM based installs. The list of packages to install are given

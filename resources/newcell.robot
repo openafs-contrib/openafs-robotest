@@ -60,11 +60,16 @@ Cell Name Should Be
     Should Be Equal As Integers  ${rc}  0
     Should Contain    ${output}    Cell name is ${cellname}
 
-Set the Cell Name
+Try To Set the Cell Name
     [Arguments]  ${cellname}
     Should Not Be Empty  ${cellname}
     Sudo  ${BOS} setcell ${HOSTNAME} -name ${cellname} -localauth
     Cell Name Should Be  ${cellname}
+
+Set the Cell Name
+    # Retry since the bosserver just started.
+    [Arguments]  ${cellname}
+    Wait Until Keyword Succeeds  1 min  1 sec  Try To Set the Cell Name  ${cellname}
 
 Set the Cell Configuration
     [Documentation]  Set up the cell configuration for the admin clients this

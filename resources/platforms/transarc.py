@@ -4,6 +4,8 @@
 # Variables for Transarc-style environments.
 #
 
+import os as _os
+
 #
 # Transarc style install paths.
 #
@@ -36,7 +38,13 @@ VOS = "/usr/afs/bin/vos"
 #
 # afsd options
 #
-AFSD_DYNROOT = True
 AFSD_OPTIONS = "-dynroot -fakestat"
+AFSD_DYNROOT = '-dynroot' in AFSD_OPTIONS
+
+if _os.uname()[0] == 'Linux':
+    AFSD_CONFIG_DIR ="/etc/sysconfig"
+elif _os.uname()[0] == 'SunOS':
+    AFSD_CONFIG_DIR ="/usr/vice/etc/config"
+
 
 BOSSERVER_OPTIONS = "-pidfiles"

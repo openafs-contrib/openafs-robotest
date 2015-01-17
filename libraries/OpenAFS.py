@@ -27,8 +27,63 @@ from robot.api import logger
 from robot.libraries.BuiltIn import BuiltIn
 from robot.libraries.BuiltIn import register_run_keyword
 
+class _Linux:
+    def get_modules(self):
+        """Return loaded kernel module names."""
+        modules = []
+        f = open("/proc/modules", "r")
+        for line in f.readlines():
+            module = line.split()[0]
+            modules.append(module)
+        f.close()
+        return modules
+
+    def unload_module(self, name):
+        """Unload the kernel module."""
+        _run_keyword("Sudo", "rmmod", name)
+
+class _Solaris:
+    def _get_kernel_modules(self):
+        """Return loaded kernel module names and ids."""
+        modules = {}
+        pipe = os.popen("/usr/sbin/modinfo -w")
+        for line in pipe.readlines():
+            if line.lstrip().startswith("Id"):
+                continue # skip header line
+            # Fields are: Id Loadaddr Size Info Rev Module Name (Desc)
+            m = re.match(r'\s*(\d+)\s+\S+\s+\S+\s+\S+\s+\d+\s+(\S+)', line)
+            if m:
+                id = m.group(1)
+                name = m.group(2)
+                modules[name] = id  # remove duplicate entries
+            else:
+                raise AssertionError("Unexpected modinfo output: %s" % (line))
+        pipe.close()
+        return modules
+
+    def get_modules(self):
+        """Return loaded kernel module names."""
+        return self._get_kernel_modules().keys()
+
+    def unload_module(self, name):
+        """Unload the kernel module."""
+        modules = self._get_kernel_modules()
+        if name in modules:
+            _run_keyword("Sudo", "modunload", "-i", modules[name])
+
+
 class _Util:
     """Generic helper keywords."""
+
+    def __init__(self):
+        uname = os.uname()[0]
+        if uname == "Linux":
+            self._os = _Linux()
+        elif uname == "SunOS":
+            self._os = _Solaris()
+        else:
+            raise AssertionError("Unsupported operating system: %s" % (uname))
+
     def file_should_be_executable(self, path):
         """Fails if the file does not have execute permissions for the current user."""
         if not path:
@@ -46,6 +101,15 @@ class _Util:
         """Return the device id of the given path as '(major,minor)'."""
         device = os.stat(path).st_dev
         return "(%d,%d)" % (os.major(device), os.minor(device))
+
+    def get_modules(self):
+        """Return a list of loaded kernel module names."""
+        return self._os.get_modules()
+
+    def unload_module(self, name):
+        """Unloade the kernel module."""
+        return self._os.unload_module(name)
+
 
 class _Setup:
     """Test system setup and teardown top-level keywords.
@@ -126,15 +190,25 @@ class _Setup:
         if _get_var('DO_INSTALL') == False:
             logger.info("Skipping install: DO_INSTALL is False")
             return
-        if _get_var('AFS_DIST') == "transarc":
+        uname = os.uname()[0]
+        dist = _get_var('AFS_DIST')
+        if dist == "transarc":
             if _get_var('TRANSARC_TARBALL'):
                 _run_keyword("Untar Binaries")
             _run_keyword("Install Server Binaries")
             _run_keyword("Install Client Binaries")
             _run_keyword("Install Workstation Binaries")
-        elif _get_var('AFS_DIST') in ('rhel6', 'suse'):
+            if uname == "Linux":
+                _run_keyword("Install Init Script on Linux")
+            elif uname == "SunOS":
+                _run_keyword("Install Init Script on Solaris")
+            else:
+                raise AssertionError("Unsupported operating system: %s" % (uname))
+        elif dist in ('rhel6', 'suse'):
             _run_keyword("Install OpenAFS Server RPM Files")
             _run_keyword("Install OpenAFS Client RPM Files")
+        else:
+            raise AssertionError("Unsupported AFS_DIST: %s" % (dist))
 
     @_setup_stage
     def create_test_cell(self):
@@ -160,7 +234,13 @@ class _Setup:
         _run_keyword("Create the root.afs Volume")
         _run_keyword("Set Cache Manager Configuration")
         if _get_var('AFS_DIST') == "transarc":
-            _run_keyword("Start the Cache Manager")
+            uname = os.uname()[0]
+            if uname == 'Linux':
+                _run_keyword("Start the Cache Manager on Linux")
+            elif uname == 'SunOS':
+                _run_keyword("Start the Cache Manager on Solaris")
+            else:
+                raise AssertionError("Unsupported operating system: %s" % (uname))
         else:
             _run_keyword("Start Service", "openafs-client")
         _run_keyword("Login",  _get_var('AFS_ADMIN'))
@@ -173,7 +253,13 @@ class _Setup:
     def shutdown_openafs(self):
         """Shutdown the OpenAFS client and servers."""
         if _get_var('AFS_DIST') == "transarc":
-            _run_keyword("Stop the Cache Manager")
+            uname = os.uname()[0]
+            if uname == 'Linux':
+                _run_keyword("Stop the Cache Manager on Linux")
+            elif uname == 'SunOS':
+                _run_keyword("Stop the Cache Manager on Solaris")
+            else:
+                raise AssertionError("Unsupported operating system: %s" % (uname))
             _run_keyword("Stop the bosserver")
         else:
             _run_keyword("Stop Service", "openafs-client")
