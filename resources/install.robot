@@ -63,7 +63,7 @@ Start the bosserver
     File Should Exist              ${AFS_SRV_LIBEXEC_DIR}/bosserver
     File Should Be Executable      ${AFS_SRV_LIBEXEC_DIR}/bosserver
     Program Should Not Be Running  bosserver
-    Sudo  ${AFS_SRV_LIBEXEC_DIR}/bosserver
+    Sudo  ${AFS_SRV_LIBEXEC_DIR}/bosserver  ${BOSSERVER_OPTIONS}
     Program Should Be Running      bosserver
 
 Stop the bosserver

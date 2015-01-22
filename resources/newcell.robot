@@ -56,14 +56,14 @@ Create Extended Key File
 
 Cell Name Should Be
     [Arguments]    ${cellname}
-    ${rc}  ${output}  Run And Return Rc And Output  ${BOS} listhosts localhost -noauth
+    ${rc}  ${output}  Run And Return Rc And Output  ${BOS} listhosts ${HOSTNAME} -noauth
     Should Be Equal As Integers  ${rc}  0
     Should Contain    ${output}    Cell name is ${cellname}
 
 Set the Cell Name
     [Arguments]  ${cellname}
     Should Not Be Empty  ${cellname}
-    Sudo  ${BOS} setcell localhost -name ${cellname} -localauth
+    Sudo  ${BOS} setcell ${HOSTNAME} -name ${cellname} -localauth
     Cell Name Should Be  ${cellname}
 
 Set the Cell Configuration
@@ -92,23 +92,23 @@ Set the Cell Configuration
 
 Database Should Have Quorum
     [Arguments]    ${port}
-    ${rc}  ${output}  Run And Return Rc And Output  ${UDEBUG} localhost ${port}
+    ${rc}  ${output}  Run And Return Rc And Output  ${UDEBUG} ${HOSTNAME} ${port}
     Should Contain  ${output}  Recovery state 1f
 
 Create Database Service
     [Arguments]    ${name}  ${port}
-    Sudo  ${BOS} create localhost
+    Sudo  ${BOS} create ${HOSTNAME}
     ...   ${name} simple
     ...   -cmd  ${AFS_SRV_LIBEXEC_DIR}/${name}
     ...   -localauth
     Wait Until Keyword Succeeds  1 min  1 sec  Database Should Have Quorum  ${port}
 
 Fileserver Should Be Running
-    Wait Until Keyword Succeeds  1 min  5 sec    Rx Service Should Be Reachable  localhost  7000
-    Wait Until Keyword Succeeds  1 min  5 sec    Rx Service Should Be Reachable  localhost  7003
+    Wait Until Keyword Succeeds  1 min  5 sec    Rx Service Should Be Reachable  ${HOSTNAME}  7000
+    Wait Until Keyword Succeeds  1 min  5 sec    Rx Service Should Be Reachable  ${HOSTNAME}  7003
 
 Create File Service
-    Sudo  ${BOS}  create localhost fs fs
+    Sudo  ${BOS}  create ${HOSTNAME} fs fs
     ...   -cmd /usr/afs/bin/fileserver
     ...   -cmd /usr/afs/bin/volserver
     ...   -cmd /usr/afs/bin/salvager
@@ -116,7 +116,7 @@ Create File Service
     Wait Until Keyword Succeeds  1 min  5 sec    Fileserver Should Be Running
 
 Create Demand Attach File Service
-    Sudo  ${BOS}  create localhost
+    Sudo  ${BOS}  create ${HOSTNAME}
     ...   dafs dafs
     ...   -cmd /usr/afs/bin/dafileserver
     ...   -cmd /usr/afs/bin/davolserver
@@ -129,7 +129,7 @@ Create an Admin Account
     [Arguments]    ${name}
     Sudo  ${PTS} createuser ${name} -localauth
     Sudo  ${PTS} adduser ${name} system:administrators -localauth
-    Sudo  ${BOS} adduser localhost ${name} -localauth
+    Sudo  ${BOS} adduser ${HOSTNAME} ${name} -localauth
 
 Try To Create the root.afs Volume
     Sudo  ${VOS} create ${HOSTNAME} a root.afs -verbose -localauth

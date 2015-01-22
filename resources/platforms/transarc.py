@@ -39,3 +39,4 @@ VOS = "/usr/afs/bin/vos"
 AFSD_DYNROOT = True
 AFSD_OPTIONS = "-dynroot -fakestat"
 
+BOSSERVER_OPTIONS = "-pidfiles"
