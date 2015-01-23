@@ -33,6 +33,7 @@ PTS = "/usr/afs/bin/pts"
 RXDEBUG = "/usr/afsws/etc/rxdebug"
 TOKENS = "/usr/afsws/bin/tokens"
 UDEBUG = "/usr/afs/bin/udebug"
+UNLOG = "/usr/afsws/bin/unlog"
 VOS = "/usr/afs/bin/vos"
 
 #

@@ -31,6 +31,7 @@ PTS = "/usr/bin/pts"
 RXDEBUG = "/usr/sbin/rxdebug"
 TOKENS = "/usr/bin/tokens"
 UDEBUG = "/usr/bin/udebug"
+UNLOG = "/usr/bin/unlog"
 VOS = "/usr/sbin/vos"
 
 #

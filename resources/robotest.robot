@@ -61,6 +61,10 @@ Login
     Run Command  KRB5CCNAME=site/krb5cc ${KINIT} -5 -k -t ${keytab} ${principal}@${KRB_REALM}
     Run Command  KRB5CCNAME=site/krb5cc ${AKLOG} -d -c ${AFS_CELL} -k ${KRB_REALM}
 
+Logout
+    Run Command  KRB5CCNAME=site/krb5cc ${KDESTROY}
+    Run Command  ${UNLOG}
+
 Create Volume
     [Arguments]  ${server}  ${part}  ${name}
     Run Command  ${VOS} create -server ${server} -partition ${part} -name ${name} -verbose
