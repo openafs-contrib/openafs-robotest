@@ -16,12 +16,12 @@ ${TESTPATH}    /afs/${AFS_CELL}/${VOLUME}
 *** Test Cases ***
 Touch
     ${file}=  Set Variable  ${TESTPATH}/file
-    Should Not Exist   ${file}
-    Run Command  touch ${file}
-    Should Be True      os.path.isfile("${file}")
-    Should Not Be True  os.path.islink("${file}")
-    Remove File       ${file}
-    Should Not Exist  ${file}
+    Should Not Exist       ${file}
+    Run Command            touch ${file}
+    Should Be File         ${file}
+    Should Not Be Symlink  ${file}
+    Remove File            ${file}
+    Should Not Exist       ${file}
 
 Write
     ${file}=  Set Variable  ${TESTPATH}/file
@@ -38,43 +38,41 @@ Make Directory
     Should Not Exist  ${dir}
     Create Directory  ${dir}
     Should Exist      ${dir}
-    Should Be True    os.path.isdir("${dir}")
-    Should Be True    os.path.isdir("${dir}/.")
-    Should Be True    os.path.isdir("${dir}/..")
+    Should Be Dir     ${dir}
+    Should Be Dir     ${dir}/.
+    Should Be Dir     ${dir}/..
     Remove Directory  ${dir}
     Should Not Exist  ${dir}
 
 Symlink
     ${dir}=      Set Variable  ${TESTPATH}/dir
     ${symlink}=  Set Variable  ${TESTPATH}/symlink
-    Should Not Exist  ${dir}
-    Should Not Exist  ${symlink}
-    Create Directory  ${dir}
-    Run Command       ln -s ${dir} ${symlink}
-    Should Exist      ${symlink}
-    Should Be True    os.path.islink("${symlink}")
-    Run Command       rm ${symlink}
-    Remove Directory  ${dir}
-    Should Not Exist  ${dir}
-    Should Not Exist  ${symlink}
+    Should Not Exist   ${dir}
+    Should Not Exist   ${symlink}
+    Create Directory   ${dir}
+    Run Command        ln -s ${dir} ${symlink}
+    Should Be Symlink  ${symlink}
+    Run Command        rm ${symlink}
+    Remove Directory   ${dir}
+    Should Not Exist   ${dir}
+    Should Not Exist   ${symlink}
 
 Hard Link
     ${file}=  Set Variable  ${TESTPATH}/file
     ${link}=  Set Variable  ${TESTPATH}/link
-    Should Not Exist  ${file}
-    Should Not Exist  ${link}
-    Create File       ${file}
-    Should Be True    os.stat("${file}").st_nlink == 1
-    Run Command       ln ${file} ${link}
-    Should Exist      ${link}
-    Should Be True    os.stat("${link}").st_ino  os.stat("${file}").st_ino
-    Should Be True    os.stat("${file}").st_nlink == 2
-    Should Be True    os.stat("${link}").st_nlink == 2
-    Run Command       rm ${link}
-    Should Be True    os.stat("${file}").st_nlink == 1
-    Remove File       ${file}
-    Should Not Exist  ${file}
-    Should Not Exist  ${link}
+    Should Not Exist       ${file}
+    Should Not Exist       ${link}
+    Create File            ${file}
+    Link Count Should Be   ${file}  1
+    Run Command            ln ${file} ${link}
+    Inode Should Be Equal  ${link}  ${file}
+    Link Count Should Be   ${file}  2
+    Link Count Should Be   ${link}  2
+    Run Command            rm ${link}
+    Should Not Exist       ${link}
+    Link Count Should Be   ${file}  1
+    Remove File            ${file}
+    Should Not Exist       ${file}
 
 Rename
     ${a}=  Set Variable  ${TESTPATH}/a

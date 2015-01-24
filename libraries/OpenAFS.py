@@ -84,15 +84,6 @@ class _Util:
         else:
             raise AssertionError("Unsupported operating system: %s" % (uname))
 
-    def file_should_be_executable(self, path):
-        """Fails if the file does not have execute permissions for the current user."""
-        if not path:
-            raise AssertionError("path arg is empty")
-        if not os.path.isfile(path):
-            raise AssertionError("path arg is not a file: %s" % (path))
-        if not os.access(path, os.X_OK):
-            raise AssertionError("File is not executable: %s" % (path))
-
     def get_host_by_name(self, hostname):
         """Return the ipv4 address of the hostname."""
         return socket.gethostbyname(hostname)

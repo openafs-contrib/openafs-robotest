@@ -25,6 +25,48 @@ Sudo
     ${arg}  Catenate  @{args}
     Run Command  sudo -n ${cmd} ${arg}
 
+Should Be File
+    [Arguments]  ${path}
+    Should Exist     ${path}
+    Should Be True   os.path.isfile("${path}")
+
+File Should Be Executable
+    [Arguments]  ${file}
+    Should Not Be Empty  ${file}
+    Should Be File  ${file}
+    Should Be True  os.access("${file}", os.X_OK)
+
+Should Be Symlink
+    [Arguments]  ${path}
+    Should Exist    ${path}
+    Should Be True  os.path.islink("${path}")
+
+Should Not Be Symlink
+    [Arguments]  ${path}
+    Should Exist        ${path}
+    Should Not Be True  os.path.islink("${path}")
+
+Should Be Dir
+    [Arguments]  ${path}
+    Should Exist     ${path}
+    Should Be True   os.path.isdir("${path}")
+
+Should Not Be Dir
+    [Arguments]  ${path}
+    Should Exist         ${path}
+    Should Not Be True   os.path.isdir("${path}")
+
+Link Count Should Be
+    [Arguments]  ${path}  ${count}
+    Should Exist    ${path}
+    Should Be True  os.stat("${path}").st_nlink == ${count}
+
+Inode Should Be Equal
+    [Arguments]  ${a}  ${b}
+    Should Exist  ${a}
+    Should Exist  ${b}
+    Should Be True  os.stat("${a}").st_ino  os.stat("${b}").st_ino
+
 Start Service
     [Arguments]  ${name}
     Should Not Be Empty  ${name}
