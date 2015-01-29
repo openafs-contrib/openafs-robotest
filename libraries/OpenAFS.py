@@ -27,6 +27,8 @@ from robot.api import logger
 from robot.libraries.BuiltIn import BuiltIn
 from robot.libraries.BuiltIn import register_run_keyword
 
+from libraries.dump import VolumeDump
+
 class _Linux:
     def get_modules(self):
         """Return loaded kernel module names."""
@@ -101,6 +103,48 @@ class _Util:
         """Unloade the kernel module."""
         return self._os.unload_module(name)
 
+    def _get_crash_count(self):
+        count = 0
+        last = ""
+        filename = "%s/BosLog" % _get_var('AFS_LOGS_DIR')
+        log = open(filename, "r")
+        for line in log.readlines():
+            if 'core dumped' in line:
+                last = line
+                count += 1
+        log.close()
+        return (count, last)
+
+    def init_crash_check(self):
+        (count, last) = self._get_crash_count()
+        BuiltIn().set_suite_variable('${CRASH_COUNT}', count)
+        BuiltIn().set_suite_variable('${CRASH_LAST}', last)
+
+    def crash_check(self):
+        before = _get_var('CRASH_COUNT')
+        (after, last) = self._get_crash_count()
+        if after != before:
+            raise AssertionError("Server crash detected! %s" % last)
+
+class _Dump:
+    """OpenAFS volume dump keywords."""
+
+    def should_be_a_dump_file(self, filename):
+        """Fails if filename is not an AFS dump file."""
+        VolumeDump.check_header(filename)
+
+    def create_bad_dump(self, filename):
+        """Create a bogus AFS dump file."""
+        dump = VolumeDump(filename)
+        dump.write(ord('v'), "L",  536870999)
+        dump.write(ord('t'), "HLL", 2, 0, 0)
+        dump.write(VolumeDump.D_VOLUMEHEADER, "")
+        dump.write(VolumeDump.D_VNODE, "LL", 3, 999)
+        # Create a bad ACL record.
+        # This may crash the volser because 'positive' is out of range.
+        size, version, total, positive, negative = (0, 0, 0, 1000, 0)
+        dump.write(ord('A'), "LLLLL", size, version, total, positive, negative)
+        dump.close()
 
 class _Setup:
     """Test system setup and teardown top-level keywords.
@@ -342,7 +386,7 @@ class _Setup:
         return stage
 
 
-class OpenAFS(_Util, _Setup):
+class OpenAFS(_Util, _Dump, _Setup):
     """OpenAFS test library for basic tests.
     """
     ROBOT_LIBRARY_SCOPE = 'GLOBAL'
