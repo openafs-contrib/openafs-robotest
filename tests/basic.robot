@@ -16,12 +16,12 @@ ${TESTPATH}    /afs/${AFS_CELL}/${VOLUME}
 *** Test Cases ***
 Touch
     ${file}=  Set Variable  ${TESTPATH}/file
-    Should Not Exist       ${file}
-    Run Command            touch ${file}
-    Should Be File         ${file}
-    Should Not Be Symlink  ${file}
-    Remove File            ${file}
-    Should Not Exist       ${file}
+    Should Not Exist        ${file}
+    Command Should Succeed  touch ${file}
+    Should Be File          ${file}
+    Should Not Be Symlink   ${file}
+    Remove File             ${file}
+    Should Not Exist        ${file}
 
 Write
     ${file}=  Set Variable  ${TESTPATH}/file
@@ -47,32 +47,32 @@ Make Directory
 Symlink
     ${dir}=      Set Variable  ${TESTPATH}/dir
     ${symlink}=  Set Variable  ${TESTPATH}/symlink
-    Should Not Exist   ${dir}
-    Should Not Exist   ${symlink}
-    Create Directory   ${dir}
-    Run Command        ln -s ${dir} ${symlink}
-    Should Be Symlink  ${symlink}
-    Run Command        rm ${symlink}
-    Remove Directory   ${dir}
-    Should Not Exist   ${dir}
-    Should Not Exist   ${symlink}
+    Should Not Exist        ${dir}
+    Should Not Exist        ${symlink}
+    Create Directory        ${dir}
+    Command Should Succeed  ln -s ${dir} ${symlink}
+    Should Be Symlink       ${symlink}
+    Command Should Succeed  rm ${symlink}
+    Remove Directory        ${dir}
+    Should Not Exist        ${dir}
+    Should Not Exist        ${symlink}
 
 Hard Link
     ${file}=  Set Variable  ${TESTPATH}/file
     ${link}=  Set Variable  ${TESTPATH}/link
-    Should Not Exist       ${file}
-    Should Not Exist       ${link}
-    Create File            ${file}
-    Link Count Should Be   ${file}  1
-    Run Command            ln ${file} ${link}
-    Inode Should Be Equal  ${link}  ${file}
-    Link Count Should Be   ${file}  2
-    Link Count Should Be   ${link}  2
-    Run Command            rm ${link}
-    Should Not Exist       ${link}
-    Link Count Should Be   ${file}  1
-    Remove File            ${file}
-    Should Not Exist       ${file}
+    Should Not Exist        ${file}
+    Should Not Exist        ${link}
+    Create File             ${file}
+    Link Count Should Be    ${file}  1
+    Command Should Succeed  ln ${file} ${link}
+    Inode Should Be Equal   ${link}  ${file}
+    Link Count Should Be    ${file}  2
+    Link Count Should Be    ${link}  2
+    Command Should Succeed  rm ${link}
+    Should Not Exist        ${link}
+    Link Count Should Be    ${file}  1
+    Remove File             ${file}
+    Should Not Exist        ${file}
 
 Rename
     ${a}=  Set Variable  ${TESTPATH}/a
@@ -80,9 +80,10 @@ Rename
     Should Not Exist  ${a}
     Should Not Exist  ${b}
     Create File  ${a}
-    ${inode}=  Evaluate  os.stat("${a}").st_ino  os
-    Run Command  mv ${a} ${b}
-    Should Be True  os.stat("${b}").st_ino == ${inode}
+    ${before}=  Get Inode  ${a}
+    Command Should Succeed  mv ${a} ${b}
+    ${after}=   Get Inode  ${b}
+    Should Be Equal  ${before}  ${after}
     Remove File  ${b}
     Should Not Exist  ${b}
 

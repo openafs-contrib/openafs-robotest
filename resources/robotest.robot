@@ -15,6 +15,16 @@ Variables         sysinfo.py
 Variables         platforms/${AFS_DIST}.py
 
 *** Keywords ***
+Command Should Succeed
+    [Arguments]  ${cmd}
+    ${rc}  ${output}  Run And Return Rc And Output  ${cmd}
+    Should Be Equal As Integers  ${rc}  0
+
+Command Should Fail
+    [Arguments]  ${cmd}
+    ${rc}  ${output}  Run And Return Rc And Output  ${cmd}
+    Should Not Be Equal As Integers  ${rc}  0
+
 Run Command
     [Arguments]  ${cmd}
     ${rc}  ${output}  Run And Return Rc And Output    ${cmd}
@@ -66,6 +76,11 @@ Inode Should Be Equal
     Should Exist  ${a}
     Should Exist  ${b}
     Should Be True  os.stat("${a}").st_ino  os.stat("${b}").st_ino
+
+Get Inode
+    [Arguments]  ${path}
+    ${inode}=  Evaluate  os.stat("${path}").st_ino  os
+    [Return]  ${inode}
 
 Start Service
     [Arguments]  ${name}
