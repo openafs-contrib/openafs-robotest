@@ -56,15 +56,13 @@ class VolumeDump:
 
     def write(self, tag, fmt, *args):
         """Write a tag and values to the dump file."""
-        packed = struct.pack("!B", tag)
+        packed = struct.pack("!B"+fmt, tag, *args)
         self.file.write(packed)
-        if fmt != "":
-            packed = struct.pack("!"+fmt, *args)
-            self.file.write(packed)
 
     def close(self):
         """Write the end of dump tag and close the dump file."""
         self.write(self.D_DUMPEND, "L", self.DUMPENDMAGIC) # vos requires the end tag
         self.file.close()
         self.file = None
+
 

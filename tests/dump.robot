@@ -11,40 +11,47 @@ Test Teardown      Crash Check
 
 *** Variables ***
 ${VOLUME}      dump.test
-${PARTITION}   a
+${PART}        a
 ${SERVER}      ${HOSTNAME}
 ${TESTPATH}    /afs/${AFS_CELL}/${VOLUME}
+${DUMP}        /tmp/robotestt.dump
 
 *** Test Cases ***
 Dump Empty Volume
-    ${dump}=  Set Variable  /tmp/${VOLUME}.dump
-    Create Volume  ${SERVER}  ${PARTITION}  ${VOLUME}
-    Command Should Succeed  ${VOS} dump -id ${VOLUME} -file ${dump}
-    Should Exist  ${dump}
-    Should Be a Dump File  ${dump}
-    Remove File   ${dump}
+    Create Volume  ${SERVER}  ${PART}  ${VOLUME}
+    Command Should Succeed  ${VOS} dump -id ${VOLUME} -file ${DUMP}
+    Should Exist  ${DUMP}
+    Should Be a Dump File  ${DUMP}
     Remove Volume  ${VOLUME}
+    Remove File   ${DUMP}
 
 Restore Volume
-    ${dump}=  Set Variable  /tmp/${VOLUME}.dump
     Create a Test Volume
-    Command Should Succeed  ${VOS} dump -id ${VOLUME} -file ${dump}
+    Command Should Succeed  ${VOS} dump -id ${VOLUME} -file ${DUMP}
+    Should Exist  ${DUMP}
+    Should Be a Dump File  ${DUMP}
+    Command Should Succeed  ${VOS} restore ${SERVER} ${PART} ${VOLUME}.restore -file ${DUMP} -overwrite full
     Remove the Test Volume
-    Should Exist  ${dump}
-    Should Be a Dump File  ${dump}
-    Command Should Succeed  ${VOS} restore ${SERVER} ${PARTITION} restore.test -file ${dump} -overwrite full
-    Remove Volume  restore.test
+    Remove Volume  ${VOLUME}.restore
+    Remove File   ${DUMP}
 
-Restore Bad Dump
-    ${dump}=  Set Variable  /tmp/bad.dump
-    Create Bad Dump  ${dump}
-    Command Should Fail  ${VOS} restore ${SERVER} ${PARTITION} bad.test -file ${dump} -overwrite full
+Restore Empty Dump
+    Create Empty Dump  ${DUMP}
+    Command Should Succeed  ${VOS} restore ${SERVER} ${PART} ${VOLUME} -file ${DUMP} -overwrite full
+    Remove Volume  ${VOLUME}
+    Remove File   ${DUMP}
+
+Restore Bogus ACL
+    [Tags]  crash
+    Create Dump with Bogus ACL  ${DUMP}
+    Command Should Fail  ${VOS} restore ${SERVER} ${PART} ${VOLUME} -file ${DUMP} -overwrite full
+    Remove Volume  ${VOLUME}
+    Remove File   ${DUMP}
 
 
 *** Keywords ***
-
 Create a Test Volume
-    Create Volume  ${SERVER}  ${PARTITION}  ${VOLUME}
+    Create Volume  ${SERVER}  ${PART}  ${VOLUME}
     Mount Volume  ${TESTPATH}  ${VOLUME}
     Add Access Rights  ${TESTPATH}  system:anyuser  read
     Command Should Succeed  mkdir -p ${TESTPATH}/mydir
