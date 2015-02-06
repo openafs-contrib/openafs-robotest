@@ -27,6 +27,7 @@ rhel6)
     rm -f /var/lock/subsys/openafs-client 2>/dev/null
     rm -f /etc/sysconfig/openafs* 2>/dev/null
     rm -rf /usr/vice/etc 2>/dev/null
+    rm -rf /usr/vice/cache/* 2>/dev/null
     rm -rf /usr/afs 2>/dev/null
     ;;
 suse)
@@ -35,6 +36,7 @@ suse)
     packages=`rpm -qa | grep openafs`
     rpm --erase --noscripts $packages 2>/dev/null
     rm -rf /etc/openafs 2>/dev/null
+    rm -rf /var/cache/openafs/* 2>/dev/null
     rm -rf /var/lib/openafs 2>/dev/null
     rm -rf /var/log/openafs 2>/dev/null
     ;;
@@ -61,6 +63,7 @@ transarc)
     pkill bosserver
     rm -rf /usr/afsws 2>/dev/null
     rm -rf /usr/vice/etc 2>/dev/null
+    rm -rf /usr/vice/cache/* 2>/dev/null
     rm -rf /usr/afs 2>/dev/null
     ;;
 *)
