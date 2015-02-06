@@ -158,6 +158,7 @@ Purge Directory
 
 Purge Cache Manager Configuration
     Purge Directory  ${AFS_KERNEL_DIR}
+    Purge Directory  ${AFS_CACHE_DIR}
     Purge Directory  /afs
 
 Purge Server Configuration
