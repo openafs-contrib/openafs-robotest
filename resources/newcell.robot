@@ -126,7 +126,7 @@ Create Demand Attach File Service
     ...   -cmd /usr/afs/bin/dafileserver
     ...   -cmd /usr/afs/bin/davolserver
     ...   -cmd /usr/afs/bin/salvageserver
-    ...   -cmd /usr/afs/bin/salvager
+    ...   -cmd /usr/afs/bin/dasalvager
     ...   -localauth
     Wait Until Keyword Succeeds  1 min  5 sec    Fileserver Should Be Running
 
