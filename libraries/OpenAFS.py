@@ -213,7 +213,7 @@ class _Setup:
         _run_keyword("AFS Filesystem Should Not Be Mounted")
         _run_keyword("OpenAFS Kernel Module Should Not Be Loaded")
         _run_keyword("OpenAFS Installation Directories Should Not Exist")
-	_run_keyword("Cache Partition Should Be Empty")
+        _run_keyword("Cache Partition Should Be Empty")
         for id in ['a']:
             _run_keyword("Vice Partition Should Be Empty", id)
             _run_keyword("Vice Partition Should Be Attachable", id)

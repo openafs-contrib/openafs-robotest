@@ -61,8 +61,8 @@ OpenAFS Installation Directories Should Not Exist
 
 Cache Partition Should Be Empty
     [Documentation]   Fails unless the cache partition is available, empty
-    Directory Should Exist	${AFS_CACHE_DIR}
-    File Should Not Exist	${AFS_CACHE_DIR}/*
+    Directory Should Exist   ${AFS_CACHE_DIR}
+    File Should Not Exist    ${AFS_CACHE_DIR}/*
 
 Vice Partition Should Be Empty
     [Documentation]   Fails unless the vice partition is available, empty
