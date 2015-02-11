@@ -16,9 +16,9 @@ Variables         platforms/${AFS_DIST}.py
 
 *** Keywords ***
 Command Should Succeed
-    [Arguments]  ${cmd}
+    [Arguments]  ${cmd}  ${msg}=None
     ${rc}  ${output}  Run And Return Rc And Output  ${cmd}
-    Should Be Equal As Integers  ${rc}  0
+    Should Be Equal As Integers  ${rc}  0  msg=${msg}  values=False
 
 Command Should Fail
     [Arguments]  ${cmd}

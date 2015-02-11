@@ -6,6 +6,10 @@ Documentation    Checks to verify this system is ready
 ...              to begin setup for testing.
 
 *** Keywords ***
+Non-interactive sudo is Required
+    Command Should Succeed  sudo -n uname
+    ...  Passwordless sudo is not available!
+
 Required Variables Should Not Be Empty
     Should Not Be Empty  AFS_CELL
     Should Not Be Empty  AFS_DIST

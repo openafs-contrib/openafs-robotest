@@ -203,6 +203,7 @@ class _Setup:
     @_setup_stage
     def precheck_system(self):
         """Verify system prerequisites are met."""
+        _run_keyword("Non-interactive sudo is Required")
         if not _get_var('AFS_DIST') in ('transarc', 'rhel6', 'suse'):
             raise AssertionError("Unsupported AFS_DIST: %s" % _get_var('AFS_DIST'))
         _run_keyword("Required Variables Should Not Be Empty")
