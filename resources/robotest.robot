@@ -95,12 +95,12 @@ Stop Service
 Program Should Be Running
     [Arguments]  ${program}
     ${output}=  Run   ps -ef
-    Should Contain  ${output}  ${program}
+    Should Contain  ${output}  ${program}  msg=Program ${program} is not running!  values=False
 
 Program Should Not Be Running
     [Arguments]  ${program}
     ${output}=  Run   ps -ef
-    Should Not Contain  ${output}  ${program}
+    Should Not Contain  ${output}  ${program}  msg=Program ${program} is running!  values=False
 
 Rx Service Should Be Reachable
     [Arguments]  ${host}  ${port}
