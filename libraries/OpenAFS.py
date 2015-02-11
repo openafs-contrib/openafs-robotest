@@ -329,6 +329,7 @@ class _Setup:
         """Remove remnant data and configuration files."""
         _run_keyword("Purge Server Configuration")
         _run_keyword("Purge Cache Manager Configuration")
+        _run_keyword("Purge Cache")
         valid = r'/vicep([a-z]|[a-h][a-z]|i[a-v])$'
         for vicep in glob.glob("/vicep*"):
             if re.match(valid, vicep) and os.path.isdir(vicep):

@@ -158,8 +158,12 @@ Purge Directory
 
 Purge Cache Manager Configuration
     Purge Directory  ${AFS_KERNEL_DIR}
-    Purge Directory  ${AFS_CACHE_DIR}
     Purge Directory  /afs
+
+Purge Cache
+    [Documentation]  Delete all of the cache files. AFS_CACHE_DIR may be
+    ...              a unix mount point, so do not remove it.
+    Purge Directory  ${AFS_CACHE_DIR}/*
 
 Purge Server Configuration
     Purge Directory  ${AFS_LOGS_DIR}
