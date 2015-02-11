@@ -68,6 +68,7 @@ def main(args):
         variablefile="settings.py",
         outputdir=settings.RF_OUTPUT,
         loglevel=settings.RF_LOGLEVEL,
+        exclude=settings.RF_EXCLUDE,
         runemptysuite=True,
     )
     return rc

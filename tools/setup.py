@@ -68,7 +68,7 @@ SETTINGS = {
    'KRB_VERBOSE':      {'t':'bool', 'dv':"false",          'desc':"Print kadmin output."},
    'RF_LOGLEVEL':      {'t':'enum', 'dv':"INFO",           'desc':"RF Logging level", 'e':('TRACE','DEBUG','INFO','WARN')},
    'RF_OUTPUT':        {'t':'path', 'dv':"./output/",      'desc':"Location for RF reports and logs."},
-   'RF_TESTBED':       {'t':'enum', 'dv':"",               'desc':"System type", 'e':('debian', 'rhel6')},
+   'RF_EXCLUDE':       {'t':'text', 'dv':"crash",          'desc':"RF Tags to exclude"},
    'RPM_AFSRELEASE':   {'t':'name', 'dv':"",               'desc':"RPM release number"},
    'RPM_AFSVERSION':   {'t':'name', 'dv':"",               'desc':"AFS Version Number"},
    'RPM_PACKAGE_DIR':  {'t':'path', 'dv':"",               'desc':"Path the RPM packages"},
