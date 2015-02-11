@@ -10,5 +10,3 @@ OS_RELEASE = os.uname()[2]
 OS_VERSION = os.uname()[3]
 OS_MACHINE = os.uname()[4]
 
-HOSTNAME = OS_NODE   # socket.gethostname()
-

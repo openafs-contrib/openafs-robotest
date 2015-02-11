@@ -64,6 +64,7 @@ def main(args):
     # Run the tests.
     rc = robot.run(
         "tests",
+        variable="HOSTNAME:%s" % os.uname()[1],
         variablefile="settings.py",
         outputdir=settings.RF_OUTPUT,
         loglevel=settings.RF_LOGLEVEL,
