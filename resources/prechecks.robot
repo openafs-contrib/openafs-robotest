@@ -31,6 +31,16 @@ Host Address Should Not Be Loopback
     Should Not Match Regexp  ${address}  ^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$
     ...  Loopback address is assigned to ${HOSTNAME}
 
+Network Interface Should Have The Host Address
+    [Documentation]   Fail if a network interface is not found for the host address.
+    ...               This can happen if the DNS (or /etc/hosts) has a different address
+    ...               than the network interface.
+    ${address}=     Get Host By Name  ${HOSTNAME}
+    ${interfaces}=  Get Interfaces
+    Should Contain  ${interfaces}  ${address}
+    ...  msg=Network interface not found for host adddress ${address}!
+    ...  values=False
+
 OpenAFS Servers Should Not Be Running
     Program Should Not Be Running  bosserver
     Program Should Not Be Running  fileserver

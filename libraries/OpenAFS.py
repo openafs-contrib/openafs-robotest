@@ -44,6 +44,25 @@ class _Linux:
         """Unload the kernel module."""
         _run_keyword("Sudo", "rmmod", name)
 
+    def get_interfaces(self):
+        # Getting information about the network interfaces in a portable way
+        # requires some non-core modules; so instead just run the native
+        # command line program.
+        addrs = []
+        cmd = "ip -oneline -family inet addr show"
+        # Example output:
+        # 1: lo    inet 127.0.0.1/8 scope host lo
+        # 2: eth0    inet 172.16.50.143/24 brd 172.16.50.255 scope global eth0
+        pipe = os.popen(cmd)
+        for line in pipe.readlines():
+            s = re.search(r'inet (\d+\.\d+\.\d+\.\d+)', line)
+            if s:
+                addr = s.group(1)
+                if not addr.startswith("127."):
+                    addrs.append(addr)
+        pipe.close
+        return addrs
+
 class _Solaris:
     def _get_kernel_modules(self):
         """Return loaded kernel module names and ids."""
@@ -73,6 +92,26 @@ class _Solaris:
         if name in modules:
             _run_keyword("Sudo", "modunload", "-i", modules[name])
 
+    def get_interfaces(self):
+        # Getting information about the network interfaces in a portable way
+        # requires some non-core modules; so instead just run the native
+        # command line program.
+        addrs = []
+        cmd = "ipadm show-addr -p -o STATE,ADDR"
+        # Example output:
+        # ok:127.0.0.1/8
+        # ok:172.16.50.146/24
+        # ok:\:\:1/128
+        # ok:fe80\:\:20c\:29ff\:fe3d\:f60c/10
+        pipe = os.popen(cmd)
+        for line in pipe.readlines():
+            m = re.match(r'ok:(\d+\.\d+\.\d+\.\d+)', line)
+            if m:
+                addr = m.group(1)
+                if not addr.startswith("127."):
+                    addrs.append(addr)
+        pipe.close
+        return addrs
 
 class _Util:
     """Generic helper keywords."""
@@ -100,8 +139,12 @@ class _Util:
         return self._os.get_modules()
 
     def unload_module(self, name):
-        """Unloade the kernel module."""
+        """Unload the kernel module."""
         return self._os.unload_module(name)
+
+    def get_interfaces(self):
+        """Find the non-loopback IPv4 addresses of the network interfaces."""
+        return self._os.get_interfaces()
 
     def _get_crash_count(self):
         count = 0
@@ -210,6 +253,7 @@ class _Setup:
         if _get_var('AFS_DIST') == 'transarc':
             _run_keyword("Transarc Variables Should Exist")
         _run_keyword("Host Address Should Not Be Loopback")
+        _run_keyword("Network Interface Should Have The Host Address")
         _run_keyword("OpenAFS Servers Should Not Be Running")
         _run_keyword("AFS Filesystem Should Not Be Mounted")
         _run_keyword("OpenAFS Kernel Module Should Not Be Loaded")
