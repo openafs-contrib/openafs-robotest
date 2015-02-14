@@ -80,6 +80,21 @@ Install Workstation Binaries
     Sudo    cp -r -p ${TRANSARC_DEST}/lib /usr/afsws
     Sudo    cp -r -p ${TRANSARC_DEST}/man /usr/afsws
 
+Install Shared Libraries
+    [Documentation]  Install OpenAFS shared libraries in a sandbox directory.
+    Should Not Be Empty     ${TRANSARC_DEST}
+    Directory Should Exist  ${TRANSARC_DEST}
+    Directory Should Exist  ${TRANSARC_DEST}/lib
+    Sudo    mkdir -p /usr/afs/lib
+    # Find the shared lib files; skip the symlinks.
+    ${cmd}=  Set Variable  find ${TRANSARC_DEST}/lib -type f -name "*.so*"
+    ${rc}  ${output}  Run And Return Rc And Output  ${cmd}
+    Should Be Equal As Integers  ${rc}  0   msg=Failed: ${cmd}, rc=${rc}
+    @{libs}=  Split To Lines  ${output}
+    :FOR  ${lib}  IN  @{libs}
+    \  Sudo  cp ${lib} /usr/afs/lib
+    Sudo  ${LDCONFIG} ${LDCONFIG_UPDATE} ${LDCONFIG_LIB} /usr/afs/lib
+
 Remove Server Binaries
     [Documentation]  Remove transarc style server binaries.
     Purge Directory  /usr/afs/bin
@@ -91,6 +106,11 @@ Remove Client Binaries
 Remove Workstation Binaries
     [Documentation]  Remove transarc style workstation binaries.
     Purge Directory  /usr/afsws
+
+Remove Shared Libraries Binaries
+    [Documentation]  Remove transarc style shared libraries.
+    Purge Directory  /usr/afs/lib
+    Sudo  ${LDCONFIG} ${LDCONFIG_UPDATE}
 
 Start the bosserver
     File Should Exist              ${AFS_SRV_LIBEXEC_DIR}/bosserver

@@ -289,6 +289,7 @@ class _Setup:
             _run_keyword("Install Server Binaries")
             _run_keyword("Install Client Binaries")
             _run_keyword("Install Workstation Binaries")
+            _run_keyword("Install Shared Libraries")
             if uname == "Linux":
                 _run_keyword("Install Init Script on Linux")
             elif uname == "SunOS":
@@ -366,6 +367,7 @@ class _Setup:
             _run_keyword("Remove Server Binaries")
             _run_keyword("Remove Client Binaries")
             _run_keyword("Remove Workstation Binaries")
+            _run_keyword("Remove Shared Libraries Binaries")
         else:
             _run_keyword("Remove OpenAFS RPM Packages")
 

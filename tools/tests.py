@@ -54,6 +54,10 @@ def main(args):
         else:
             sys.path.append(name)
 
+    # Setup our path for shared libraries.
+    if settings.AFS_DIST == "transarc":
+        os.environ['LD_LIBRARY_PATH'] = '/usr/afs/lib'
+
     # Create directories for output and input.
     for name in ['site', settings.RF_OUTPUT]:
         if not os.path.exists(name):

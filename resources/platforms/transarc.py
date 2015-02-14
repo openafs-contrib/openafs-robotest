@@ -42,10 +42,18 @@ VOS = "/usr/afs/bin/vos"
 AFSD_OPTIONS = "-dynroot -fakestat"
 AFSD_DYNROOT = '-dynroot' in AFSD_OPTIONS
 
+# bosserver options
+BOSSERVER_OPTIONS = "-pidfiles"
+
+# platform dependent
 if _os.uname()[0] == 'Linux':
     AFSD_CONFIG_DIR ="/etc/sysconfig"
+    LDCONFIG = "/sbin/ldconfig"
+    LDCONFIG_UPDATE = ""
+    LDCONFIG_LIB = ""
 elif _os.uname()[0] == 'SunOS':
     AFSD_CONFIG_DIR ="/usr/vice/etc/config"
+    LDCONFIG = "/usr/bin/crle"
+    LDCONFIG_UPDATE = "-u"
+    LDCONFIG_LIB = "-l"
 
-
-BOSSERVER_OPTIONS = "-pidfiles"
