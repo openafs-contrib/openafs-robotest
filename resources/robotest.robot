@@ -11,7 +11,6 @@ Library           Kerberos
 Resource          prechecks.robot
 Resource          install.robot
 Resource          newcell.robot
-Variables         sysinfo.py
 Variables         platforms/${AFS_DIST}.py
 
 *** Keywords ***
