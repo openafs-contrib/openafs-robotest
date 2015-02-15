@@ -11,7 +11,7 @@ Library           Kerberos
 Resource          prechecks.robot
 Resource          install.robot
 Resource          newcell.robot
-Variables         platforms/${AFS_DIST}.py
+Variables         dist/${AFS_DIST}.py
 
 *** Keywords ***
 Command Should Succeed
