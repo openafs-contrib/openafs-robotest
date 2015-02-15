@@ -18,17 +18,23 @@ Variables         platforms/${AFS_DIST}.py
 Command Should Succeed
     [Arguments]  ${cmd}  ${msg}=None
     ${rc}  ${output}  Run And Return Rc And Output  ${cmd}
-    Should Be Equal As Integers  ${rc}  0  msg=${msg}  values=False
+    Should Be Equal As Integers  ${rc}  0
+    ...  msg=${msg}: ${cmd}, rc=${rc}, ${output}
+    ...  values=False
 
 Command Should Fail
     [Arguments]  ${cmd}
     ${rc}  ${output}  Run And Return Rc And Output  ${cmd}
     Should Not Be Equal As Integers  ${rc}  0
+    ...  msg=Should have failed: ${cmd}
+    ...  values=False
 
 Run Command
     [Arguments]  ${cmd}
     ${rc}  ${output}  Run And Return Rc And Output    ${cmd}
     Should Be Equal As Integers  ${rc}  0
+    ...  msg=Failed: ${cmd}, rc=${rc}, ${output}
+    ...  values=False
 
 Sudo
     [Arguments]  ${cmd}  @{args}
@@ -39,43 +45,51 @@ Should Be File
     [Arguments]  ${path}
     Should Exist     ${path}
     Should Be True   os.path.isfile("${path}")
+    ...  msg=${path} is not a file.
 
 File Should Be Executable
     [Arguments]  ${file}
     Should Not Be Empty  ${file}
     Should Be File  ${file}
     Should Be True  os.access("${file}", os.X_OK)
+    ...  msg=${file} is not executable.
 
 Should Be Symlink
     [Arguments]  ${path}
     Should Exist    ${path}
     Should Be True  os.path.islink("${path}")
+    ...  msg=${path} is not a symlink.
 
 Should Not Be Symlink
     [Arguments]  ${path}
     Should Exist        ${path}
     Should Not Be True  os.path.islink("${path}")
+    ...  msg=${path} is a symlink.
 
 Should Be Dir
     [Arguments]  ${path}
     Should Exist     ${path}
     Should Be True   os.path.isdir("${path}")
+    ...  msg=${path} is not a directory.
 
 Should Not Be Dir
     [Arguments]  ${path}
     Should Exist         ${path}
     Should Not Be True   os.path.isdir("${path}")
+    ...  msg=${path} is a directory.
 
 Link Count Should Be
     [Arguments]  ${path}  ${count}
     Should Exist    ${path}
     Should Be True  os.stat("${path}").st_nlink == ${count}
+    ...  msg=${path} does not have ${count} links.
 
 Inode Should Be Equal
     [Arguments]  ${a}  ${b}
     Should Exist  ${a}
     Should Exist  ${b}
     Should Be True  os.stat("${a}").st_ino == os.stat("${b}").st_ino
+    ...  msg=${a} and ${b} do not have the same inode number.
 
 Get Inode
     [Arguments]  ${path}
