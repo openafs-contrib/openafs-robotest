@@ -42,7 +42,7 @@ suse)
     ;;
 transarc)
     umount /afs 2>/dev/null
-    test -x /usr/vice/etc/afsd && /usr/vice/etc/afsd -shutdown 2>/dev/null
+    test -x /usr/vice/etc/afsd && /usr/vice/etc/afsd -shutdown 2>/dev/null 1>/dev/null
     case `uname` in
     Linux)
         rmmod libafs 2>/dev/null
