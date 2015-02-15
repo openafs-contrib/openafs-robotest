@@ -75,7 +75,7 @@ Inode Should Be Equal
     [Arguments]  ${a}  ${b}
     Should Exist  ${a}
     Should Exist  ${b}
-    Should Be True  os.stat("${a}").st_ino  os.stat("${b}").st_ino
+    Should Be True  os.stat("${a}").st_ino == os.stat("${b}").st_ino
 
 Get Inode
     [Arguments]  ${path}
