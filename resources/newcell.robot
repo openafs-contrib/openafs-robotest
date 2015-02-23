@@ -31,6 +31,9 @@ Create Default Cell Config
     Sudo  cp site/ThisCell  ${AFS_CONF_DIR}/ThisCell
     Sudo  cp site/CellServDB  ${AFS_CONF_DIR}/CellServDB
 
+Create Akimpersonate Keytab
+    Create Fake Keytab  ${KRB_AFS_KEYTAB}  ${AFS_CELL}  ${KRB_REALM}  ${KRB_AFS_ENCTYPE}
+
 Create Key File
     # Workaround: asetkey fails without a cell config (even though it does not use it) so create one first.
     Create Default Cell Config

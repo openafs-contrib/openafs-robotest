@@ -1,4 +1,4 @@
-# Copyright (c) 2014, Sine Nomine Associates
+# Copyright (c) 2014-2015, Sine Nomine Associates
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -21,11 +21,14 @@
 
 import os
 import re
-from struct import pack
+import sys
+import time
+from struct import pack,calcsize
 from robot.api import logger
 from robot.libraries.BuiltIn import BuiltIn
 
 _KRB_KEYTAB_MAGIC = 0x0502
+_KRB_NT_PRINCIPAL = 1
 
 # IANA Kerberos Encryption Type Numbers
 _KRB_ENCTYPE_NUMBERS = {
@@ -294,4 +297,77 @@ class Kerberos:
             old = [k for k in kvnos if k!=kvno]
             if old:
                 raise AssertionError("Old kvnos for principal '%s' in keytab '%s'!" % (principal, keytab))
+
+    def generate_des_key(self):
+        """Generate a random DES key with correct parity bits."""
+        keybytes = bytearray(os.urandom(8))
+        key = bytearray(0)
+        for i in keybytes:
+            b = bin(i & 0xfe)
+            nb = len(b.split('1'))
+            # nb is one more than the number of bits set
+            key.append(int(b, 2) + (nb % 2))
+        return bytes(key)
+
+
+    def create_fake_keytab(self, keytab, cell, realm, enctype):
+        """Create a test keytab file for akimpersonate.
+
+        This is intended testing OpenAFS without requiring an external kerberos
+        server. A dummy service key is created randomly and saved in the MIT krb5
+        keytab format. The key is not cryptographically strong; only use this
+        for test systems.
+
+        The following C-like structure definitions illustrate the MIT keytab
+        file format. All values are in network byte order. All text is ASCII.
+
+          keytab {
+              uint16_t file_format_version;                    /* 0x502 */
+              keytab_entry entries[*];
+          };
+          keytab_entry {
+              int32_t size;
+              uint16_t num_components;    /* sub 1 if version 0x501 */
+              counted_octet_string realm;
+              counted_octet_string components[num_components];
+              uint32_t name_type;   /* not present if version 0x501 */
+              uint32_t timestamp;
+              uint8_t vno8;
+              keyblock key;
+              uint32_t vno; /* only present if >= 4 bytes left in entry */
+          };
+          counted_octet_string {
+              uint16_t length;
+              uint8_t data[length];
+          };
+          keyblock {
+              uint16_t type;
+              counted_octet_string key;
+          };
+        """
+        num_components = 2
+        name_type = _KRB_NT_PRINCIPAL
+        timestamp = int(time.time())
+
+        vno = 1
+        eno = self.get_encryption_type_number(enctype)
+        if eno in (1, 2, 3):
+            key = self.generate_des_key()
+        elif eno == 17:
+            key = os.urandom(16)
+        elif eno == 18:
+            key = os.urandom(32)
+        else:
+            AssertionError("Cannot create fake keytab for enctype %s" % (enctype))
+
+        fmt = "HH%dsH%dsH%dsLLBHH%ds" % (len(realm), len("afs"), len(cell), len(key))
+        size = calcsize("!"+fmt) # get the entry size
+
+        f = open(keytab, "w")
+        f.write(pack('!h', _KRB_KEYTAB_MAGIC))
+        f.write(pack("!l"+fmt,
+            size, num_components,
+            len(realm), realm, len("afs"), "afs", len(cell), cell, name_type,
+            timestamp, vno, eno, len(key), key))
+        f.close()
 

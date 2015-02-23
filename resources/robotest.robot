@@ -119,7 +119,7 @@ Rx Service Should Be Reachable
     [Arguments]  ${host}  ${port}
     Run Command  ${RXDEBUG} ${host} ${port} -version
 
-Login
+Login with Keytab
     [Arguments]  ${name}
     Should Not Be Empty  ${name}
     # Convert OpenAFS k4 style names to k5 style principals.
@@ -131,8 +131,23 @@ Login
     Run Command  KRB5CCNAME=site/krb5cc ${KINIT} -5 -k -t ${keytab} ${principal}@${KRB_REALM}
     Run Command  KRB5CCNAME=site/krb5cc ${AKLOG} -d -c ${AFS_CELL} -k ${KRB_REALM}
 
+Login with Akimpersonate
+    [Arguments]  ${name}
+    Should Not Be Empty  ${name}
+    # Convert OpenAFS k4 style names to k5 style principals.
+    ${principal}=  Replace String  ${name}  .  /
+    Run Command  ${AKLOG} -d -c ${AFS_CELL} -k ${KRB_REALM} -keytab ${KRB_AFS_KEYTAB} -principal ${principal}@${KRB_REALM}
+
+Login
+    [Arguments]  ${name}
+    Run Keyword If  ${AFS_AKIMPERSONATE}
+    ...  Login with Akimpersonate  ${name}
+    ...  ELSE
+    ...  Login with Keytab  ${name}
+
 Logout
-    Run Command  KRB5CCNAME=site/krb5cc ${KDESTROY}
+    Run Keyword Unless  ${AFS_AKIMPERSONATE}
+    ...  Run Command  KRB5CCNAME=site/krb5cc ${KDESTROY}
     Run Command  ${UNLOG}
 
 Create Volume

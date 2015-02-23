@@ -264,16 +264,17 @@ class _Setup:
             _run_keyword("Vice Partition Should Be Attachable", id)
         if _get_var('AFS_CSDB_DIST'):
             _run_keyword("CellServDB.dist Should Exist")
-        _run_keyword("Kerberos Client Must Be Installed")
-        _run_keyword("Service Keytab Should Exist",
-            _get_var('KRB_AFS_KEYTAB'), _get_var('AFS_CELL'), _get_var('KRB_REALM'),
-            _get_var('KRB_AFS_ENCTYPE'), _get_var('AFS_KEY_FILE'))
-        _run_keyword("Kerberos Keytab Should Exist", _get_var('KRB_USER_KEYTAB'),
-            "%s" % _get_var('AFS_USER').replace('.','/'), _get_var('KRB_REALM'))
-        _run_keyword("Kerberos Keytab Should Exist", _get_var('KRB_ADMIN_KEYTAB'),
-            "%s" % _get_var('AFS_ADMIN').replace('.','/'), _get_var('KRB_REALM'))
-        _run_keyword("Can Get a Kerberos Ticket", _get_var('KRB_USER_KEYTAB'),
-            "%s" % _get_var('AFS_USER').replace('.','/'), _get_var('KRB_REALM'))
+        if _get_var('AFS_AKIMPERSONATE') == False:
+            _run_keyword("Kerberos Client Must Be Installed")
+            _run_keyword("Service Keytab Should Exist",
+                _get_var('KRB_AFS_KEYTAB'), _get_var('AFS_CELL'), _get_var('KRB_REALM'),
+                _get_var('KRB_AFS_ENCTYPE'), _get_var('AFS_KEY_FILE'))
+            _run_keyword("Kerberos Keytab Should Exist", _get_var('KRB_USER_KEYTAB'),
+                "%s" % _get_var('AFS_USER').replace('.','/'), _get_var('KRB_REALM'))
+            _run_keyword("Kerberos Keytab Should Exist", _get_var('KRB_ADMIN_KEYTAB'),
+                "%s" % _get_var('AFS_ADMIN').replace('.','/'), _get_var('KRB_REALM'))
+            _run_keyword("Can Get a Kerberos Ticket", _get_var('KRB_USER_KEYTAB'),
+                "%s" % _get_var('AFS_USER').replace('.','/'), _get_var('KRB_REALM'))
 
     @_setup_stage
     def install_openafs(self):
@@ -385,10 +386,14 @@ class _Setup:
     def _setup_service_key(self):
         """Helper method to setup the AFS service key.
 
+        Create a dummy keytab file when running in akimpersonate mode.
+
         Call the correct keyword depending on which key file is being setup in
         the test cell. Supported types are the lecacy DES KeyFile, the interim
         rxkad-k5 non-DES enctype, and the modern non-DES KeyFileExt.
         """
+        if _get_var('AFS_AKIMPERSONATE') and not os.path.exists(_get_var('AFS_KEY_FILE')):
+            _run_keyword("Create Akimpersonate Keytab")
         if _get_var('AFS_KEY_FILE') == 'KeyFile':
             _run_keyword("Create Key File")
         elif _get_var('AFS_KEY_FILE') == 'rxkad.keytab':

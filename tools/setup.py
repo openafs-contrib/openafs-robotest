@@ -51,6 +51,7 @@ SETTINGS = {
    'AFS_DIST':         {'t':'enum', 'dv':"transarc",       'desc':"Distribution style", 'e':('rhel6','suse','transarc')},
    'AFS_KEY_FILE':     {'t':'enum', 'dv':"KeyFileExt",     'desc':"Service key style", 'e':('KeyFile','rxkad.keytab','KeyFileExt')},
    'AFS_USER':         {'t':'name', 'dv':"robotest",       'desc':"Test username"},
+   'AFS_AKIMPERSONATE':{'t':'bool', 'dv':"false",          'desc':"Use akimpersonate for kerberos-less testing"},
    'DO_INSTALL':       {'t':'bool', 'dv':"true",           'desc':"Perform the installation"},
    'DO_REMOVE':        {'t':'bool', 'dv':"true",           'desc':"Perform the uninstallation"},
    'DO_TEARDOWN':      {'t':'bool', 'dv':"true",           'desc':"Perform the cell teardown"},
@@ -444,6 +445,7 @@ class SetupShell(cmd.Cmd):
 
     def _gen_afs_key(self, enctype):
         """Helper to create the AFS service key and keytab."""
+        akimpersonate = self._get("AFS_AKIMPERSONATE")
         if not enctype:
             enctype = self._get("KRB_AFS_ENCTYPE", 'aes256-cts-hmac-sha1-96')
         keytab = self._get("KRB_AFS_KEYTAB", './site/afs.keytab')
@@ -457,7 +459,10 @@ class SetupShell(cmd.Cmd):
             k = Kerberos()
             k._set_settings(self.settings.get_dict())
             k._set_logger(DummyLogger(verbose=verbose))
-            k.create_afs_service_keytab(keytab, cell, realm, enctype)
+            if akimpersonate:
+                k.create_fake_keytab(keytab, cell, realm, enctype)
+            else:
+                k.create_afs_service_keytab(keytab, cell, realm, enctype)
         except:
             sys.stderr.write("Failed to create keytab!")
             traceback.print_exc(file=sys.stderr)
