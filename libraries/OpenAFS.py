@@ -339,8 +339,10 @@ class _Setup:
         _run_keyword("Login",  _get_var('AFS_ADMIN'))
         _run_keyword("Create Volume",  hostname, "a", "root.cell")
         _run_keyword("Mount Cell Root Volume")
+        _run_keyword("Create and Mount Volume", hostname, "a", "test", "/afs/%s/test" % _get_var('AFS_CELL'))
         _run_keyword("Replicate Volume", hostname, "a", "root.afs")
         _run_keyword("Replicate Volume", hostname, "a", "root.cell")
+        _run_keyword("Logout")
 
     @_teardown_stage
     def shutdown_openafs(self):
