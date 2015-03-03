@@ -4,7 +4,7 @@
 *** Settings ***
 Suite setup       Setup Test System
 Suite teardown    Teardown Test System
-Resource          robotest.robot
+Resource          openafs.robot
 
 *** Keywords ***
 Setup Test System

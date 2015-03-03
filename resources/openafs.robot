@@ -175,3 +175,11 @@ Replicate Volume
     [Arguments]    ${server}  ${part}  ${volume}
     Run Command    ${VOS} addsite -server ${server} -part ${part} -id ${volume}
     Run Command    ${VOS} release -id ${volume} -verbose
+
+Create and Mount Volume
+    [Documentation]  Helper keyword to create and mount a readable volume.
+    [Arguments]  ${server}  ${part}  ${name}  ${dir}
+    Run Command        ${VOS} create -server ${server} -partition ${part} -name ${name} -verbose
+    Mount Volume       ${dir}  ${name}
+    Add Access Rights  ${dir}  system:anyuser  read
+
