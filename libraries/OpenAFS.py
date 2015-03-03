@@ -169,6 +169,13 @@ class _Util:
         if after != before:
             raise AssertionError("Server crash detected! %s" % last)
 
+    def directory_entry_should_exist(self, path):
+        """Fails if directory entry does not exist in the given path."""
+        base = os.path.basename(path)
+        dir = os.path.dirname(path)
+        if not base in os.listdir(dir):
+            raise AssertionError("Directory entry '%s' does not exist in '%s'" % (base, dir))
+
 class _Dump:
     """OpenAFS volume dump keywords."""
 

@@ -1,4 +1,5 @@
-# Copyright (c) 2014, Sine Nomine Associates
+# Copyright (c) 2001 Kungliga Tekniska Högskolan
+# Copyright (c) 2014-2015 Sine Nomine Associates
 # See LICENSE
 
 *** Settings ***
