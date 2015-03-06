@@ -197,18 +197,6 @@ class AccessControlList:
 #
 # Unit tests
 #
-
-def _test2_old():
-    cases = [
-        ("",     ("", "")),
-        ("rl",   ("rl", "")),
-        ("rl-l", ("rl", "l")),
-        ("-w",   ("", "w"))
-    ]
-    for x,y in cases:
-        u,v = AccessControlList.parse_rights(x)
-        assert u == y[0] and v == y[1], "expected=(%s,%s), got=(%s,%s)" % (u,v,y[0],y[1])
-
 def _test1():
     cases = [
         ("", ""),
