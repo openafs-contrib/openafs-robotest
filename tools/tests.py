@@ -26,26 +26,36 @@ import tools.setup
 import robot.run
 
 def usage():
-    print "usage: run-tests"
+    print "usage: ./run.py tests [--suite=<name>]"
 
 def main(args):
     try:
         import settings
     except ImportError:
-        print "Please do `./run setup' first."
+        print "Please run `./run.py setup'."
         sys.exit(1)
+    rf = {
+        "variablefile": ["settings.py", "resources/sysinfo.py"],
+        "outputdir": settings.RF_OUTPUT,
+        "loglevel": settings.RF_LOGLEVEL,
+        "exclude": settings.RF_EXCLUDE,
+        "runemptysuite": True,
+    }
     try:
-        opts, args = getopt.getopt(args, "h", ["help"])
+        opts, args = getopt.getopt(args, "hs:", ["help", "suite="])
     except getopt.GetoptError as err:
         sys.stderr.write(str(err))
+        sys.stderr.write("\n")
         usage()
         sys.exit(2)
     for o, a in opts:
         if o in ("-h", "--help"):
             usage()
             sys.exit(0)
+        elif o in ("-s", "--suite"):
+            rf['suite'] = a
         else:
-            assert False, "unhandled option"
+            raise AssertionError("Unhandled option: %s" % o)
 
     # Setup paths for local libraries and keywords.
     for name in ['./resources', './libraries']:
@@ -54,7 +64,7 @@ def main(args):
         else:
             sys.path.append(name)
 
-    # Setup our path for shared libraries.
+    # Setup the path for our shared libraries.
     if settings.AFS_DIST == "transarc":
         os.environ['LD_LIBRARY_PATH'] = '/usr/afs/lib'
 
@@ -66,14 +76,7 @@ def main(args):
             raise AssertionError("File '%s' is in the way!" % (name))
 
     # Run the tests.
-    rc = robot.run(
-        "tests",
-        variablefile=["settings.py", "resources/sysinfo.py"],
-        outputdir=settings.RF_OUTPUT,
-        loglevel=settings.RF_LOGLEVEL,
-        exclude=settings.RF_EXCLUDE,
-        runemptysuite=True,
-    )
+    rc = robot.run("tests", **rf)
     return rc
 
 if __name__ == "__main__":
