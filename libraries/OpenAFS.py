@@ -29,6 +29,7 @@ from robot.libraries.BuiltIn import BuiltIn
 from robot.libraries.BuiltIn import register_run_keyword
 
 from libraries.dump import VolumeDump
+from libraries.acl import AccessControlList
 
 class _Linux:
     def get_modules(self):
@@ -206,6 +207,37 @@ class _Dump:
         dump.write(VolumeDump.D_VNODE, "LL", 3, 999)
         dump.write(ord('A'), "LLLLL", size, version, total, positive, negative)
         dump.close()
+
+class _ACL:
+    """ACL testing keywords."""
+
+    def access_control_list_matches(self, path, *acls):
+        """Fails if a directory ACL does not match the given ACL."""
+        logger.debug("access_control_list_matches: path=%s, acls=[%s]" % (path, ",".join(acls)))
+        a1 = AccessControlList.from_path(path)
+        a2 = AccessControlList.from_args(*acls)
+        if a1 != a2:
+            raise AssertionError("ACLs do not match: path=%s args=%s" % (a1, a2))
+
+    def access_control_list_contains(self, path, name, rights):
+        logger.debug("access_control_list_contains: path=%s, name=%s, rights=%s" % (path, name, rights))
+        a = AccessControlList.from_path(path)
+        if not a.contains(name, rights):
+            raise AssertionError("ACL entry rights do not match for name '%s'")
+
+    def access_control_should_exist(self, path, name):
+        """Fails if the access control does not exist for the the given user or group name."""
+        logger.debug("access_control_should_exist: path=%s, name=%s, rights=%s" % (path, name, rights))
+        a = AccessControlList.from_path(path)
+        if name not in a.acls:
+            raise AssertionError("ACL entry does not exist for name '%s'" % (name))
+
+    def access_control_should_not_exist(self, path, name):
+        """Fails if the access control exists for the the given user or group name."""
+        logger.debug("access_control_should_not_exist: path=%s, name=%s" % (path, name))
+        a = AccessControlList.from_path(path)
+        if name in a.acls:
+            raise AssertionError("ACL entry exists for name '%s'" % (name))
 
 class _Setup:
     """Test system setup and teardown top-level keywords.
@@ -460,7 +492,7 @@ class _Setup:
         return stage
 
 
-class OpenAFS(_Util, _Dump, _Setup):
+class OpenAFS(_Util, _Dump, _ACL, _Setup):
     """OpenAFS test library for basic tests.
     """
     ROBOT_LIBRARY_SCOPE = 'GLOBAL'
