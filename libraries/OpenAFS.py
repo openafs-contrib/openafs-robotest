@@ -30,102 +30,13 @@ from robot.libraries.BuiltIn import register_run_keyword
 
 from libraries.dump import VolumeDump
 from libraries.acl import AccessControlList
-
-class _Linux:
-    def get_modules(self):
-        """Return loaded kernel module names."""
-        modules = []
-        f = open("/proc/modules", "r")
-        for line in f.readlines():
-            module = line.split()[0]
-            modules.append(module)
-        f.close()
-        return modules
-
-    def unload_module(self, name):
-        """Unload the kernel module."""
-        _run_keyword("Sudo", "rmmod", name)
-
-    def get_interfaces(self):
-        # Getting information about the network interfaces in a portable way
-        # requires some non-core modules; so instead just run the native
-        # command line program.
-        addrs = []
-        cmd = "ip -oneline -family inet addr show"
-        # Example output:
-        # 1: lo    inet 127.0.0.1/8 scope host lo
-        # 2: eth0    inet 172.16.50.143/24 brd 172.16.50.255 scope global eth0
-        pipe = os.popen(cmd)
-        for line in pipe.readlines():
-            s = re.search(r'inet (\d+\.\d+\.\d+\.\d+)', line)
-            if s:
-                addr = s.group(1)
-                if not addr.startswith("127."):
-                    addrs.append(addr)
-        pipe.close
-        return addrs
-
-class _Solaris:
-    def _get_kernel_modules(self):
-        """Return loaded kernel module names and ids."""
-        modules = {}
-        pipe = os.popen("/usr/sbin/modinfo -w")
-        for line in pipe.readlines():
-            if line.lstrip().startswith("Id"):
-                continue # skip header line
-            # Fields are: Id Loadaddr Size Info Rev Module Name (Desc)
-            m = re.match(r'\s*(\d+)\s+\S+\s+\S+\s+\S+\s+\d+\s+(\S+)', line)
-            if m:
-                id = m.group(1)
-                name = m.group(2)
-                modules[name] = id  # remove duplicate entries
-            else:
-                raise AssertionError("Unexpected modinfo output: %s" % (line))
-        pipe.close()
-        return modules
-
-    def get_modules(self):
-        """Return loaded kernel module names."""
-        return self._get_kernel_modules().keys()
-
-    def unload_module(self, name):
-        """Unload the kernel module."""
-        modules = self._get_kernel_modules()
-        if name in modules:
-            _run_keyword("Sudo", "modunload", "-i", modules[name])
-
-    def get_interfaces(self):
-        # Getting information about the network interfaces in a portable way
-        # requires some non-core modules; so instead just run the native
-        # command line program.
-        addrs = []
-        cmd = "ipadm show-addr -p -o STATE,ADDR"
-        # Example output:
-        # ok:127.0.0.1/8
-        # ok:172.16.50.146/24
-        # ok:\:\:1/128
-        # ok:fe80\:\:20c\:29ff\:fe3d\:f60c/10
-        pipe = os.popen(cmd)
-        for line in pipe.readlines():
-            m = re.match(r'ok:(\d+\.\d+\.\d+\.\d+)', line)
-            if m:
-                addr = m.group(1)
-                if not addr.startswith("127."):
-                    addrs.append(addr)
-        pipe.close
-        return addrs
+from libraries.system import System
 
 class _Util:
     """Generic helper keywords."""
 
     def __init__(self):
-        uname = os.uname()[0]
-        if uname == "Linux":
-            self._os = _Linux()
-        elif uname == "SunOS":
-            self._os = _Solaris()
-        else:
-            raise AssertionError("Unsupported operating system: %s" % (uname))
+        self.system = System.current()
 
     def get_host_by_name(self, hostname):
         """Return the ipv4 address of the hostname."""
@@ -138,15 +49,15 @@ class _Util:
 
     def get_modules(self):
         """Return a list of loaded kernel module names."""
-        return self._os.get_modules()
+        return self.system.get_modules()
 
     def unload_module(self, name):
         """Unload the kernel module."""
-        return self._os.unload_module(name)
+        return self.system.unload_module(name)
 
     def get_interfaces(self):
         """Find the non-loopback IPv4 addresses of the network interfaces."""
-        return self._os.get_interfaces()
+        return self.system.get_interfaces()
 
     def _get_crash_count(self):
         count = 0
@@ -179,7 +90,7 @@ class _Util:
             raise AssertionError("Directory entry '%s' does not exist in '%s'" % (base, dir))
 
 class _Dump:
-    """OpenAFS volume dump keywords."""
+    """Volume dump keywords."""
 
     def should_be_a_dump_file(self, filename):
         """Fails if filename is not an AFS dump file."""
