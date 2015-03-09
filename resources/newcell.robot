@@ -74,30 +74,6 @@ Set the Cell Name
     [Arguments]  ${cellname}
     Wait Until Keyword Succeeds  1 min  1 sec  Try To Set the Cell Name  ${cellname}
 
-Set the Cell Configuration
-    [Documentation]  Set up the cell configuration for the admin clients this
-    ...              host. This is needed for older versions of pts and vos,
-    ...              which read the cell configuration from the client data
-    ...              directory.
-    # The bosserver tries to create symlinks for the client cell configuration
-    # files. Some packaging and init scripts will write foreign cell entries
-    # to the client CellServDB, and if that is a symlink, the server copy
-    # of the cell CellServDB is clobbered! So, to be safe, remove the links
-    # and make a copy of the server's files for the client.
-    Should Not Be Empty  ${AFS_CONF_DIR}
-    Should Not Be Empty  ${AFS_DATA_DIR}
-    Directory Should Exist  ${AFS_CONF_DIR}
-    File Should Exist       ${AFS_CONF_DIR}/CellServDB
-    File Should Exist       ${AFS_CONF_DIR}/ThisCell
-    Sudo  mkdir -p ${AFS_DATA_DIR}
-    Sudo  rm -f ${AFS_DATA_DIR}/CellServDB
-    Sudo  rm -f ${AFS_DATA_DIR}/ThisCell
-    Sudo  cp ${AFS_CONF_DIR}/CellServDB ${AFS_DATA_DIR}/CellServDB.local
-    Sudo  cp ${AFS_CONF_DIR}/ThisCell   ${AFS_DATA_DIR}/ThisCell
-    Run Keyword If  '${AFS_CSDB_DIST}'==''  Sudo  touch -a ${AFS_DATA_DIR}/CellServDB.dist
-    Run Keyword If  '${AFS_CSDB_DIST}'!=''  Sudo  cp ${AFS_CSDB_DIST} ${AFS_DATA_DIR}/CellServDB.dist
-    Sudo  sh -c 'cat ${AFS_DATA_DIR}/CellServDB.local ${AFS_DATA_DIR}/CellServDB.dist > ${AFS_DATA_DIR}/CellServDB'
-
 Database Should Have Quorum
     [Arguments]    ${port}
     ${rc}  ${output}  Run And Return Rc And Output  ${UDEBUG} ${HOSTNAME} ${port}
@@ -151,16 +127,33 @@ Create the root.afs Volume
     ...              first since the servers just started and may not be ready yet.
     Wait Until Keyword Succeeds  1 min  5 sec  Try To Create the root.afs Volume
 
-Set Cache Manager Configuration
-    [Documentation]  Setup the cache manager configuration and make sure
-    ...              the /afs directory is available to mount the AFS filesystem.
-    ...              See 'Set the Cell Configuration' for CellServDB and ThisCell
-    ...              configuration.
-    Should Not Be Empty  ${AFS_DATA_DIR}
-    Should Not Be Empty  ${AFS_CACHE_DIR}
+Append CellServDB.dist
+    [Documentation]  Append the CellServDB.dist contents to the client CellServDB.
+    ...              This allows the client in the test cell to access other cells.
+    ...              The AFS_CSDB_DIST setting should be set before this keyword
+    ...              is called.
+    Should Not Be Empty     ${AFS_DATA_DIR}
+    Should Not Be Empty     ${AFS_CSDB_DIST}
+    Directory Should Exist  ${AFS_DATA_DIR}
+    File Should Exist       ${AFS_CSDB_DIST}
+    File Should Exist       ${AFS_DATA_DIR}/CellServDB
+    Sudo  cp ${AFS_CONF_DIR}/CellServDB ${AFS_DATA_DIR}/CellServDB.local
+    Sudo  cp ${AFS_CSDB_DIST} ${AFS_DATA_DIR}/CellServDB.dist
+    ${local}=  Get File  ${AFS_DATA_DIR}/CellServDB.local
+    ${dist}=   Get File  ${AFS_DATA_DIR}/CellServDB.dist
+    Create File      ./site/CellServDB.client  content=${local}
+    Append To File   ./site/CellServDB.client  content=${dist}
+    Sudo  cp ./site/CellServDB.client ${AFS_DATA_DIR}/CellServDB
+
+Create AFS Mount Point
     Sudo    mkdir -p /afs
-    Create File  site/cacheinfo    /afs:${AFS_CACHE_DIR}:50000
-    Sudo  cp site/cacheinfo ${AFS_DATA_DIR}/cacheinfo
+
+Set Cache Manager Configuration
+    Should Not Be Empty  ${AFS_CACHE_DIR}
+    Should Not Be Empty  ${AFS_DATA_DIR}
+    Directory Should Exist  ${AFS_DATA_DIR}
+    Create File   ./site/cacheinfo    /afs:${AFS_CACHE_DIR}:50000
+    Sudo          cp ./site/cacheinfo ${AFS_DATA_DIR}/cacheinfo
 
 Mount Cell Root Volume
     ${afs}=  Set Variable If  ${AFSD_DYNROOT}  afs/.:mount/${AFS_CELL}:root.afs  afs

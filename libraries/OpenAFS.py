@@ -268,7 +268,7 @@ class _Setup:
         else:
             _run_keyword("Start Service", "openafs-server")
         _run_keyword("Set the Cell Name", _get_var('AFS_CELL'))
-        _run_keyword("Set the Cell Configuration")
+        self._remove_symlinks_created_by_bosserver()
         _run_keyword("Create Database Service", "ptserver", 7002)
         _run_keyword("Create Database Service", "vlserver", 7003)
         if _get_var('AFS_DAFS'):
@@ -277,6 +277,9 @@ class _Setup:
             _run_keyword("Create File Service")
         _run_keyword("Create an Admin Account", _get_var('AFS_ADMIN'))
         _run_keyword("Create the root.afs Volume")
+        if _get_var('AFS_CSDB_DIST'):
+            _run_keyword("Append CellServDB.dist")
+        _run_keyword("Create AFS Mount Point")
         _run_keyword("Set Cache Manager Configuration")
         if _get_var('AFS_DIST') == "transarc":
             uname = os.uname()[0]
@@ -357,6 +360,38 @@ class _Setup:
             _run_keyword("Create Extended Key File", _get_var('KRB_AFS_ENCTYPE'))
         else:
             raise AssertionError("Unsupported AFS_KEY_FILE! %s" % (_get_var('AFS_KEY_FILE')))
+
+    def _remove_symlinks_created_by_bosserver(self):
+        """Remove the symlinks to the CellServDB and ThisCell files
+        created by the bosserver and replace them with regular files.
+
+        This is a workaround step which is needed to support RPM packages.
+        The init scripts provided by the RPMs can inadvertently overwrite
+        the server's CellServDB when the client side CellServDB is a symlink.
+
+        It is not sufficient to just remove the symlinks. The client side
+        configuration is needed by vos and pts, which are used to setup the
+        cell before the client is started.
+
+        So, remove the symlinked CSDB and ThisCell, and replace with copies
+        from the server configuration directory.
+        """
+        afs_conf_dir = _get_var('AFS_CONF_DIR')    # e.g. /usr/afs/etc
+        afs_data_dir = _get_var('AFS_DATA_DIR')    # e.g. /usr/vice/etc
+        if afs_conf_dir is None or afs_conf_dir == "":
+            raise AssertionError("AFS_CONF_DIR is not set!")
+        if afs_data_dir is None or afs_data_dir == "":
+            raise AssertionError("AFS_DATA_DIR is not set!")
+        if not os.path.exists(afs_data_dir):
+            _run_keyword("Sudo", "mkdir -p %s" % (afs_data_dir))
+        if os.path.islink("%s/CellServDB" % (afs_data_dir)):
+            _run_keyword("Sudo", "rm", "%s/CellServDB" % (afs_data_dir))
+        if os.path.islink("%s/ThisCell" % (afs_data_dir)):
+            _run_keyword("Sudo", "rm", "%s/ThisCell" % (afs_data_dir))
+        _run_keyword("Sudo", "cp", "%s/CellServDB" % (afs_conf_dir), "%s/CellServDB.local" % (afs_data_dir))
+        _run_keyword("Sudo", "cp", "%s/CellServDB" % (afs_conf_dir), "%s/CellServDB" % (afs_data_dir))
+        _run_keyword("Sudo", "cp", "%s/ThisCell" % (afs_conf_dir), "%s/ThisCell" % (afs_data_dir))
+
 
     def _should_run_stage(self, stage):
         """Returns true if this stage should be run."""
