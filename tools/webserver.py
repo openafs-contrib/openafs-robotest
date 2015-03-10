@@ -33,7 +33,7 @@ def main(args):
         os.makedirs(settings.RF_OUTPUT)
     os.chdir(settings.RF_OUTPUT)
     httpd = SocketServer.TCPServer(("", settings.WEBSERVER_PORT), MyHTTPRequestHandler)
-    syslog.openlog(ident='webserver', logoption=syslog.LOG_PID, facility=syslog.LOG_DAEMON)
+    syslog.openlog('webserver', syslog.LOG_PID, syslog.LOG_DAEMON)
     syslog.syslog("Starting openafs-robotest webserver on port %d ..." % settings.WEBSERVER_PORT)
     daemonize()
     httpd.serve_forever()
