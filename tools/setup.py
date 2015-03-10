@@ -52,7 +52,6 @@ SETTINGS = {
    'AFS_KEY_FILE':     {'t':'enum', 'dv':"KeyFileExt",     'desc':"Service key style", 'e':('KeyFile','rxkad.keytab','KeyFileExt')},
    'AFS_USER':         {'t':'name', 'dv':"robotest",       'desc':"Test username"},
    'AFS_AKIMPERSONATE':{'t':'bool', 'dv':"true",           'desc':"Use akimpersonate for kerberos-less testing"},
-   'ALT_AKLOG':        {'t':'path', 'dv':"",               'desc':"Path to an alternate aklog"},
    'DO_INSTALL':       {'t':'bool', 'dv':"true",           'desc':"Perform the installation"},
    'DO_REMOVE':        {'t':'bool', 'dv':"true",           'desc':"Perform the uninstallation"},
    'DO_TEARDOWN':      {'t':'bool', 'dv':"true",           'desc':"Perform the cell teardown"},

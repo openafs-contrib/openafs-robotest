@@ -13,9 +13,6 @@ Resource          install.robot
 Resource          newcell.robot
 Variables         dist/${AFS_DIST}.py
 
-*** Variables ***
-${ALT_AKLOG}      # empty
-
 *** Keywords ***
 Command Should Succeed
     [Arguments]  ${cmd}  ${msg}=None
@@ -129,7 +126,6 @@ Login with Keytab
     ${principal}=  Replace String  ${name}  .  /
     ${keytab}=  Set Variable If  "${name}"=="${AFS_USER}"    ${KRB_USER_KEYTAB}
     ${keytab}=  Set Variable If  "${name}"=="${AFS_ADMIN}"   ${KRB_ADMIN_KEYTAB}
-    ${aklog}=   Set Variable If  "${ALT_AKLOG}"!=""  ${ALT_AKLOG}  ${AKLOG}
     File Should Exist   ${keytab}
     Remove File  site/krb5cc
     Run Command  KRB5CCNAME=site/krb5cc ${KINIT} -5 -k -t ${keytab} ${principal}@${KRB_REALM}
@@ -140,7 +136,6 @@ Login with Akimpersonate
     Should Not Be Empty  ${name}
     # Convert OpenAFS k4 style names to k5 style principals.
     ${principal}=  Replace String  ${name}  .  /
-    ${aklog}=   Set Variable If  "${ALT_AKLOG}"!=""  ${ALT_AKLOG}  ${AKLOG}
     Run Command  ${AKLOG} -d -c ${AFS_CELL} -k ${KRB_REALM} -keytab ${KRB_AFS_KEYTAB} -principal ${principal}@${KRB_REALM}
 
 Login
