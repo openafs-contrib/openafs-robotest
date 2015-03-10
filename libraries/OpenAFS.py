@@ -288,6 +288,7 @@ class _Setup:
                 raise AssertionError("Unsupported operating system: %s" % (uname))
         else:
             _run_keyword("Start Service", "openafs-client")
+        _run_keyword("Cell Should Be", _get_var('AFS_CELL'))
         _run_keyword("Login",  _get_var('AFS_ADMIN'))
         _run_keyword("Create Volume",  hostname, "a", "root.cell")
         _run_keyword("Mount Cell Root Volume")

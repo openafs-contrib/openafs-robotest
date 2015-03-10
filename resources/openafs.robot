@@ -119,6 +119,16 @@ Rx Service Should Be Reachable
     [Arguments]  ${host}  ${port}
     Run Command  ${RXDEBUG} ${host} ${port} -version
 
+Cell Should Be
+    [Arguments]  ${cellname}
+    ${cmd}=  Set Variable  ${FS} wscell
+    ${rc}  ${output}  Run And Return Rc And Output    ${cmd}
+    Should Be Equal As Integers  ${rc}  0
+    ...  msg=Failed: ${cmd}, rc=${rc}, ${output}
+    ...  values=False
+    Should Match  ${output}  This workstation belongs to cell '${cellname}'
+    ...  msg=Client has the wrong cell name!
+
 Login with Keytab
     [Arguments]  ${name}
     Should Not Be Empty  ${name}
