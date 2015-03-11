@@ -21,8 +21,10 @@
 
 import sys
 import os
+import stat
 import re
 import cmd
+import string
 import glob
 import getopt
 import subprocess
@@ -559,10 +561,61 @@ class SetupShell(cmd.Cmd):
         else:
             sys.stderr.write("Failed to find rpm release!\n")
 
+    def do_gensudo(self, line):
+        """Generate the sudo permissions check script.
+
+        syntax: gensudo
+        """
+        afs_dist = self._get('AFS_DIST')
+        try:
+            dist = __import__(afs_dist)
+        except ImportError:
+            sys.stderr.write("Cannot find variable file '%s'. Check AFS_DIST.\n" % afs_dist)
+            return
+        variables = dict()
+        for k in dir(dist):
+            if k.startswith("_"):
+                continue
+            v = getattr(dist, k)
+            variables[k] = v
+        # Values from the settings file override the dist settings.
+        settings = self.settings.get_dict()
+        for k in settings.keys():
+            if k.startswith("_"):
+                continue
+            variables[k] = settings[k]
+
+        infile = open("./tools/afs-robotest-sudo.in", "r")
+        outfile = open("./tools/afs-robotest-sudo", "w")
+        substituting = False
+        for number,line in enumerate(infile.readlines(), start=1):
+            line = line.rstrip()
+            if not substituting:
+                if line == 'ALLOW = """':
+                    substituting = True
+                elif line == "# _NOTICE_":
+                    line = "# This file is generated. Do not edit."
+            else:
+                if line == '"""':
+                    substituting = False
+                else:
+                    t = string.Template(line)
+                    try:
+                        line = t.substitute(variables)
+                    except KeyError:
+                        sys.stderr.write("warning: unknown variable on line %d: %s\n" % \
+                                          (number, line))
+                        line = "## " + line
+            outfile.write("%s\n" % line)
+        infile.close()
+        outfile.close()
+        os.chmod("./tools/afs-robotest-sudo", stat.S_IREAD|stat.S_IWRITE|stat.S_IEXEC)
+
+
 def main(args):
     """Command line entry for the setup shell. """
     # Setup paths for local libraries.
-    for name in ['./libraries']:
+    for name in ['./libraries', './resources/dist']:
         if not os.path.isdir(name):
             raise AssertionError("Directory '%s' is missing! (Wrong current working directory?)" % name)
         sys.path.append(name)

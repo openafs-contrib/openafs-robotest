@@ -36,15 +36,18 @@ class System:
             raise AssertionError("Unsupported operating system: %s" % (uname))
 
     def sudo(self, cmd, *args):
-        cmd = "sudo -n %s %s" % (cmd, " ".join(args))
-        logger.debug("running: %s" % cmd)
+        cmd = "sudo -n /usr/sbin/afs-robotest-sudo %s %s" % (cmd, " ".join(args))
+        logger.info("running: %s" % cmd)
         pipe = os.popen("%s 2>&1" % (cmd))
-        output = pipe.readlines()
+        for line in pipe.readlines():
+            logger.info("output: %s" % line.rstrip())
         rc = pipe.close()
         if rc:
-            for line in output:
-                logger.error(line.strip())
-            raise AssertionError("Fail: %s" % (cmd))
+            code = (rc & 0xff00) >> 8  # process exit code is in the 16 high bits
+            if code == os.EX_NOPERM:
+                raise AssertionError("Command not permitted: %s\n" % (cmd));
+            else:
+                raise AssertionError("Command failed: %s: exit code %d" % (cmd, code))
 
 class Linux(System):
     def get_modules(self):

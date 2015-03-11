@@ -65,6 +65,7 @@ test harness.
     ============================================================
     call      Execute commands in a file.
     genkey    Add a kerberos principal then write the keys to a keytab file.
+    gensudo   Generate the sudo permissions check script.
     getrpms   Download RPM files.
     help      Display command help.
     list      List setting names and values.
@@ -80,32 +81,55 @@ present.)
 
     (setup) makepart a
 
-Set the type of distribution depending the OpenAFS binaries to be tested.
-The installation types currently supported are
+Set the `AFS_DIST` variable to select the distribution type to be tested.  The
+distribution types currently supported are:
 
-* `rhel6`  for RHEL6/Centos6 rpm installation
-* `suse`   for OpenSUSE rpm installation
-* `transarc` for legacy mode installation
+* `rhel6`    -- RHEL6/Centos6 rpm installation
+* `suse`     -- OpenSUSE rpm installation
+* `transarc` -- legacy mode installation
 
-To configure RoboTest to install RHEL6/Centos6 rpms:
+Set the `AFS_DIST` variable using the set subcommand:
 
-    (setup) set AFS_DIST rhel6
+    (setup) set AFS_DIST <type>
+
+For the `rhel6` or `suse` types, use the `genrpms` command to download rpm
+files from OpenAFS.org, or set the following variables to specify the packages
+to be installed when the test harness runs:
+
     (setup) set RPM_PACKAGE_DIR  <path-to-rpm-files>
     (setup) set RPM_AFSRELEASE   <rpm-release>
     (setup) set RPM_AFSVERSION   <open-afs-version>
 
-To configure RoboTest to install SuSE rpms:
+To configure RoboTest to use traditional Transarc-style binaries, set
+`AFS_DIST` to `transarc` and then set the path to the Transarc-style `dist`
+directory.
 
-    (setup) set AFS_DIST suse
-    (setup) set RPM_PACKAGE_DIR  <path-to-rpm-files>
-    (setup) set RPM_AFSRELEASE   <rpm-release>
-    (setup) set RPM_AFSVERSION   <open-afs-version>
+    (setup) set TRANSARC_DEST  <path-to-dest-directory>
 
-To configure RoboTest to use traditional Transarc style
-binaries:
 
-    (setup) set AFS_DIST suse
-    (setup) set TRANSARC_DEST  <path-to-dest-files>
+Sudo Setup
+==========
+
+The test harness should be run as a normal user, but the installation and
+removal of OpenAFS requires root access. All commands within the test harness
+which require root access use sudo to invoke a script. This script permits only
+commands needed for OpenAFS installation and and removal.
+
+First, run the `gensudo` setup command to generate the commands permitted
+based on the current settings.
+
+    $ ./run.py setup
+    (setup) gensudo
+    (setup) quit
+
+This will generate a script in the `tools` directory called `afs-robotest-sudo`.
+Copy this generated file to `/usr/sbin/afs-robotest-sudo`.
+
+    sudo cp tools/afs-robotest-sudo /usr/sbin/
+
+Next, add the following line to your sudoers configuration, using `sudo visudo`:
+
+    ALL ALL = (root) NOPASSWD: /usr/sbin/afs-robotest-sudo
 
 
 Running Tests

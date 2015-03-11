@@ -39,6 +39,10 @@ class _Util:
     def __init__(self):
         self.system = System.current()
 
+    def sudo(self, cmd, *args):
+        # Run a command as root.
+        self.system.sudo(cmd, *args)
+
     def get_host_by_name(self, hostname):
         """Return the ipv4 address of the hostname."""
         return socket.gethostbyname(hostname)

@@ -35,11 +35,6 @@ Run Command
     ...  msg=Failed: ${cmd}, rc=${rc}, ${output}
     ...  values=False
 
-Sudo
-    [Arguments]  ${cmd}  @{args}
-    ${arg}  Catenate  @{args}
-    Run Command  sudo -n ${cmd} ${arg}
-
 Should Be File
     [Arguments]  ${path}
     Should Exist     ${path}

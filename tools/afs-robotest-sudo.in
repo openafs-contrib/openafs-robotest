@@ -1,0 +1,153 @@
+#!/usr/bin/env python
+# Copyright (c) 2015 Sine Nomine Associates
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, this
+#    list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# THE SOFTWARE IS PROVIDED 'AS IS' AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+#
+
+#
+# _NOTICE_
+#
+
+import sys
+import os
+import re
+import shlex
+import subprocess
+
+ALLOW = """
+${AFS_SRV_LIBEXEC_DIR}/bosserver ?.*
+${ASETKEY} add .*
+${BOS} adduser .*
+${BOS} create .*
+${BOS} setcell .*
+${BOS} shutdown .*
+chmod 755 ${AFS_CONF_DIR}
+chmod 755 ${AFS_LOCAL_DIR}
+chmod \+x /etc/init.d/afs
+cp ${AFS_CONF_DIR}/CellServDB ${AFS_DATA_DIR}/CellServDB
+cp ${AFS_CONF_DIR}/CellServDB ${AFS_DATA_DIR}/CellServDB.local
+cp ${AFS_CONF_DIR}/ThisCell ${AFS_DATA_DIR}/ThisCell
+cp ${AFS_CSDB_DIST} ${AFS_DATA_DIR}/CellServDB.dist
+cp -r -p \S+ /usr/afs
+cp -r -p \S+ /usr/afsws
+cp -r -p \S+ /usr/vice
+cp \S+ ${AFS_CONF_DIR}/CellServDB
+cp \S+ ${AFS_CONF_DIR}/krb.conf
+cp \S+ ${AFS_CONF_DIR}/rxkad.keytab
+cp \S+ ${AFS_CONF_DIR}/ThisCell
+cp \S+ ${AFS_DATA_DIR}/cacheinfo
+cp \S+ ${AFS_DATA_DIR}/CellServDB.dist
+cp \S+ ${AFS_DATA_DIR}/CellServDB.local
+cp \S+ ${AFS_DATA_DIR}/ThisCell
+cp \S+ ${AFS_LOCAL_DIR}/NetInfo
+cp \S+ /etc/init.d/afs
+cp \S+ /etc/sysconfig
+cp ./site/CellServDB.client ${AFS_DATA_DIR}/CellServDB
+cp \S+ /usr/afs/lib
+cp \S+ /usr/vice/etc/config
+/etc/init.d/afs .*
+insmod .*(lib|open)afs.*\.ko
+mkdir -p /afs
+mkdir -p ${AFS_CONF_DIR}
+mkdir -p ${AFS_DATA_DIR}
+mkdir -p ${AFS_LOCAL_DIR}
+mkdir -p /etc/sysconfig
+mkdir -p /usr/afs
+mkdir -p /usr/afs/lib
+mkdir -p /usr/afsws
+mkdir -p /usr/vice/etc
+mkdir -p /usr/vice/etc/config
+pkill bosserver
+${PTS} adduser .*
+${PTS} createuser .*
+rm ${AFS_DATA_DIR}/CellServDB
+rm ${AFS_DATA_DIR}/ThisCell
+rm -f ${AFS_DATA_DIR}/CellServDB
+rm -f ${AFS_DATA_DIR}/ThisCell
+rm -f /vicep[a-z][a-z]?/V\d+\.vol
+rmmod (lib|open)afs
+rm -rf /afs
+rm -rf ${AFS_CACHE_DIR}/.+
+rm -rf ${AFS_CONF_DIR}
+rm -rf ${AFS_DB_DIR}
+rm -rf ${AFS_KERNEL_DIR}
+rm -rf ${AFS_LOCAL_DIR}
+rm -rf ${AFS_LOGS_DIR}
+rm -rf /usr/afs/bin
+rm -rf /usr/afs/lib
+rm -rf /usr/afsws
+rm -rf /usr/vice/etc
+rm -rf /vicep\w+/AFSIDat
+rm -rf /vicep\w+/Lock
+rpm .*
+/sbin/ldconfig ?.*
+/sbin/service openafs-client .*
+/sbin/service openafs-server .*
+umount /afs
+uname
+/usr/vice/etc/afsd ?.*
+${VOS} create .*
+"""
+
+def is_rm_root(cmd_line):
+    """Returns true if this command could remove the root dir."""
+    args = shlex.split(cmd_line)
+    if len(args) > 0 and args[0] == 'rm':
+        for arg in args:
+            if arg.startswith('-'):
+                continue
+            if os.path.realpath(arg) == '/':
+                return True
+    return False
+
+def is_allowed(cmd_line):
+    """Return true if this command is permitted."""
+
+    # Take special care of rm commands, regardless of the ALLOW list.
+    if is_rm_root(cmd_line):
+        sys.stderr.write("afs-robotest-sudo: Invalid rm command: %s\n" % (cmd_line));
+        return False
+
+    for pattern in ALLOW.splitlines():
+        pattern = pattern.strip()
+        if pattern == "" or pattern.startswith("#"):
+            continue
+        if re.match(pattern + "$", cmd_line):
+            return True
+    return False
+
+def main(args):
+    """Run permitted commands as root."""
+    if os.getuid() != 0:
+        sys.stderr.write("afs-robotest-sudo: Must run as root.\n");
+        sys.exit(os.EX_USAGE)
+    if len(args) == 0:
+        sys.stderr.write("usage: afs-robotest-sudo <command-line>\n")
+        sys.exit(os.EX_USAGE)
+    cmd_line = " ".join(args)
+    if not is_allowed(cmd_line):
+        sys.stderr.write("afs-robotest-sudo: Command not permitted: %s\n" % (cmd_line));
+        sys.exit(os.EX_NOPERM)
+    args = shlex.split(cmd_line)
+    rc = subprocess.call(args)
+    if rc:
+        sys.exit(os.EX_SOFTWARE)
+    sys.exit(os.EX_OK)
+
+main(sys.argv[1:])

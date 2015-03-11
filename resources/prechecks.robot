@@ -7,7 +7,7 @@ Documentation    Checks to verify this system is ready
 
 *** Keywords ***
 Non-interactive sudo is Required
-    Command Should Succeed  sudo -n uname
+    Command Should Succeed  sudo -n /usr/sbin/afs-robotest-sudo uname
     ...  Passwordless sudo is not available!
 
 Required Variables Should Not Be Empty
