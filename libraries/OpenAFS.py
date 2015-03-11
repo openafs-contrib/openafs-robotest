@@ -335,11 +335,16 @@ class _Setup:
         """Remove remnant data and configuration files."""
         _run_keyword("Purge Server Configuration")
         _run_keyword("Purge Cache Manager Configuration")
-        _run_keyword("Purge Cache")
+        # TODO: Probably the only sane way to do this is to call
+        #       a helper script which runs as root.
+        # _run_keyword("Purge Cache")
         valid = r'/vicep([a-z]|[a-h][a-z]|i[a-v])$'
         for vicep in glob.glob("/vicep*"):
             if re.match(valid, vicep) and os.path.isdir(vicep):
-                _run_keyword("Purge Volumes On Partition", vicep)
+                _run_keyword("Purge Directory", "%s/AFSIDat" % vicep)
+                _run_keyword("Purge Directory", "%s/Lock" % vicep)
+                for vheader in glob.glob("%s/V*.vol" % vicep):
+                    _run_keyword("Sudo", "rm -f %s" % vheader)
 
     def _setup_service_key(self):
         """Helper method to setup the AFS service key.
