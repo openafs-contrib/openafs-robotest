@@ -36,6 +36,10 @@ try:
 except:
     old_settings = None
 
+def usage():
+    print "usage: ./run.py setup"
+    print "       ./run.py setup -c '<command>'"
+    print "       ./run.py setup <command-file>"
 
 INTRO = \
 """OpenAFS RoboTest Setup
@@ -196,7 +200,7 @@ class Settings:
     def save(self):
         f = open("settings.py", "w+")
         f.write("# OpenAFS RobotTest Settings\n")
-        f.write("# Use `./run setup' to change this file.\n")
+        f.write("# Use `./run.py setup' to change this file.\n")
         for name in sorted(self.settings.keys()):
             setting = self.settings[name]
             setting.emit(f)
@@ -223,23 +227,34 @@ class SetupShell(cmd.Cmd):
         input from a terminal. This is done to support reading commands
         from a pipeline.
         """
-        if settings is None:
-            settings = Settings()
-        if script:
-            cmd.Cmd.__init__(self, stdin=script)
+        if settings:
+            self.settings = settings
+        else:
+            self.settings = Settings()
+        if script is not None:
+            # Reading commands from a script file.
+            self.scriptfd = open(script, "r")
             self.use_rawinput = False
             self.prompt = ''
             self.intro = ''
-        else:
+            cmd.Cmd.__init__(self, stdin=self.scriptfd)
+        elif sys.stdin.isatty():
+            # Reading commands from a terminal.
+            self.scriptfd = None
+            self.prompt = '(setup) '
+            self.intro = INTRO
+            self.doc_header = "Commands. Type help <command> for syntax"
             cmd.Cmd.__init__(self)
-            if sys.stdin.isatty():
-                self.prompt = '(setup) '
-                self.intro = INTRO
-            else:
-                self.prompt = ''
-                self.intro = ''
-        self.doc_header = "Commands. Type help <command> for syntax"
-        self.settings = settings
+        else:
+            # Reading commands from a pipe.
+            self.scriptfd = None
+            self.prompt = ''
+            self.intro = ''
+            cmd.Cmd.__init__(self)
+
+    def postloop(self):
+        if self.scriptfd:
+            self.scriptfd.close()
 
     def _set(self, name, value):
         """Helper to set a setting value."""
@@ -353,13 +368,11 @@ class SetupShell(cmd.Cmd):
             return
         filename = args[0].strip()
         try:
-            input_file = open(filename, "r")
+            shell = SetupShell(script=filename, settings=self.settings)
         except IOError as e:
-            sys.stderr.write("Unable to open input-file %s: %s\n" % (filename, e.message))
+            sys.stderr.write("Unable to open input-file %s: %s\n" % (filename))
             return
-        shell = SetupShell(script=input_file, settings=self.settings)
         shell.cmdloop()
-        input_file.close()
     def complete_call(self, text, line, begidx, endidx):
         return self._complete_filename(text, line, begidx, endidx)
 
@@ -552,26 +565,41 @@ def main(args):
     for name in ['./libraries']:
         if not os.path.isdir(name):
             raise AssertionError("Directory '%s' is missing! (Wrong current working directory?)" % name)
-        else:
-            sys.path.append(name)
+        sys.path.append(name)
+    try:
+        opts, args = getopt.getopt(args, "hc:", ["help", "command="])
+    except getopt.GetoptError as err:
+        sys.stderr.write(str(err))
+        sys.stderr.write("\n")
+        usage()
+        return 2
 
-    if len(args) == 0:
+    command = None
+    for o,a in opts:
+        if o in ("-h", "--help"):
+            usage()
+            return 0
+        elif o in ("-c", "--command"):
+            command = a
+        else:
+            raise AssertionError("Unhandled option: %s" % o)
+
+    if command or len(args) == 0:
         shell = SetupShell()
-        shell.cmdloop()
     elif len(args) == 1:
-        filename = args[0]
         try:
-            input_file = open(filename, "r")
-        except IOError as e:
-            sys.stderr.write("Unable to open input file '%s': %s, errno=%d\n" % \
-                (filename, e.strerror, e.errno))
-            return e.errno
-        shell = SetupShell(script=input_file)
-        shell.cmdloop()
-        input_file.close()
+            shell = SetupShell(script=args[0])
+        except IOError:
+            sys.stderr.write("Unable to open input file '%s'.\n" % args[0])
+            return 2
     else:
-       sys.stderr.write("usage: setup [filename]\n")
-       return 1
+        usage()
+        return 1
+
+    if command:
+        shell.onecmd(command)
+    else:
+        shell.cmdloop()
     return 0
 
 if __name__ == "__main__":
