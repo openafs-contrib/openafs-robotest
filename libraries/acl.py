@@ -24,8 +24,10 @@ import os
 import re
 from robot.libraries.BuiltIn import BuiltIn
 
-_FS = None # full path to the fs command
 _RIGHTS = list("rlidwkaABCDEFGH")
+
+def _get_var(name):
+    return BuiltIn().get_variable_value("${%s}" % name)
 
 def _normalize(rights):
     """Normalize a list of ACL right characters.
@@ -99,10 +101,7 @@ class AccessControlList:
         if not os.path.isdir(path):
             raise AssertionError("Path is not a directory: %s" % (path))
         try:
-            if _FS:
-                fs = _FS
-            else:
-                fs = BuiltIn().get_variable_value("${FS}")
+            fs = _get_var('FS')
         except:
             raise AssertionError("FS variable is not set!")
         acl = AccessControlList()
@@ -282,10 +281,13 @@ def _test4():
     assert a.contains("user3", "+rlidwk")
     assert not a.contains("user4", "none")
 
-if __name__ == "__main__":
-    _FS = "/usr/afs/bin/fs"
+def main():
+    global _get_var  # monkey patch a test stub.
+    _get_var = lambda name: {'FS':"/usr/afs/bin/fs"}[name]
     _test1()
     _test2()
     _test3()
     _test4()
 
+if __name__ == "__main__":
+    main()
