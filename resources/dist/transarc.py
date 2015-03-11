@@ -1,10 +1,11 @@
 # Copyright (c) 2014, Sine Nomine Associates
 # See LICENSE
 #
-# Variables for Transarc-style environments.
+# Transarc-style default settings.
 #
-
-import os as _os
+# Variables may be added to the settings.py file in order to
+# override these default values.
+#
 
 #
 # Transarc style install paths.
@@ -46,9 +47,4 @@ BOSSERVER_OPTIONS = "-pidfiles"
 #
 AFSD_OPTIONS = "-dynroot -fakestat"
 AFSD_DYNROOT = '-dynroot' in AFSD_OPTIONS
-if _os.uname()[0] == 'Linux':
-    AFSD_CONFIG_DIR = "/etc/sysconfig"
-elif _os.uname()[0] == 'SunOS':
-    AFSD_CONFIG_DIR = "/usr/vice/etc/config"
-else:
-    AFSD_CONFIG_DIR = None
+

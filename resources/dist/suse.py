@@ -1,9 +1,11 @@
 # Copyright (c) 2014, Sine Nomine Associates
 # See LICENSE
 #
-# Variables for SuSE installs.
+# SuSE default settings.
 #
-
+# Variables may be added to the settings.py file in order to
+# override these default values.
+#
 
 AFS_SERVER_ETC_DIR = "/etc/openafs/server"
 AFS_SERVER_LIB_DIR  = "/var/lib/openafs"
@@ -43,35 +45,10 @@ VOS = "/usr/sbin/vos"
 AFSD_DYNROOT = True
 
 #
-# RPM package name components
+# RPM package names
 #
-import os
-RPM_ARCH     = os.uname()[4]
-RPM_KVERSION = os.uname()[2].replace('-','_')
-RPM_DIST     = ".1" # ?
-
-#
-# RPM package files to install
-#
-import os
-import settings as _s
-
-RPM_SERVER_PACKAGES = ('openafs', 'openafs-krb5-mit', 'openafs-docs', 'openafs-server')
-RPM_CLIENT_PACKAGES = ('openafs', 'openafs-krb5-mit', 'openafs-docs', 'openafs-client')
-
-def _suse_rpm(package):
-    """Get the SuSE rpm filename from a package name."""
-    rpm_arch = os.uname()[4]
-    return "%s/%s-%s-%s.%s.%s.rpm" % \
-        (_s.RPM_PACKAGE_DIR, package, _s.RPM_AFSVERSION, _s.RPM_AFSRELEASE, "1", rpm_arch)
-
-def _suse_kmod():
-    """Get the SuSE rpm filename for the kernel module."""
-    rpm_kflavour = os.uname()[2].split("-")[-1:][0]
-    return "%s/openafs-kmp-%s*.rpm" % (_s.RPM_PACKAGE_DIR, rpm_kflavour)
-
-# Generate the list of rpm filenames from the package names.
-RPM_KMOD_FILE = _suse_kmod()
-RPM_SERVER_FILES = [_suse_rpm(p) for p in RPM_SERVER_PACKAGES]
-RPM_CLIENT_FILES = [_suse_rpm(p) for p in RPM_CLIENT_PACKAGES] + [RPM_KMOD_FILE]
+RPM_DIST            = "1"
+RPM_COMMON_PACKAGES = "openafs,openafs-krb5-mit,openafs-docs"
+RPM_SERVER_PACKAGES = "openafs-server"
+RPM_CLIENT_PACKAGES = "openafs-client"
 

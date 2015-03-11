@@ -31,6 +31,7 @@ from robot.libraries.BuiltIn import register_run_keyword
 from libraries.dump import VolumeDump
 from libraries.acl import AccessControlList
 from libraries.system import System
+from libraries.rpm import Rpm
 
 class _Util:
     """Generic helper keywords."""
@@ -250,8 +251,9 @@ class _Setup:
             else:
                 raise AssertionError("Unsupported operating system: %s" % (uname))
         elif dist in ('rhel6', 'suse'):
-            _run_keyword("Install OpenAFS Server RPM Files")
-            _run_keyword("Install OpenAFS Client RPM Files")
+            rpm = Rpm.current()
+            _run_keyword("Install RPM Files", *rpm.get_server_rpms())
+            _run_keyword("Install RPM Files", *rpm.get_client_rpms())
         else:
             raise AssertionError("Unsupported AFS_DIST: %s" % (dist))
 

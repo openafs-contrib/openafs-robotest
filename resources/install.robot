@@ -35,19 +35,17 @@ Install Init Script on Linux
     [Documentation]  Install the transarc style init script for linux. Do not
     ...              make it run automatically on reboot.
     Should Not Be Empty  ${TRANSARC_DEST}
-    Should Not Be Empty  ${AFSD_CONFIG_DIR}
     Sudo  cp ${TRANSARC_DEST}/root.client/usr/vice/etc/afs.rc /etc/init.d/afs
     Sudo  chmod +x /etc/init.d/afs
     # Set the afsd command line options.
-    Sudo  mkdir -p ${AFSD_CONFIG_DIR}
-    Sudo  cp ${TRANSARC_DEST}/root.client/usr/vice/etc/afs.conf ${AFSD_CONFIG_DIR}
+    Sudo  mkdir -p /etc/sysconfig
+    Sudo  cp ${TRANSARC_DEST}/root.client/usr/vice/etc/afs.conf /etc/sysconfig
 
 Install Init Script on Solaris
     [Documentation]  Install the transarc style init script for solaris. Do not
     ...              make it run automatically on reboot.  Patch the init script
     ...              so the client can be started independently from the server.
     Should Not Be Empty  ${TRANSARC_DEST}
-    Should Not Be Empty  ${AFSD_CONFIG_DIR}
     Should Not Be Empty  ${AFSD_OPTIONS}
     ${afsrc}=  Get File  ${TRANSARC_DEST}/root.client/usr/vice/etc/modload/afs.rc
     ${afsrc}=  Replace String  ${afsrc}
@@ -61,8 +59,8 @@ Install Init Script on Solaris
     Sudo  chmod +x /etc/init.d/afs
     # Set the afsd command line options.
     Create File  site/afsd.options  ${AFSD_OPTIONS}
-    Sudo  mkdir -p ${AFSD_CONFIG_DIR}
-    Sudo  cp site/afsd.options ${AFSD_CONFIG_DIR}
+    Sudo  mkdir -p /usr/vice/etc/config
+    Sudo  cp site/afsd.options /usr/vice/etc/config
 
 Install Workstation Binaries
     [Documentation]  Install transarc style workstation binaries
@@ -150,21 +148,17 @@ Stop the Cache Manager on Solaris
 #
 Install RPM Files
     [Arguments]  @{packages}
-    Sudo  rpm -v --test --install --replacepkgs  @{packages}
-    Sudo  rpm -v --install --replacepkgs  @{packages}
-
-Install OpenAFS Server RPM Files
-    Install RPM Files  @{RPM_SERVER_FILES}
-
-Install OpenAFS Client RPM Files
-    Install RPM Files  @{RPM_CLIENT_FILES}
+    ${rpms}=  Catenate  @{packages}
+    Sudo  rpm -v --test --install --replacepkgs ${rpms}
+    Sudo  rpm -v --install --replacepkgs ${rpms}
 
 Remove OpenAFS RPM Packages
     ${rc}  ${output}  Run And Return Rc And Output  rpm -qa '(kmod-)?openafs*'
     Should Be Equal As Integers  ${rc}  0
     @{packages}=  Split To Lines  ${output}
-    Sudo  rpm -v --test --erase  @{packages}
-    Sudo  rpm -v --erase  @{packages}
+    ${rpms}=      Catenate  @{packages}
+    Sudo  rpm -v --test --erase ${rpms}
+    Sudo  rpm -v --erase ${rpms}
 
 #--------------------------------------------------------------------------------
 # Keywords for post-uninstall clean up.
