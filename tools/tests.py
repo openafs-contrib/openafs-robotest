@@ -26,7 +26,7 @@ import tools.setup
 import robot.run
 
 def usage():
-    print "usage: ./run.py tests [--suite=<name>]"
+    print "usage: ./run.py tests [-s <suites>] [-x <tags>]"
 
 def main(args):
     try:
@@ -42,7 +42,7 @@ def main(args):
         "runemptysuite": True,
     }
     try:
-        opts, args = getopt.getopt(args, "hs:", ["help", "suite="])
+        opts, args = getopt.getopt(args, "hs:x:", ["help", "suite=", "exclude="])
     except getopt.GetoptError as err:
         sys.stderr.write(str(err))
         sys.stderr.write("\n")
@@ -53,12 +53,15 @@ def main(args):
             usage()
             sys.exit(0)
         elif o in ("-s", "--suite"):
-            rf['suite'] = a
+            rf['suite'] = a.split(",")
+        elif o in ("-x", "--exclude"):
+            rf['exclude'] = a.split(",")
         else:
             raise AssertionError("Unhandled option: %s" % o)
 
     # Setup paths for local libraries and keywords.
     for name in ['./resources', './libraries']:
+        name = os.path.realpath(name)
         if not os.path.isdir(name):
             raise AssertionError("Directory '%s' is missing! (Wrong current working directory?)" % name)
         else:
