@@ -3,6 +3,7 @@
 # See LICENSE
 
 *** Settings ***
+Documentation     Mountpoint tests
 Resource          openafs.robot
 Suite Setup       Login  ${AFS_ADMIN}
 Suite Teardown    Logout
@@ -10,6 +11,7 @@ Suite Teardown    Logout
 
 *** Test Cases ***
 Make and Remove a Mountpoint
+    [Tags]  arla  #(mkm-rmm)
     ${mtpt}=  Set Variable  /afs/${AFS_CELL}/test/mtpt1
     Command Should Succeed  ${FS} mkmount -dir ${mtpt} -vol root.cell
     Directory Should Exist  ${mtpt}
@@ -17,6 +19,7 @@ Make and Remove a Mountpoint
     Directory Should Not Exist  ${mtpt}
 
 Make and Remove a Mountpoint with Command Aliases
+    [Tags]  arla
     ${mtpt}=  Set Variable  /afs/${AFS_CELL}/test/mtpt2
     Command Should Succeed  ${FS} mkm ${mtpt} root.cell
     Directory Should Exist  ${mtpt}
@@ -24,6 +27,7 @@ Make and Remove a Mountpoint with Command Aliases
     Directory Should Not Exist  ${mtpt}
 
 Create a Mountpoint to a Nonexistent Volume
+    [Tags]  arla  #(mountpoint)
     [Documentation]   The fs command permits the creation of dangling mountpoints.
     ...               A directory entry in created, but the directory is not usable.
     ${mtpt}=  Set Variable        /afs/${AFS_CELL}/test/mtpt3
