@@ -42,8 +42,9 @@ class Rpm:
     RPM_AFSVERSION       -- rpm afs version number
     RPM_AFSRELEASE       -- rpm release number
     RPM_DIST             -- rpm dist number (suse only)
-    RPM_SERVER_PACKAGES  -- comma separated list of server packages
-    RPM_CLIENT_PACKAGES  -- comma separated list of client packages
+    RPM_COMMON_PACKAGES  -- comma separated list of common package names
+    RPM_SERVER_PACKAGES  -- comma separated list of server package names
+    RPM_CLIENT_PACKAGES  -- comma separated list of client package names
     """
     @staticmethod
     def current():
