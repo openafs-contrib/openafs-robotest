@@ -1,8 +1,9 @@
-# Copyright (c) 2001 Kungliga Tekniska Högskolan
 # Copyright (c) 2014-2015 Sine Nomine Associates
+# Copyright (c) 2001 Kungliga Tekniska Högskolan
 # See LICENSE
 
 *** Settings ***
+Documentation     Basic Functional Tests, part 1
 Resource          openafs.robot
 Suite Setup       Setup
 Suite Teardown    Teardown
@@ -25,6 +26,7 @@ Teardown
 
 *** Test Cases ***
 Create a File
+    [Tags]  arla  #(creat1)
     ${file}=  Set Variable  ${TESTPATH}/file
     Should Not Exist        ${file}
     Command Should Succeed  touch ${file}
@@ -34,6 +36,7 @@ Create a File
     Should Not Exist        ${file}
 
 Create a Directory
+    [Tags]  arla  #(mkdir1)
     ${dir}=  Set Variable  ${TESTPATH}/dir
     Should Not Exist  ${dir}
     Create Directory  ${dir}
@@ -45,6 +48,7 @@ Create a Directory
     Should Not Exist  ${dir}
 
 Create a Symlink
+    [Tags]  arla  #(symlink)
     ${dir}=      Set Variable  ${TESTPATH}/dir
     ${symlink}=  Set Variable  ${TESTPATH}/symlink
     Should Not Exist        ${dir}
@@ -58,6 +62,7 @@ Create a Symlink
     Should Not Exist        ${symlink}
 
 Create a Hard Link within a Directory
+    [Tags]  arla  #(hardlink1)
     ${file}=  Set Variable  ${TESTPATH}/file
     ${link}=  Set Variable  ${TESTPATH}/link
     Should Not Exist        ${file}
@@ -74,18 +79,24 @@ Create a Hard Link within a Directory
     Remove File             ${file}
     Should Not Exist        ${file}
 
-# Create a Hard Link within a Volume
-# TODO: Should fail with EXDEV
+Create a Hard Link within a Volume
+    [Tags]  todo  arla  #(hardlink4)
+    TODO  Should fail with EXDEV
 
-# Create a Hard Link to a Directory
-# TODO
+Create a Hard Link to a Directory
+    [Tags]  todo  arla  #(hardlink2)
+    TODO
 
-# Create a Cross-Volume Hard Link
-# TODO
+Create a Cross-Volume Hard Link
+    [Tags]  todo  arla  #(hardlink5)
+    TODO
 
-# Touch a file (touch1)
+Touch a file
+    [Tags]  todo  arla  #(touch1)
+    TODO
 
 Write to a File
+    [Tags]  arla  #(write1)
     ${file}=  Set Variable  ${TESTPATH}/file
     Should Not Exist    ${file}
     Create File         ${file}  Hello world!\n
@@ -95,9 +106,12 @@ Write to a File
     Remove File         ${file}
     Should Not Exist    ${file}
 
-# Rewrite a file (write3)
+Rewrite a file
+    [Tags]  todo  arla  #(write3)
+    TODO
 
 Rename a File
+    [Tags]  arla  #(rename1)
     ${a}=  Set Variable  ${TESTPATH}/a
     ${b}=  Set Variable  ${TESTPATH}/b
     Should Not Exist  ${a}
@@ -109,19 +123,4 @@ Rename a File
     Should Be Equal  ${before}  ${after}
     Remove File  ${b}
     Should Not Exist  ${b}
-
-# TODO
-# 10) Stat multiple hardlinked files. (hardlink3)
-# 20) Write, truncate, rewrite a file. (write2)
-# 30) Append to a file. (append1)
-# 40) Rename a file over another file. (rename2)
-# 50) Rename a file into a same-volume directory. (rename4)
-# 60) Rename a file into another-volume directory. (rename6)
-# 70) Rename an open directory. (rename-under-feet)
-# 80) Create a file with a large filename. (large-filename)
-# 90) Chmod a file by descriptor. (fchmod)
-# 100) Utimes a file. (utime-file)
-# 110) Utimes a directory. (utime-dir)
-# 120) Test directory "link count" increasing/decreasing appropriately. (mkdir3)
-
 
