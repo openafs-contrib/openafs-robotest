@@ -14,6 +14,10 @@ Resource          newcell.robot
 Variables         dist/${AFS_DIST}.py
 
 *** Keywords ***
+TODO
+    [Arguments]  ${msg}=Not implemented
+    Fail  TODO: ${msg}
+
 Command Should Succeed
     [Arguments]  ${cmd}  ${msg}=None
     ${rc}  ${output}  Run And Return Rc And Output  ${cmd}
