@@ -65,7 +65,6 @@ test harness.
     ============================================================
     call      Execute commands in a file.
     genkey    Add a kerberos principal then write the keys to a keytab file.
-    gensudo   Generate the sudo permissions check script.
     getrpms   Download RPM files.
     help      Display command help.
     list      List setting names and values.
@@ -112,22 +111,14 @@ Sudo Setup
 
 The test harness should be run as a normal user, but the installation and
 removal of OpenAFS requires root access. All commands within the test harness
-which require root access use sudo to invoke a script. This script permits only
-commands needed for OpenAFS installation and and removal.
+that require root access use sudo to invoke a wrapper script. This script
+permits only commands needed to install, setup, and then remove OpenAFS.
 
-First, run the `gensudo` setup command to generate the commands permitted
-based on the current settings.
-
-    $ ./run.py setup
-    (setup) gensudo
-    (setup) quit
-
-This will generate a script in the `tools` directory called `afs-robotest-sudo`.
-Copy this generated file to `/usr/sbin/afs-robotest-sudo`.
+First, install the wrapper script to '/usr/sbin':
 
     sudo cp tools/afs-robotest-sudo /usr/sbin/
 
-Next, add the following line to your sudoers configuration, using `sudo visudo`:
+Next, using `sudo visudo`, add the following line to your sudoers configuration:
 
     ALL ALL = (root) NOPASSWD: /usr/sbin/afs-robotest-sudo
 
@@ -153,5 +144,5 @@ To view the test report and log, setup a webserver to serve the files in the
 
     $ ./run.py webserver
 
-The results are then available under http://<hostname>:8000
+The results are then available under http://yourhostname:8000/.
 

@@ -36,7 +36,7 @@ Install Init Script on Linux
     ...              make it run automatically on reboot.
     Should Not Be Empty  ${TRANSARC_DEST}
     Sudo  cp ${TRANSARC_DEST}/root.client/usr/vice/etc/afs.rc /etc/init.d/afs
-    Sudo  chmod +x /etc/init.d/afs
+    Sudo  chmod 755 /etc/init.d/afs
     # Set the afsd command line options.
     Sudo  mkdir -p /etc/sysconfig
     Sudo  cp ${TRANSARC_DEST}/root.client/usr/vice/etc/afs.conf /etc/sysconfig
@@ -56,7 +56,7 @@ Install Init Script on Solaris
     ...  if [ "\${AFS_SERVER}" == "on" -a "\${bosrunning}" != "" ]; then
     Create File  site/afs.rc  ${afsrc}
     Sudo  cp site/afs.rc /etc/init.d/afs
-    Sudo  chmod +x /etc/init.d/afs
+    Sudo  chmod 755 /etc/init.d/afs
     # Set the afsd command line options.
     Create File  site/afsd.options  ${AFSD_OPTIONS}
     Sudo  mkdir -p /usr/vice/etc/config

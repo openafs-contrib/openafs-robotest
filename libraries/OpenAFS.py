@@ -396,9 +396,9 @@ class _Setup:
         if not os.path.exists(afs_data_dir):
             _run_keyword("Sudo", "mkdir -p %s" % (afs_data_dir))
         if os.path.islink("%s/CellServDB" % (afs_data_dir)):
-            _run_keyword("Sudo", "rm", "%s/CellServDB" % (afs_data_dir))
+            _run_keyword("Sudo", "rm", "-f", "%s/CellServDB" % (afs_data_dir))
         if os.path.islink("%s/ThisCell" % (afs_data_dir)):
-            _run_keyword("Sudo", "rm", "%s/ThisCell" % (afs_data_dir))
+            _run_keyword("Sudo", "rm", "-f", "%s/ThisCell" % (afs_data_dir))
         _run_keyword("Sudo", "cp", "%s/CellServDB" % (afs_conf_dir), "%s/CellServDB.local" % (afs_data_dir))
         _run_keyword("Sudo", "cp", "%s/CellServDB" % (afs_conf_dir), "%s/CellServDB" % (afs_data_dir))
         _run_keyword("Sudo", "cp", "%s/ThisCell" % (afs_conf_dir), "%s/ThisCell" % (afs_data_dir))
