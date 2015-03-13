@@ -104,7 +104,7 @@ def download_files(urls, **kwargs):
     for url in urls:
         if not url.startswith("http"):
             url = "/".join([site, url])
-        filename = "/".join([directory, os.path.basename(url)])
+        filename = os.path.join(directory, os.path.basename(url))
         message = "Downloading %s ..." % (os.path.basename(filename))
         sys.stdout.write(message)
         sys.stdout.flush()

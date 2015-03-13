@@ -12,8 +12,8 @@ Untar Binaries
     [Documentation]  Untar transarc style binaries
     Should Not Be Empty  ${GTAR}
     Should Not Be Empty  ${TRANSARC_TARBALL}
-    Create Directory     site/binaries
-    Run Command          cd site/binaries && ${GTAR} xvzf ${TRANSARC_TARBALL}
+    Create Directory     ${SITE}/binaries
+    Run Command          cd ${SITE}/binaries && ${GTAR} xvzf ${TRANSARC_TARBALL}
 
 Install Server Binaries
     [Documentation]  Install transarc style server binaries
@@ -54,13 +54,13 @@ Install Init Script on Solaris
     ${afsrc}=  Replace String  ${afsrc}
     ...  if [ "\${bosrunning}" != "" ]; then
     ...  if [ "\${AFS_SERVER}" == "on" -a "\${bosrunning}" != "" ]; then
-    Create File  site/afs.rc  ${afsrc}
-    Sudo  cp site/afs.rc /etc/init.d/afs
+    Create File  ${SITE}/afs.rc  ${afsrc}
+    Sudo  cp ${SITE}/afs.rc /etc/init.d/afs
     Sudo  chmod 755 /etc/init.d/afs
     # Set the afsd command line options.
-    Create File  site/afsd.options  ${AFSD_OPTIONS}
+    Create File  ${SITE}/afsd.options  ${AFSD_OPTIONS}
     Sudo  mkdir -p /usr/vice/etc/config
-    Sudo  cp site/afsd.options /usr/vice/etc/config
+    Sudo  cp ${SITE}/afsd.options /usr/vice/etc/config
 
 Install Workstation Binaries
     [Documentation]  Install transarc style workstation binaries

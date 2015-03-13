@@ -9,27 +9,27 @@ Set Kerberos Realm Name
     [arguments]    ${realm}
     Should Not Be Empty     ${realm}
     Should Not Be Empty     ${AFS_CONF_DIR}
-    Create file    site/krb.conf    ${realm}
+    Create file    ${SITE}/krb.conf    ${realm}
     Sudo    mkdir -p ${AFS_CONF_DIR}
     Sudo    chmod 755 ${AFS_CONF_DIR}
     Directory Should Exist  ${AFS_CONF_DIR}
-    Sudo    cp site/krb.conf ${AFS_CONF_DIR}/krb.conf
+    Sudo    cp ${SITE}/krb.conf ${AFS_CONF_DIR}/krb.conf
 
 Set Machine Interface
     ${address}=  Get Host By Name  ${HOSTNAME}
     Sudo  mkdir -p ${AFS_LOCAL_DIR}
     Sudo  chmod 755 ${AFS_LOCAL_DIR}
-    Create File  site/NetInfo  ${address}
-    Sudo  cp site/NetInfo  ${AFS_LOCAL_DIR}/NetInfo
+    Create File  ${SITE}/NetInfo  ${address}
+    Sudo  cp ${SITE}/NetInfo  ${AFS_LOCAL_DIR}/NetInfo
 
 Create Default Cell Config
     ${address}=  Get Host By Name  ${HOSTNAME}
-    Create File  site/ThisCell  ${AFS_CELL}
-    Create File  site/CellServDB  >${AFS_CELL}\t#Test cell\n${address}\t#${HOSTNAME}
+    Create File  ${SITE}/ThisCell  ${AFS_CELL}
+    Create File  ${SITE}/CellServDB  >${AFS_CELL}\t#Test cell\n${address}\t#${HOSTNAME}
     Sudo  mkdir -p ${AFS_CONF_DIR}
     Sudo  chmod 755 ${AFS_CONF_DIR}
-    Sudo  cp site/ThisCell  ${AFS_CONF_DIR}/ThisCell
-    Sudo  cp site/CellServDB  ${AFS_CONF_DIR}/CellServDB
+    Sudo  cp ${SITE}/ThisCell  ${AFS_CONF_DIR}/ThisCell
+    Sudo  cp ${SITE}/CellServDB  ${AFS_CONF_DIR}/CellServDB
 
 Create Akimpersonate Keytab
     Create Fake Keytab  ${KRB_AFS_KEYTAB}  ${AFS_CELL}  ${KRB_REALM}  ${KRB_AFS_ENCTYPE}
@@ -141,9 +141,9 @@ Append CellServDB.dist
     Sudo  cp ${AFS_CSDB_DIST} ${AFS_DATA_DIR}/CellServDB.dist
     ${local}=  Get File  ${AFS_DATA_DIR}/CellServDB.local
     ${dist}=   Get File  ${AFS_DATA_DIR}/CellServDB.dist
-    Create File      ./site/CellServDB.client  content=${local}
-    Append To File   ./site/CellServDB.client  content=${dist}
-    Sudo  cp ./site/CellServDB.client ${AFS_DATA_DIR}/CellServDB
+    Create File      ${SITE}/CellServDB.client  content=${local}
+    Append To File   ${SITE}/CellServDB.client  content=${dist}
+    Sudo  cp ${SITE}/CellServDB.client ${AFS_DATA_DIR}/CellServDB
 
 Create AFS Mount Point
     Sudo    mkdir -p /afs
@@ -152,8 +152,8 @@ Set Cache Manager Configuration
     Should Not Be Empty  ${AFS_CACHE_DIR}
     Should Not Be Empty  ${AFS_DATA_DIR}
     Directory Should Exist  ${AFS_DATA_DIR}
-    Create File   ./site/cacheinfo    /afs:${AFS_CACHE_DIR}:50000
-    Sudo          cp ./site/cacheinfo ${AFS_DATA_DIR}/cacheinfo
+    Create File   ${SITE}/cacheinfo    /afs:${AFS_CACHE_DIR}:50000
+    Sudo          cp ${SITE}/cacheinfo ${AFS_DATA_DIR}/cacheinfo
 
 Mount Cell Root Volume
     ${afs}=  Set Variable If  ${AFSD_DYNROOT}  afs/.:mount/${AFS_CELL}:root.afs  afs

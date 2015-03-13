@@ -136,7 +136,7 @@ Service Keytab Should Exist
 
 Can Get a Kerberos Ticket
     [Arguments]  ${keytab}  ${principal}  ${realm}
-    Run Command  ${KINIT} -5 -c site/krb5cc -k -t ${keytab} ${principal}@${realm}
-    Run Command  ${KDESTROY} -c site/krb5cc
+    Run Command  ${KINIT} -5 -c ${SITE}/krb5cc -k -t ${keytab} ${principal}@${realm}
+    Run Command  ${KDESTROY} -c ${SITE}/krb5cc
 
 

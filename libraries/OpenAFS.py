@@ -172,7 +172,6 @@ class _Setup:
     in external robot resource files.  This library determines which
     keywords are called based on the settings and saved state.
     """
-    _stage_filename = 'site/.stage' # Where the last completed stage name is saved.
 
     def _setup_stage(method):
         """Setup keyword wrapper to manage the order of setup stages."""
@@ -415,7 +414,8 @@ class _Setup:
         if not stage in sequence[1:]:
             raise AssertionError("Internal error: invalid stage name '%s'" % stage)
         if not last in sequence:
-            raise AssertionError("Invalid stage name '%s' in file '%s'" % (last, self._stage_filename))
+            filename = os.path.join(_get_var('SITE'), ".stage")
+            raise AssertionError("Invalid stage name '%s' in file '%s'" % (last, filename))
         if sequence.index(stage) <= sequence.index(last):
             logger.info("Skipping %s; already done" % (stage))
             return False
@@ -427,7 +427,8 @@ class _Setup:
     def _get_stage(self):
         """Get the last setup/teardown stage which was completed."""
         try:
-            f = open(self._stage_filename, "r")
+            filename = os.path.join(_get_var('SITE'), ".stage")
+            f = open(filename, "r")
             stage = f.readline().strip()
             f.close()
             logger.debug("get stage: %s" % (stage))
@@ -442,7 +443,8 @@ class _Setup:
     def _set_stage(self, stage):
         """Set the last setup/teardown stage completed."""
         try:
-            f = open(self._stage_filename, "w")
+            filename = os.path.join(_get_var('SITE'), ".stage")
+            f = open(filename, "w")
             f.write("%s\n" % stage)
             f.close()
             logger.debug("set stage: %s" % (stage))

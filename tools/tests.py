@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Copyright (c) 2014, Sine Nomine Associates
 #
 # Redistribution and use in source and binary forms, with or without
@@ -22,20 +23,35 @@
 import sys
 import getopt
 import os
-import tools.setup
 import robot.run
+
+root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+site = os.path.join(root, 'site')
+resources = os.path.join(root, 'resources')
+libraries = os.path.join(root, 'libraries')
+sys.path.append(root)
+sys.path.append(libraries)
+sys.path.append(resources)
+
+try:
+    import settings
+except ImportError:
+    print "Please run `./run.py setup'."
+    sys.exit(1)
 
 def usage():
     print "usage: ./run.py tests [-s <suites>] [-x <tags>]"
 
 def main(args):
-    try:
-        import settings
-    except ImportError:
-        print "Please run `./run.py setup'."
-        sys.exit(1)
     rf = {
-        "variablefile": ["settings.py", "resources/sysinfo.py"],
+        "variable": [
+            "ROOT:%s" % root,
+            "SITE:%s" % site,
+        ],
+        "variablefile": [
+            os.path.join(root,"settings.py"),
+            os.path.join(root,"resources/sysinfo.py"),
+        ],
         "outputdir": settings.RF_OUTPUT,
         "loglevel": settings.RF_LOGLEVEL,
         "exclude": settings.RF_EXCLUDE,
@@ -59,27 +75,23 @@ def main(args):
         else:
             raise AssertionError("Unhandled option: %s" % o)
 
-    # Setup paths for local libraries and keywords.
-    for name in ['./resources', './libraries']:
-        name = os.path.realpath(name)
-        if not os.path.isdir(name):
-            raise AssertionError("Directory '%s' is missing! (Wrong current working directory?)" % name)
-        else:
-            sys.path.append(name)
-
     # Setup the path for our shared libraries.
     if settings.AFS_DIST == "transarc":
         os.environ['LD_LIBRARY_PATH'] = '/usr/afs/lib'
 
     # Create directories for output and input.
-    for name in ['site', settings.RF_OUTPUT]:
+    if settings.RF_OUTPUT.startswith("."):
+        output = os.path.abspath(os.path.join(root, settings.RF_OUTPUT))
+    else:
+        output = os.path.abspath(settings.RF_OUTPUT)
+    for name in [site, output]:
         if not os.path.exists(name):
             os.makedirs(name)
         elif not os.path.isdir(name):
             raise AssertionError("File '%s' is in the way!" % (name))
 
     # Run the tests.
-    rc = robot.run("tests", **rf)
+    rc = robot.run(os.path.join(root,"tests"), **rf)
     return rc
 
 if __name__ == "__main__":

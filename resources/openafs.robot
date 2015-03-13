@@ -136,9 +136,9 @@ Login with Keytab
     ${keytab}=  Set Variable If  "${name}"=="${AFS_USER}"    ${KRB_USER_KEYTAB}
     ${keytab}=  Set Variable If  "${name}"=="${AFS_ADMIN}"   ${KRB_ADMIN_KEYTAB}
     File Should Exist   ${keytab}
-    Remove File  site/krb5cc
-    Run Command  KRB5CCNAME=site/krb5cc ${KINIT} -5 -k -t ${keytab} ${principal}@${KRB_REALM}
-    Run Command  KRB5CCNAME=site/krb5cc ${AKLOG} -d -c ${AFS_CELL} -k ${KRB_REALM}
+    Remove File  ${SITE}/krb5cc
+    Run Command  KRB5CCNAME=${SITE}/krb5cc ${KINIT} -5 -k -t ${keytab} ${principal}@${KRB_REALM}
+    Run Command  KRB5CCNAME=${SITE}/krb5cc ${AKLOG} -d -c ${AFS_CELL} -k ${KRB_REALM}
 
 Login with Akimpersonate
     [Arguments]  ${name}
@@ -156,7 +156,7 @@ Login
 
 Logout
     Run Keyword Unless  ${AFS_AKIMPERSONATE}
-    ...  Run Command  KRB5CCNAME=site/krb5cc ${KDESTROY}
+    ...  Run Command  KRB5CCNAME=${SITE}/krb5cc ${KDESTROY}
     Run Command  ${UNLOG}
 
 Create Volume
