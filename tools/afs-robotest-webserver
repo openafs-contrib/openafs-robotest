@@ -6,6 +6,15 @@ import syslog
 import SimpleHTTPServer
 import SocketServer
 
+root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.append(root)
+try:
+    import settings
+except ImportError:
+    class settings:
+        RF_OUTPUT = os.path.join(root, "output")
+        WEBSERVER_PORT = 8000
+
 class MyHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
     def log_message(self, format, *args):
         syslog.syslog("%s - - [%s] %s\n" % (self.client_address[0],
@@ -24,17 +33,12 @@ def daemonize():
         return
 
 def main(args):
-    try:
-        import settings
-    except ImportError:
-        print "Please do `./run.py setup' first."
-        sys.exit(1)
     if not os.path.exists(settings.RF_OUTPUT):
         os.makedirs(settings.RF_OUTPUT)
     os.chdir(settings.RF_OUTPUT)
     httpd = SocketServer.TCPServer(("", settings.WEBSERVER_PORT), MyHTTPRequestHandler)
     syslog.openlog('webserver', syslog.LOG_PID, syslog.LOG_DAEMON)
-    syslog.syslog("Starting openafs-robotest webserver on port %d ..." % settings.WEBSERVER_PORT)
+    syslog.syslog("Starting afs-robotest-webserver on port %d ..." % settings.WEBSERVER_PORT)
     daemonize()
     httpd.serve_forever()
 

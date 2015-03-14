@@ -1,4 +1,4 @@
-# Copyright (c) 2014, Sine Nomine Associates
+# Copyright (c) 2014 Sine Nomine Associates
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -26,67 +26,28 @@ import re
 import cmd
 import string
 import glob
-import getopt
 import subprocess
 import traceback
-from tools.download import download
-from tools.partition import create_fake_partition
-from libraries.Kerberos import Kerberos
+
+from download import download
+from partition import create_fake_partition
+from Kerberos import Kerberos
 
 try:
     import settings as old_settings
 except:
     old_settings = None
 
-def usage():
-    print "usage: ./run.py setup"
-    print "       ./run.py setup -c '<command>'"
-    print "       ./run.py setup <command-file>"
-
-INTRO = \
-"""OpenAFS RoboTest Setup
-Type help for information.
-"""
-
-
-SETTINGS = {
-   'AFS_ADMIN':        {'t':'name', 'dv':"robotest.admin", 'desc':"Admin username"},
-   'AFS_CELL':         {'t':'name', 'dv':"robotest",       'desc':"Test cell name"},
-   'AFS_CSDB_DIST':    {'t':'path', 'dv':"",               'desc':"Extra CSDB Entries"},
-   'AFS_DAFS':         {'t':'bool', 'dv':"true",           'desc':"Run DAFS fileserver"},
-   'AFS_DIST':         {'t':'enum', 'dv':"transarc",       'desc':"Distribution style", 'e':('rhel6','suse','transarc')},
-   'AFS_KEY_FILE':     {'t':'enum', 'dv':"KeyFileExt",     'desc':"Service key style", 'e':('KeyFile','rxkad.keytab','KeyFileExt')},
-   'AFS_USER':         {'t':'name', 'dv':"robotest",       'desc':"Test username"},
-   'AFS_AKIMPERSONATE':{'t':'bool', 'dv':"true",           'desc':"Use akimpersonate for kerberos-less testing"},
-   'DO_INSTALL':       {'t':'bool', 'dv':"true",           'desc':"Perform the installation"},
-   'DO_REMOVE':        {'t':'bool', 'dv':"true",           'desc':"Perform the uninstallation"},
-   'DO_TEARDOWN':      {'t':'bool', 'dv':"true",           'desc':"Perform the cell teardown"},
-   'GTAR':             {'t':'path', 'dv':"/bin/tar",       'desc':"GNU tar utility"},
-   'KADMIN_LOCAL':     {'t':'path', 'dv':"/usr/sbin/kadmin.local", 'desc':"Kerberos kadmin.local program"},
-   'KADMIN':           {'t':'path', 'dv':"/usr/sbin/kadmin", 'desc':"Kerberos kadmin program"},
-   'KDESTROY':         {'t':'path', 'dv':"/usr/bin/kdestroy", 'desc':"Kerberos kdestroy program."},
-   'KINIT':            {'t':'path', 'dv':"/usr/bin/kinit", 'desc':"Kerberos kinit program."},
-   'KLIST':            {'t':'path', 'dv':"/usr/bin/klist", 'desc':"Kerberos klist program."},
-   'KRB_AFS_ENCTYPE':  {'t':'enum', 'dv':'aes256-cts-hmac-sha1-96', 'desc':"AFS service key encryption type", 'e':Kerberos().get_encryption_types()},
-   'KRB_ADMIN_KEYTAB': {'t':'path', 'dv':"",               'desc':"Admin user keytab file."},
-   'KRB_AFS_KEYTAB':   {'t':'path', 'dv':"",               'desc':"AFS service keytab file."},
-   'KRB_REALM':        {'t':'name', 'dv':"ROBOTEST",       'desc':"The kerberos realm name."},
-   'KRB_USER_KEYTAB':  {'t':'path', 'dv':"",               'desc':"Test user keytab."},
-   'KRB_VERBOSE':      {'t':'bool', 'dv':"false",          'desc':"Print kadmin output."},
-   'RF_LOGLEVEL':      {'t':'enum', 'dv':"INFO",           'desc':"RF Logging level", 'e':('TRACE','DEBUG','INFO','WARN')},
-   'RF_OUTPUT':        {'t':'path', 'dv':"./output/",      'desc':"Location for RF reports and logs."},
-   'RF_EXCLUDE':       {'t':'text', 'dv':"crash",          'desc':"RF Tags to exclude"},
-   'RPM_AFSRELEASE':   {'t':'name', 'dv':"",               'desc':"RPM release number"},
-   'RPM_AFSVERSION':   {'t':'name', 'dv':"",               'desc':"AFS Version Number"},
-   'RPM_PACKAGE_DIR':  {'t':'path', 'dv':"",               'desc':"Path the RPM packages"},
-   'TRANSARC_DEST':    {'t':'path', 'dv':"",               'desc':"Directory for binaries when AFS_DIST is 'transarc'."},
-   'TRANSARC_TARBALL': {'t':'path', 'dv':"",               'desc':"Tarball filename when AFS_DIST is 'transarc'."},
-   'WEBSERVER_PORT':   {'t':'int',  'dv':8000,             'desc':"Results webserver port number."},
-}
-
-
-
 class Setting:
+    @staticmethod
+    def from_table(table, name):
+        row = table[name]
+        if len(row) == 3:
+            return Setting(name, t=row[0], dv=row[1], desc=row[2])
+        if len(row) == 4:
+            return Setting(name, t=row[0], dv=row[1], desc=row[2], e=row[3])
+        assert("Unexpected number of elements in settings table! name=%s" % name)
+
     def __init__(self, name, t='name', value=None, dv=None, desc=None, e=()):
         self.name = name
         self.value = None
@@ -138,17 +99,25 @@ class Setting:
 
 class Settings:
     """The collection of setting values."""
-    def __init__(self):
+    def __init__(self, root, table):
         """Intialize the setting collection.
 
         Start with default values and then overlay with the
         values in the existing settings.py file (if one).
         This preserves any extra user defined values in
-        settings.py, even if they are not in the SETTINGS table."""
+        settings.py, even if they are not in the settings table."""
         self.saved = False
         self.settings = dict()
-        for name in SETTINGS.keys():
-            self.settings[name] = Setting(name, **SETTINGS[name])
+        self.root = root
+        self.table = table
+        assert(root is not None)
+        assert(table is not None)
+
+        # Set default values.
+        for name in table.keys():
+            self.settings[name] = Setting.from_table(table, name)
+
+        # Overlay current values:
         if old_settings:
             for name in dir(old_settings):
                 if name.startswith('__') and name.endswith('__'):
@@ -171,7 +140,7 @@ class Settings:
             value = self.settings[name].value
             if value == '':
                value = '(empty)'
-            sys.stdout.write("%-16s  %s\n" % (name, value))
+            sys.stdout.write("%-18s  %s\n" % (name, value))
 
     def set(self, name, value):
         name = name.upper()
@@ -200,9 +169,9 @@ class Settings:
         self.save()
 
     def save(self):
-        f = open("settings.py", "w+")
+        f = open(os.path.join(self.root, "settings.py"), "w+")
         f.write("# OpenAFS RobotTest Settings\n")
-        f.write("# Use `./run.py setup' to change this file.\n")
+        f.write("# Please use afs-robotest-setup to change this file.\n")
         for name in sorted(self.settings.keys()):
             setting = self.settings[name]
             setting.emit(f)
@@ -221,7 +190,8 @@ class DummyLogger:
 
 class SetupShell(cmd.Cmd):
     """Console interface to setup the OpenAFS Robotest harness."""
-    def __init__(self, script=None, settings=None):
+
+    def __init__(self, script=None, settings=None, root=".", table={}):
         """Initialize the command interpreter.
 
         Read commands from the open filehandle if given, otherwise read
@@ -232,7 +202,7 @@ class SetupShell(cmd.Cmd):
         if settings:
             self.settings = settings
         else:
-            self.settings = Settings()
+            self.settings = Settings(root, table)
         if script is not None:
             # Reading commands from a script file.
             self.scriptfd = open(script, "r")
@@ -244,7 +214,7 @@ class SetupShell(cmd.Cmd):
             # Reading commands from a terminal.
             self.scriptfd = None
             self.prompt = '(setup) '
-            self.intro = INTRO
+            self.intro = "OpenAFS RoboTest Setup\nType help for information."
             self.doc_header = "Commands. Type help <command> for syntax"
             cmd.Cmd.__init__(self)
         else:
@@ -370,7 +340,7 @@ class SetupShell(cmd.Cmd):
             return
         filename = args[0].strip()
         try:
-            shell = SetupShell(script=filename, settings=self.settings)
+            shell = SetupShell(script=filename, settings=self.settings, table=self.table)
         except IOError as e:
             sys.stderr.write("Unable to open input-file %s: %s\n" % (filename))
             return
@@ -400,21 +370,22 @@ class SetupShell(cmd.Cmd):
         if m:
             name = m.group(1)
             if re.match(r'[a-z_]+$', name):
-                names = [n.lower() for n in SETTINGS.keys()]
+                names = [n.lower() for n in self.settings.table.keys()]
             else:
-                names = SETTINGS.keys()
+                names = self.settings.table.keys()
             return self._complete_value(text, names)
         m = re.match(r'set\s+(\w+)\s+\S*$', line)
         if m:
             name = m.group(1).upper()
-            if name in SETTINGS and 't' in SETTINGS[name]:
-                t = SETTINGS[name]['t']
+            if name in self.settings.table:
+                row = self.settings.table[name]
+                t = row[0]
                 if t == 'path':
                     return self._complete_filename(text, line, begidx, endidx)
                 elif t == 'bool':
                     return self._complete_value(text, ['true', 'false'])
-                elif t == 'enum':
-                    return self._complete_value(text, SETTINGS[name]['e'])
+                elif t == 'enum' and len(row) > 3:
+                    return self._complete_value(text, row[3])
 
     def do_reset(self, line):
         """Reset all settings to default values.
@@ -561,49 +532,3 @@ class SetupShell(cmd.Cmd):
         else:
             sys.stderr.write("Failed to find rpm release!\n")
 
-
-def main(args):
-    """Command line entry for the setup shell. """
-    # Setup paths for local libraries.
-    for name in ['./libraries', './resources/dist']:
-        if not os.path.isdir(name):
-            raise AssertionError("Directory '%s' is missing! (Wrong current working directory?)" % name)
-        sys.path.append(name)
-    try:
-        opts, args = getopt.getopt(args, "hc:", ["help", "command="])
-    except getopt.GetoptError as err:
-        sys.stderr.write(str(err))
-        sys.stderr.write("\n")
-        usage()
-        return 2
-
-    command = None
-    for o,a in opts:
-        if o in ("-h", "--help"):
-            usage()
-            return 0
-        elif o in ("-c", "--command"):
-            command = a
-        else:
-            raise AssertionError("Unhandled option: %s" % o)
-
-    if command or len(args) == 0:
-        shell = SetupShell()
-    elif len(args) == 1:
-        try:
-            shell = SetupShell(script=args[0])
-        except IOError:
-            sys.stderr.write("Unable to open input file '%s'.\n" % args[0])
-            return 2
-    else:
-        usage()
-        return 1
-
-    if command:
-        shell.onecmd(command)
-    else:
-        shell.cmdloop()
-    return 0
-
-if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))

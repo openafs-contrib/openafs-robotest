@@ -1,0 +1,122 @@
+#!/usr/bin/env python
+# Copyright (c) 2014-2015 Sine Nomine Associates
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, this
+#    list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# THE SOFTWARE IS PROVIDED 'AS IS' AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+#
+
+import sys
+import os
+import getopt
+
+root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+libraries = os.path.join(root, 'libraries')
+output = os.path.join(root, 'output')
+sys.path.append(root)
+sys.path.append(libraries)
+
+from setup import SetupShell
+
+enc_types = (
+    'aes256-cts-hmac-sha1-96',
+    'aes128-cts-hmac-sha1-96',
+    'des3-cbc-md5',
+    'des3-cbc-sha1',
+    'des3-cbc-sha1-kd',
+    'des-cbc-crc',
+    'des-cbc-md4',
+    'des-cbc-md5',
+)
+
+settings = {
+   'AFS_ADMIN':        ('name', "robotest.admin",         "Admin username"),
+   'AFS_AKIMPERSONATE':('bool', "true",                   "Use akimpersonate for kerberos-less testing"),
+   'AFS_CELL':         ('name', "robotest",               "Test cell name"),
+   'AFS_CSDB_DIST':    ('path', "",                       "Extra CSDB Entries"),
+   'AFS_DAFS':         ('bool', "true",                   "Run DAFS fileserver"),
+   'AFS_DIST':         ('enum', "transarc",               "Distribution style", ('rhel6','suse','transarc')),
+   'AFS_KEY_FILE':     ('enum', "KeyFileExt",             "Service key style", ('KeyFile','rxkad.keytab','KeyFileExt')),
+   'AFS_USER':         ('name', "robotest",               "Test username"),
+   'DO_INSTALL':       ('bool', "true",                   "Perform the installation"),
+   'DO_REMOVE':        ('bool', "true",                   "Perform the uninstallation"),
+   'DO_TEARDOWN':      ('bool', "true",                   "Perform the cell teardown"),
+   'GTAR':             ('path', "/bin/tar",               "GNU tar utility"),
+   'KADMIN_LOCAL':     ('path', "/usr/sbin/kadmin.local", "Kerberos kadmin.local program"),
+   'KADMIN':           ('path', "/usr/sbin/kadmin",       "Kerberos kadmin program"),
+   'KDESTROY':         ('path', "/usr/bin/kdestroy",      "Kerberos kdestroy program."),
+   'KINIT':            ('path', "/usr/bin/kinit",         "Kerberos kinit program."),
+   'KLIST':            ('path', "/usr/bin/klist",         "Kerberos klist program."),
+   'KRB_ADMIN_KEYTAB': ('path', "",                       "Admin user keytab file."),
+   'KRB_AFS_ENCTYPE':  ('enum', enc_types[0],             "AFS service key encryption type", enc_types),
+   'KRB_AFS_KEYTAB':   ('path', "",                       "AFS service keytab file."),
+   'KRB_REALM':        ('name', "ROBOTEST",               "The kerberos realm name."),
+   'KRB_USER_KEYTAB':  ('path', "",                       "Test user keytab."),
+   'KRB_VERBOSE':      ('bool', "false",                  "Print kadmin output."),
+   'RF_EXCLUDE':       ('text', "",                       "RF Tags to exclude"),
+   'RF_LOGLEVEL':      ('enum', "INFO",                   "RF Logging level", ('TRACE','DEBUG','INFO','WARN')),
+   'RF_OUTPUT':        ('path', output,                   "Location for RF reports and logs."),
+   'RPM_AFSRELEASE':   ('name', "",                       "RPM release number"),
+   'RPM_AFSVERSION':   ('name', "",                       "AFS Version Number"),
+   'RPM_PACKAGE_DIR':  ('path', "",                       "Path the RPM packages"),
+   'TRANSARC_DEST':    ('path', "",                       "Directory for binaries when AFS_DIST is 'transarc'."),
+   'TRANSARC_TARBALL': ('path', "",                       "Tarball filename when AFS_DIST is 'transarc'."),
+   'WEBSERVER_PORT':   ('int',  8000,                     "Results webserver port number."),
+}
+
+
+def usage():
+    sys.stdout.write("usage: afs-robotest-setup [-c '<command>'] [<file>]\n")
+
+def main(args):
+    try:
+        opts, args = getopt.getopt(args, "hc:", ["help", "command="])
+    except getopt.GetoptError as err:
+        sys.stderr.write(str(err))
+        sys.stderr.write("\n")
+        usage()
+        sys.exit(os.EX_USAGE)
+    command = None
+    for o,a in opts:
+        if o in ("-h", "--help"):
+            usage()
+            sys.exit(os.EX_OK)
+        if o in ("-c", "--command"):
+            command = a
+        else:
+            raise AssertionError("Unhandled option: %s" % o)
+
+    if command or len(args) == 0:
+        shell = SetupShell(root=root, table=settings)
+    elif len(args) == 1:
+        try:
+            shell = SetupShell(script=args[0], root=root, table=settings)
+        except IOError:
+            sys.stderr.write("Unable to open input file '%s'.\n" % args[0])
+            sys.exit(os.EX_NOINPUT)
+    else:
+        usage()
+        sys.exit(os.EX_USAGE)
+
+    if command:
+        shell.onecmd(command)
+    else:
+        shell.cmdloop()
+    sys.exit(os.EX_OK)
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

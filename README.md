@@ -56,7 +56,7 @@ Setup
 A console based setup tool is provided to assist in setting up the
 test harness.
 
-    $ ./run.py setup
+    $ tools/afs-robotest-setup
     OpenAFS RoboTest Setup
     Type help for information.
     
@@ -126,11 +126,9 @@ Next, using `sudo visudo`, add the following line to your sudoers configuration:
 Running Tests
 =============
 
-To run the tests, change to the openafs-robotest top level directory, and run the
-the run.py command:
+To run the tests:
 
-    $ cd openafs-robotest
-    $ ./run.py tests
+    $ tools/afs-robotest-run
 
 
 Publishing Results
@@ -142,7 +140,7 @@ RF_OUTPUT setting.)
 To view the test report and log, setup a webserver to serve the files in the
 `output` directory, or use the built-in webserver tool provided by RoboTest.
 
-    $ ./run.py webserver
+    $ tools/afs-robotest-webserver
 
 The results are then available under http://yourhostname:8000/.
 

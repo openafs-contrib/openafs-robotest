@@ -1,4 +1,4 @@
-# Copyright (c) 2014, Sine Nomine Associates
+# Copyright (c) 2014 Sine Nomine Associates
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -21,7 +21,6 @@
 
 import sys
 import os
-import getopt
 import re
 import subprocess
 
@@ -43,25 +42,3 @@ def create_fake_partition(id):
     if rc:
         raise OSError(rc, "Failed to create file.", aa)
 
-def usage():
-    print "usage: python -m tools.partition create <id>"
-
-def main(args):
-    """Helper script to create partitions."""
-    if len(args) != 2:
-        usage()
-        return 1
-    command,id = args
-    if command == 'create':
-        try:
-            create_fake_partition(id)
-        except Exception as e:
-            sys.stderr.write("Fail: %s\n" % (e))
-            return 2
-    else:
-        sys.stderr.write("unknown command: %s\n" % command)
-        return 1
-    return 0
-
-if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))

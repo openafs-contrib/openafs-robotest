@@ -1,4 +1,4 @@
-# Copyright (c) 2014, Sine Nomine Associates
+# Copyright (c) 2014 Sine Nomine Associates
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -21,7 +21,6 @@
 
 import sys
 import os
-import getopt
 import re
 import urllib
 from HTMLParser import HTMLParser
@@ -129,55 +128,4 @@ def download(version, platform, **kwargs):
     else:
         raise ValueError("Unexpected platform: %s" % (platform))
     return download_files(urls, **kwargs)
-
-OPTIONS = ["help", "version=", "platform=", "directory=", "site=",
-           "arch=", "kernel=", "dry-run"]
-
-def usage():
-    opts = ["--%s<%s>" % (x,x.rstrip('=')) if x.endswith('=') else "--%s" % (x) for x in OPTIONS]
-    print "usage: python -m tools.download %s" % (" ".join(opts))
-
-def main(args):
-    """Helper script to download OpenAFS installation packages."""
-    version = None
-    platform = None
-    options = dict()
-    try:
-        opts, args = getopt.getopt(args, "h", OPTIONS)
-    except getopt.GetoptError as err:
-        sys.stderr.write("error: %s\n" % (str(err)))
-        usage()
-        return 1
-    for o, a in opts:
-        if o in ("-h", "--help"):
-            usage()
-            return 0
-        elif o == "--version":
-            version = a
-        elif o == "--platform":
-            platform = a
-        elif o == "--directory":
-            options['directory'] = a
-        elif o == "--arch":
-            options['arch'] = a
-        elif o == "--kernel":
-            options['kernel'] = a
-        elif o == "--dry-run":
-            options['dryrun'] = True
-        else:
-            raise AssertionError("Unhandled option")
-    if version is None:
-       sys.stderr.write("--version is required\n")
-       return 2
-    if platform is None:
-       sys.stderr.write("--platform is required\n")
-       return 2
-    try:
-       download(version, platform, **options)
-    except Exception as e:
-       sys.stderr.write("Fail: %s\n" % (e.message))
-    return 0
-
-if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
 

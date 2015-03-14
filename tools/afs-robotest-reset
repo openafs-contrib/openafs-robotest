@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (c) 2014, Sine Nomine Associates
+# Copyright (c) 2014 Sine Nomine Associates
 # See LICENSE
 #
 # WARNING!
@@ -67,9 +67,9 @@ transarc)
     rm -rf /usr/afs 2>/dev/null
     ;;
 *)
-    echo "usage: sudo tools/reset.sh <mode>" >&2
+    echo "usage: sudo tools/afs-robotest-reset <mode>" >&2
     echo "       where <mode> is one of rhel6, suse, transarc" >&2
-    echo "warning: This tool will destroy all OpenAFS data files on this system!" >&2
+    echo "WARNING: This tool will destroy all OpenAFS data files on this system!" >&2
     exit 1
     ;;
 esac
