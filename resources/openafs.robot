@@ -150,8 +150,12 @@ Add Access Rights
     Run Command  ${FS} setacl -dir ${dir} -acl ${group} ${rights}
 
 Replicate Volume
-    [Arguments]    ${server}  ${part}  ${volume}
-    Run Command    ${VOS} addsite -server ${server} -part ${part} -id ${volume}
+    [Arguments]     ${server}  ${part}  ${volume}
+    Run Command     ${VOS} addsite -server ${server} -part ${part} -id ${volume}
+    Release Volume  ${volume}
+
+Release Volume
+    [Arguments]    ${volume}
     Run Command    ${VOS} release -id ${volume} -verbose
 
 Create and Mount Volume

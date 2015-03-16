@@ -382,9 +382,18 @@ class _Setup:
         _Login().login(_get_var('AFS_ADMIN'))
         _run_keyword("Create Volume",  hostname, "a", "root.cell")
         _run_keyword("Mount Cell Root Volume")
-        _run_keyword("Create and Mount Volume", hostname, "a", "test", "/afs/%s/test" % _get_var('AFS_CELL'))
         _run_keyword("Replicate Volume", hostname, "a", "root.afs")
         _run_keyword("Replicate Volume", hostname, "a", "root.cell")
+        # Create a replicated test volume.
+        path = "/afs/.%s/test" % _get_var('AFS_CELL')
+        volume = "test"
+        part = "a"
+        parent = "root.cell"
+        _run_keyword("Create Volume", hostname, part, volume)
+        _run_keyword("Mount Volume", path, volume)
+        _run_keyword("Add Access Rights",  path, "system:anyuser", "rl")
+        _run_keyword("Replicate Volume", hostname, part, volume)
+        _run_keyword("Release Volume", parent)
         _Login().logout()
 
     @_teardown_stage

@@ -10,8 +10,8 @@ Test Setup        Setup Test Directory
 Test Teardown     Teardown Test Directory
 
 *** Variables ***
-${PATH}     /afs/${AFS_CELL}/test/acltest
-${PATH2}    /afs/${AFS_CELL}/test/acltest2
+${PATH}     /afs/.${AFS_CELL}/test/acltest
+${PATH2}    /afs/.${AFS_CELL}/test/acltest2
 
 *** Keywords ***
 Setup Users and Groups

@@ -14,8 +14,8 @@ Test Teardown      Crash Check
 ${VOLUME}      dump.test
 ${PART}        a
 ${SERVER}      ${HOSTNAME}
-${TESTPATH}    /afs/${AFS_CELL}/${VOLUME}
-${DUMP}        /tmp/robotestt.dump
+${TESTPATH}    /afs/.${AFS_CELL}/test/${VOLUME}
+${DUMP}        /tmp/robotest.dump
 
 *** Keywords ***
 Create Test Volume
