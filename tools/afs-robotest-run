@@ -52,9 +52,9 @@ def main(args):
             os.path.join(root,"settings.py"),
             os.path.join(root,"resources/sysinfo.py"),
         ],
-        "outputdir": settings.RF_OUTPUT,
-        "loglevel": settings.RF_LOGLEVEL,
-        "exclude": settings.RF_EXCLUDE,
+        "outputdir": getattr(settings, 'RF_OUTPUT', os.path.join(root, "output")),
+        "loglevel": getattr(settings, 'RF_LOGLEVEL', 'INFO'),
+        "exclude": getattr(settings, 'RF_EXCLUDE', "todo,crash").split(","),
         "runemptysuite": True,
     }
     try:
