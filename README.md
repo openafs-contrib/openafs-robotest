@@ -1,5 +1,4 @@
-OpenAFS RoboTest
-================
+# OpenAFS RoboTest
 
 OpenAFS RoboTest is a [Robot Framework][1] based test suite for OpenAFS. This
 initial version is a limited test suite for an OpenAFS server and client on a
@@ -10,44 +9,43 @@ setup a Kerberos realm and create keytabs.
 
 [1]: http://robotframework.org/
 
-# Requirements
+*Requirements*
 
 * Linux or Solaris
 * Python 2.6.x
 * Robot Framework 2.7 or better
 * OpenAFS installation packages or binaries built from source
 
-
-# Installation
+## Installation
 
 This test harness is designed to be run on a dedicated test system.
 Typically you will want to setup a virtual machine to run the
 tests.
 
-## Install Robot Framework
-
-Robot Framework can be installed using the Python `pip` command:
+Robot Framework can be installed using the Python `pip` command.  (See
+http://robotframework.org/ for more details.)
 
     $ sudo pip install robotframework
 
-See http://robotframework.org/ for more details.
-
-## Install OpenAFS RoboTest.
-
-Clone to a directory of your choice.
+Clone OpenAFS RoboTest to a directory of your choice:
 
     $ git clone https://github.com/openafs-contrib/openafs-robotest.git
     $ cd openafs-robotest
 
-## Setup sudo.
+The test harness should be run as a normal user, but the installation and
+removal of OpenAFS requires root access. All commands within the test harness
+that require root access use sudo to invoke a wrapper script. This script
+permits only commands needed to install, setup, and then remove OpenAFS.
 
-The tests are designed to be run by a non-root user, however RoboTest
-will install OpenAFS and setup a test cell, which requires root access.
-The commands which require root-access are run as sudo with the NOPASSWD
-option. Setup the sudo to allow NOPASSWD for the user which runs the
-tests.
+First, install the wrapper script to '/usr/sbin':
 
-# Setup
+    $ sudo cp tools/afs-robotest-sudo /usr/sbin/
+
+Next, using `sudo visudo`, add the following line to your sudoers configuration:
+
+    ALL ALL = (root) NOPASSWD: /usr/sbin/afs-robotest-sudo
+
+## Setup
 
 A console based setup tool is provided to assist in setting up the
 test harness.
@@ -101,30 +99,14 @@ directory.
 
     (setup) set TRANSARC_DEST  <path-to-dest-directory>
 
-## Sudo Setup
-
-The test harness should be run as a normal user, but the installation and
-removal of OpenAFS requires root access. All commands within the test harness
-that require root access use sudo to invoke a wrapper script. This script
-permits only commands needed to install, setup, and then remove OpenAFS.
-
-First, install the wrapper script to '/usr/sbin':
-
-    sudo cp tools/afs-robotest-sudo /usr/sbin/
-
-Next, using `sudo visudo`, add the following line to your sudoers configuration:
-
-    ALL ALL = (root) NOPASSWD: /usr/sbin/afs-robotest-sudo
-
-
-# Running Tests
+## Running Tests
 
 To run the tests:
 
     $ tools/afs-robotest-run
 
 
-# Publishing Results
+## Viewing Test Results
 
 The test results are saved in the `output` directory by default. (See the
 `RF_OUTPUT` setting.)
