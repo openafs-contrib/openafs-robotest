@@ -135,7 +135,7 @@ class AccessControlList:
     def __eq__(self, other):
         """Returns true if ACL test objects have the same entries."""
         if isinstance(other, self.__class__):
-            return self.__str__() == self.__str__()
+            return self.__str__() == other.__str__()
         else:
             return False
 
@@ -259,7 +259,7 @@ def _test3():
     a2 = AccessControlList.from_args(*t)
     #print "a1=", a1
     #print "a2=", a2
-    assert not a1 is a2
+    assert a1 != a2
 
 def _test4():
     t = [

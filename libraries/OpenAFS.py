@@ -212,6 +212,8 @@ class _ACL:
         logger.debug("access_control_list_matches: path=%s, acls=[%s]" % (path, ",".join(acls)))
         a1 = AccessControlList.from_path(path)
         a2 = AccessControlList.from_args(*acls)
+        logger.debug("a1=%s" % a1)
+        logger.debug("a2=%s" % a2)
         if a1 != a2:
             raise AssertionError("ACLs do not match: path=%s args=%s" % (a1, a2))
 
