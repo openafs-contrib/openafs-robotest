@@ -10,8 +10,7 @@ setup a Kerberos realm and create keytabs.
 
 [1]: http://robotframework.org/
 
-Requirements
-============
+# Requirements
 
 * Linux or Solaris
 * Python 2.6.x
@@ -19,14 +18,13 @@ Requirements
 * OpenAFS installation packages or binaries built from source
 
 
-Installation
-============
+# Installation
 
 This test harness is designed to be run on a dedicated test system.
 Typically you will want to setup a virtual machine to run the
 tests.
 
-1. Install Robot Framework
+## Install Robot Framework
 
 Robot Framework can be installed using the Python `pip` command:
 
@@ -34,14 +32,14 @@ Robot Framework can be installed using the Python `pip` command:
 
 See http://robotframework.org/ for more details.
 
-2. Install OpenAFS RoboTest.
+## Install OpenAFS RoboTest.
 
 Clone to a directory of your choice.
 
     $ git clone https://github.com/openafs-contrib/openafs-robotest.git
     $ cd openafs-robotest
 
-3. Setup sudo.
+## Setup sudo.
 
 The tests are designed to be run by a non-root user, however RoboTest
 will install OpenAFS and setup a test cell, which requires root access.
@@ -49,9 +47,7 @@ The commands which require root-access are run as sudo with the NOPASSWD
 option. Setup the sudo to allow NOPASSWD for the user which runs the
 tests.
 
-
-Setup
-=====
+# Setup
 
 A console based setup tool is provided to assist in setting up the
 test harness.
@@ -105,9 +101,7 @@ directory.
 
     (setup) set TRANSARC_DEST  <path-to-dest-directory>
 
-
-Sudo Setup
-==========
+## Sudo Setup
 
 The test harness should be run as a normal user, but the installation and
 removal of OpenAFS requires root access. All commands within the test harness
@@ -123,19 +117,17 @@ Next, using `sudo visudo`, add the following line to your sudoers configuration:
     ALL ALL = (root) NOPASSWD: /usr/sbin/afs-robotest-sudo
 
 
-Running Tests
-=============
+# Running Tests
 
 To run the tests:
 
     $ tools/afs-robotest-run
 
 
-Publishing Results
-==================
+# Publishing Results
 
 The test results are saved in the `output` directory by default. (See the
-RF_OUTPUT setting.)
+`RF_OUTPUT` setting.)
 
 To view the test report and log, setup a webserver to serve the files in the
 `output` directory, or use the built-in webserver tool provided by RoboTest.
