@@ -24,6 +24,8 @@ import os
 import re
 import glob
 import socket
+import shlex
+import subprocess
 from robot.api import logger
 from robot.libraries.BuiltIn import BuiltIn
 from robot.libraries.BuiltIn import register_run_keyword
@@ -38,6 +40,11 @@ class _Util:
 
     def __init__(self):
         self.system = System.current()
+
+    def run_program(self, cmd_line):
+        rc = _run_program(cmd_line)
+        if rc:
+            raise AssertionError("Program failed: '%s', exit code='%d'" % (cmd_line, rc))
 
     def sudo(self, cmd, *args):
         # Run a command as root.
@@ -93,6 +100,79 @@ class _Util:
         dir = os.path.dirname(path)
         if not base in os.listdir(dir):
             raise AssertionError("Directory entry '%s' does not exist in '%s'" % (base, dir))
+
+class _Login:
+
+    def _principal(self, user, realm):
+        # Convert OpenAFS k4 style names to k5 style principals.
+        return "%s@%s" %  (user.replace('.', '/'), realm)
+
+    def login(self, user=None):
+        if user is None:
+            user = _get_var('AFS_ADMIN')
+        if _get_var('AFS_AKIMPERSONATE'):
+            self.akimpersonate(user)
+        else:
+            self.login_with_keytab(user)
+
+    def logout(self):
+        if not _get_var('AFS_AKIMPERSONATE'):
+            site = _get_var('SITE')
+            kdestroy = _get_var('KDESTROY')
+            krb5cc = os.path.join(site, "krb5cc")
+            cmd = "KRB5CCNAME=%s %s" % (krb5cc, kdestroy)
+            rc = _run_program(cmd)
+            if rc:
+                raise AssertionError("kdestroy failed: '%s'; exit code = %d" % (cmd, rc))
+        unlog = _get_var('UNLOG')
+        rc = _run_program(unlog)
+        if rc:
+            raise AssertionError("unlog failed: '%s'; exit code = %d" % (unlog, rc))
+
+    def akimpersonate(self, user):
+        if not user:
+            raise AsseritionError("User name is required")
+        aklog = _get_var('AKLOG')
+        cell = _get_var('AFS_CELL')
+        realm = _get_var('KRB_REALM')
+        keytab = _get_var('KRB_AFS_KEYTAB')
+        principal = self._principal(user, realm)
+        cmd = "%s -d -c %s -k %s -keytab %s -principal %s" % (aklog, cell, realm, keytab, principal)
+        rc = _run_program(cmd)
+        if rc:
+            raise AssertionError("aklog failed: '%s'; exit code = %d" % (cmd, rc))
+
+    def login_with_keytab(self, user):
+        if not user:
+            raise AsseritionError("User name is required")
+        site = _get_var('SITE')
+        kinit = _get_var('KINIT')
+        aklog = _get_var('AKLOG')
+        cell = _get_var('AFS_CELL')
+        realm = _get_var('KRB_REALM')
+        principal = self._principal(user, realm)
+        if user == _get_var('AFS_USER'):
+            keytab = _get_var('KRB_USER_KEYTAB')
+        elif user == _get_var('AFS_ADMIN'):
+            keytab = _get_var('KRB_ADMIN_KEYTAB')
+        else:
+            raise AssertionError("No keytab found for user '%s'." % user)
+        if not keytab:
+            raise AssertionError("Keytab not set for user '%s'." % user)
+        logger.info("keytab: " + keytab)
+        if not os.path.exists(keytab):
+            raise AsseritionError("Keytab file '%s' is missing." % keytab)
+        if not os.path.isdir(site):
+            raise AsseritionError("SITE directory '%s' is missing." % site)
+        krb5cc = os.path.join(site, "krb5cc")
+        cmd = "KRB5CCNAME=%s %s -5 -k -t %s %s" % (krb5cc, kinit, keytab, principal)
+        rc = _run_program(cmd)
+        if rc:
+            raise AssertionError("kinit failed: '%s'; exit code = %d" % (cmd, rc))
+        cmd = "KRB5CCNAME=%s %s -d -c %s -k %s" % (krb5cc, aklog, cell, realm)
+        rc = _run_program(cmd)
+        if rc:
+            raise AssertionError("kinit failed: '%s'; exit code = %d" % (cmd, rc))
 
 class _Dump:
     """Volume dump keywords."""
@@ -297,13 +377,13 @@ class _Setup:
         else:
             _run_keyword("Start Service", "openafs-client")
         _run_keyword("Cell Should Be", _get_var('AFS_CELL'))
-        _run_keyword("Login",  _get_var('AFS_ADMIN'))
+        _Login().login(_get_var('AFS_ADMIN'))
         _run_keyword("Create Volume",  hostname, "a", "root.cell")
         _run_keyword("Mount Cell Root Volume")
         _run_keyword("Create and Mount Volume", hostname, "a", "test", "/afs/%s/test" % _get_var('AFS_CELL'))
         _run_keyword("Replicate Volume", hostname, "a", "root.afs")
         _run_keyword("Replicate Volume", hostname, "a", "root.cell")
-        _run_keyword("Logout")
+        _Login().logout()
 
     @_teardown_stage
     def shutdown_openafs(self):
@@ -453,13 +533,22 @@ class _Setup:
         return stage
 
 
-class OpenAFS(_Util, _Dump, _ACL, _Setup):
+class OpenAFS(_Util, _Login, _Dump, _ACL, _Setup):
     """OpenAFS test library for basic tests.
     """
     ROBOT_LIBRARY_SCOPE = 'GLOBAL'
 
 
 # Helpers
+
+def _run_program(cmd):
+    logger.info("running: %s" % cmd)
+    proc = subprocess.Popen(cmd, bufsize=-1, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    output, error = proc.communicate()
+    if proc.returncode:
+        logger.info("output: " + output)
+        logger.info("error:  " + error)
+    return proc.returncode
 
 def _say(msg):
     """Display a progress message to the console."""

@@ -128,37 +128,6 @@ Cell Should Be
     Should Match  ${output}  This workstation belongs to cell '${cellname}'
     ...  msg=Client has the wrong cell name!
 
-Login with Keytab
-    [Arguments]  ${name}
-    Should Not Be Empty  ${name}
-    # Convert OpenAFS k4 style names to k5 style principals.
-    ${principal}=  Replace String  ${name}  .  /
-    ${keytab}=  Set Variable If  "${name}"=="${AFS_USER}"    ${KRB_USER_KEYTAB}
-    ${keytab}=  Set Variable If  "${name}"=="${AFS_ADMIN}"   ${KRB_ADMIN_KEYTAB}
-    File Should Exist   ${keytab}
-    Remove File  ${SITE}/krb5cc
-    Run Command  KRB5CCNAME=${SITE}/krb5cc ${KINIT} -5 -k -t ${keytab} ${principal}@${KRB_REALM}
-    Run Command  KRB5CCNAME=${SITE}/krb5cc ${AKLOG} -d -c ${AFS_CELL} -k ${KRB_REALM}
-
-Login with Akimpersonate
-    [Arguments]  ${name}
-    Should Not Be Empty  ${name}
-    # Convert OpenAFS k4 style names to k5 style principals.
-    ${principal}=  Replace String  ${name}  .  /
-    Run Command  ${AKLOG} -d -c ${AFS_CELL} -k ${KRB_REALM} -keytab ${KRB_AFS_KEYTAB} -principal ${principal}@${KRB_REALM}
-
-Login
-    [Arguments]  ${name}
-    Run Keyword If  ${AFS_AKIMPERSONATE}
-    ...  Login with Akimpersonate  ${name}
-    ...  ELSE
-    ...  Login with Keytab  ${name}
-
-Logout
-    Run Keyword Unless  ${AFS_AKIMPERSONATE}
-    ...  Run Command  KRB5CCNAME=${SITE}/krb5cc ${KDESTROY}
-    Run Command  ${UNLOG}
-
 Create Volume
     [Arguments]  ${server}  ${part}  ${name}
     Run Command  ${VOS} create -server ${server} -partition ${part} -name ${name} -verbose
