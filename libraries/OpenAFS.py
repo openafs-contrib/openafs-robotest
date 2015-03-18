@@ -34,6 +34,7 @@ from libraries.dump import VolumeDump
 from libraries.acl import AccessControlList
 from libraries.system import System
 from libraries.rpm import Rpm
+from libraries import bulk
 
 class _Util:
     """Generic helper keywords."""
@@ -100,6 +101,9 @@ class _Util:
         dir = os.path.dirname(path)
         if not base in os.listdir(dir):
             raise AssertionError("Directory entry '%s' does not exist in '%s'" % (base, dir))
+
+    def bulk_create_files(self, path, count, size=0):
+        bulk.create_files(path, int(count), int(size))
 
 class _Login:
 

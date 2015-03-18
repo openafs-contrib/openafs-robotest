@@ -1,4 +1,4 @@
-# Copyright (c) 2014, Sine Nomine Associates
+# Copyright (c) 2014 Sine Nomine Associates
 # See LICENSE
 
 *** Settings ***
@@ -130,7 +130,7 @@ Cell Should Be
 
 Create Volume
     [Arguments]  ${server}  ${part}  ${name}
-    Run Command  ${VOS} create -server ${server} -partition ${part} -name ${name} -verbose
+    Run Command  ${VOS} create -server ${server} -partition ${part} -name ${name} -m 0 -verbose
 
 Remove Volume
     [Arguments]  ${name}

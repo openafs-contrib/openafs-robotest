@@ -39,8 +39,8 @@ Write a File in a Read-only Volume
     ...  Create File  ${ROPATH}/should-be-read-only
 
 Create a Large Number of Entries in a Directory
-    [Tags]  todo  arla  #(too-many-files)
-    TODO
+    [Tags]  slow  arla  #(too-many-files)
+    Bulk Create Files  ${RWPATH}  31707  0
 
 Test setpag
     [Tags]  todo  arla  #(setpag)
