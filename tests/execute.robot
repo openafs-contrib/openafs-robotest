@@ -12,7 +12,7 @@ Suite Teardown    Teardown
 ${VOLUME}      test.execute
 ${PARTITION}   a
 ${SERVER}      ${HOSTNAME}
-${TESTPATH}    /afs/${AFS_CELL}/test/${VOLUME}
+${TESTPATH}    /afs/.${AFS_CELL}/test/${VOLUME}
 
 *** Keywords ***
 Setup
