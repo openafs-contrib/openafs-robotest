@@ -394,6 +394,7 @@ class _Setup:
         _run_keyword("Add Access Rights",  path, "system:anyuser", "rl")
         _run_keyword("Replicate Volume", hostname, part, volume)
         _run_keyword("Release Volume", parent)
+        _run_program("%s checkvolumes" % _get_var('FS'))
         _Login().logout()
 
     @_teardown_stage

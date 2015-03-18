@@ -153,10 +153,16 @@ Replicate Volume
     [Arguments]     ${server}  ${part}  ${volume}
     Run Command     ${VOS} addsite -server ${server} -part ${part} -id ${volume}
     Release Volume  ${volume}
+    Run Command     ${FS} checkvolumes
+
+Remove Replica
+    [Arguments]  ${server}  ${part}  ${name}
+    Run Command  ${VOS} remove -server ${server} -part ${part} -id ${name}.readonly
 
 Release Volume
     [Arguments]    ${volume}
     Run Command    ${VOS} release -id ${volume} -verbose
+    Run Command    ${FS} checkvolumes
 
 Create and Mount Volume
     [Documentation]  Helper keyword to create and mount a readable volume.
