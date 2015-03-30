@@ -43,7 +43,7 @@ class _Util:
         self.system = System.current()
 
     def run_program(self, cmd_line):
-        rc = _run_program(cmd_line)
+        rc,out,err = _run_program(cmd_line)
         if rc:
             raise AssertionError("Program failed: '%s', exit code='%d'" % (cmd_line, rc))
 
@@ -59,6 +59,31 @@ class _Util:
         """Return the device id of the given path as '(major,minor)'."""
         device = os.stat(path).st_dev
         return "(%d,%d)" % (os.major(device), os.minor(device))
+
+    def program_should_be_running(self, program):
+        if program not in self._get_running_programs():
+            raise AssertionError("Program '%s' is not running!" % (program))
+
+    def program_should_not_be_running(self, program):
+        if program in self._get_running_programs():
+            raise AssertionError("Program '%s' is running!" % (program))
+
+    def _get_running_programs(self):
+        rc,out,err = _run_program("ps ax")
+        if rc != 0:
+            raise AssertionError("Failed to run 'ps', exit code='%d'" % (rc))
+        programs = set()
+        lines = out.splitlines()
+        # The first line of the ps output is a header line which shows
+        # the columns for the fields.
+        column = lines[0].index('COMMAND')
+        for line in lines[1:]:
+            cmd_line = line[column:]
+            if cmd_line[0] == '[':  # skip linux threads
+                continue
+            command = cmd_line.split()[0]
+            programs.add(os.path.basename(command))
+        return list(programs)
 
     def get_modules(self):
         """Return a list of loaded kernel module names."""
@@ -125,11 +150,11 @@ class _Login:
             kdestroy = _get_var('KDESTROY')
             krb5cc = os.path.join(site, "krb5cc")
             cmd = "KRB5CCNAME=%s %s" % (krb5cc, kdestroy)
-            rc = _run_program(cmd)
+            rc,out,err = _run_program(cmd)
             if rc:
                 raise AssertionError("kdestroy failed: '%s'; exit code = %d" % (cmd, rc))
         unlog = _get_var('UNLOG')
-        rc = _run_program(unlog)
+        rc,out,err = _run_program(unlog)
         if rc:
             raise AssertionError("unlog failed: '%s'; exit code = %d" % (unlog, rc))
 
@@ -142,7 +167,7 @@ class _Login:
         keytab = _get_var('KRB_AFS_KEYTAB')
         principal = self._principal(user, realm)
         cmd = "%s -d -c %s -k %s -keytab %s -principal %s" % (aklog, cell, realm, keytab, principal)
-        rc = _run_program(cmd)
+        rc,out,err = _run_program(cmd)
         if rc:
             raise AssertionError("aklog failed: '%s'; exit code = %d" % (cmd, rc))
 
@@ -170,11 +195,11 @@ class _Login:
             raise AsseritionError("SITE directory '%s' is missing." % site)
         krb5cc = os.path.join(site, "krb5cc")
         cmd = "KRB5CCNAME=%s %s -5 -k -t %s %s" % (krb5cc, kinit, keytab, principal)
-        rc = _run_program(cmd)
+        rc,out,err = _run_program(cmd)
         if rc:
             raise AssertionError("kinit failed: '%s'; exit code = %d" % (cmd, rc))
         cmd = "KRB5CCNAME=%s %s -d -c %s -k %s" % (krb5cc, aklog, cell, realm)
-        rc = _run_program(cmd)
+        rc,out,err = _run_program(cmd)
         if rc:
             raise AssertionError("kinit failed: '%s'; exit code = %d" % (cmd, rc))
 
@@ -564,7 +589,7 @@ def _run_program(cmd):
     if proc.returncode:
         logger.info("output: " + output)
         logger.info("error:  " + error)
-    return proc.returncode
+    return (proc.returncode, output, error)
 
 def _say(msg):
     """Display a progress message to the console."""

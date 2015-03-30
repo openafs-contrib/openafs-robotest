@@ -104,16 +104,6 @@ Stop Service
     Should Not Be Empty  ${name}
     Sudo  /sbin/service ${name} stop
 
-Program Should Be Running
-    [Arguments]  ${program}
-    ${output}=  Run   ps -ef
-    Should Contain  ${output}  ${program}  msg=Program ${program} is not running!  values=False
-
-Program Should Not Be Running
-    [Arguments]  ${program}
-    ${output}=  Run   ps -ef
-    Should Not Contain  ${output}  ${program}  msg=Program ${program} is running!  values=False
-
 Rx Service Should Be Reachable
     [Arguments]  ${host}  ${port}
     Run Command  ${RXDEBUG} ${host} ${port} -version
