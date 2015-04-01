@@ -67,7 +67,7 @@ settings = {
    'KRB_REALM':        ('name', "ROBOTEST",               "The kerberos realm name."),
    'KRB_USER_KEYTAB':  ('path', "",                       "Test user keytab."),
    'KRB_VERBOSE':      ('bool', "false",                  "Print kadmin output."),
-   'RF_EXCLUDE':       ('text', "",                       "RF Tags to exclude"),
+   'RF_EXCLUDE':       ('text', "todo,crash,slow",        "Comma separted list of RF Tags to exclude"),
    'RF_LOGLEVEL':      ('enum', "INFO",                   "RF Logging level", ('TRACE','DEBUG','INFO','WARN')),
    'RF_OUTPUT':        ('path', output,                   "Location for RF reports and logs."),
    'RPM_AFSRELEASE':   ('name', "",                       "RPM release number"),
