@@ -18,6 +18,12 @@ TODO
     [Arguments]  ${msg}=Not implemented
     Fail  TODO: ${msg}
 
+#
+# XXX: Move all the keywords which "run" a program to the python library.
+#      Should have a common routine there which uses subprocess
+#      and has consistent logging.
+#
+
 Command Should Succeed
     [Arguments]  ${cmd}  ${msg}=None
     ${rc}  ${output}  Run And Return Rc And Output  ${cmd}
@@ -121,6 +127,7 @@ Cell Should Be
 Create Volume
     [Arguments]  ${server}  ${part}  ${name}
     Run Command  ${VOS} create -server ${server} -partition ${part} -name ${name} -m 0 -verbose
+    # todo: return the volume id!
 
 Remove Volume
     [Arguments]  ${name}
