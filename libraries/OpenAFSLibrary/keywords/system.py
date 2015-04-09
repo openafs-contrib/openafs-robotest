@@ -22,7 +22,11 @@
 import sys
 import os
 import re
+import math
+import socket
 from robot.api import logger
+from robot.libraries.BuiltIn import BuiltIn
+from OpenAFSLibrary.util import _get_var,_run_program
 
 class System:
     @staticmethod
@@ -133,4 +137,125 @@ class Solaris(System):
                     addrs.append(addr)
         pipe.close
         return addrs
+
+
+
+class _SystemKeywords(object):
+
+    def __init__(self):
+        self.system = System.current()
+
+    def run_program(self, cmd_line):
+        rc,out,err = _run_program(cmd_line)
+        if rc:
+            raise AssertionError("Program failed: '%s', exit code='%d'" % (cmd_line, rc))
+
+    def sudo(self, cmd, *args):
+        # Run a command as root.
+        self.system.sudo(cmd, *args)
+
+    def get_host_by_name(self, hostname):
+        """Return the ipv4 address of the hostname."""
+        return socket.gethostbyname(hostname)
+
+    def get_device(self, path):
+        """Return the device id of the given path as '(major,minor)'."""
+        device = os.stat(path).st_dev
+        return "(%d,%d)" % (os.major(device), os.minor(device))
+
+    def program_should_be_running(self, program):
+        if program not in self._get_running_programs():
+            raise AssertionError("Program '%s' is not running!" % (program))
+
+    def program_should_not_be_running(self, program):
+        if program in self._get_running_programs():
+            raise AssertionError("Program '%s' is running!" % (program))
+
+    def _get_running_programs(self):
+        rc,out,err = _run_program("ps ax")
+        if rc != 0:
+            raise AssertionError("Failed to run 'ps', exit code='%d'" % (rc))
+        programs = set()
+        lines = out.splitlines()
+        # The first line of the ps output is a header line which shows
+        # the columns for the fields.
+        column = lines[0].index('COMMAND')
+        for line in lines[1:]:
+            cmd_line = line[column:]
+            if cmd_line[0] == '[':  # skip linux threads
+                continue
+            command = cmd_line.split()[0]
+            programs.add(os.path.basename(command))
+        return list(programs)
+
+    def get_modules(self):
+        """Return a list of loaded kernel module names."""
+        return self.system.get_modules()
+
+    def unload_module(self, name):
+        """Unload the kernel module."""
+        return self.system.unload_module(name)
+
+    def get_interfaces(self):
+        """Find the non-loopback IPv4 addresses of the network interfaces."""
+        return self.system.get_interfaces()
+
+    def _get_crash_count(self):
+        count = 0
+        last = ""
+        filename = "%s/BosLog" % _get_var('AFS_LOGS_DIR')
+        log = open(filename, "r")
+        for line in log.readlines():
+            if 'core dumped' in line:
+                last = line
+                count += 1
+        log.close()
+        return (count, last)
+
+    def init_crash_check(self):
+        (count, last) = self._get_crash_count()
+        BuiltIn().set_suite_variable('${CRASH_COUNT}', count)
+        BuiltIn().set_suite_variable('${CRASH_LAST}', last)
+
+    def crash_check(self):
+        before = _get_var('CRASH_COUNT')
+        (after, last) = self._get_crash_count()
+        if after != before:
+            raise AssertionError("Server crash detected! %s" % last)
+
+    def directory_entry_should_exist(self, path):
+        """Fails if directory entry does not exist in the given path."""
+        base = os.path.basename(path)
+        dir = os.path.dirname(path)
+        if not base in os.listdir(dir):
+            raise AssertionError("Directory entry '%s' does not exist in '%s'" % (base, dir))
+
+    def create_files(self, path, count, size=0):
+        """Create count number fixed size files in the given path.
+
+        Fails if the files are already present.
+        """
+        count = int(count)
+        size = int(size)
+        if count <= 0:
+            return
+        fmt = "%%0%dd" % (int(math.log10(float(count))) + 1) # fixed width filenames
+        if size > 0:
+            block = '\0' * 8192
+            blocks = size // len(block)
+            partial = size % len(block)
+            if partial > 0:
+                pblock = '\0' * partial
+        for i in xrange(0, count):
+            num = os.path.join(path, fmt % (i))
+            fd = os.open(num, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0777)
+            if size > 0:
+                for j in xrange(0, blocks):
+                    if os.write(fd, block) != len(block):
+                        raise IOError("Failed to write block %d to file '%s'" % (j,num))
+                if partial:
+                    if os.write(fd, pblock) != len(pblock):
+                        raise IOError("Failed to write to file '%s'" % num)
+            os.close(fd)
+
 

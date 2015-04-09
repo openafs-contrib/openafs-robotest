@@ -6,8 +6,7 @@ Documentation     Import common keywords and variables for
 ...               the OpenAFS test suite.
 Library           OperatingSystem
 Library           String
-Library           OpenAFS
-Library           Kerberos
+Library           OpenAFSLibrary
 Resource          prechecks.robot
 Resource          install.robot
 Resource          newcell.robot

@@ -24,249 +24,13 @@ import os
 import re
 import glob
 import socket
-import shlex
-import subprocess
 from robot.api import logger
-from robot.libraries.BuiltIn import BuiltIn
 from robot.libraries.BuiltIn import register_run_keyword
+from OpenAFSLibrary.util import _get_var, _say, _lookup_keywords, _run_keyword, _run_program
+from OpenAFSLibrary.util.rpm import Rpm
+from OpenAFSLibrary.keywords.login import _LoginKeywords
 
-from libraries.dump import VolumeDump
-from libraries.acl import AccessControlList
-from libraries.system import System
-from libraries.rpm import Rpm
-from libraries import bulk
-
-class _Util:
-    """Generic helper keywords."""
-
-    def __init__(self):
-        self.system = System.current()
-
-    def run_program(self, cmd_line):
-        rc,out,err = _run_program(cmd_line)
-        if rc:
-            raise AssertionError("Program failed: '%s', exit code='%d'" % (cmd_line, rc))
-
-    def sudo(self, cmd, *args):
-        # Run a command as root.
-        self.system.sudo(cmd, *args)
-
-    def get_host_by_name(self, hostname):
-        """Return the ipv4 address of the hostname."""
-        return socket.gethostbyname(hostname)
-
-    def get_device(self, path):
-        """Return the device id of the given path as '(major,minor)'."""
-        device = os.stat(path).st_dev
-        return "(%d,%d)" % (os.major(device), os.minor(device))
-
-    def program_should_be_running(self, program):
-        if program not in self._get_running_programs():
-            raise AssertionError("Program '%s' is not running!" % (program))
-
-    def program_should_not_be_running(self, program):
-        if program in self._get_running_programs():
-            raise AssertionError("Program '%s' is running!" % (program))
-
-    def _get_running_programs(self):
-        rc,out,err = _run_program("ps ax")
-        if rc != 0:
-            raise AssertionError("Failed to run 'ps', exit code='%d'" % (rc))
-        programs = set()
-        lines = out.splitlines()
-        # The first line of the ps output is a header line which shows
-        # the columns for the fields.
-        column = lines[0].index('COMMAND')
-        for line in lines[1:]:
-            cmd_line = line[column:]
-            if cmd_line[0] == '[':  # skip linux threads
-                continue
-            command = cmd_line.split()[0]
-            programs.add(os.path.basename(command))
-        return list(programs)
-
-    def get_modules(self):
-        """Return a list of loaded kernel module names."""
-        return self.system.get_modules()
-
-    def unload_module(self, name):
-        """Unload the kernel module."""
-        return self.system.unload_module(name)
-
-    def get_interfaces(self):
-        """Find the non-loopback IPv4 addresses of the network interfaces."""
-        return self.system.get_interfaces()
-
-    def _get_crash_count(self):
-        count = 0
-        last = ""
-        filename = "%s/BosLog" % _get_var('AFS_LOGS_DIR')
-        log = open(filename, "r")
-        for line in log.readlines():
-            if 'core dumped' in line:
-                last = line
-                count += 1
-        log.close()
-        return (count, last)
-
-    def init_crash_check(self):
-        (count, last) = self._get_crash_count()
-        BuiltIn().set_suite_variable('${CRASH_COUNT}', count)
-        BuiltIn().set_suite_variable('${CRASH_LAST}', last)
-
-    def crash_check(self):
-        before = _get_var('CRASH_COUNT')
-        (after, last) = self._get_crash_count()
-        if after != before:
-            raise AssertionError("Server crash detected! %s" % last)
-
-    def directory_entry_should_exist(self, path):
-        """Fails if directory entry does not exist in the given path."""
-        base = os.path.basename(path)
-        dir = os.path.dirname(path)
-        if not base in os.listdir(dir):
-            raise AssertionError("Directory entry '%s' does not exist in '%s'" % (base, dir))
-
-    def bulk_create_files(self, path, count, size=0):
-        bulk.create_files(path, int(count), int(size))
-
-class _Login:
-
-    def _principal(self, user, realm):
-        # Convert OpenAFS k4 style names to k5 style principals.
-        return "%s@%s" %  (user.replace('.', '/'), realm)
-
-    def login(self, user=None):
-        if user is None:
-            user = _get_var('AFS_ADMIN')
-        if _get_var('AFS_AKIMPERSONATE'):
-            self.akimpersonate(user)
-        else:
-            self.login_with_keytab(user)
-
-    def logout(self):
-        if not _get_var('AFS_AKIMPERSONATE'):
-            site = _get_var('SITE')
-            kdestroy = _get_var('KDESTROY')
-            krb5cc = os.path.join(site, "krb5cc")
-            cmd = "KRB5CCNAME=%s %s" % (krb5cc, kdestroy)
-            rc,out,err = _run_program(cmd)
-            if rc:
-                raise AssertionError("kdestroy failed: '%s'; exit code = %d" % (cmd, rc))
-        unlog = _get_var('UNLOG')
-        rc,out,err = _run_program(unlog)
-        if rc:
-            raise AssertionError("unlog failed: '%s'; exit code = %d" % (unlog, rc))
-
-    def akimpersonate(self, user):
-        if not user:
-            raise AsseritionError("User name is required")
-        aklog = _get_var('AKLOG')
-        cell = _get_var('AFS_CELL')
-        realm = _get_var('KRB_REALM')
-        keytab = _get_var('KRB_AFS_KEYTAB')
-        principal = self._principal(user, realm)
-        cmd = "%s -d -c %s -k %s -keytab %s -principal %s" % (aklog, cell, realm, keytab, principal)
-        rc,out,err = _run_program(cmd)
-        if rc:
-            raise AssertionError("aklog failed: '%s'; exit code = %d" % (cmd, rc))
-
-    def login_with_keytab(self, user):
-        if not user:
-            raise AsseritionError("User name is required")
-        site = _get_var('SITE')
-        kinit = _get_var('KINIT')
-        aklog = _get_var('AKLOG')
-        cell = _get_var('AFS_CELL')
-        realm = _get_var('KRB_REALM')
-        principal = self._principal(user, realm)
-        if user == _get_var('AFS_USER'):
-            keytab = _get_var('KRB_USER_KEYTAB')
-        elif user == _get_var('AFS_ADMIN'):
-            keytab = _get_var('KRB_ADMIN_KEYTAB')
-        else:
-            raise AssertionError("No keytab found for user '%s'." % user)
-        if not keytab:
-            raise AssertionError("Keytab not set for user '%s'." % user)
-        logger.info("keytab: " + keytab)
-        if not os.path.exists(keytab):
-            raise AsseritionError("Keytab file '%s' is missing." % keytab)
-        if not os.path.isdir(site):
-            raise AsseritionError("SITE directory '%s' is missing." % site)
-        krb5cc = os.path.join(site, "krb5cc")
-        cmd = "KRB5CCNAME=%s %s -5 -k -t %s %s" % (krb5cc, kinit, keytab, principal)
-        rc,out,err = _run_program(cmd)
-        if rc:
-            raise AssertionError("kinit failed: '%s'; exit code = %d" % (cmd, rc))
-        cmd = "KRB5CCNAME=%s %s -d -c %s -k %s" % (krb5cc, aklog, cell, realm)
-        rc,out,err = _run_program(cmd)
-        if rc:
-            raise AssertionError("kinit failed: '%s'; exit code = %d" % (cmd, rc))
-
-class _Dump:
-    """Volume dump keywords."""
-
-    def should_be_a_dump_file(self, filename):
-        """Fails if filename is not an AFS dump file."""
-        VolumeDump.check_header(filename)
-
-    def create_empty_dump(self, filename):
-        """Create the smallest possible valid dump file."""
-        volid = 536870999 # random, but valid, volume id
-        dump = VolumeDump(filename)
-        dump.write(ord('v'), "L", volid)
-        dump.write(ord('t'), "HLL", 2, 0, 0)
-        dump.write(VolumeDump.D_VOLUMEHEADER, "")
-        dump.close()
-
-    def create_dump_with_bogus_acl(self, filename):
-        """Create a minimal dump file with bogus ACL record.
-
-        The bogus ACL would crash the volume server before gerrit 11702."""
-        volid = 536870999 # random, but valid, volume id
-        size, version, total, positive, negative = (0, 0, 0, 1000, 0) # positive is out of range.
-        dump = VolumeDump(filename)
-        dump.write(ord('v'), "L", volid)
-        dump.write(ord('t'), "HLL", 2, 0, 0)
-        dump.write(VolumeDump.D_VOLUMEHEADER, "")
-        dump.write(VolumeDump.D_VNODE, "LL", 3, 999)
-        dump.write(ord('A'), "LLLLL", size, version, total, positive, negative)
-        dump.close()
-
-class _ACL:
-    """ACL testing keywords."""
-
-    def access_control_list_matches(self, path, *acls):
-        """Fails if a directory ACL does not match the given ACL."""
-        logger.debug("access_control_list_matches: path=%s, acls=[%s]" % (path, ",".join(acls)))
-        a1 = AccessControlList.from_path(path)
-        a2 = AccessControlList.from_args(*acls)
-        logger.debug("a1=%s" % a1)
-        logger.debug("a2=%s" % a2)
-        if a1 != a2:
-            raise AssertionError("ACLs do not match: path=%s args=%s" % (a1, a2))
-
-    def access_control_list_contains(self, path, name, rights):
-        logger.debug("access_control_list_contains: path=%s, name=%s, rights=%s" % (path, name, rights))
-        a = AccessControlList.from_path(path)
-        if not a.contains(name, rights):
-            raise AssertionError("ACL entry rights do not match for name '%s'")
-
-    def access_control_should_exist(self, path, name):
-        """Fails if the access control does not exist for the the given user or group name."""
-        logger.debug("access_control_should_exist: path=%s, name=%s, rights=%s" % (path, name, rights))
-        a = AccessControlList.from_path(path)
-        if name not in a.acls:
-            raise AssertionError("ACL entry does not exist for name '%s'" % (name))
-
-    def access_control_should_not_exist(self, path, name):
-        """Fails if the access control exists for the the given user or group name."""
-        logger.debug("access_control_should_not_exist: path=%s, name=%s" % (path, name))
-        a = AccessControlList.from_path(path)
-        if name in a.acls:
-            raise AssertionError("ACL entry exists for name '%s'" % (name))
-
-class _Setup:
+class _InstallationKeywords(object):
     """Test system setup and teardown top-level keywords.
 
     This library provides keywords to install the OpenAFS server and
@@ -408,7 +172,7 @@ class _Setup:
         else:
             _run_keyword("Start Service", "openafs-client")
         _run_keyword("Cell Should Be", _get_var('AFS_CELL'))
-        _Login().login(_get_var('AFS_ADMIN'))
+        _LoginKeywords().login(_get_var('AFS_ADMIN'))
         _run_keyword("Create Volume",  hostname, "a", "root.cell")
         _run_keyword("Mount Cell Root Volume")
         _run_keyword("Replicate Volume", hostname, "a", "root.afs")
@@ -424,7 +188,7 @@ class _Setup:
         _run_keyword("Replicate Volume", hostname, part, volume)
         _run_keyword("Release Volume", parent)
         _run_program("%s checkvolumes" % _get_var('FS'))
-        _Login().logout()
+        _LoginKeywords().logout()
 
     @_teardown_stage
     def shutdown_openafs(self):
@@ -570,67 +334,12 @@ class _Setup:
             f.close()
             logger.debug("set stage: %s" % (stage))
         except:
-            raise AssertionError("Unable to save setup/teardown stage! %s" % (sys.exc_info()[0]))
+            raise AssertionError("Unable to save setup/teardown stage! %s" % (sys.exc_info()[1]))
         return stage
-
-
-class OpenAFS(_Util, _Login, _Dump, _ACL, _Setup):
-    """OpenAFS test library for basic tests.
-    """
-    ROBOT_LIBRARY_SCOPE = 'GLOBAL'
-
-
-# Helpers
-
-def _run_program(cmd):
-    logger.info("running: %s" % cmd)
-    proc = subprocess.Popen(cmd, bufsize=-1, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-    output, error = proc.communicate()
-    if proc.returncode:
-        logger.info("output: " + output)
-        logger.info("error:  " + error)
-    return (proc.returncode, output, error)
-
-def _say(msg):
-    """Display a progress message to the console."""
-    stream = sys.__stdout__
-    stream.write("%s\n" % (msg))
-    stream.flush()
-
-def _run_keyword(name, *args):
-    """Run the named keyword."""
-    BuiltIn().run_keyword(name, *args)
-
-def _get_var(name):
-    """Return the named variable value or None if it does not exist."""
-    return BuiltIn().get_variable_value("${%s}" % name)
-
-def _lookup_keywords(filename):
-    """Lookup the keyword names in the given resource file."""
-    keywords = []
-    start_of_table = r'\*+\s+'
-    start_of_kw_table = r'\*+\s+Keyword'
-    in_kw_table = False
-    f = open(filename, "r")
-    for line in f.readlines():
-        line = line.rstrip()
-        if len(line) == 0 or line.startswith("#"):
-            continue  # skip comments and blanks
-        if re.match(start_of_kw_table, line):
-            in_kw_table = True   # table started
-            continue
-        if re.match(start_of_table, line) and not re.match(start_of_kw_table, line):
-            in_kw_table = False  # table ended
-            continue
-        if line.startswith(' '):
-            continue  # skip content rows
-        if in_kw_table:
-            keywords.append(line)
-    f.close()
-    return keywords
 
 def _register_keywords():
     """Register the keywords in all of the resource files."""
+    # XXX: Relative Path!
     for filename in glob.glob('./resources/*.robot'):
         keywords = _lookup_keywords(filename)
         for keyword in keywords:

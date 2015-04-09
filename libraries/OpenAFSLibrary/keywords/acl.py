@@ -1,4 +1,4 @@
-# Copyright (c) 2015 Sine Nomine Associates
+# Copyright (c) 2014-2015, Sine Nomine Associates
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -22,12 +22,10 @@
 import sys
 import os
 import re
-from robot.libraries.BuiltIn import BuiltIn
+from robot.api import logger
+from OpenAFSLibrary.util import _get_var
 
 _RIGHTS = list("rlidwkaABCDEFGH")
-
-def _get_var(name):
-    return BuiltIn().get_variable_value("${%s}" % name)
 
 def _normalize(rights):
     """Normalize a list of ACL right characters.
@@ -192,6 +190,40 @@ class AccessControlList:
             return False
         return True
 
+class _ACLKeywords(object):
+    """ACL testing keywords."""
+
+    def access_control_list_matches(self, path, *acls):
+        """Fails if a directory ACL does not match the given ACL."""
+        logger.debug("access_control_list_matches: path=%s, acls=[%s]" % (path, ",".join(acls)))
+        a1 = AccessControlList.from_path(path)
+        a2 = AccessControlList.from_args(*acls)
+        logger.debug("a1=%s" % a1)
+        logger.debug("a2=%s" % a2)
+        if a1 != a2:
+            raise AssertionError("ACLs do not match: path=%s args=%s" % (a1, a2))
+
+    def access_control_list_contains(self, path, name, rights):
+        logger.debug("access_control_list_contains: path=%s, name=%s, rights=%s" % (path, name, rights))
+        a = AccessControlList.from_path(path)
+        if not a.contains(name, rights):
+            raise AssertionError("ACL entry rights do not match for name '%s'")
+
+    def access_control_should_exist(self, path, name):
+        """Fails if the access control does not exist for the the given user or group name."""
+        logger.debug("access_control_should_exist: path=%s, name=%s, rights=%s" % (path, name, rights))
+        a = AccessControlList.from_path(path)
+        if name not in a.acls:
+            raise AssertionError("ACL entry does not exist for name '%s'" % (name))
+
+    def access_control_should_not_exist(self, path, name):
+        """Fails if the access control exists for the the given user or group name."""
+        logger.debug("access_control_should_not_exist: path=%s, name=%s" % (path, name))
+        a = AccessControlList.from_path(path)
+        if name in a.acls:
+            raise AssertionError("ACL entry exists for name '%s'" % (name))
+
+
 
 #
 # Unit tests
@@ -257,8 +289,8 @@ def _test3():
     ]
     a1 = AccessControlList.from_path(p)
     a2 = AccessControlList.from_args(*t)
-    #print "a1=", a1
-    #print "a2=", a2
+    # print "a1=", a1
+    # print "a2=", a2
     assert a1 != a2
 
 def _test4():
@@ -290,4 +322,7 @@ def main():
     _test4()
 
 if __name__ == "__main__":
+    # usage: python -m OpenAFSLibary.keywords.acl
     main()
+
+

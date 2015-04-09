@@ -30,7 +30,7 @@ output = os.path.join(root, 'output')
 sys.path.append(root)
 sys.path.append(libraries)
 
-from setup import SetupShell
+from OpenAFSLibrary.util.setup import SetupShell
 
 enc_types = (
     'aes256-cts-hmac-sha1-96',

@@ -25,7 +25,7 @@ import sys
 import time
 from struct import pack,calcsize
 from robot.api import logger
-from robot.libraries.BuiltIn import BuiltIn
+from OpenAFSLibrary.util import _get_var
 
 _KRB_KEYTAB_MAGIC = 0x0502
 _KRB_NT_PRINCIPAL = 1
@@ -63,34 +63,9 @@ _KRB_ENCTYPE_DESCS = {
 }
 
 
-class Kerberos:
+class _KeytabKeywords(object):
+
     """Keywords for reading Kerberos keytabs."""
-
-    def __init__(self):
-        self._settings = None
-
-    def _set_settings(self, _settings):
-        """Settings to be used when running outside of RF.
-
-        The _settings dictionary is provided by the interactive setup tool
-        so this class can be used outside of the robotframework.
-        """
-        self._settings = _settings
-
-    def _set_logger(self, _logger):
-        """Logger to be used when running outside of RF."""
-        global logger
-        logger = _logger
-
-    def _get_setting_value(self, name):
-        """Get a setting value."""
-        if self._settings and name in self._settings:
-            value = self._settings[name]
-        else:
-            value = BuiltIn().get_variable_value("${%s}" % (name))
-        if value is None or value == "":
-            raise AssertionError("%s not set." % (name))
-        return value
 
     def _normalize_enctype(self, enctype):
         if enctype in _KRB_ENCTYPE_NUMBERS:
@@ -102,8 +77,8 @@ class Kerberos:
 
     def _get_keytab_keys(self, keytab):
         """Read the list of (kvno,principal,enctype) tuples from a keytab."""
+        klist = _get_var('KLIST')
         entries = []
-        klist = self._get_setting_value('KLIST')
         command = "%s -e -k -t %s" % (klist, keytab)
         logger.info("Running: %s " % (command))
         pipe = os.popen(command)
@@ -129,11 +104,11 @@ class Kerberos:
         return entries
 
     def _get_principal_keys(self, principal):
+        kadmin_local = _get_var('KADMIN_LOCAL')
         keys = []
-        kadmin = self._get_setting_value('KADMIN_LOCAL')
         if "'" in principal:
             raise AssertionError("Invalid principal string: %s" % (principal))
-        command = "sudo -n %s -q 'get_principal %s'" % (kadmin, principal)
+        command = "sudo -n %s -q 'get_principal %s'" % (kadmin_local, principal)
         logger.info("Running: %s" % command)
         pipe = os.popen(command)
         for line in pipe.readlines():
@@ -155,10 +130,10 @@ class Kerberos:
         return _KRB_ENCTYPE_NUMBERS.keys()
 
     def add_principal(self, principal):
-        kadmin = self._get_setting_value('KADMIN_LOCAL')
+        kadmin_local = _get_var('KADMIN_LOCAL')
         if "'" in principal:
             raise AssertionError("Invalid principal string: %s" % (principal))
-        command = "sudo -n %s -q 'add_principal -randkey %s'" % (kadmin, principal)
+        command = "sudo -n %s -q 'add_principal -randkey %s'" % (kadmin_local, principal)
         logger.info("Running: %s" % command)
         pipe = os.popen(command)
         for line in pipe.readlines():
@@ -214,6 +189,7 @@ class Kerberos:
 
     def add_entry_to_keytab(self, keytab, principal, enctype=None, salt='normal'):
         """Write an entry to a keytab."""
+        kadmin_local = _get_var('KADMIN_LOCAL')
         if principal and "'" in principal:
             raise AssertionError("Invalid principal string: %s" % (principal))
         if enctype and "'" in enctype:
@@ -221,12 +197,11 @@ class Kerberos:
         if salt and "'" in salt:
             raise AssertionError("Invalid salt string: %s" % (salt))
 
-        kadmin = self._get_setting_value('KADMIN_LOCAL')
         if enctype:
             query = "ktadd -k %s -e %s:%s %s" % (keytab, enctype, salt, principal)
         else:
             query = "ktadd -k %s %s" % (keytab, principal)
-        command = "sudo -n %s -q '%s'" % (kadmin, query)
+        command = "sudo -n %s -q '%s'" % (kadmin_local, query)
         logger.info("Running: %s " % (command))
         pipe = os.popen(command)
         for line in pipe.readlines():

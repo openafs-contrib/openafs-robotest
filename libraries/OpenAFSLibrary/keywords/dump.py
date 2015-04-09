@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2015 Sine Nomine Associates
+# Copyright (c) 2014-2015, Sine Nomine Associates
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -66,4 +66,35 @@ class VolumeDump:
         self.file.close()
         self.file = None
 
+
+
+class _VolumeDumpKeywords(object):
+    """Volume dump keywords."""
+
+    def should_be_a_dump_file(self, filename):
+        """Fails if filename is not an AFS dump file."""
+        VolumeDump.check_header(filename)
+
+    def create_empty_dump(self, filename):
+        """Create the smallest possible valid dump file."""
+        volid = 536870999 # random, but valid, volume id
+        dump = VolumeDump(filename)
+        dump.write(ord('v'), "L", volid)
+        dump.write(ord('t'), "HLL", 2, 0, 0)
+        dump.write(VolumeDump.D_VOLUMEHEADER, "")
+        dump.close()
+
+    def create_dump_with_bogus_acl(self, filename):
+        """Create a minimal dump file with bogus ACL record.
+
+        The bogus ACL would crash the volume server before gerrit 11702."""
+        volid = 536870999 # random, but valid, volume id
+        size, version, total, positive, negative = (0, 0, 0, 1000, 0) # positive is out of range.
+        dump = VolumeDump(filename)
+        dump.write(ord('v'), "L", volid)
+        dump.write(ord('t'), "HLL", 2, 0, 0)
+        dump.write(VolumeDump.D_VOLUMEHEADER, "")
+        dump.write(VolumeDump.D_VNODE, "LL", 3, 999)
+        dump.write(ord('A'), "LLLLL", size, version, total, positive, negative)
+        dump.close()
 

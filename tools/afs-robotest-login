@@ -29,7 +29,7 @@ sys.path.append(root)
 sys.path.append(os.path.join(root, "libraries"))
 sys.path.append(os.path.join(root, "resources", "dist"))
 
-import OpenAFS
+from OpenAFSLibrary import OpenAFSLibrary
 
 # Load local and "dist" settings.
 try:
@@ -77,8 +77,8 @@ def main(args):
     else:
         user = settings.AFS_ADMIN
 
-    OpenAFS._get_var = get_var
-    OpenAFS.OpenAFS().login(user)
+
+    OpenAFSLibrary().login(user)
     sys.exit(0)
 
 if __name__ == "__main__":

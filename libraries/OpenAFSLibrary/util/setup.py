@@ -29,9 +29,9 @@ import glob
 import subprocess
 import traceback
 
-from download import download
-from partition import create_fake_partition
-from Kerberos import Kerberos
+from OpenAFSLibrary.util.download import download
+from OpenAFSLibrary.util.partition import create_fake_partition
+from OpenAFSLibrary import OpenAFSLibrary
 
 try:
     import settings as old_settings
@@ -177,16 +177,6 @@ class Settings:
             setting.emit(f)
         f.close()
         self.saved = True
-
-class DummyLogger:
-    def __init__(self, verbose=False):
-        self.verbose = verbose
-    def info(self, msg):
-        if self.verbose:
-            print "INFO:", msg
-    def debug(self, msg):
-        if self.verbose:
-            print "DEBUG:", msg
 
 class SetupShell(cmd.Cmd):
     """Console interface to setup the OpenAFS Robotest harness."""
@@ -431,6 +421,7 @@ class SetupShell(cmd.Cmd):
 
     def _gen_afs_key(self, enctype):
         """Helper to create the AFS service key and keytab."""
+        keywords = OpenAFSLibrary()
         akimpersonate = self._get("AFS_AKIMPERSONATE")
         if not enctype:
             enctype = self._get("KRB_AFS_ENCTYPE", 'aes256-cts-hmac-sha1-96')
@@ -442,13 +433,10 @@ class SetupShell(cmd.Cmd):
             sys.stderr.write("AFS_CELL and KRB_REALM are required.\n")
             return
         try:
-            k = Kerberos()
-            k._set_settings(self.settings.get_dict())
-            k._set_logger(DummyLogger(verbose=verbose))
             if akimpersonate:
-                k.create_fake_keytab(keytab, cell, realm, enctype)
+                keywords.create_fake_keytab(keytab, cell, realm, enctype)
             else:
-                k.create_afs_service_keytab(keytab, cell, realm, enctype)
+                keywords.create_afs_service_keytab(keytab, cell, realm, enctype)
         except:
             sys.stderr.write("Failed to create keytab!")
             traceback.print_exc(file=sys.stderr)
@@ -458,6 +446,7 @@ class SetupShell(cmd.Cmd):
 
     def _gen_user_key(self):
         """Helper to create the user principal and keytab."""
+        keywords = OpenAFSLibrary()
         realm = self._get("KRB_REALM")
         principal = self._get("AFS_USER", "robotest")
         keytab = self._get("KRB_USER_KEYTAB", "./site/user.keytab")
@@ -466,10 +455,7 @@ class SetupShell(cmd.Cmd):
             sys.stderr.write("KRB_REALM is required.\n")
             return
         try:
-            k = Kerberos()
-            k._set_settings(self.settings.get_dict())
-            k._set_logger(DummyLogger(verbose=verbose))
-            k.create_keytab(keytab, principal, realm)
+            keywords.create_keytab(keytab, principal, realm)
         except:
             sys.stderr.write("Failed to create keytab!")
             traceback.print_exc(file=sys.stderr)
@@ -479,6 +465,7 @@ class SetupShell(cmd.Cmd):
 
     def _gen_admin_key(self):
         """Helper to create the admin principal and keytab."""
+        keywords = OpenAFSLibrary()
         realm = self._get("KRB_REALM")
         principal = self._get("AFS_ADMIN", "robotest/admin")
         keytab = self._get("KRB_ADMIN_KEYTAB", "./site/admin.keytab")
@@ -487,10 +474,7 @@ class SetupShell(cmd.Cmd):
             sys.stderr.write("KRB_REALM is required.\n")
             return
         try:
-            k = Kerberos()
-            k._set_settings(self.settings.get_dict())
-            k._set_logger(DummyLogger(verbose=verbose))
-            k.create_keytab(keytab, principal, realm)
+            keywords.create_keytab(keytab, principal, realm)
         except:
             sys.stderr.write("Failed to create keytab!")
             traceback.print_exc(file=sys.stderr)
