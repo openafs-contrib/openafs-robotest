@@ -26,7 +26,7 @@ import math
 import socket
 from robot.api import logger
 from robot.libraries.BuiltIn import BuiltIn
-from OpenAFSLibrary.util import _get_var,_run_program
+from OpenAFSLibrary.util import get_var,run_program
 
 class System:
     @staticmethod
@@ -146,7 +146,7 @@ class _SystemKeywords(object):
         self.system = System.current()
 
     def run_program(self, cmd_line):
-        rc,out,err = _run_program(cmd_line)
+        rc,out,err = run_program(cmd_line)
         if rc:
             raise AssertionError("Program failed: '%s', exit code='%d'" % (cmd_line, rc))
 
@@ -172,7 +172,7 @@ class _SystemKeywords(object):
             raise AssertionError("Program '%s' is running!" % (program))
 
     def _get_running_programs(self):
-        rc,out,err = _run_program("ps ax")
+        rc,out,err = run_program("ps ax")
         if rc != 0:
             raise AssertionError("Failed to run 'ps', exit code='%d'" % (rc))
         programs = set()
@@ -203,7 +203,7 @@ class _SystemKeywords(object):
     def _get_crash_count(self):
         count = 0
         last = ""
-        filename = "%s/BosLog" % _get_var('AFS_LOGS_DIR')
+        filename = "%s/BosLog" % get_var('AFS_LOGS_DIR')
         log = open(filename, "r")
         for line in log.readlines():
             if 'core dumped' in line:
@@ -218,7 +218,7 @@ class _SystemKeywords(object):
         BuiltIn().set_suite_variable('${CRASH_LAST}', last)
 
     def crash_check(self):
-        before = _get_var('CRASH_COUNT')
+        before = get_var('CRASH_COUNT')
         (after, last) = self._get_crash_count()
         if after != before:
             raise AssertionError("Server crash detected! %s" % last)

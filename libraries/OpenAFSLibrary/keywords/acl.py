@@ -23,7 +23,7 @@ import sys
 import os
 import re
 from robot.api import logger
-from OpenAFSLibrary.util import _get_var
+from OpenAFSLibrary.util import get_var
 
 _RIGHTS = list("rlidwkaABCDEFGH")
 
@@ -99,7 +99,7 @@ class AccessControlList:
         if not os.path.isdir(path):
             raise AssertionError("Path is not a directory: %s" % (path))
         try:
-            fs = _get_var('FS')
+            fs = get_var('FS')
         except:
             raise AssertionError("FS variable is not set!")
         acl = AccessControlList()
@@ -314,8 +314,8 @@ def _test4():
     assert not a.contains("user4", "none")
 
 def main():
-    global _get_var  # monkey patch a test stub.
-    _get_var = lambda name: {'FS':"/usr/afs/bin/fs"}[name]
+    global get_var  # monkey patch a test stub.
+    get_var = lambda name: {'FS':"/usr/afs/bin/fs"}[name]
     _test1()
     _test2()
     _test3()

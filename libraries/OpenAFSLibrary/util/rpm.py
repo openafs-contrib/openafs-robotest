@@ -22,13 +22,11 @@
 import os
 import sys
 from robot.libraries.BuiltIn import BuiltIn
-
-def _get_var(name):
-    return BuiltIn().get_variable_value("${%s}" % name)
+from OpenAFSLibrary.util import get_var
 
 def _get_list(name):
     items = []
-    for v in _get_var(name).split(","):
+    for v in get_var(name).split(","):
         items.append(v.strip())
     return items
 
@@ -49,7 +47,7 @@ class Rpm:
     @staticmethod
     def current():
         """Get the current rpm filename formatting object."""
-        dist = _get_var('AFS_DIST')
+        dist = get_var('AFS_DIST')
         if dist == 'rhel6':
             return _Rhel6()
         if dist == 'suse':
@@ -83,10 +81,10 @@ class _Rhel6(Rpm):
         rpm_arch = os.uname()[4]
         rpm_dist = ".el6"
         rpm = "%s/%s-%s-%s%s.%s.rpm" % \
-            (_get_var('RPM_PACKAGE_DIR'),
+            (get_var('RPM_PACKAGE_DIR'),
              package,
-             _get_var('RPM_AFSVERSION'),
-             _get_var('RPM_AFSRELEASE'),
+             get_var('RPM_AFSVERSION'),
+             get_var('RPM_AFSRELEASE'),
              rpm_dist,
              rpm_arch)
         return rpm
@@ -95,9 +93,9 @@ class _Rhel6(Rpm):
         """Get the RHEL rpm filename for the kernel module."""
         rpm_kversion = os.uname()[2].replace('-','_')
         kmod = "%s/kmod-openafs-%s-%s.%s.rpm" % \
-            (_get_var('RPM_PACKAGE_DIR'),
-             _get_var('RPM_AFSVERSION'),
-             _get_var('RPM_AFSRELEASE'),
+            (get_var('RPM_PACKAGE_DIR'),
+             get_var('RPM_AFSVERSION'),
+             get_var('RPM_AFSRELEASE'),
              rpm_kversion)
         return kmod
 
@@ -107,11 +105,11 @@ class _Suse(Rpm):
         """Get the SuSE rpm filename from a package name."""
         rpm_arch = os.uname()[4]
         rpm = "%s/%s-%s-%s.%s.%s.rpm" % \
-            (_get_var('RPM_PACKAGE_DIR'),
+            (get_var('RPM_PACKAGE_DIR'),
              package,
-             _get_var('RPM_AFSVERSION'),
-             _get_var('RPM_AFSRELEASE'),
-             _get_var('RPM_DIST'),
+             get_var('RPM_AFSVERSION'),
+             get_var('RPM_AFSRELEASE'),
+             get_var('RPM_DIST'),
              rpm_arch)
         return rpm
 
@@ -119,7 +117,7 @@ class _Suse(Rpm):
         """Get the SuSE rpm filename for the kernel module."""
         rpm_kflavour = os.uname()[2].split("-")[-1:][0]
         kmod = "%s/openafs-kmp-%s*.rpm" % \
-            (_get_var('RPM_PACKAGE_DIR'),
+            (get_var('RPM_PACKAGE_DIR'),
              rpm_kflavour)
         return kmod
 
@@ -138,8 +136,8 @@ def main():
         'RPM_SERVER_PACKAGES': 'x',
         'RPM_CLIENT_PACKAGES': 'y',
     }
-    global _get_var  # monkey patch a test stub.
-    _get_var = lambda name: t[name]
+    global get_var  # monkey patch a test stub.
+    get_var = lambda name: t[name]
 
     t['AFS_DIST'] = 'rhel6'
     rpm = Rpm.current()

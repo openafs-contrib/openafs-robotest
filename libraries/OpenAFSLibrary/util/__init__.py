@@ -60,7 +60,7 @@ def _emulate_get_variable_value(name):
     value = getattr(dist, name, None)
     return value  # may be None
 
-def _get_var(name):
+def get_var(name):
     """Return the named variable value or None if it does not exist."""
     try:
         return rf.get_variable_value("${%s}" % name)
@@ -68,7 +68,7 @@ def _get_var(name):
         # Look in the settings files directly when running outside of the RF.
         return _emulate_get_variable_value(name)
 
-def _run_program(cmd):
+def run_program(cmd):
     logger.info("running: %s" % cmd)
     proc = subprocess.Popen(cmd, bufsize=-1, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     output, error = proc.communicate()
@@ -77,17 +77,17 @@ def _run_program(cmd):
         logger.info("error:  " + error)
     return (proc.returncode, output, error)
 
-def _say(msg):
+def say(msg):
     """Display a progress message to the console."""
     stream = sys.__stdout__
     stream.write("%s\n" % (msg))
     stream.flush()
 
-def _run_keyword(name, *args):
+def run_keyword(name, *args):
     """Run the named keyword."""
     rf.run_keyword(name, *args)
 
-def _lookup_keywords(filename):
+def lookup_keywords(filename):
     """Lookup the keyword names in the given resource file."""
     keywords = []
     start_of_table = r'\*+\s+'

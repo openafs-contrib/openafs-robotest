@@ -25,7 +25,7 @@ import sys
 import time
 from struct import pack,calcsize
 from robot.api import logger
-from OpenAFSLibrary.util import _get_var
+from OpenAFSLibrary.util import get_var
 
 _KRB_KEYTAB_MAGIC = 0x0502
 _KRB_NT_PRINCIPAL = 1
@@ -77,7 +77,7 @@ class _KeytabKeywords(object):
 
     def _get_keytab_keys(self, keytab):
         """Read the list of (kvno,principal,enctype) tuples from a keytab."""
-        klist = _get_var('KLIST')
+        klist = get_var('KLIST')
         entries = []
         command = "%s -e -k -t %s" % (klist, keytab)
         logger.info("Running: %s " % (command))
@@ -104,7 +104,7 @@ class _KeytabKeywords(object):
         return entries
 
     def _get_principal_keys(self, principal):
-        kadmin_local = _get_var('KADMIN_LOCAL')
+        kadmin_local = get_var('KADMIN_LOCAL')
         keys = []
         if "'" in principal:
             raise AssertionError("Invalid principal string: %s" % (principal))
@@ -130,7 +130,7 @@ class _KeytabKeywords(object):
         return _KRB_ENCTYPE_NUMBERS.keys()
 
     def add_principal(self, principal):
-        kadmin_local = _get_var('KADMIN_LOCAL')
+        kadmin_local = get_var('KADMIN_LOCAL')
         if "'" in principal:
             raise AssertionError("Invalid principal string: %s" % (principal))
         command = "sudo -n %s -q 'add_principal -randkey %s'" % (kadmin_local, principal)
@@ -189,7 +189,7 @@ class _KeytabKeywords(object):
 
     def add_entry_to_keytab(self, keytab, principal, enctype=None, salt='normal'):
         """Write an entry to a keytab."""
-        kadmin_local = _get_var('KADMIN_LOCAL')
+        kadmin_local = get_var('KADMIN_LOCAL')
         if principal and "'" in principal:
             raise AssertionError("Invalid principal string: %s" % (principal))
         if enctype and "'" in enctype:
