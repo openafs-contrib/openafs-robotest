@@ -350,7 +350,7 @@ def _register_keywords():
             BuiltIn().import_resource(filename)
             keywords = lookup_keywords(filename)
             for keyword in keywords:
-                registerrun_keyword(filename, keyword, 0)
+                register_run_keyword(filename, keyword, 0)
         except:
             pass
 
