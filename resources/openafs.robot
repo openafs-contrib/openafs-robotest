@@ -2,14 +2,10 @@
 # See LICENSE
 
 *** Settings ***
-Documentation     Import common keywords and variables for
-...               the OpenAFS test suite.
+Documentation     Common keywords and variables for the OpenAFS test suite.
 Library           OperatingSystem
 Library           String
 Library           OpenAFSLibrary
-Resource          prechecks.robot
-Resource          install.robot
-Resource          newcell.robot
 Variables         dist/${AFS_DIST}.py
 
 *** Keywords ***

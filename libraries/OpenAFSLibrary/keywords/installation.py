@@ -25,6 +25,7 @@ import re
 import glob
 import socket
 from robot.api import logger
+from robot.libraries.BuiltIn import BuiltIn
 from robot.libraries.BuiltIn import register_run_keyword
 from OpenAFSLibrary.util import _get_var, _say, _lookup_keywords, _run_keyword, _run_program
 from OpenAFSLibrary.util.rpm import Rpm
@@ -339,11 +340,19 @@ class _InstallationKeywords(object):
 
 def _register_keywords():
     """Register the keywords in all of the resource files."""
-    # XXX: Relative Path!
-    for filename in glob.glob('./resources/*.robot'):
-        keywords = _lookup_keywords(filename)
-        for keyword in keywords:
-            register_run_keyword(filename, keyword, 0)
+    resources = os.path.abspath(os.path.join(os.path.dirname(__file__), "../resources"))
+    logger.info("resources=%s" % resources)
+    if not os.path.isdir(resources):
+        raise AssertionError("Unable to find resources directory! resources=%s" % resources)
+    for filename in glob.glob(os.path.join(resources, "*.robot")):
+        logger.info("looking up keywords in file %s" % filename)
+        try:
+            BuiltIn().import_resource(filename)
+            keywords = _lookup_keywords(filename)
+            for keyword in keywords:
+                register_run_keyword(filename, keyword, 0)
+        except:
+            pass
 
 _register_keywords()
 
