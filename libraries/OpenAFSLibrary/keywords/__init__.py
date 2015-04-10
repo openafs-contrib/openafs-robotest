@@ -23,6 +23,7 @@ from installation import _InstallationKeywords
 from system import _SystemKeywords
 from keytab import _KeytabKeywords
 from login import _LoginKeywords
+from path import _PathKeywords
 from acl import _ACLKeywords
 from dump import _VolumeDumpKeywords
 
@@ -31,6 +32,7 @@ __all__ = [
     '_SystemKeywords',
     '_KeytabKeywords',
     '_LoginKeywords',
+    '_PathKeywords',
     '_ACLKeywords',
     '_VolumeDumpKeywords'
 ]

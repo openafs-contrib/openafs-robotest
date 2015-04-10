@@ -223,39 +223,3 @@ class _SystemKeywords(object):
         if after != before:
             raise AssertionError("Server crash detected! %s" % last)
 
-    def directory_entry_should_exist(self, path):
-        """Fails if directory entry does not exist in the given path."""
-        base = os.path.basename(path)
-        dir = os.path.dirname(path)
-        if not base in os.listdir(dir):
-            raise AssertionError("Directory entry '%s' does not exist in '%s'" % (base, dir))
-
-    def create_files(self, path, count, size=0):
-        """Create count number fixed size files in the given path.
-
-        Fails if the files are already present.
-        """
-        count = int(count)
-        size = int(size)
-        if count <= 0:
-            return
-        fmt = "%%0%dd" % (int(math.log10(float(count))) + 1) # fixed width filenames
-        if size > 0:
-            block = '\0' * 8192
-            blocks = size // len(block)
-            partial = size % len(block)
-            if partial > 0:
-                pblock = '\0' * partial
-        for i in xrange(0, count):
-            num = os.path.join(path, fmt % (i))
-            fd = os.open(num, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0777)
-            if size > 0:
-                for j in xrange(0, blocks):
-                    if os.write(fd, block) != len(block):
-                        raise IOError("Failed to write block %d to file '%s'" % (j,num))
-                if partial:
-                    if os.write(fd, pblock) != len(pblock):
-                        raise IOError("Failed to write to file '%s'" % num)
-            os.close(fd)
-
-

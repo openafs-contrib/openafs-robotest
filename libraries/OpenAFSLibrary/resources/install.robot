@@ -146,6 +146,16 @@ Stop the Cache Manager on Solaris
 # Keywords for RPM based installs. The list of packages to install are given
 # in the per platform variable file.
 #
+Start Service
+    [Arguments]  ${name}
+    Should Not Be Empty  ${name}
+    Sudo  /sbin/service ${name} start
+
+Stop Service
+    [Arguments]  ${name}
+    Should Not Be Empty  ${name}
+    Sudo  /sbin/service ${name} stop
+
 Install RPM Files
     [Arguments]  @{packages}
     ${rpms}=  Catenate  @{packages}
