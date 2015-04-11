@@ -69,6 +69,18 @@ def get_var(name):
         # Look in the settings files directly when running outside of the RF.
         return _emulate_get_variable_value(name)
 
+def vos(*args):
+    rc,out,err = run_program([get_var('VOS')] + list(args))
+    if rc != 0:
+        raise AssertionError("vos failed! %s" % (err))
+    return out
+
+def fs(*args):
+    rc,out,err = run_program([get_var('FS')] + list(args))
+    if rc != 0:
+        raise AssertionError("fs failed! %s" % (err))
+    return out
+
 def run_program(args):
     if isinstance(args, types.StringTypes):
         logger.info("running: string=%s" % args)

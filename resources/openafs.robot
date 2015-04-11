@@ -54,8 +54,4 @@ Cell Should Be
     Should Match  ${output}  This workstation belongs to cell '${cellname}'
     ...  msg=Client has the wrong cell name!
 
-Add Access Rights
-    [Arguments]  ${dir}  ${group}  ${rights}
-    Run Command  ${FS} setacl -dir ${dir} -acl ${group} ${rights}
-
 

@@ -20,17 +20,7 @@
 #
 
 import struct
-from OpenAFSLibrary.util import get_var,run_program
-
-def vos(*args):
-    rc,out,err = run_program([get_var('VOS')] + list(args))
-    if rc != 0:
-        raise AssertionError("vos failed! %s" % (err))
-
-def fs(*args):
-    rc,out,err = run_program([get_var('FS')] + list(args))
-    if rc != 0:
-        raise AssertionError("fs failed! %s" % (err))
+from OpenAFSLibrary.util import vos,fs
 
 class VolumeDump(object):
     """Helper class to create and check volume dumps."""

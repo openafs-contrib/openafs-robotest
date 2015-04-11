@@ -23,11 +23,11 @@ import sys
 import os
 import re
 from robot.api import logger
-from OpenAFSLibrary.util import get_var
+from OpenAFSLibrary.util import get_var,fs
 
 _RIGHTS = list("rlidwkaABCDEFGH")
 
-def _normalize(rights):
+def normalize(rights):
     """Normalize a list of ACL right characters.
 
     Return the characters in canonical order.  A exception is
@@ -45,7 +45,7 @@ def _normalize(rights):
             normalized.append(r)
     return normalized
 
-def _split(rights):
+def parse(rights):
     """ Returns a list string of right chars from a string.
 
     Unlike the fs commands, the leading char may be a '+'
@@ -75,13 +75,13 @@ def _split(rights):
     elif w == "write":
         rights = list("rlidwk")
 
-    return (sign, _normalize(rights))
+    return (sign, normalize(rights))
 
 class AccessControlList:
     """ACL rights checking."""
 
-    @staticmethod
-    def from_args(*args):
+    @classmethod
+    def from_args(cls, *args):
         """Create an ACL test object from a list of string arguments."""
         acl = AccessControlList()
         for arg in args:
@@ -91,22 +91,17 @@ class AccessControlList:
             acl.add(parts[0], parts[1])
         return acl
 
-    @staticmethod
-    def from_path(path):
+    @classmethod
+    def from_path(cls, path):
         """Read an ACL from AFS directory to create an ACL test object."""
         if not os.path.exists(path):
             raise AssertionError("Path does not exist: %s" % (path))
         if not os.path.isdir(path):
             raise AssertionError("Path is not a directory: %s" % (path))
-        try:
-            fs = get_var('FS')
-        except:
-            raise AssertionError("FS variable is not set!")
         acl = AccessControlList()
         section = None
-        cmd = "%s listacl %s" % (fs, path)
-        pipe = os.popen(cmd)
-        for line in pipe.readlines():
+        output = fs('listacl', path)
+        for line in output.splitlines():
             if line.startswith("Access list for"):
                 continue
             if line.startswith("Normal rights:"):
@@ -121,9 +116,6 @@ class AccessControlList:
                 if not section in ('+', '-'):
                     raise AssertionError("Failed to parse fs listacl; missing section label")
                 acl.add(name, section + rights)
-        rc = pipe.close()
-        if rc:
-            raise AssertionError("Failed to run %s: rc=%d" % (cmd,rc))
         return acl
 
     def __init__(self):
@@ -158,14 +150,14 @@ class AccessControlList:
         if name not in self.acls:
             self.acls[name] = ('','')
         acl = self.acls[name] # current entry
-        (sign,rights) = _split(rights)
+        (sign,rights) = parse(rights)
         # Update the rights.
         if sign == '+':
-            pos = "".join(_normalize(rights + list(acl[0])))
+            pos = "".join(normalize(rights + list(acl[0])))
             neg = acl[1]
         elif sign == '-':
             pos = acl[0]
-            neg = "".join(_normalize(rights + list(acl[1])))
+            neg = "".join(normalize(rights + list(acl[1])))
         else:
             assert "Internal error"
         if pos == '' and neg == '':
@@ -178,7 +170,7 @@ class AccessControlList:
         if name not in self.acls:
             return False
         acl = self.acls[name] # current entry
-        (sign,rights) = _split(rights)
+        (sign,rights) = parse(rights)
         rights = "%s%s" % (sign, "".join(rights))
         if sign == '+':
             current = "+%s" % acl[0]
@@ -192,6 +184,9 @@ class AccessControlList:
 
 class _ACLKeywords(object):
     """ACL testing keywords."""
+
+    def add_access_rights(self, path, name, rights):
+        fs('setacl', '-dir', path, '-acl', name, rights)
 
     def access_control_list_matches(self, path, *acls):
         """Fails if a directory ACL does not match the given ACL."""
@@ -239,7 +234,7 @@ def _test1():
     ]
     for x,y in cases:
         try:
-            z = "".join(_normalize(list(x)))
+            z = "".join(normalize(list(x)))
         except:
             assert y is None, "expected exception: x='%s'" % (x)
         if y:
@@ -322,7 +317,7 @@ def main():
     _test4()
 
 if __name__ == "__main__":
-    # usage: python -m OpenAFSLibary.keywords.acl
+    # usage: python -m OpenAFSLibrary.keywords.acl
     main()
 
 
