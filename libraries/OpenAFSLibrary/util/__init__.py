@@ -69,6 +69,27 @@ def get_var(name):
         # Look in the settings files directly when running outside of the RF.
         return _emulate_get_variable_value(name)
 
+def run_program(args):
+    if isinstance(args, types.StringTypes):
+        logger.info("running: string=%s" % args)
+        shell = True
+    else:
+        logger.info("running: args=%s" % " ".join(args))
+        shell = False
+    proc = subprocess.Popen(args, shell=shell, bufsize=-1, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    output, error = proc.communicate()
+    if proc.returncode:
+        logger.info("output: " + output)
+        logger.info("error:  " + error)
+    return (proc.returncode, output, error)
+
+def sudo(cmd, *args):
+    rc,out,err = run_program(['sudo', '-n', '/usr/sbin/afs-robotest-sudo', cmd] + list(args))
+    if rc == os.EX_NOPERM:
+        raise AssertionError("Command not permitted: %s\n" % (cmd));
+    if rc != 0:
+        raise AssertionError("Command failed: %s: exit code %d" % (cmd, rc))
+
 def rxdebug(*args):
     rc,out,err = run_program([get_var('RXDEBUG')] + list(args))
     if rc != 0:
@@ -93,51 +114,4 @@ def fs(*args):
         raise AssertionError("fs failed! %s" % (err))
     return out
 
-def run_program(args):
-    if isinstance(args, types.StringTypes):
-        logger.info("running: string=%s" % args)
-        shell = True
-    else:
-        logger.info("running: args=%s" % " ".join(args))
-        shell = False
-    proc = subprocess.Popen(args, shell=shell, bufsize=-1, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    output, error = proc.communicate()
-    if proc.returncode:
-        logger.info("output: " + output)
-        logger.info("error:  " + error)
-    return (proc.returncode, output, error)
-
-def say(msg):
-    """Display a progress message to the console."""
-    stream = sys.__stdout__
-    stream.write("%s\n" % (msg))
-    stream.flush()
-
-def run_keyword(name, *args):
-    """Run the named keyword."""
-    rf.run_keyword(name, *args)
-
-def lookup_keywords(filename):
-    """Lookup the keyword names in the given resource file."""
-    keywords = []
-    start_of_table = r'\*+\s+'
-    start_of_kw_table = r'\*+\s+Keyword'
-    in_kw_table = False
-    f = open(filename, "r")
-    for line in f.readlines():
-        line = line.rstrip()
-        if len(line) == 0 or line.startswith("#"):
-            continue  # skip comments and blanks
-        if re.match(start_of_kw_table, line):
-            in_kw_table = True   # table started
-            continue
-        if re.match(start_of_table, line) and not re.match(start_of_kw_table, line):
-            in_kw_table = False  # table ended
-            continue
-        if line.startswith(' '):
-            continue  # skip content rows
-        if in_kw_table:
-            keywords.append(line)
-    f.close()
-    return keywords
 

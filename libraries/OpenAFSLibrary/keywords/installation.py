@@ -27,9 +27,186 @@ import socket
 from robot.api import logger
 from robot.libraries.BuiltIn import BuiltIn
 from robot.libraries.BuiltIn import register_run_keyword
-from OpenAFSLibrary.util import get_var, say, lookup_keywords, run_keyword, run_program
+from OpenAFSLibrary.util import get_var,run_program
 from OpenAFSLibrary.util.rpm import Rpm
 from OpenAFSLibrary.keywords.login import _LoginKeywords
+
+def say(msg):
+    """Display a progress message to the console."""
+    stream = sys.__stdout__
+    stream.write("%s\n" % (msg))
+    stream.flush()
+
+def setup_stage(method):
+    """Setup keyword wrapper to manage the order of setup stages."""
+    def decorator(self):
+        name = method.func_name
+        if should_run_stage(name):
+            say("Setup.%s" % name)
+            method(self)
+            set_stage(name)
+    return decorator
+
+def teardown_stage(method):
+    """Teardown keyword wrapper to manage the order of teardown stages."""
+    def decorator(self):
+        if get_var('DO_TEARDOWN') == False:
+            # Do not change the stage so the setup is skipped the
+            # next time the tests harness is run.
+            logger.info("Skipping Teardown: DO_TEARDOWN is False")
+        else:
+            name = method.func_name
+            if should_run_stage(name):
+                say("Teardown.%s" % name)
+                method(self)
+                set_stage(name)
+    return decorator
+
+def should_run_stage(stage):
+    """Returns true if this stage should be run."""
+    sequence = ['', # initial condition
+                'precheck_system',  'install_openafs', 'create_test_cell',
+                'shutdown_openafs', 'remove_openafs',  'purge_files']
+    last = get_stage()
+    if last == sequence[-1]:
+        last = sequence[0] # next cycle
+    if not stage in sequence[1:]:
+        raise AssertionError("Internal error: invalid stage name '%s'" % stage)
+    if not last in sequence:
+        filename = os.path.join(get_var('SITE'), ".stage")
+        raise AssertionError("Invalid stage name '%s' in file '%s'" % (last, filename))
+    if sequence.index(stage) <= sequence.index(last):
+        logger.info("Skipping %s; already done" % (stage))
+        return False
+    if sequence.index(stage) != sequence.index(last) + 1:
+        logger.info("Skipping %s; out of sequence! last stage was '%s'" % (stage, last))
+        return False
+    return True
+
+def get_stage():
+    """Get the last setup/teardown stage which was completed."""
+    try:
+        filename = os.path.join(get_var('SITE'), ".stage")
+        f = open(filename, "r")
+        stage = f.readline().strip()
+        f.close()
+        logger.debug("get stage: %s" % (stage))
+        return stage
+    except:
+        return reset_stage()
+
+def reset_stage():
+    """Reset the last stage to the initial state."""
+    return set_stage('')
+
+def set_stage(stage):
+    """Set the last setup/teardown stage completed."""
+    try:
+        filename = os.path.join(get_var('SITE'), ".stage")
+        f = open(filename, "w")
+        f.write("%s\n" % stage)
+        f.close()
+        logger.debug("set stage: %s" % (stage))
+    except:
+        raise AssertionError("Unable to save setup/teardown stage! %s" % (sys.exc_info()[1]))
+    return stage
+
+def register_keywords():
+    """Register the keywords in all of the resource files."""
+    resources = os.path.abspath(os.path.join(os.path.dirname(__file__), "../resources"))
+    logger.info("resources=%s" % resources)
+    if not os.path.isdir(resources):
+        raise AssertionError("Unable to find resources directory! resources=%s" % resources)
+    for filename in glob.glob(os.path.join(resources, "*.robot")):
+        logger.info("looking up keywords in file %s" % filename)
+        try:
+            BuiltIn().import_resource(filename)
+            keywords = lookup_keywords(filename)
+            for keyword in keywords:
+                register_run_keyword(filename, keyword, 0)
+        except:
+            pass
+
+def lookup_keywords(filename):
+    """Lookup the keyword names in the given resource file."""
+    keywords = []
+    start_of_table = r'\*+\s+'
+    start_of_kw_table = r'\*+\s+Keyword'
+    in_kw_table = False
+    f = open(filename, "r")
+    for line in f.readlines():
+        line = line.rstrip()
+        if len(line) == 0 or line.startswith("#"):
+            continue  # skip comments and blanks
+        if re.match(start_of_kw_table, line):
+            in_kw_table = True   # table started
+            continue
+        if re.match(start_of_table, line) and not re.match(start_of_kw_table, line):
+            in_kw_table = False  # table ended
+            continue
+        if line.startswith(' '):
+            continue  # skip content rows
+        if in_kw_table:
+            keywords.append(line)
+    f.close()
+    return keywords
+
+def run_keyword(name, *args):
+    """Run the named keyword."""
+    BuiltIn().run_keyword(name, *args)
+
+def setup_service_key():
+    """Helper method to setup the AFS service key.
+
+    Create a dummy keytab file when running in akimpersonate mode.
+
+    Call the correct keyword depending on which key file is being setup in
+    the test cell. Supported types are the lecacy DES KeyFile, the interim
+    rxkad-k5 non-DES enctype, and the modern non-DES KeyFileExt.
+    """
+    if get_var('AFS_AKIMPERSONATE') and not os.path.exists(get_var('AFS_KEY_FILE')):
+        run_keyword("Create Akimpersonate Keytab")
+    if get_var('AFS_KEY_FILE') == 'KeyFile':
+        run_keyword("Create Key File")
+    elif get_var('AFS_KEY_FILE') == 'rxkad.keytab':
+        run_keyword("Install rxkad-k5 Keytab")
+    elif get_var('AFS_KEY_FILE') == 'KeyFileExt':
+        run_keyword("Create Extended Key File", get_var('KRB_AFS_ENCTYPE'))
+    else:
+        raise AssertionError("Unsupported AFS_KEY_FILE! %s" % (get_var('AFS_KEY_FILE')))
+
+def remove_symlinks_created_by_bosserver():
+    """Remove the symlinks to the CellServDB and ThisCell files
+    created by the bosserver and replace them with regular files.
+
+    This is a workaround step which is needed to support RPM packages.
+    The init scripts provided by the RPMs can inadvertently overwrite
+    the server's CellServDB when the client side CellServDB is a symlink.
+
+    It is not sufficient to just remove the symlinks. The client side
+    configuration is needed by vos and pts, which are used to setup the
+    cell before the client is started.
+
+    So, remove the symlinked CSDB and ThisCell, and replace with copies
+    from the server configuration directory.
+    """
+    afs_conf_dir = get_var('AFS_CONF_DIR')    # e.g. /usr/afs/etc
+    afs_data_dir = get_var('AFS_DATA_DIR')    # e.g. /usr/vice/etc
+    if afs_conf_dir is None or afs_conf_dir == "":
+        raise AssertionError("AFS_CONF_DIR is not set!")
+    if afs_data_dir is None or afs_data_dir == "":
+        raise AssertionError("AFS_DATA_DIR is not set!")
+    if not os.path.exists(afs_data_dir):
+        run_keyword("Sudo", "mkdir -p %s" % (afs_data_dir))
+    if os.path.islink("%s/CellServDB" % (afs_data_dir)):
+        run_keyword("Sudo", "rm", "-f", "%s/CellServDB" % (afs_data_dir))
+    if os.path.islink("%s/ThisCell" % (afs_data_dir)):
+        run_keyword("Sudo", "rm", "-f", "%s/ThisCell" % (afs_data_dir))
+    run_keyword("Sudo", "cp", "%s/CellServDB" % (afs_conf_dir), "%s/CellServDB.local" % (afs_data_dir))
+    run_keyword("Sudo", "cp", "%s/CellServDB" % (afs_conf_dir), "%s/CellServDB" % (afs_data_dir))
+    run_keyword("Sudo", "cp", "%s/ThisCell" % (afs_conf_dir), "%s/ThisCell" % (afs_data_dir))
+
+
 
 class _InstallationKeywords(object):
     """Test system setup and teardown top-level keywords.
@@ -49,32 +226,7 @@ class _InstallationKeywords(object):
     keywords are called based on the settings and saved state.
     """
 
-    def _setup_stage(method):
-        """Setup keyword wrapper to manage the order of setup stages."""
-        def decorator(self):
-            name = method.func_name
-            if self._should_run_stage(name):
-                say("Setup.%s" % name)
-                method(self)
-                self._set_stage(name)
-        return decorator
-
-    def _teardown_stage(method):
-        """Teardown keyword wrapper to manage the order of teardown stages."""
-        def decorator(self):
-            if get_var('DO_TEARDOWN') == False:
-                # Do not change the stage so the setup is skipped the
-                # next time the tests harness is run.
-                logger.info("Skipping Teardown: DO_TEARDOWN is False")
-            else:
-                name = method.func_name
-                if self._should_run_stage(name):
-                    say("Teardown.%s" % name)
-                    method(self)
-                    self._set_stage(name)
-        return decorator
-
-    @_setup_stage
+    @setup_stage
     def precheck_system(self):
         """Verify system prerequisites are met."""
         run_keyword("Non-interactive sudo is Required")
@@ -108,7 +260,7 @@ class _InstallationKeywords(object):
             run_keyword("Can Get a Kerberos Ticket", get_var('KRB_USER_KEYTAB'),
                 "%s" % get_var('AFS_USER').replace('.','/'), get_var('KRB_REALM'))
 
-    @_setup_stage
+    @setup_stage
     def install_openafs(self):
         """Install the OpenAFS client and server binaries."""
         if get_var('DO_INSTALL') == False:
@@ -136,20 +288,20 @@ class _InstallationKeywords(object):
         else:
             raise AssertionError("Unsupported AFS_DIST: %s" % (dist))
 
-    @_setup_stage
+    @setup_stage
     def create_test_cell(self):
         """Create the OpenAFS test cell."""
         hostname = socket.gethostname()
         if get_var('KRB_REALM').lower() != get_var('AFS_CELL').lower():
             run_keyword("Set Kerberos Realm Name", get_var('KRB_REALM'))
         run_keyword("Set Machine Interface")
-        self._setup_service_key()
+        setup_service_key()
         if get_var('AFS_DIST') == "transarc":
             run_keyword("Start the bosserver")
         else:
             run_keyword("Start Service", "openafs-server")
         run_keyword("Set the Cell Name", get_var('AFS_CELL'))
-        self._remove_symlinks_created_by_bosserver()
+        remove_symlinks_created_by_bosserver()
         run_keyword("Create Database Service", "ptserver", 7002)
         run_keyword("Create Database Service", "vlserver", 7003)
         if get_var('AFS_DAFS'):
@@ -191,7 +343,7 @@ class _InstallationKeywords(object):
         run_program("%s checkvolumes" % get_var('FS'))
         _LoginKeywords().logout()
 
-    @_teardown_stage
+    @teardown_stage
     def shutdown_openafs(self):
         """Shutdown the OpenAFS client and servers."""
         if get_var('AFS_DIST') == "transarc":
@@ -207,7 +359,7 @@ class _InstallationKeywords(object):
             run_keyword("Stop Service", "openafs-client")
             run_keyword("Stop Service", "openafs-server")
 
-    @_teardown_stage
+    @teardown_stage
     def remove_openafs(self):
         """Remove the OpenAFS server and client binaries."""
         if get_var('DO_REMOVE') == False:
@@ -221,7 +373,7 @@ class _InstallationKeywords(object):
         else:
             run_keyword("Remove OpenAFS RPM Packages")
 
-    @_teardown_stage
+    @teardown_stage
     def purge_files(self):
         """Remove remnant data and configuration files."""
         run_keyword("Purge Server Configuration")
@@ -237,122 +389,5 @@ class _InstallationKeywords(object):
                 for vheader in glob.glob("%s/V*.vol" % vicep):
                     run_keyword("Sudo", "rm -f %s" % vheader)
 
-    def _setup_service_key(self):
-        """Helper method to setup the AFS service key.
-
-        Create a dummy keytab file when running in akimpersonate mode.
-
-        Call the correct keyword depending on which key file is being setup in
-        the test cell. Supported types are the lecacy DES KeyFile, the interim
-        rxkad-k5 non-DES enctype, and the modern non-DES KeyFileExt.
-        """
-        if get_var('AFS_AKIMPERSONATE') and not os.path.exists(get_var('AFS_KEY_FILE')):
-            run_keyword("Create Akimpersonate Keytab")
-        if get_var('AFS_KEY_FILE') == 'KeyFile':
-            run_keyword("Create Key File")
-        elif get_var('AFS_KEY_FILE') == 'rxkad.keytab':
-            run_keyword("Install rxkad-k5 Keytab")
-        elif get_var('AFS_KEY_FILE') == 'KeyFileExt':
-            run_keyword("Create Extended Key File", get_var('KRB_AFS_ENCTYPE'))
-        else:
-            raise AssertionError("Unsupported AFS_KEY_FILE! %s" % (get_var('AFS_KEY_FILE')))
-
-    def _remove_symlinks_created_by_bosserver(self):
-        """Remove the symlinks to the CellServDB and ThisCell files
-        created by the bosserver and replace them with regular files.
-
-        This is a workaround step which is needed to support RPM packages.
-        The init scripts provided by the RPMs can inadvertently overwrite
-        the server's CellServDB when the client side CellServDB is a symlink.
-
-        It is not sufficient to just remove the symlinks. The client side
-        configuration is needed by vos and pts, which are used to setup the
-        cell before the client is started.
-
-        So, remove the symlinked CSDB and ThisCell, and replace with copies
-        from the server configuration directory.
-        """
-        afs_conf_dir = get_var('AFS_CONF_DIR')    # e.g. /usr/afs/etc
-        afs_data_dir = get_var('AFS_DATA_DIR')    # e.g. /usr/vice/etc
-        if afs_conf_dir is None or afs_conf_dir == "":
-            raise AssertionError("AFS_CONF_DIR is not set!")
-        if afs_data_dir is None or afs_data_dir == "":
-            raise AssertionError("AFS_DATA_DIR is not set!")
-        if not os.path.exists(afs_data_dir):
-            run_keyword("Sudo", "mkdir -p %s" % (afs_data_dir))
-        if os.path.islink("%s/CellServDB" % (afs_data_dir)):
-            run_keyword("Sudo", "rm", "-f", "%s/CellServDB" % (afs_data_dir))
-        if os.path.islink("%s/ThisCell" % (afs_data_dir)):
-            run_keyword("Sudo", "rm", "-f", "%s/ThisCell" % (afs_data_dir))
-        run_keyword("Sudo", "cp", "%s/CellServDB" % (afs_conf_dir), "%s/CellServDB.local" % (afs_data_dir))
-        run_keyword("Sudo", "cp", "%s/CellServDB" % (afs_conf_dir), "%s/CellServDB" % (afs_data_dir))
-        run_keyword("Sudo", "cp", "%s/ThisCell" % (afs_conf_dir), "%s/ThisCell" % (afs_data_dir))
-
-
-    def _should_run_stage(self, stage):
-        """Returns true if this stage should be run."""
-        sequence = ['', # initial condition
-                    'precheck_system',  'install_openafs', 'create_test_cell',
-                    'shutdown_openafs', 'remove_openafs',  'purge_files']
-        last = self._get_stage()
-        if last == sequence[-1]:
-            last = sequence[0] # next cycle
-        if not stage in sequence[1:]:
-            raise AssertionError("Internal error: invalid stage name '%s'" % stage)
-        if not last in sequence:
-            filename = os.path.join(get_var('SITE'), ".stage")
-            raise AssertionError("Invalid stage name '%s' in file '%s'" % (last, filename))
-        if sequence.index(stage) <= sequence.index(last):
-            logger.info("Skipping %s; already done" % (stage))
-            return False
-        if sequence.index(stage) != sequence.index(last) + 1:
-            logger.info("Skipping %s; out of sequence! last stage was '%s'" % (stage, last))
-            return False
-        return True
-
-    def _get_stage(self):
-        """Get the last setup/teardown stage which was completed."""
-        try:
-            filename = os.path.join(get_var('SITE'), ".stage")
-            f = open(filename, "r")
-            stage = f.readline().strip()
-            f.close()
-            logger.debug("get stage: %s" % (stage))
-            return stage
-        except:
-            return self._reset_stage()
-
-    def _reset_stage(self):
-        """Reset the last stage to the initial state."""
-        return self._set_stage('')
-
-    def _set_stage(self, stage):
-        """Set the last setup/teardown stage completed."""
-        try:
-            filename = os.path.join(get_var('SITE'), ".stage")
-            f = open(filename, "w")
-            f.write("%s\n" % stage)
-            f.close()
-            logger.debug("set stage: %s" % (stage))
-        except:
-            raise AssertionError("Unable to save setup/teardown stage! %s" % (sys.exc_info()[1]))
-        return stage
-
-def _register_keywords():
-    """Register the keywords in all of the resource files."""
-    resources = os.path.abspath(os.path.join(os.path.dirname(__file__), "../resources"))
-    logger.info("resources=%s" % resources)
-    if not os.path.isdir(resources):
-        raise AssertionError("Unable to find resources directory! resources=%s" % resources)
-    for filename in glob.glob(os.path.join(resources, "*.robot")):
-        logger.info("looking up keywords in file %s" % filename)
-        try:
-            BuiltIn().import_resource(filename)
-            keywords = lookup_keywords(filename)
-            for keyword in keywords:
-                register_run_keyword(filename, keyword, 0)
-        except:
-            pass
-
-_register_keywords()
+register_keywords()
 
