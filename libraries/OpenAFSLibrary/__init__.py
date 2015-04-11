@@ -31,7 +31,8 @@ class OpenAFSLibrary(
     _LoginKeywords,
     _PathKeywords,
     _ACLKeywords,
-    _VolumeKeywords):
+    _VolumeKeywords,
+    _RxKeywords):
     """Robot Framework test library for OpenAFS.
 
 

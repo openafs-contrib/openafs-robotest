@@ -19,22 +19,21 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
 
-from installation import _InstallationKeywords
-from system import _SystemKeywords
-from keytab import _KeytabKeywords
-from login import _LoginKeywords
-from path import _PathKeywords
-from acl import _ACLKeywords
-from volume import _VolumeKeywords
-from rx import _RxKeywords
+from robot.api import logger
+from OpenAFSLibrary.util import rxdebug
 
-__all__ = [
-    '_InstallationKeywords',
-    '_SystemKeywords',
-    '_KeytabKeywords',
-    '_LoginKeywords',
-    '_PathKeywords',
-    '_ACLKeywords',
-    '_VolumeKeywords',
-    '_RxKeywords'
-]
+
+class _RxKeywords(object):
+
+    def get_version(self, host, port):
+        version = None
+        output = rxdebug('-servers', host, '-port', port, '-version')
+        for line in output.splitlines():
+            if line.startswith("Trying"):
+                continue
+            if line.startswith("AFS version:"):
+                version = line.replace("AFS version:", "").strip()
+        if not version:
+            raise AssertionError("Failed to get version string.")
+        return version
+

@@ -69,6 +69,18 @@ def get_var(name):
         # Look in the settings files directly when running outside of the RF.
         return _emulate_get_variable_value(name)
 
+def rxdebug(*args):
+    rc,out,err = run_program([get_var('RXDEBUG')] + list(args))
+    if rc != 0:
+        raise AssertionError("rxdebug failed! %s" % (err))
+    return out
+
+def bos(*args):
+    rc,out,err = run_program([get_var('BOS')] + list(args))
+    if rc != 0:
+        raise AssertionError("bos failed! %s" % (err))
+    return out
+
 def vos(*args):
     rc,out,err = run_program([get_var('VOS')] + list(args))
     if rc != 0:

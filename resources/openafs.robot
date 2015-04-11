@@ -40,10 +40,6 @@ Run Command
     ...  msg=Failed: ${cmd}, rc=${rc}, ${output}
     ...  values=False
 
-Rx Service Should Be Reachable
-    [Arguments]  ${host}  ${port}
-    Run Command  ${RXDEBUG} ${host} ${port} -version
-
 Cell Should Be
     [Arguments]  ${cellname}
     ${cmd}=  Set Variable  ${FS} wscell

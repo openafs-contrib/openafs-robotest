@@ -88,8 +88,8 @@ Create Database Service
     Wait Until Keyword Succeeds  1 min  1 sec  Database Should Have Quorum  ${port}
 
 Fileserver Should Be Running
-    Wait Until Keyword Succeeds  1 min  5 sec    Rx Service Should Be Reachable  ${HOSTNAME}  7000
-    Wait Until Keyword Succeeds  1 min  5 sec    Rx Service Should Be Reachable  ${HOSTNAME}  7003
+    Wait Until Keyword Succeeds  1 min  5 sec    Get Version  ${HOSTNAME}  7000
+    Wait Until Keyword Succeeds  1 min  5 sec    Get Version  ${HOSTNAME}  7003
 
 Create File Service
     Sudo  ${BOS}  create ${HOSTNAME} fs fs
