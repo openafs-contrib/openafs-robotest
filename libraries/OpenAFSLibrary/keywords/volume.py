@@ -20,8 +20,19 @@
 #
 
 import struct
+from OpenAFSLibrary.util import get_var,run_program
 
-class VolumeDump:
+def vos(*args):
+    rc,out,err = run_program([get_var('VOS')] + list(args))
+    if rc != 0:
+        raise AssertionError("vos failed! %s" % (err))
+
+def fs(*args):
+    rc,out,err = run_program([get_var('FS')] + list(args))
+    if rc != 0:
+        raise AssertionError("fs failed! %s" % (err))
+
+class VolumeDump(object):
     """Helper class to create and check volume dumps."""
 
     DUMPBEGINMAGIC = 0xB3A11322
@@ -66,10 +77,8 @@ class VolumeDump:
         self.file.close()
         self.file = None
 
-
-
-class _VolumeDumpKeywords(object):
-    """Volume dump keywords."""
+class _VolumeKeywords(object):
+    """Volume keywords."""
 
     def should_be_a_dump_file(self, filename):
         """Fails if filename is not an AFS dump file."""
@@ -97,4 +106,34 @@ class _VolumeDumpKeywords(object):
         dump.write(VolumeDump.D_VNODE, "LL", 3, 999)
         dump.write(ord('A'), "LLLLL", size, version, total, positive, negative)
         dump.close()
+
+    def create_volume(self, server, part, name):
+        # todo: return the volume id!
+        vos('create', '-server', server, '-partition', part, '-name', name, '-m', '0', '-verbose')
+
+    def remove_volume(self, name):
+        vos('remove', '-id', name)
+
+    def mount_volume(self, path, vol, *options):
+        fs('mkmount', '-dir', path, '-vol', vol, *options)
+
+    def remove_mount_point(self, path):
+        fs('rmmount', '-dir', path)
+
+    def replicate_volume(self, server, part, volume):
+        vos('addsite', '-server', server, '-partition', part, '-id', volume)
+        vos('release', '-id', volume, '-verbose')
+        fs('checkvolumes')
+
+    def remove_replica(self, server, part, name):
+        vos('remove', '-server',server, '-partition', part, '-id', "%s.readonly" % name)
+
+    def release_volume(self, volume):
+        vos('release', '-id', volume, '-verbose')
+        fs('checkvolumes')
+
+    def create_and_mount_volume(self, server, part, name, path):
+        vos('create', '-server', server, '-partition', part, '-name', name, '-verbose')
+        fs('mkmount', '-dir', path, '-vol', name)
+        fs('setacl', '-dir', path, '-acl', 'system:anyuser', 'read')
 

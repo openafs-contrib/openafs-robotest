@@ -161,8 +161,8 @@ Mount Cell Root Volume
     Directory Should Exist         /${afs}
     Directory Should Not Exist     /${afs}/${AFS_CELL}
     Directory Should Not Exist     /${afs}/.${AFS_CELL}
-    Mount Volume       /${afs}/${AFS_CELL}    root.cell  -cell ${AFS_CELL}
-    Mount Volume       /${afs}/.${AFS_CELL}   root.cell  -cell ${AFS_CELL}  -rw
+    Mount Volume       /${afs}/${AFS_CELL}    root.cell  -cell  ${AFS_CELL}
+    Mount Volume       /${afs}/.${AFS_CELL}   root.cell  -cell  ${AFS_CELL}  -rw
     Add Access Rights  /${afs}/.              system:anyuser  read
     Add Access Rights  /${afs}/${AFS_CELL}/.  system:anyuser  read
 

@@ -25,7 +25,7 @@ from keytab import _KeytabKeywords
 from login import _LoginKeywords
 from path import _PathKeywords
 from acl import _ACLKeywords
-from dump import _VolumeDumpKeywords
+from volume import _VolumeKeywords
 
 __all__ = [
     '_InstallationKeywords',
@@ -34,5 +34,5 @@ __all__ = [
     '_LoginKeywords',
     '_PathKeywords',
     '_ACLKeywords',
-    '_VolumeDumpKeywords'
+    '_VolumeKeywords'
 ]

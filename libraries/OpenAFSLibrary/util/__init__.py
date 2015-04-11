@@ -23,6 +23,7 @@ import sys
 import os
 import re
 import imp
+import types
 import subprocess
 from robot.api import logger
 from robot.libraries.BuiltIn import BuiltIn
@@ -68,9 +69,14 @@ def get_var(name):
         # Look in the settings files directly when running outside of the RF.
         return _emulate_get_variable_value(name)
 
-def run_program(cmd):
-    logger.info("running: %s" % cmd)
-    proc = subprocess.Popen(cmd, bufsize=-1, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+def run_program(args):
+    if isinstance(args, types.StringTypes):
+        logger.info("running: string=%s" % args)
+        shell = True
+    else:
+        logger.info("running: args=%s" % " ".join(args))
+        shell = False
+    proc = subprocess.Popen(args, shell=shell, bufsize=-1, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     output, error = proc.communicate()
     if proc.returncode:
         logger.info("output: " + output)
