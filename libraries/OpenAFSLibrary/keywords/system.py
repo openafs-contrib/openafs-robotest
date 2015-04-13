@@ -168,6 +168,9 @@ class _SystemKeywords(object):
 
     def __init__(self):
         self.system = System.current()
+        # Save this hostname as a global variable.
+        hostname = socket.gethostname()
+        BuiltIn().set_global_variable("${HOSTNAME}", hostname)
 
     def command_should_succeed(self, cmd, msg=None):
         """Fails if command does not exit with a zero status code."""

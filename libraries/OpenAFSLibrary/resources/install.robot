@@ -133,7 +133,8 @@ Stop the bosserver
     Sudo  pkill bosserver
 
 Start the Cache Manager on Linux
-    ${kmod}=  Set Variable  ${AFS_KERNEL_DIR}/modload/libafs-${OS_RELEASE}.mp.ko
+    ${release}=  Evaluate  os.uname()[2]  os
+    ${kmod}=  Set Variable  ${AFS_KERNEL_DIR}/modload/libafs-${release}.mp.ko
     File Should Exist  ${kmod}
     Sudo  insmod ${kmod}
     Sudo  /usr/vice/etc/afsd ${AFSD_OPTIONS}

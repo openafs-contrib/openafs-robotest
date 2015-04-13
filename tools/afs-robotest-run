@@ -50,7 +50,6 @@ def main(args):
         ],
         "variablefile": [
             os.path.join(root,"settings.py"),
-            os.path.join(root,"resources/sysinfo.py"),
         ],
         "outputdir": getattr(settings, 'RF_OUTPUT', os.path.join(root, "output")),
         "loglevel": getattr(settings, 'RF_LOGLEVEL', 'INFO'),
