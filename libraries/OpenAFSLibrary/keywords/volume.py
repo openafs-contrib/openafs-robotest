@@ -98,31 +98,39 @@ class _VolumeKeywords(object):
         dump.close()
 
     def create_volume(self, server, part, name):
+        """Create an AFS volume."""
         # todo: return the volume id!
         vos('create', '-server', server, '-partition', part, '-name', name, '-m', '0', '-verbose')
 
     def remove_volume(self, name):
+        """Remove an AFS volume."""
         vos('remove', '-id', name)
 
     def mount_volume(self, path, vol, *options):
+        """Mount an AFS volume."""
         fs('mkmount', '-dir', path, '-vol', vol, *options)
 
     def remove_mount_point(self, path):
+        """Unmount an AFS volume."""
         fs('rmmount', '-dir', path)
 
     def replicate_volume(self, server, part, volume):
+        """Create an AFS read-only volume."""
         vos('addsite', '-server', server, '-partition', part, '-id', volume)
         vos('release', '-id', volume, '-verbose')
         fs('checkvolumes')
 
     def remove_replica(self, server, part, name):
+        """Remove an AFS read-only volume."""
         vos('remove', '-server',server, '-partition', part, '-id', "%s.readonly" % name)
 
     def release_volume(self, volume):
+        """Release an AFS read-write volume."""
         vos('release', '-id', volume, '-verbose')
         fs('checkvolumes')
 
     def create_and_mount_volume(self, server, part, name, path):
+        """Create an AFS volume."""
         vos('create', '-server', server, '-partition', part, '-name', name, '-verbose')
         fs('mkmount', '-dir', path, '-vol', name)
         fs('setacl', '-dir', path, '-acl', 'system:anyuser', 'read')

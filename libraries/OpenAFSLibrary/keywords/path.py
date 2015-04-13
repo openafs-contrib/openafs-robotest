@@ -66,42 +66,49 @@ class _PathKeywords(object):
             raise AssertionError("Directory entry '%s' does not exist in '%s'." % (base, dir))
 
     def should_be_file(self, path):
+        """Fails if path is not a file."""
         if not path:
             raise AssertionError("Empty argument!")
         if not os.path.isfile(path):
             raise AssertionError("%s is not a file." % path)
 
     def file_should_be_executable(self, path):
+        """Fails if path is not an executable file for the current user."""
         if not path:
             raise AssertionError("Empty argument!")
         if not os.access(path, os.X_OK):
             raise AssertionError("%s is not executable." % path)
 
     def should_be_symlink(self, path):
+        """Fails if path is not a symlink."""
         if not path:
             raise AssertionError("Empty argument!")
         if not os.path.islink(path):
             raise AssertionError("%s is not a symlink." % path)
 
     def should_not_be_symlink(self, path):
+        """Fails if path is a symlink."""
         if not path:
             raise AssertionError("Empty argument!")
         if os.path.islink(path):
             raise AssertionError("%s is a symlink." % path)
 
     def should_be_dir(self, path):
+        """Fails if path is not a directory."""
         if not path:
             raise AssertionError("Empty argument!")
         if not os.path.isdir(path):
             raise AssertionError("%s is not a directory." % path)
 
     def should_not_be_dir(self, path):
+        """Fails if path is a directory."""
         if not path:
             raise AssertionError("Empty argument!")
         if os.path.isdir(path):
             raise AssertionError("%s is a directory." % path)
 
     def link_count_should_be(self, path, count):
+        """Fails if the inode link count is not `count`."""
         count = int(count)
         if not path:
             raise AssertionError("Empty argument!")
@@ -109,12 +116,14 @@ class _PathKeywords(object):
             raise AssertionError("%s does not have %d links" % (path,count))
 
     def inode_should_be_equal(self, a, b):
+        """Fails if path `a` is a different inode than `b`."""
         if not a or not b:
             raise AssertionError("Empty argument!")
         if os.stat(a).st_ino != os.stat(b).st_ino:
             raise AssertionError("%s and %s do not have the same inode number." % (a,b))
 
     def get_inode(self, path):
+        """Returns the inode number of a path."""
         if not path:
             raise AssertionError("Empty argument!")
         return os.stat(path).st_ino

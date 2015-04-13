@@ -145,9 +145,11 @@ class _KeytabKeywords(object):
     """Keywords for reading Kerberos keytabs."""
 
     def get_encryption_types(self):
+        """Return the list of encyption types."""
         return KRB_ENCTYPE_NUMBERS.keys()
 
     def add_principal(self, principal):
+        """Add a principal to the Kerberos realm."""
         kadmin_local = get_var('KADMIN_LOCAL')
         if "'" in principal:
             raise AssertionError("Invalid principal string: %s" % (principal))
@@ -161,7 +163,7 @@ class _KeytabKeywords(object):
             raise AssertionError("kadmin.local failed: exit code=%d" % (rc))
 
     def get_key_version_number(self, keytab, cell, realm, enctype="des-cbc-crc"):
-        """Get the kvno of an AFS service key.
+        """Get the kvno of the AFS service key.
 
         Returns the kvno of the AFS service key for the given cell, realm and
         enctype pattern. The largest kvno is returned if more than one key matches.
@@ -290,34 +292,33 @@ class _KeytabKeywords(object):
         server. A dummy service key is created randomly and saved in the MIT krb5
         keytab format. The key is not cryptographically strong; only use this
         for test systems.
-
-        The following C-like structure definitions illustrate the MIT keytab
-        file format. All values are in network byte order. All text is ASCII.
-
-          keytab {
-              uint16_t file_format_version;                    /* 0x502 */
-              keytab_entry entries[*];
-          };
-          keytab_entry {
-              int32_t size;
-              uint16_t num_components;    /* sub 1 if version 0x501 */
-              counted_octet_string realm;
-              counted_octet_string components[num_components];
-              uint32_t name_type;   /* not present if version 0x501 */
-              uint32_t timestamp;
-              uint8_t vno8;
-              keyblock key;
-              uint32_t vno; /* only present if >= 4 bytes left in entry */
-          };
-          counted_octet_string {
-              uint16_t length;
-              uint8_t data[length];
-          };
-          keyblock {
-              uint16_t type;
-              counted_octet_string key;
-          };
         """
+        # The following C-like structure definitions illustrate the MIT keytab
+        # file format. All values are in network byte order. All text is ASCII.
+        #
+        #   keytab {
+        #       uint16_t file_format_version;                    /* 0x502 */
+        #       keytab_entry entries[*];
+        #   };
+        #   keytab_entry {
+        #       int32_t size;
+        #       uint16_t num_components;    /* sub 1 if version 0x501 */
+        #       counted_octet_string realm;
+        #       counted_octet_string components[num_components];
+        #       uint32_t name_type;   /* not present if version 0x501 */
+        #       uint32_t timestamp;
+        #       uint8_t vno8;
+        #       keyblock key;
+        #       uint32_t vno; /* only present if >= 4 bytes left in entry */
+        #   };
+        #   counted_octet_string {
+        #       uint16_t length;
+        #       uint8_t data[length];
+        #   };
+        #   keyblock {
+        #       uint16_t type;
+        #       counted_octet_string key;
+        #   };
         num_components = 2
         name_type = KRB_NT_PRINCIPAL
         timestamp = int(time.time())

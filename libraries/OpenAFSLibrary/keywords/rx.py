@@ -26,6 +26,7 @@ from OpenAFSLibrary.util import rxdebug
 class _RxKeywords(object):
 
     def get_version(self, host, port):
+        """Request the software version number."""
         version = None
         output = rxdebug('-servers', host, '-port', port, '-version')
         for line in output.splitlines():

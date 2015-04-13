@@ -29,6 +29,7 @@ def _principal(user, realm):
 class _LoginKeywords(object):
 
     def login(self, user=None):
+        """Acquire an AFS token for authenticated access."""
         if user is None:
             user = get_var('AFS_ADMIN')
         if get_var('AFS_AKIMPERSONATE'):
@@ -37,6 +38,7 @@ class _LoginKeywords(object):
             self.login_with_keytab(user)
 
     def logout(self):
+        """Release the AFS token."""
         if not get_var('AFS_AKIMPERSONATE'):
             site = get_var('SITE')
             kdestroy = get_var('KDESTROY')
@@ -51,6 +53,7 @@ class _LoginKeywords(object):
             raise AssertionError("unlog failed: '%s'; exit code = %d" % (unlog, rc))
 
     def akimpersonate(self, user):
+        """Acquire an AFS token for authenticated access without Kerberos."""
         if not user:
             raise AsseritionError("User name is required")
         aklog = get_var('AKLOG')
@@ -64,6 +67,7 @@ class _LoginKeywords(object):
             raise AssertionError("aklog failed: '%s'; exit code = %d" % (cmd, rc))
 
     def login_with_keytab(self, user):
+        """Acquire an AFS token for authenticated access with Kerberos."""
         if not user:
             raise AsseritionError("User name is required")
         site = get_var('SITE')

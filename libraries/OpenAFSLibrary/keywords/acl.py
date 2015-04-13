@@ -186,10 +186,11 @@ class _ACLKeywords(object):
     """ACL testing keywords."""
 
     def add_access_rights(self, path, name, rights):
+        """Add access rights to a path."""
         fs('setacl', '-dir', path, '-acl', name, rights)
 
     def access_control_list_matches(self, path, *acls):
-        """Fails if a directory ACL does not match the given ACL."""
+        """Fails if an ACL does not match the given ACL."""
         logger.debug("access_control_list_matches: path=%s, acls=[%s]" % (path, ",".join(acls)))
         a1 = AccessControlList.from_path(path)
         a2 = AccessControlList.from_args(*acls)
@@ -199,6 +200,7 @@ class _ACLKeywords(object):
             raise AssertionError("ACLs do not match: path=%s args=%s" % (a1, a2))
 
     def access_control_list_contains(self, path, name, rights):
+        """Fails if an ACL does not contain the given rights."""
         logger.debug("access_control_list_contains: path=%s, name=%s, rights=%s" % (path, name, rights))
         a = AccessControlList.from_path(path)
         if not a.contains(name, rights):

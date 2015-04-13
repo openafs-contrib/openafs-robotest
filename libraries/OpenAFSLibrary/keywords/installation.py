@@ -45,6 +45,7 @@ def setup_stage(method):
             say("Setup.%s" % name)
             method(self)
             set_stage(name)
+    decorator.__doc__ = method.__doc__
     return decorator
 
 def teardown_stage(method):
@@ -60,6 +61,7 @@ def teardown_stage(method):
                 say("Teardown.%s" % name)
                 method(self)
                 set_stage(name)
+    decorator.__doc__ = method.__doc__
     return decorator
 
 def should_run_stage(stage):

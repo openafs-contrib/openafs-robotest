@@ -159,16 +159,19 @@ class _SystemKeywords(object):
         self.system = System.current()
 
     def run_program(self, cmd):
+        """Run a program."""
         rc,out,err = run_program(cmd)
         if rc:
             raise AssertionError("Program failed: '%s', exit code='%d'" % (cmd_line, rc))
 
     def run_command(self, cmd):
+        """Run a program."""
         rc,out,err = run_program(cmd)
         if rc:
             raise AssertionError("Program failed: '%s', exit code='%d'" % (cmd_line, rc))
 
     def command_should_succeed(self, cmd, msg=None):
+        """Fails if command does not exit with a zero status code."""
         rc,out,err = run_program(cmd)
         if rc != 0:
             if not msg:
@@ -176,6 +179,7 @@ class _SystemKeywords(object):
             raise AssertionError(msg)
 
     def command_should_fail(self, cmd):
+        """Fails if command exits with a zero status code."""
         rc,out,err = run_program(cmd)
         if rc == 0:
             raise AssertionError("Command should have failed: %s" % cmd)
@@ -194,10 +198,12 @@ class _SystemKeywords(object):
         return "(%d,%d)" % (os.major(device), os.minor(device))
 
     def program_should_be_running(self, program):
+        """Verify the process name is running."""
         if program not in get_running_programs():
             raise AssertionError("Program '%s' is not running!" % (program))
 
     def program_should_not_be_running(self, program):
+        """Verify the process name is not running."""
         if program in get_running_programs():
             raise AssertionError("Program '%s' is running!" % (program))
 
@@ -214,11 +220,13 @@ class _SystemKeywords(object):
         return self.system.get_interfaces()
 
     def init_crash_check(self):
+        """Initialize the crash check counter."""
         (count, last) = get_crash_count()
         BuiltIn().set_suite_variable('${CRASH_COUNT}', count)
         BuiltIn().set_suite_variable('${CRASH_LAST}', last)
 
     def crash_check(self):
+        """Fails if a server process crash was detected."""
         before = get_var('CRASH_COUNT')
         (after, last) = get_crash_count()
         if after != before:
