@@ -27,7 +27,7 @@ import socket
 from robot.api import logger
 from robot.libraries.BuiltIn import BuiltIn
 from robot.libraries.BuiltIn import register_run_keyword
-from OpenAFSLibrary.util import get_var,run_program
+from OpenAFSLibrary.util import get_var,run_program,load_globals,DIST
 from OpenAFSLibrary.util.rpm import Rpm
 from OpenAFSLibrary.keywords.login import _LoginKeywords
 
@@ -112,6 +112,14 @@ def set_stage(stage):
     except:
         raise AssertionError("Unable to save setup/teardown stage! %s" % (sys.exc_info()[1]))
     return stage
+
+def import_dist_variables():
+    if not get_var('AFS_DIST'):
+        raise AssertionError("AFS_DIST is not set!")
+    dist = os.path.abspath(os.path.join(DIST, "%s.py" % get_var('AFS_DIST')))
+    if not os.path.isfile(dist):
+        raise AssertionError("Unable to find dist file! %s" % dist)
+    load_globals(dist)
 
 def register_keywords():
     """Register the keywords in all of the resource files."""
@@ -391,5 +399,5 @@ class _InstallationKeywords(object):
                 for vheader in glob.glob("%s/V*.vol" % vicep):
                     run_keyword("Sudo", "rm -f %s" % vheader)
 
+import_dist_variables()
 register_keywords()
-

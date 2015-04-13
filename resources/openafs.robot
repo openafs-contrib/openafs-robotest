@@ -6,7 +6,6 @@ Documentation     Common keywords and variables for the OpenAFS test suite.
 Library           OperatingSystem
 Library           String
 Library           OpenAFSLibrary
-Variables         dist/${AFS_DIST}.py
 
 *** Keywords ***
 TODO

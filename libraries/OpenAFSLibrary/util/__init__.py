@@ -30,8 +30,8 @@ from robot.libraries.BuiltIn import BuiltIn
 
 # Assume the root is relative to this module. In the future, an environment
 # variable may be needed.
-ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
-DIST = os.path.join(ROOT, 'resources', 'dist')
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+DIST = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "resources", "dist"))
 
 rf = BuiltIn()
 
@@ -60,6 +60,20 @@ def _emulate_get_variable_value(name):
     dist = imp.load_source('settings.dist', dist_py)
     value = getattr(dist, name, None)
     return value  # may be None
+
+
+def load_globals(path):
+    """Load defaults into the global variable namespace."""
+    module = imp.load_source('globals', path)
+    for name in dir(module):
+        if name.startswith("_"):
+            continue
+        try:
+            value = getattr(module, name, None)
+            if value and not get_var(name):
+                rf.set_global_variable("${%s}" % name, value)
+        except AttributeError:
+            pass # allow to load outside of RF
 
 def get_var(name):
     """Return the named variable value or None if it does not exist."""

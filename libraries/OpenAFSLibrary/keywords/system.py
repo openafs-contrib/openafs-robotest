@@ -28,6 +28,14 @@ from robot.api import logger
 from robot.libraries.BuiltIn import BuiltIn
 from OpenAFSLibrary.util import get_var,sudo,run_program
 
+def set_global_variables():
+    # Save this hostname as a global variable.
+    try:
+        hostname = socket.gethostname()
+        BuiltIn().set_global_variable("${HOSTNAME}", hostname)
+    except AttributeError:
+        pass # allow to load outside of RF
+
 def get_running_programs():
     rc,out,err = run_program("ps ax")
     if rc != 0:
@@ -164,13 +172,8 @@ class Solaris(System):
         else:
             sudo("/usr/bin/crle", "-u")
 
+current = System.current()
 class _SystemKeywords(object):
-
-    def __init__(self):
-        self.system = System.current()
-        # Save this hostname as a global variable.
-        hostname = socket.gethostname()
-        BuiltIn().set_global_variable("${HOSTNAME}", hostname)
 
     def command_should_succeed(self, cmd, msg=None):
         """Fails if command does not exit with a zero status code."""
@@ -211,19 +214,19 @@ class _SystemKeywords(object):
 
     def get_modules(self):
         """Return a list of loaded kernel module names."""
-        return self.system.get_modules()
+        return current.get_modules()
 
     def unload_module(self, name):
         """Unload the kernel module."""
-        return self.system.unload_module(name)
+        return current.unload_module(name)
 
     def get_interfaces(self):
         """Find the non-loopback IPv4 addresses of the network interfaces."""
-        return self.system.get_interfaces()
+        return current.get_interfaces()
 
     def configure_dynamic_linker(self, lib=None):
         """Configure the run-time dynamic linker."""
-        return self.system.configure_dynamic_linker(lib)
+        return current.configure_dynamic_linker(lib)
 
     def init_crash_check(self):
         """Initialize the crash check counter."""
@@ -237,4 +240,6 @@ class _SystemKeywords(object):
         (after, last) = get_crash_count()
         if after != before:
             raise AssertionError("Server crash detected! %s" % last)
+
+set_global_variables()
 

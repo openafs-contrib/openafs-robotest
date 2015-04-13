@@ -46,5 +46,5 @@ BOSSERVER_OPTIONS = "-pidfiles"
 # afsd options
 #
 AFSD_OPTIONS = "-dynroot -fakestat"
-AFSD_DYNROOT = '-dynroot' in AFSD_OPTIONS
+AFSD_DYNROOT = True
 
