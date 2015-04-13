@@ -102,6 +102,11 @@ class Linux(System):
         pipe.close
         return addrs
 
+    def configure_dynamic_linker(self, lib=None):
+        if lib:
+            sudo("/sbin/ldconfig", lib)
+        else:
+            sudo("/sbin/ldconfig")
 
 class Solaris(System):
     def _get_kernel_modules(self):
@@ -152,6 +157,12 @@ class Solaris(System):
                     addrs.append(addr)
         pipe.close
         return addrs
+
+    def configure_dynamic_linker(self, lib=None):
+        if lib:
+            sudo("/usr/bin/crle", "-u", "-l", lib)
+        else:
+            sudo("/usr/bin/crle", "-u")
 
 class _SystemKeywords(object):
 
@@ -206,6 +217,10 @@ class _SystemKeywords(object):
     def get_interfaces(self):
         """Find the non-loopback IPv4 addresses of the network interfaces."""
         return self.system.get_interfaces()
+
+    def configure_dynamic_linker(self, lib=None):
+        """Configure the run-time dynamic linker."""
+        return self.system.configure_dynamic_linker(lib)
 
     def init_crash_check(self):
         """Initialize the crash check counter."""

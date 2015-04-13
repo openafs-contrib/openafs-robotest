@@ -101,7 +101,7 @@ Install Shared Libraries
     @{libs}=  Split To Lines  ${output}
     :FOR  ${lib}  IN  @{libs}
     \  Sudo  cp ${lib} /usr/afs/lib
-    Sudo  ${LDCONFIG} ${LDCONFIG_UPDATE} ${LDCONFIG_LIB} /usr/afs/lib
+    Configure Dynamic Linker  /usr/afs/lib
 
 Remove Server Binaries
     [Documentation]  Remove transarc style server binaries.
@@ -118,7 +118,7 @@ Remove Workstation Binaries
 Remove Shared Libraries Binaries
     [Documentation]  Remove transarc style shared libraries.
     Purge Directory  /usr/afs/lib
-    Sudo  ${LDCONFIG} ${LDCONFIG_UPDATE}
+    Configure Dynamic Linker
 
 Start the bosserver
     File Should Exist              ${AFS_SRV_LIBEXEC_DIR}/bosserver
