@@ -158,18 +158,6 @@ class _SystemKeywords(object):
     def __init__(self):
         self.system = System.current()
 
-    def run_program(self, cmd):
-        """Run a program."""
-        rc,out,err = run_program(cmd)
-        if rc:
-            raise AssertionError("Program failed: '%s', exit code='%d'" % (cmd_line, rc))
-
-    def run_command(self, cmd):
-        """Run a program."""
-        rc,out,err = run_program(cmd)
-        if rc:
-            raise AssertionError("Program failed: '%s', exit code='%d'" % (cmd_line, rc))
-
     def command_should_succeed(self, cmd, msg=None):
         """Fails if command does not exit with a zero status code."""
         rc,out,err = run_program(cmd)

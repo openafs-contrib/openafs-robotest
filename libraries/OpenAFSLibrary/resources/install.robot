@@ -23,7 +23,7 @@ Untar Binaries
     Should Not Be Empty  ${GTAR}
     Should Not Be Empty  ${TRANSARC_TARBALL}
     Create Directory     ${SITE}/binaries
-    Run Command          cd ${SITE}/binaries && ${GTAR} xvzf ${TRANSARC_TARBALL}
+    Command Should Succeed  cd ${SITE}/binaries && ${GTAR} xvzf ${TRANSARC_TARBALL}
 
 Install Server Binaries
     [Documentation]  Install transarc style server binaries

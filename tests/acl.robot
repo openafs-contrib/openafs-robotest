@@ -16,16 +16,16 @@ ${PATH2}    /afs/.${AFS_CELL}/test/acltest2
 *** Keywords ***
 Setup Users and Groups
     Login  ${AFS_ADMIN}
-    Run Command  ${PTS} createuser user1
-    Run Command  ${PTS} createuser user2
-    Run Command  ${PTS} creategroup group1 -owner ${AFS_ADMIN}
-    Run Command  ${PTS} adduser user1 group1
-    Run Command  ${PTS} adduser user2 group1
+    Command Should Succeed  ${PTS} createuser user1
+    Command Should Succeed  ${PTS} createuser user2
+    Command Should Succeed  ${PTS} creategroup group1 -owner ${AFS_ADMIN}
+    Command Should Succeed  ${PTS} adduser user1 group1
+    Command Should Succeed  ${PTS} adduser user2 group1
 
 Teardown Users and Groups
-    Run Command  ${PTS} delete user1
-    Run Command  ${PTS} delete user2
-    Run Command  ${PTS} delete group1
+    Command Should Succeed  ${PTS} delete user1
+    Command Should Succeed  ${PTS} delete user2
+    Command Should Succeed  ${PTS} delete group1
     Logout
 
 Setup Test Directory

@@ -71,7 +71,7 @@ Add a Replication Site
     [Tags]  arla  #(vosaddsite)
     [Setup]     Run Keywords  Login  ${AFS_ADMIN}
     ...         AND           Create Volume  ${SERVER}  a  test.add
-    [Teardown]  Run Keywords  Run Command    ${VOS} remsite ${SERVER} a test.add
+    [Teardown]  Run Keywords  Command Should Succeed    ${VOS} remsite ${SERVER} a test.add
     ...         AND           Remove Volume  test.add
     ...         AND           Logout
     Command Should Succeed  ${VOS} addsite ${SERVER} a test.add
@@ -81,7 +81,7 @@ Release a Volume
     [Tags]  arla  #(vosrelease)
     [Setup]     Run Keywords  Login  ${AFS_ADMIN}
     ...         AND           Create Volume  ${SERVER}  a  test.rel
-    [Teardown]  Run Keywords  Run Command    ${VOS} remove ${SERVER} a test.rel.readonly
+    [Teardown]  Run Keywords  Command Should Succeed    ${VOS} remove ${SERVER} a test.rel.readonly
     ...         AND           Remove Volume  test.rel
     ...         AND           Logout
     Command Should Succeed  ${VOS} addsite ${SERVER} a test.rel
@@ -93,9 +93,9 @@ Remove a Replication Site
     [Tags]  arla  #(vosremsite)
     [Setup]     Run Keywords  Login  ${AFS_ADMIN}
     ...         AND           Create Volume  ${SERVER}  a  test.rem
-    ...         AND           Run Command    ${VOS} addsite ${SERVER} a test.rem
-    ...         AND           Run Command    ${VOS} release test.rem
-    [Teardown]  Run Keywords  Run Command    ${VOS} remove ${SERVER} a test.rem.readonly
+    ...         AND           Command Should Succeed    ${VOS} addsite ${SERVER} a test.rem
+    ...         AND           Command Should Succeed    ${VOS} release test.rem
+    [Teardown]  Run Keywords  Command Should Succeed    ${VOS} remove ${SERVER} a test.rem.readonly
     ...         AND           Remove Volume  test.rem
     ...         AND           Logout
     Command Should Succeed    ${VOS} remsite ${SERVER} a test.rem
@@ -106,8 +106,8 @@ Remove a Replicated Volume
     [Tags]  arla  #(vosremove)
     [Setup]     Run Keywords  Login  ${AFS_ADMIN}
     ...         AND           Create Volume  ${SERVER}  a  test.rem.2
-    ...         AND           Run Command    ${VOS} addsite ${SERVER} a test.rem.2
-    ...         AND           Run Command    ${VOS} release test.rem.2
+    ...         AND           Command Should Succeed    ${VOS} addsite ${SERVER} a test.rem.2
+    ...         AND           Command Should Succeed    ${VOS} release test.rem.2
     [Teardown]  Logout
     Command Should Succeed    ${VOS} remove ${SERVER} a -id test.rem.2.readonly
     Command Should Succeed    ${VOS} remove -id test.rem.2
@@ -118,7 +118,7 @@ Delete a VLDB Entry
     [Tags]  todo  arla  #(vosdelentry)
     [Setup]     Run Keywords  Login  ${AFS_ADMIN}
     ...         AND           Create Volume  ${SERVER}  a  test.delent
-    [Teardown]  Run Keywords  Run Command  ${VOS} zap -server ${SERVER} -part a -id ${VOLID}
+    [Teardown]  Run Keywords  Command Should Succeed  ${VOS} zap -server ${SERVER} -part a -id ${VOLID}
     ...         AND           Logout
     Command Should Succeed    ${VOS} delentry test.delent
     RW Site Should Not Exist  test.delent  server=${SERVER}  part=a
@@ -155,7 +155,7 @@ Unlock a VLDB Entry
     [Tags]  todo  arla  #(vosunlock)
     [Setup]     Run Keywords  Login  ${AFS_ADMIN}
     ...         AND           Create Volume  ${SERVER}  a  test.unlock
-    ...         AND           Run Command    ${VOS} lock test.unlock
+    ...         AND           Command Should Succeed    ${VOS} lock test.unlock
     [Teardown]  Run Keywords  Remove Volume  test.unlock
     ...         AND           Logout
     Volume Should Be Locked    test.unlock
