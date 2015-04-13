@@ -5,6 +5,16 @@
 Documentation     Keywords for OpenAFS installation and removal.
 
 *** Keywords ***
+Cell Should Be
+    [Arguments]  ${cellname}
+    ${cmd}=  Set Variable  ${FS} wscell
+    ${rc}  ${output}  Run And Return Rc And Output    ${cmd}
+    Should Be Equal As Integers  ${rc}  0
+    ...  msg=Failed: ${cmd}, rc=${rc}, ${output}
+    ...  values=False
+    Should Match  ${output}  This workstation belongs to cell '${cellname}'
+    ...  msg=Client has the wrong cell name!
+
 #--------------------------------------------------------------------------------
 # Keywords for transarc-style intallations.
 #

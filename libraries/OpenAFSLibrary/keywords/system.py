@@ -158,10 +158,27 @@ class _SystemKeywords(object):
     def __init__(self):
         self.system = System.current()
 
-    def run_program(self, cmd_line):
-        rc,out,err = run_program(cmd_line)
+    def run_program(self, cmd):
+        rc,out,err = run_program(cmd)
         if rc:
             raise AssertionError("Program failed: '%s', exit code='%d'" % (cmd_line, rc))
+
+    def run_command(self, cmd):
+        rc,out,err = run_program(cmd)
+        if rc:
+            raise AssertionError("Program failed: '%s', exit code='%d'" % (cmd_line, rc))
+
+    def command_should_succeed(self, cmd, msg=None):
+        rc,out,err = run_program(cmd)
+        if rc != 0:
+            if not msg:
+                msg = "Command Failed! %s" % cmd
+            raise AssertionError(msg)
+
+    def command_should_fail(self, cmd):
+        rc,out,err = run_program(cmd)
+        if rc == 0:
+            raise AssertionError("Command should have failed: %s" % cmd)
 
     def sudo(self, cmd, *args):
         """Run a command as root."""
