@@ -22,9 +22,56 @@
 from robot.api import logger
 from OpenAFSLibrary.util import get_var,run_program
 
-def _principal(user, realm):
+def get_principal(user, realm):
     """Convert OpenAFS k4 style names to k5 style principals."""
     return "%s@%s" %  (user.replace('.', '/'), realm)
+
+def akimpersonate(user):
+    """Acquire an AFS token for authenticated access without Kerberos."""
+    if not user:
+        raise AsseritionError("User name is required")
+    aklog = get_var('AKLOG')
+    cell = get_var('AFS_CELL')
+    realm = get_var('KRB_REALM')
+    keytab = get_var('KRB_AFS_KEYTAB')
+    principal = get_principal(user, realm)
+    cmd = "%s -d -c %s -k %s -keytab %s -principal %s" % (aklog, cell, realm, keytab, principal)
+    rc,out,err = run_program(cmd)
+    if rc:
+        raise AssertionError("aklog failed: '%s'; exit code = %d" % (cmd, rc))
+
+def login_with_keytab(user):
+    """Acquire an AFS token for authenticated access with Kerberos."""
+    if not user:
+        raise AsseritionError("User name is required")
+    site = get_var('SITE')
+    kinit = get_var('KINIT')
+    aklog = get_var('AKLOG')
+    cell = get_var('AFS_CELL')
+    realm = get_var('KRB_REALM')
+    principal = get_principal(user, realm)
+    if user == get_var('AFS_USER'):
+        keytab = get_var('KRB_USER_KEYTAB')
+    elif user == get_var('AFS_ADMIN'):
+        keytab = get_var('KRB_ADMIN_KEYTAB')
+    else:
+        raise AssertionError("No keytab found for user '%s'." % user)
+    if not keytab:
+        raise AssertionError("Keytab not set for user '%s'." % user)
+    logger.info("keytab: " + keytab)
+    if not os.path.exists(keytab):
+        raise AsseritionError("Keytab file '%s' is missing." % keytab)
+    if not os.path.isdir(site):
+        raise AsseritionError("SITE directory '%s' is missing." % site)
+    krb5cc = os.path.join(site, "krb5cc")
+    cmd = "KRB5CCNAME=%s %s -5 -k -t %s %s" % (krb5cc, kinit, keytab, principal)
+    rc,out,err = run_program(cmd)
+    if rc:
+        raise AssertionError("kinit failed: '%s'; exit code = %d" % (cmd, rc))
+    cmd = "KRB5CCNAME=%s %s -d -c %s -k %s" % (krb5cc, aklog, cell, realm)
+    rc,out,err = run_program(cmd)
+    if rc:
+        raise AssertionError("kinit failed: '%s'; exit code = %d" % (cmd, rc))
 
 class _LoginKeywords(object):
 
@@ -33,9 +80,9 @@ class _LoginKeywords(object):
         if user is None:
             user = get_var('AFS_ADMIN')
         if get_var('AFS_AKIMPERSONATE'):
-            self.akimpersonate(user)
+            akimpersonate(user)
         else:
-            self.login_with_keytab(user)
+            login_with_keytab(user)
 
     def logout(self):
         """Release the AFS token."""
@@ -51,51 +98,4 @@ class _LoginKeywords(object):
         rc,out,err = run_program(unlog)
         if rc:
             raise AssertionError("unlog failed: '%s'; exit code = %d" % (unlog, rc))
-
-    def akimpersonate(self, user):
-        """Acquire an AFS token for authenticated access without Kerberos."""
-        if not user:
-            raise AsseritionError("User name is required")
-        aklog = get_var('AKLOG')
-        cell = get_var('AFS_CELL')
-        realm = get_var('KRB_REALM')
-        keytab = get_var('KRB_AFS_KEYTAB')
-        principal = _principal(user, realm)
-        cmd = "%s -d -c %s -k %s -keytab %s -principal %s" % (aklog, cell, realm, keytab, principal)
-        rc,out,err = run_program(cmd)
-        if rc:
-            raise AssertionError("aklog failed: '%s'; exit code = %d" % (cmd, rc))
-
-    def login_with_keytab(self, user):
-        """Acquire an AFS token for authenticated access with Kerberos."""
-        if not user:
-            raise AsseritionError("User name is required")
-        site = get_var('SITE')
-        kinit = get_var('KINIT')
-        aklog = get_var('AKLOG')
-        cell = get_var('AFS_CELL')
-        realm = get_var('KRB_REALM')
-        principal = _principal(user, realm)
-        if user == get_var('AFS_USER'):
-            keytab = get_var('KRB_USER_KEYTAB')
-        elif user == get_var('AFS_ADMIN'):
-            keytab = get_var('KRB_ADMIN_KEYTAB')
-        else:
-            raise AssertionError("No keytab found for user '%s'." % user)
-        if not keytab:
-            raise AssertionError("Keytab not set for user '%s'." % user)
-        logger.info("keytab: " + keytab)
-        if not os.path.exists(keytab):
-            raise AsseritionError("Keytab file '%s' is missing." % keytab)
-        if not os.path.isdir(site):
-            raise AsseritionError("SITE directory '%s' is missing." % site)
-        krb5cc = os.path.join(site, "krb5cc")
-        cmd = "KRB5CCNAME=%s %s -5 -k -t %s %s" % (krb5cc, kinit, keytab, principal)
-        rc,out,err = run_program(cmd)
-        if rc:
-            raise AssertionError("kinit failed: '%s'; exit code = %d" % (cmd, rc))
-        cmd = "KRB5CCNAME=%s %s -d -c %s -k %s" % (krb5cc, aklog, cell, realm)
-        rc,out,err = run_program(cmd)
-        if rc:
-            raise AssertionError("kinit failed: '%s'; exit code = %d" % (cmd, rc))
 
