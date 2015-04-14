@@ -433,10 +433,7 @@ class SetupShell(cmd.Cmd):
             sys.stderr.write("AFS_CELL and KRB_REALM are required.\n")
             return
         try:
-            if akimpersonate:
-                keywords.create_fake_keytab(keytab, cell, realm, enctype)
-            else:
-                keywords.create_afs_service_keytab(keytab, cell, realm, enctype)
+            keywords.create_service_keytab(keytab, cell, realm, enctype, akimpersonate=akimpersonate)
         except:
             sys.stderr.write("Failed to create keytab!")
             traceback.print_exc(file=sys.stderr)
@@ -455,7 +452,7 @@ class SetupShell(cmd.Cmd):
             sys.stderr.write("KRB_REALM is required.\n")
             return
         try:
-            keywords.create_keytab(keytab, principal, realm)
+            keywords.create_user_keytab(keytab, principal, realm)
         except:
             sys.stderr.write("Failed to create keytab!")
             traceback.print_exc(file=sys.stderr)
@@ -474,7 +471,7 @@ class SetupShell(cmd.Cmd):
             sys.stderr.write("KRB_REALM is required.\n")
             return
         try:
-            keywords.create_keytab(keytab, principal, realm)
+            keywords.create_user_keytab(keytab, principal, realm)
         except:
             sys.stderr.write("Failed to create keytab!")
             traceback.print_exc(file=sys.stderr)

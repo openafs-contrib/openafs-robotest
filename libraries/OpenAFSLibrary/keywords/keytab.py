@@ -62,6 +62,17 @@ KRB_ENCTYPE_DESCS = {
     'des-cbc-crc': "DES cbc mode with CRC-32",
 }
 
+def encryption_type_number(enctype):
+    """Get the enctype number of an enctype string."""
+    if not enctype in KRB_ENCTYPE_NUMBERS:
+        raise AssertionError("Unknown enctype: %s" % (enctype))
+    return KRB_ENCTYPE_NUMBERS[enctype]
+
+def encryption_type_is_des(self, enctype):
+    """Returns true if the enctype uses the single DES cipher."""
+    eno = encryption_type_number(enctype)
+    return (eno in [1, 2, 3, 15])
+
 def normalize_enctype(enctype):
     if enctype in KRB_ENCTYPE_NUMBERS:
         return enctype
@@ -121,6 +132,70 @@ def get_principal_keys(principal):
         raise AssertionError("kadmin.local failed: exit code=%d" % (rc))
     return keys
 
+def get_key_version_number(keytab, cell, realm, enctype="des-cbc-crc"):
+    """Get the kvno of the AFS service key.
+
+    Returns the kvno of the AFS service key for the given cell, realm and
+    enctype pattern. The largest kvno is returned if more than one key matches.
+    """
+    logger.info("Searching for afs/%s@%s (or afs@%s) with enctype %s in %s" % \
+        (cell, realm, realm, enctype, keytab))
+    p = re.compile(r'afs(/%s)?@%s$' % (cell, realm))
+    e = re.compile(r'%s$' % (enctype))
+    kvnos = [k['kvno'] for k in get_keytab_keys(keytab) if p.match(k['principal']) and e.match(k['enctype'])]
+    if len(kvnos) == 0:
+        raise AssertionError("Failed to find a kvno in keytab '%s'." % (keytab))
+    kvno = sorted(kvnos, reverse=True)[0]
+    return kvno
+
+def add_principal(principal):
+    """Add a principal to the Kerberos realm."""
+    kadmin_local = get_var('KADMIN_LOCAL')
+    if "'" in principal:
+        raise AssertionError("Invalid principal string: %s" % (principal))
+    command = "sudo -n %s -q 'add_principal -randkey %s'" % (kadmin_local, principal)
+    logger.info("Running: %s" % command)
+    pipe = os.popen(command)
+    for line in pipe.readlines():
+        logger.info(line.rstrip())
+    rc = pipe.close()
+    if rc:
+        raise AssertionError("kadmin.local failed: exit code=%d" % (rc))
+
+def add_entry_to_keytab(keytab, principal, enctype=None, salt='normal'):
+    """Write an entry to a keytab."""
+    kadmin_local = get_var('KADMIN_LOCAL')
+    if principal and "'" in principal:
+        raise AssertionError("Invalid principal string: %s" % (principal))
+    if enctype and "'" in enctype:
+        raise AssertionError("Invalid enctype string: %s" % (enctype))
+    if salt and "'" in salt:
+        raise AssertionError("Invalid salt string: %s" % (salt))
+
+    if enctype:
+        query = "ktadd -k %s -e %s:%s %s" % (keytab, enctype, salt, principal)
+    else:
+        query = "ktadd -k %s %s" % (keytab, principal)
+    command = "sudo -n %s -q '%s'" % (kadmin_local, query)
+    logger.info("Running: %s " % (command))
+    pipe = os.popen(command)
+    for line in pipe.readlines():
+        logger.info(line.rstrip())
+    rc = pipe.close()
+    if rc:
+        raise AssertionError("kadmin.local failed: exit code=%d" % (rc))
+
+def generate_des_key():
+    """Generate a random DES key with correct parity bits."""
+    keybytes = bytearray(os.urandom(8))
+    key = bytearray(0)
+    for i in keybytes:
+        b = bin(i & 0xfe)
+        nb = len(b.split('1'))
+        # nb is one more than the number of bits set
+        key.append(int(b, 2) + (nb % 2))
+    return bytes(key)
+
 def create_empty_keytab(keytab):
     """Create an emtpy keytab file.
 
@@ -139,28 +214,98 @@ def create_empty_keytab(keytab):
     f.write(pack('!h', KRB_KEYTAB_MAGIC))  # requried by kadmin
     f.close()
 
+def create_afs_service_keytab(self, keytab, cell, realm, enctype):
+    """Create the AFS service key and write it to a keytab.
+
+    Create the afs service key using kadmin.local if it does not
+    exist and write the key to a keytab if the key version number is
+    not already in the keytab.
+    """
+    principal = "afs/%s@%s" % (cell, realm)
+    if encryption_type_is_des(enctype):
+        salt = 'afs3'
+    else:
+        salt = 'normal'
+    # Create the key, if needed
+    keys = get_principal_keys(principal)
+    if not keys:
+        add_principal(principal)
+        keys = get_principal_keys(principal)
+    kvno = [k['kvno'] for k in keys][0]
+    # Create an empty keytab, if none. Otherwise get the service key kvno
+    # in the existing keytab.
+    if not os.path.isfile(keytab):
+        create_empty_keytab(keytab)
+    try:
+        in_keytab = get_key_version_number(keytab, cell, realm, enctype=enctype)
+    except:
+        in_keytab = None
+    # Write the service key, if not already in the keytab.
+    if kvno != in_keytab:
+        add_entry_to_keytab(keytab, principal, enctype=enctype, salt=salt)
+
+def create_fake_keytab(self, keytab, cell, realm, enctype):
+    """Create a test keytab file for akimpersonate.
+
+    This is intended testing OpenAFS without requiring an external kerberos
+    server. A dummy service key is created randomly and saved in the MIT krb5
+    keytab format. The key is not cryptographically strong; only use this
+    for test systems.
+    """
+    # The following C-like structure definitions illustrate the MIT keytab
+    # file format. All values are in network byte order. All text is ASCII.
+    #
+    #   keytab {
+    #       uint16_t file_format_version;                    /* 0x502 */
+    #       keytab_entry entries[*];
+    #   };
+    #   keytab_entry {
+    #       int32_t size;
+    #       uint16_t num_components;    /* sub 1 if version 0x501 */
+    #       counted_octet_string realm;
+    #       counted_octet_string components[num_components];
+    #       uint32_t name_type;   /* not present if version 0x501 */
+    #       uint32_t timestamp;
+    #       uint8_t vno8;
+    #       keyblock key;
+    #       uint32_t vno; /* only present if >= 4 bytes left in entry */
+    #   };
+    #   counted_octet_string {
+    #       uint16_t length;
+    #       uint8_t data[length];
+    #   };
+    #   keyblock {
+    #       uint16_t type;
+    #       counted_octet_string key;
+    #   };
+    num_components = 2
+    name_type = KRB_NT_PRINCIPAL
+    timestamp = int(time.time())
+    vno = 1
+    eno = encryption_type_number(enctype)
+    if eno in (1, 2, 3):
+        key = generate_des_key()
+    elif eno == 17:
+        key = os.urandom(16)
+    elif eno == 18:
+        key = os.urandom(32)
+    else:
+        AssertionError("Cannot create fake keytab for enctype %s" % (enctype))
+    fmt = "HH%dsH%dsH%dsLLBHH%ds" % (len(realm), len("afs"), len(cell), len(key))
+    size = calcsize("!"+fmt) # get the entry size
+    f = open(keytab, "w")
+    f.write(pack('!h', KRB_KEYTAB_MAGIC))
+    f.write(pack("!l"+fmt,
+        size, num_components,
+        len(realm), realm, len("afs"), "afs", len(cell), cell, name_type,
+        timestamp, vno, eno, len(key), key))
+    f.close()
 
 class _KeytabKeywords(object):
-
-    """Keywords for reading Kerberos keytabs."""
 
     def get_encryption_types(self):
         """Return the list of encyption types."""
         return KRB_ENCTYPE_NUMBERS.keys()
-
-    def add_principal(self, principal):
-        """Add a principal to the Kerberos realm."""
-        kadmin_local = get_var('KADMIN_LOCAL')
-        if "'" in principal:
-            raise AssertionError("Invalid principal string: %s" % (principal))
-        command = "sudo -n %s -q 'add_principal -randkey %s'" % (kadmin_local, principal)
-        logger.info("Running: %s" % command)
-        pipe = os.popen(command)
-        for line in pipe.readlines():
-            logger.info(line.rstrip())
-        rc = pipe.close()
-        if rc:
-            raise AssertionError("kadmin.local failed: exit code=%d" % (rc))
 
     def get_key_version_number(self, keytab, cell, realm, enctype="des-cbc-crc"):
         """Get the kvno of the AFS service key.
@@ -168,81 +313,13 @@ class _KeytabKeywords(object):
         Returns the kvno of the AFS service key for the given cell, realm and
         enctype pattern. The largest kvno is returned if more than one key matches.
         """
-        logger.info("Searching for afs/%s@%s (or afs@%s) with enctype %s in %s" % \
-            (cell, realm, realm, enctype, keytab))
-        p = re.compile(r'afs(/%s)?@%s$' % (cell, realm))
-        e = re.compile(r'%s$' % (enctype))
-        kvnos = [k['kvno'] for k in get_keytab_keys(keytab) if p.match(k['principal']) and e.match(k['enctype'])]
-        if len(kvnos) == 0:
-            raise AssertionError("Failed to find a kvno in keytab '%s'." % (keytab))
-        kvno = sorted(kvnos, reverse=True)[0]
-        return kvno
+        return get_key_version_number(keytab, cell, realm, enctype)
 
     def get_encryption_type_number(self, enctype):
         """Get the enctype number of an enctype string."""
-        if not enctype in KRB_ENCTYPE_NUMBERS:
-            raise AssertionError("Unknown enctype: %s" % (enctype))
-        return KRB_ENCTYPE_NUMBERS[enctype]
+        return encryption_type_number(enctype)
 
-    def encryption_type_is_des(self, enctype):
-        """Returns true if the enctype uses the single DES cipher."""
-        eno = self.get_encryption_type_number(enctype)
-        return (eno in [1, 2, 3, 15])
-
-    def add_entry_to_keytab(self, keytab, principal, enctype=None, salt='normal'):
-        """Write an entry to a keytab."""
-        kadmin_local = get_var('KADMIN_LOCAL')
-        if principal and "'" in principal:
-            raise AssertionError("Invalid principal string: %s" % (principal))
-        if enctype and "'" in enctype:
-            raise AssertionError("Invalid enctype string: %s" % (enctype))
-        if salt and "'" in salt:
-            raise AssertionError("Invalid salt string: %s" % (salt))
-
-        if enctype:
-            query = "ktadd -k %s -e %s:%s %s" % (keytab, enctype, salt, principal)
-        else:
-            query = "ktadd -k %s %s" % (keytab, principal)
-        command = "sudo -n %s -q '%s'" % (kadmin_local, query)
-        logger.info("Running: %s " % (command))
-        pipe = os.popen(command)
-        for line in pipe.readlines():
-            logger.info(line.rstrip())
-        rc = pipe.close()
-        if rc:
-            raise AssertionError("kadmin.local failed: exit code=%d" % (rc))
-
-    def create_afs_service_keytab(self, keytab, cell, realm, enctype):
-        """Create the AFS service key and write it to a keytab.
-
-        Create the afs service key using kadmin.local if it does not
-        exist and write the key to a keytab if the key version number is
-        not already in the keytab.
-        """
-        principal = "afs/%s@%s" % (cell, realm)
-        if self.encryption_type_is_des(enctype):
-            salt = 'afs3'
-        else:
-            salt = 'normal'
-        # Create the key, if needed
-        keys = get_principal_keys(principal)
-        if not keys:
-            self.add_principal(principal)
-            keys = get_principal_keys(principal)
-        kvno = [k['kvno'] for k in keys][0]
-        # Create an empty keytab, if none. Otherwise get the service key kvno
-        # in the existing keytab.
-        if not os.path.isfile(keytab):
-            create_empty_keytab(keytab)
-        try:
-            in_keytab = self.get_key_version_number(keytab, cell, realm, enctype=enctype)
-        except:
-            in_keytab = None
-        # Write the service key, if not already in the keytab.
-        if kvno != in_keytab:
-            self.add_entry_to_keytab(keytab, principal, enctype=enctype, salt=salt)
-
-    def create_keytab(self, keytab, principal, realm):
+    def create_user_keytab(self, keytab, principal, realm):
         """Create test user keys and write them to a keytab.
 
         Create the test user key using kadmin.local if it does not exist
@@ -253,7 +330,7 @@ class _KeytabKeywords(object):
         # Create the key, if needed
         keys = get_principal_keys(principal)
         if not keys:
-            self.add_principal(principal)
+            add_principal(principal)
             keys = get_principal_keys(principal)
         kvno = [k['kvno'] for k in keys][0]
         # Create an emtpy keytab owned by the current uid, if the keytab does not
@@ -267,81 +344,17 @@ class _KeytabKeywords(object):
             kvnos = []
         # Write the service key, if not already in the keytab.
         if not kvnos:
-            self.add_entry_to_keytab(keytab, principal)
+            add_entry_to_keytab(keytab, principal)
         else:
             # Avoid old kvnos in the keytab.
             old = [k for k in kvnos if k!=kvno]
             if old:
                 raise AssertionError("Old kvnos for principal '%s' in keytab '%s'!" % (principal, keytab))
 
-    def generate_des_key(self):
-        """Generate a random DES key with correct parity bits."""
-        keybytes = bytearray(os.urandom(8))
-        key = bytearray(0)
-        for i in keybytes:
-            b = bin(i & 0xfe)
-            nb = len(b.split('1'))
-            # nb is one more than the number of bits set
-            key.append(int(b, 2) + (nb % 2))
-        return bytes(key)
-
-    def create_fake_keytab(self, keytab, cell, realm, enctype):
-        """Create a test keytab file for akimpersonate.
-
-        This is intended testing OpenAFS without requiring an external kerberos
-        server. A dummy service key is created randomly and saved in the MIT krb5
-        keytab format. The key is not cryptographically strong; only use this
-        for test systems.
-        """
-        # The following C-like structure definitions illustrate the MIT keytab
-        # file format. All values are in network byte order. All text is ASCII.
-        #
-        #   keytab {
-        #       uint16_t file_format_version;                    /* 0x502 */
-        #       keytab_entry entries[*];
-        #   };
-        #   keytab_entry {
-        #       int32_t size;
-        #       uint16_t num_components;    /* sub 1 if version 0x501 */
-        #       counted_octet_string realm;
-        #       counted_octet_string components[num_components];
-        #       uint32_t name_type;   /* not present if version 0x501 */
-        #       uint32_t timestamp;
-        #       uint8_t vno8;
-        #       keyblock key;
-        #       uint32_t vno; /* only present if >= 4 bytes left in entry */
-        #   };
-        #   counted_octet_string {
-        #       uint16_t length;
-        #       uint8_t data[length];
-        #   };
-        #   keyblock {
-        #       uint16_t type;
-        #       counted_octet_string key;
-        #   };
-        num_components = 2
-        name_type = KRB_NT_PRINCIPAL
-        timestamp = int(time.time())
-
-        vno = 1
-        eno = self.get_encryption_type_number(enctype)
-        if eno in (1, 2, 3):
-            key = self.generate_des_key()
-        elif eno == 17:
-            key = os.urandom(16)
-        elif eno == 18:
-            key = os.urandom(32)
+    def create_service_keytab(self, keytab, cell, realm, enctype=None, akimpersonate=True):
+        """Create the AFS service key keytab."""
+        if akimpersonate:
+            create_fake_keytab(self, keytab, cell, realm, enctype)
         else:
-            AssertionError("Cannot create fake keytab for enctype %s" % (enctype))
-
-        fmt = "HH%dsH%dsH%dsLLBHH%ds" % (len(realm), len("afs"), len(cell), len(key))
-        size = calcsize("!"+fmt) # get the entry size
-
-        f = open(keytab, "w")
-        f.write(pack('!h', KRB_KEYTAB_MAGIC))
-        f.write(pack("!l"+fmt,
-            size, num_components,
-            len(realm), realm, len("afs"), "afs", len(cell), cell, name_type,
-            timestamp, vno, eno, len(key), key))
-        f.close()
+            create_afs_service_keytab(self, keytab, cell, realm, enctype)
 

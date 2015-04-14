@@ -30,6 +30,7 @@ from robot.libraries.BuiltIn import register_run_keyword
 from OpenAFSLibrary.util import get_var,run_program,load_globals,DIST
 from OpenAFSLibrary.util.rpm import Rpm
 from OpenAFSLibrary.keywords.login import _LoginKeywords
+from OpenAFSLibrary.keywords.keytab import _KeytabKeywords
 
 def say(msg):
     """Display a progress message to the console."""
@@ -174,8 +175,13 @@ def setup_service_key():
     the test cell. Supported types are the lecacy DES KeyFile, the interim
     rxkad-k5 non-DES enctype, and the modern non-DES KeyFileExt.
     """
-    if get_var('AFS_AKIMPERSONATE') and not os.path.exists(get_var('AFS_KEY_FILE')):
-        run_keyword("Create Akimpersonate Keytab")
+    if get_var('AFS_AKIMPERSONATE'):
+        keytab = get_var('KRB_AFS_KEYTAB')
+        if keytab and not os.path.exists(keytab):
+            cell = get_var('AFS_CELL')
+            realm = get_var('KRB_REALM')
+            enctype = get_var('KRB_AFS_ENCTYPE')
+            _KeytabKeywords().create_service_keytab(keytab, cell, realm, enctype, akimpersonate=True)
     if get_var('AFS_KEY_FILE') == 'KeyFile':
         run_keyword("Create Key File")
     elif get_var('AFS_KEY_FILE') == 'rxkad.keytab':
