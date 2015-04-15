@@ -24,21 +24,18 @@ import sys
 import getopt
 import os
 
-root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-sys.path.append(root)
-sys.path.append(os.path.join(root, "libraries"))
-sys.path.append(os.path.join(root, "resources", "dist"))
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.append(ROOT)
+sys.path.append(os.path.join(ROOT, "libraries"))
 
 from OpenAFSLibrary import OpenAFSLibrary
 
-# Load local and "dist" settings.
+# Load local settings.
 try:
     import settings
 except ImportError:
     sys.stderr.write("Please run afs-robotest-setup.\n")
     sys.exit(1)
-
-dist = __import__(getattr(settings, 'AFS_DIST'))
 
 # Set the shared object path for master branch testing.
 if getattr(settings, 'AFS_DIST') == "transarc":
@@ -46,18 +43,6 @@ if getattr(settings, 'AFS_DIST') == "transarc":
 
 def usage():
     print "usage: afs-robotest-login [<user>]"
-
-def get_var(name):
-    """Simulate variable lookup."""
-    if name == 'SITE':
-        return os.path.join(root, 'site')
-    value = getattr(settings, name)
-    if value is not None:
-        return value
-    value = getattr(dist, name)
-    if value is not None:
-        return value
-    raise AssertionError("Setting '%s' not found.\n" % (name))
 
 def main(args):
     try:
@@ -76,7 +61,6 @@ def main(args):
         user = args[0]
     else:
         user = settings.AFS_ADMIN
-
 
     OpenAFSLibrary().login(user)
     sys.exit(0)
