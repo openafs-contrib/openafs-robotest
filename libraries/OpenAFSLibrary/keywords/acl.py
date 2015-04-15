@@ -23,7 +23,8 @@ import sys
 import os
 import re
 from robot.api import logger
-from OpenAFSLibrary.util import get_var,fs
+from OpenAFSLibrary.util import get_var
+from OpenAFSLibrary.util.command import fs
 
 _RIGHTS = list("rlidwkaABCDEFGH")
 

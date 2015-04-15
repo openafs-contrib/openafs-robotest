@@ -17,11 +17,10 @@ ${TESTPATH}    /afs/.${AFS_CELL}/test/${VOLUME}
 *** Keywords ***
 Setup
     Login  ${AFS_ADMIN}
-    Create and Mount Volume  ${SERVER}  ${PARTITION}  ${VOLUME}  ${TESTPATH}
+    Create Volume  ${VOLUME}  server=${SERVER}  part=${PARTITION}  path=${TESTPATH}  acl=system:anyuser,read
 
 Teardown
-    Remove Mount Point  ${TESTPATH}
-    Remove Volume  ${VOLUME}
+    Remove Volume  ${VOLUME}  path=${TESTPATH}
     Logout
 
 *** Test Cases ***

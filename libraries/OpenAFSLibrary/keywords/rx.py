@@ -20,7 +20,7 @@
 #
 
 from robot.api import logger
-from OpenAFSLibrary.util import rxdebug
+from OpenAFSLibrary.util.command import rxdebug
 
 
 class _RxKeywords(object):

@@ -70,26 +70,38 @@ def load_globals(path):
             continue
         try:
             value = getattr(module, name, None)
-            if value and not get_var(name):
+            if value and not rf.get_variable_value("${%s}" % name):
                 rf.set_global_variable("${%s}" % name, value)
         except AttributeError:
             pass # allow to load outside of RF
 
 def get_var(name):
-    """Return the named variable value or None if it does not exist."""
+    """Return the variable value.
+
+    Return `default` if the variable is not found, otherwise
+    Assert if it does not exist or is an empty string."""
+    if not name:
+        raise AssertionError("get_var argument is missing!")
     try:
-        return rf.get_variable_value("${%s}" % name)
+        value = rf.get_variable_value("${%s}" % name)
     except AttributeError:
         # Look in the settings files directly when running outside of the RF.
-        return _emulate_get_variable_value(name)
+        value = _emulate_get_variable_value(name)
+    if value is None:
+        raise AssertionError("%s is not set!" % name)
+    if value == "":
+        raise AssertionError("%s is empty!" % name)
+    return value
 
 def run_program(args):
     if isinstance(args, types.StringTypes):
-        logger.info("running: string=%s" % args)
+        cmd_line = args
         shell = True
     else:
-        logger.info("running: args=%s" % " ".join(args))
+        args = [str(a) for a in args]
+        cmd_line = " ".join(args)
         shell = False
+    logger.info("running: %s" % cmd_line)
     proc = subprocess.Popen(args, shell=shell, bufsize=-1, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     output, error = proc.communicate()
     if proc.returncode:
@@ -103,29 +115,3 @@ def sudo(cmd, *args):
         raise AssertionError("Command not permitted: %s\n" % (cmd));
     if rc != 0:
         raise AssertionError("Command failed: %s: exit code %d" % (cmd, rc))
-
-def rxdebug(*args):
-    rc,out,err = run_program([get_var('RXDEBUG')] + list(args))
-    if rc != 0:
-        raise AssertionError("rxdebug failed! %s" % (err))
-    return out
-
-def bos(*args):
-    rc,out,err = run_program([get_var('BOS')] + list(args))
-    if rc != 0:
-        raise AssertionError("bos failed! %s" % (err))
-    return out
-
-def vos(*args):
-    rc,out,err = run_program([get_var('VOS')] + list(args))
-    if rc != 0:
-        raise AssertionError("vos failed! %s" % (err))
-    return out
-
-def fs(*args):
-    rc,out,err = run_program([get_var('FS')] + list(args))
-    if rc != 0:
-        raise AssertionError("fs failed! %s" % (err))
-    return out
-
-

@@ -29,6 +29,7 @@ from robot.libraries.BuiltIn import BuiltIn
 from robot.libraries.BuiltIn import register_run_keyword
 from OpenAFSLibrary.util import get_var,run_program,load_globals,DIST
 from OpenAFSLibrary.util.rpm import Rpm
+from OpenAFSLibrary.util.command import vos,fs
 from OpenAFSLibrary.keywords.login import _LoginKeywords
 from OpenAFSLibrary.keywords.keytab import _KeytabKeywords
 
@@ -285,7 +286,11 @@ class _InstallationKeywords(object):
         uname = os.uname()[0]
         dist = get_var('AFS_DIST')
         if dist == "transarc":
-            if get_var('TRANSARC_TARBALL'):
+            try:
+                tarball = get_var('TRANSARC_TARBALL')
+            except AssertionError:
+                tarball = False
+            if tarball:
                 run_keyword("Untar Binaries")
             run_keyword("Install Server Binaries")
             run_keyword("Install Client Binaries")
@@ -342,21 +347,27 @@ class _InstallationKeywords(object):
             run_keyword("Start Service", "openafs-client")
         run_keyword("Cell Should Be", get_var('AFS_CELL'))
         _LoginKeywords().login(get_var('AFS_ADMIN'))
-        run_keyword("Create Volume",  hostname, "a", "root.cell")
+        vos("create", hostname, "a", "root.cell")
         run_keyword("Mount Cell Root Volume")
-        run_keyword("Replicate Volume", hostname, "a", "root.afs")
-        run_keyword("Replicate Volume", hostname, "a", "root.cell")
+        for v in ("root.afs", "root.cell"):
+            vos("addsite", hostname, "a", v)
+            vos("release", v)
+
         # Create a replicated test volume.
         path = "/afs/.%s/test" % get_var('AFS_CELL')
         volume = "test"
         part = "a"
         parent = "root.cell"
-        run_keyword("Create Volume", hostname, part, volume)
-        run_keyword("Mount Volume", path, volume)
+        vos("create", hostname, part, volume)
+        fs('mkmount', '-dir', path, '-vol', volume)
         run_keyword("Add Access Rights",  path, "system:anyuser", "rl")
-        run_keyword("Replicate Volume", hostname, part, volume)
-        run_keyword("Release Volume", parent)
-        run_program("%s checkvolumes" % get_var('FS'))
+
+        vos("addsite", hostname, part, volume)
+        vos("release", volume)
+        vos("release", parent)
+
+        fs("checkvolumes")  # just in case
+        fs("flushall")      # a desperate hack
         _LoginKeywords().logout()
 
     @teardown_stage

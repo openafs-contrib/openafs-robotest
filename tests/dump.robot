@@ -17,34 +17,22 @@ ${SERVER}      ${HOSTNAME}
 ${TESTPATH}    /afs/.${AFS_CELL}/test/${VOLUME}
 ${DUMP}        /tmp/robotest.dump
 
-*** Keywords ***
-Create Test Volume
-    Create Volume  ${SERVER}  ${PART}  ${VOLUME}
-    Mount Volume  ${TESTPATH}  ${VOLUME}
-    Add Access Rights  ${TESTPATH}  system:anyuser  read
-    Command Should Succeed  mkdir -p ${TESTPATH}/mydir
-    Add Access Rights  ${TESTPATH}/mydir  system:authuser  write
-
-Remove Test Volume
-    Remove Mount Point  ${TESTPATH}
-    Remove Volume  ${VOLUME}
-
 *** Test Cases ***
 Dump an Empty Volume
-    Create Volume  ${SERVER}  ${PART}  ${VOLUME}
+    Create Volume  ${VOLUME}  server=${SERVER}  part=${PART}
     Command Should Succeed  ${VOS} dump -id ${VOLUME} -file ${DUMP}
-    Should Exist  ${DUMP}
+    Should Exist   ${DUMP}
     Should Be a Dump File  ${DUMP}
     Remove Volume  ${VOLUME}
-    Remove File   ${DUMP}
+    Remove File    ${DUMP}
 
 Restore a Volume
-    Create Test Volume
+    Create Volume  ${VOLUME}  server=${SERVER}  part=${PART}  path=${TESTPATH}  acl=system:anyuser,read
     Command Should Succeed  ${VOS} dump -id ${VOLUME} -file ${DUMP}
     Should Exist  ${DUMP}
     Should Be a Dump File  ${DUMP}
     Command Should Succeed  ${VOS} restore ${SERVER} ${PART} ${VOLUME}.restore -file ${DUMP} -overwrite full
-    Remove Test Volume
+    Remove Volume  ${VOLUME}  path=${TESTPATH}
     Remove Volume  ${VOLUME}.restore
     Remove File   ${DUMP}
 

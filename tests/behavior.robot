@@ -14,21 +14,14 @@ ${PARTITION}   a
 ${SERVER}      ${HOSTNAME}
 ${RWPATH}      /afs/.${AFS_CELL}/test/behavior
 ${ROPATH}      /afs/${AFS_CELL}/test/behavior
-${PARENT}      test
 
 *** Keywords ***
 Setup Test Suite
-    Login              ${AFS_ADMIN}
-    Create Volume      ${SERVER}  ${PARTITION}  ${VOLUME}
-    Mount Volume       ${RWPATH}  ${VOLUME}
-    Add Access Rights  ${RWPATH}  system:anyuser  read
-    Replicate Volume   ${SERVER}  ${PARTITION}  ${VOLUME}
-    Release Volume     ${PARENT}
+    Login           ${AFS_ADMIN}
+    Create Volume   ${VOLUME}  server=${SERVER}  part=${PARTITION}  path=${RWPATH}  ro=True  acl=system:anyuser,read
 
 Teardown Test Suite
-    Remove Mount Point  ${RWPATH}
-    Remove Replica      ${SERVER}  ${PARTITION}  ${VOLUME}
-    Remove Volume       ${VOLUME}
+    Remove Volume   ${VOLUME}  path=${RWPATH}
     Logout
 
 *** Test Cases ***

@@ -55,6 +55,7 @@ def main(args):
         "loglevel": getattr(settings, 'RF_LOGLEVEL', 'INFO'),
         "exclude": getattr(settings, 'RF_EXCLUDE', "todo,crash").split(","),
         "runemptysuite": True,
+        "exitonfailure": False,
     }
     try:
         opts, args = getopt.getopt(args, "hs:x:", ["help", "suite=", "exclude="])
