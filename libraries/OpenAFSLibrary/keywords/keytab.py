@@ -68,8 +68,7 @@ def encryption_type_number(enctype):
         raise AssertionError("Unknown enctype: %s" % (enctype))
     return KRB_ENCTYPE_NUMBERS[enctype]
 
-def encryption_type_is_des(self, enctype):
-    """Returns true if the enctype uses the single DES cipher."""
+def encryption_type_is_des(enctype):
     eno = encryption_type_number(enctype)
     return (eno in [1, 2, 3, 15])
 
@@ -306,6 +305,10 @@ class _KeytabKeywords(object):
     def get_encryption_types(self):
         """Return the list of encyption types."""
         return KRB_ENCTYPE_NUMBERS.keys()
+
+    def encryption_type_is_des(self, enctype):
+        """Returns true if the enctype uses the single DES cipher."""
+        return encryption_type_is_des(enctype)
 
     def get_key_version_number(self, keytab, cell, realm, enctype="des-cbc-crc"):
         """Get the kvno of the AFS service key.

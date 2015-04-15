@@ -19,6 +19,7 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
 
+import os
 from robot.api import logger
 from OpenAFSLibrary.util import get_var,run_program
 
