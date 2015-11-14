@@ -1,0 +1,297 @@
+#!/usr/bin/python
+# Copyright (c) 2014-2015 Sine Nomine Associates
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, this
+#    list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# THE SOFTWARE IS PROVIDED 'AS IS' AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+import os
+import sys
+import logging
+import argparse
+import gettext
+import re
+import time
+
+import afsutil.system
+import afsutil.build
+import afsutil.init
+import afsutil.transarc as transarc
+from afsutil.keytab import Keytab
+from afsutil.cell import Cell
+
+logger = logging.getLogger('afsutil')
+
+def _must_be_root():
+    if os.geteuid() != 0:
+        sys.stderr.write("afsutil: Must run as root!\n")
+        sys.exit(1)
+
+def _detect_sysname():
+    sysname = None
+    try:
+        with open("src/config/Makefile.config", "r") as f:
+            for line in f.readlines():
+                match = re.match(r'SYS_NAME\s*=\s*(\S+)', line)
+                if match:
+                    sysname = match.group(1)
+                    break
+    except IOError as e:
+        pass
+    return sysname
+
+def _get_log_level(args):
+    if getattr(args, 'verbose', False):
+        level = logging.DEBUG
+    elif getattr(args, 'quiet', False):
+        level = logging.ERROR
+    else:
+        level = logging.INFO
+    return level
+
+def _log_options(args):
+    options = {}
+    options['level'] = _get_log_level(args)
+    log = getattr(args, 'log', None)
+    if log:
+        options['filename'] = log
+        options['format'] = '%(asctime)s %(levelname)s %(message)s'
+    else:
+        options['format'] = '%(levelname)s %(message)s'
+    return options
+
+def _check_dest(dest):
+    if dest is None:
+        sysname = _detect_sysname()
+        if sysname:
+            dest = "%s/dest" % (sysname)
+        else:
+            sys.stderr.write("afsutil: Unable to find dest in current directory; try --dest\n")
+            sys.exit(1)
+    if not os.path.exists(dest):
+        sys.stderr.write("dest dir '%s' not found.\n" % dest)
+        sys.exit(1)
+    return dest
+
+def build(**kwargs):
+    afsutil.build.rebuild(**kwargs)
+
+def install(**kwargs):
+    _must_be_root()
+    origdir = None
+    if kwargs['chdir'] is not None:
+        logger.info("Changing to directory %s", kwargs['chdir'])
+        origdir = os.getcwd()
+        os.chdir(kwargs['chdir'])
+    kwargs['dest'] = _check_dest(getattr(kwargs, 'dest', None))
+    installer = transarc.TransarcInstaller(**kwargs)
+    installer.install(components=kwargs['components'])
+    if 'keytab' in kwargs:
+        keytab = kwargs['keytab']
+        if not os.path.exists(keytab):
+            logger.warning("Skipping set key; keytab file %s not found", keytab)
+        else:
+            k = Keytab.load(keytab)
+            k.set_service_key(**kwargs)
+    if origdir:
+        logger.info("Changing to directory %s", origdir)
+        os.chdir(origdir)
+
+def remove(**kwargs):
+    _must_be_root()
+    uninstaller = transarc.TransarcUninstaller(**kwargs)
+    uninstaller.remove(components=kwargs['components'])
+
+def start(**kwargs):
+    _must_be_root()
+    afsutil.init.start(**kwargs)
+
+def stop(**kwargs):
+    _must_be_root()
+    afsutil.init.stop(**kwargs)
+
+def fakekey(**kwargs):
+    cell = kwargs['cell']
+    realm = kwargs['realm']
+    keytab = kwargs['keytab']
+    enctype = kwargs['enctype']
+    secret = kwargs['secret']
+    if realm is None:
+        realm = cell.upper()
+    principal = "afs/%s@%s" % (cell, realm)
+    k = Keytab()
+    logger.info("Adding fake key for principal '%s', enctype='%s'.", principal, enctype)
+    k.add_fake_key(principal, enctype=enctype, secret=secret)
+    logger.info("Writing keytab %s.", keytab)
+    k.write(keytab)
+
+def setkey(**kwargs):
+    _must_be_root()
+    keytab = kwargs['keytab']
+    k = Keytab.load(keytab)
+    k.set_service_key(**kwargs)
+
+def newcell(**kwargs):
+    _must_be_root()
+    if not afsutil.system.is_running('bosserver'):
+        logger.warning("bosserver is not running! trying to start it.")
+        start(components=['server'])
+        time.sleep(2) # Give the server a chance to start.
+    cell = Cell(**kwargs)
+    cell.newcell()
+    # A cache manager is required to setup the root and top level volumes!
+    if kwargs['noclient']:
+        logger.warning("Skipping root volume setup; --no-client was given.")
+        return
+    if not os.path.isfile(kwargs['keytab']):
+        logger.error("Skipping root volume setup; keytab %s not found" % (kwargs['keytab']))
+        return
+    if afsutil.system.afs_mountpoint() is None:
+        logger.warning("afs is not running! trying to start it.")
+        start(components=['client'])
+    k = Keytab.load(kwargs['keytab'])
+    k.akimpersonate(**kwargs)
+    cell.mount_root_volumes()
+    cell.create_top_volumes(kwargs['top'])
+
+def akimpersonate(**kwargs):
+    if os.geteuid() == 0:
+        logger.warning("Running akimpersonate as root!")
+    keytab = kwargs['keytab']
+    k = Keytab.load(keytab)
+    k.akimpersonate(**kwargs)
+
+# Customize the argument parser to display the full help instead
+# of the abbreviated usage message on errors. Perhaps overkill,
+# but feels friendlier since this is a custom tool.
+class ArgParser(argparse.ArgumentParser):
+    def __init__(self, *args, **kwargs):
+        argparse.ArgumentParser.__init__(self, *args, **kwargs)
+    def error(self, message):
+        self.print_help(sys.stderr)
+        self.exit(2, gettext.gettext('\n%s: error: %s\n') % (self.prog, message))
+
+def main():
+    parser = ArgParser(epilog="The following commands must be run as root: install, remove, setkey, newcell")
+    subparsers = parser.add_subparsers(title="sub-commands", metavar="<command>")
+
+    def _common_opts(p):
+        p.add_argument('-v', '--verbose', action='store_true', help='print debug messages')
+        p.add_argument('-q', '--quiet', action='store_true', help='do not print info messages')
+        p.add_argument('-l', '--log', help='log file location (default: stderr)', default=None)
+
+    p = subparsers.add_parser('build', help='build binaries')
+    _common_opts(p)
+    p.add_argument('--chdir', help='change to directory', default=None)
+    p.add_argument('--cf', help='configure options (default: depends on platform)', default=None)
+    p.add_argument('--target', help='make target (default: detect all or dest)', default=None)
+    p.add_argument('--no-clean', dest='clean', help='do not run git clean', action='store_false')
+    p.set_defaults(fn=build)
+
+    p = subparsers.add_parser('install', help='install transarc-style binaries')
+    _common_opts(p)
+    p.add_argument('--chdir', help='change to directory', default=None)
+    p.add_argument('--dest', help='dest directory (default: <sysname>/dest)', default=None)
+    p.add_argument('--components', metavar='<name>', nargs='+',
+                   choices=transarc.COMPONENTS,
+                   help='components to install; names are %s %s' % \
+                        (", ".join(transarc.COMPONENTS),
+                        '(default: install all components)'))
+    p.add_argument('--cell', help='cell name (default: localcell)', default='localcell')
+    p.add_argument('--hosts', nargs='+', help='cell service db hosts (default: this host)', default=None)
+    p.add_argument('--realm', help='realm name (default: LOCALCELL)', default=None)
+    p.add_argument('--csdb', help='path to CellServDB.dist file for client (default: none)', default=None)
+    p.add_argument('--keytab', help="keytab file (default: /tmp/afs.keytab)", default="/tmp/afs.keytab")
+    p.add_argument('--force', action='store_true', help='overwrite existing files')
+    p.set_defaults(fn=install)
+
+    p = subparsers.add_parser('remove', help="remove transarc-style binaries")
+    _common_opts(p)
+    p.add_argument('--components', metavar='<name>', nargs='+',
+                   choices=transarc.COMPONENTS,
+                   help='components to remove; names are %s %s' % \
+                        (", ".join(transarc.COMPONENTS),
+                        '(default: remove all components)'))
+    p.add_argument('--purge', action='store_true', help='remove config and data too')
+    p.set_defaults(fn=remove)
+
+    p = subparsers.add_parser('start', help="start afs services")
+    _common_opts(p)
+    p.add_argument('--components', metavar='<name>', nargs='+',
+                   choices=['server','client'],
+                   help='one or more of: "server", "client" (default: all)',
+                   default=['server','client'])
+    p.set_defaults(fn=start)
+
+    p = subparsers.add_parser('stop', help="stop afs services")
+    _common_opts(p)
+    p.add_argument('--components', metavar='<name>', nargs='+',
+                   choices=['server','client'],
+                   help='one or more of: "server", "client" (default: all)',
+                   default=['server','client'])
+    p.set_defaults(fn=stop)
+
+
+    p = subparsers.add_parser('fakekey', help='generate a keytab file for testing')
+    _common_opts(p)
+    p.add_argument('--keytab', help='keytab file to be created (default: /tmp/afs.keytab)', default='/tmp/afs.keytab')
+    p.add_argument('--cell', help='cell name (default: localcell)', default='localcell')
+    p.add_argument('--realm', help='realm name (default: LOCALCELL)', default=None)
+    p.add_argument('--enctype', help='encryption type (default: aes256-cts-hmac-sha1-96)', default='aes256-cts-hmac-sha1-96')
+    p.add_argument('--secret', help='passphrase (default: random)', default=None)
+    p.set_defaults(fn=fakekey)
+
+    p = subparsers.add_parser('setkey', help='add a service key from a keytab file')
+    _common_opts(p)
+    p.add_argument('--keytab', help="keytab file (default: /tmp/afs.keytab)", default="/tmp/afs.keytab")
+    p.add_argument('--cell', help="cell name (default: detect)", default=None)
+    p.add_argument('--realm', help="realm name (default: detect)", default=None)
+    p.add_argument('--confdir', help="server config directory (default: /usr/afs/etc)", default="/usr/afs/etc")
+    p.add_argument('--format', help="key file format (default: detect)",
+                   choices=['transarc', 'rxkad-k5', 'extended'], default=None)
+    p.set_defaults(fn=setkey)
+
+    p = subparsers.add_parser('newcell', help='setup the new cell')
+    _common_opts(p)
+    p.add_argument('--keytab', help="keytab file (default: /tmp/afs.keytab)", default="/tmp/afs.keytab")
+    p.add_argument('--cell', help="cell name (default: localcell)", default='localcell')
+    p.add_argument('--db', nargs='+', help="cell database hosts (default: local hostname)", default=None)
+    p.add_argument('--fs', nargs='+', help="cell fileserver hosts (default: local hostname)", default=None)
+    p.add_argument('--top', nargs='+', help="top level volumes (default: none)", default=[])
+    p.add_argument('--no-client', dest='noclient', help='do not mount root and top level volumes', action='store_true')
+    p.set_defaults(fn=newcell)
+
+    p = subparsers.add_parser('login', help='create a token from the service key')
+    _common_opts(p)
+    p.add_argument('--keytab', help="keytab file (default: /tmp/afs.keytab)", default="/tmp/afs.keytab")
+    p.add_argument('--user', help="user name (default: admin)", default="admin")
+    p.add_argument('--cell', help="cell name (default: detect from keytab)", default=None)
+    p.add_argument('--realm', help="realm name (default: detect from keytab)", default=None)
+    p.set_defaults(fn=akimpersonate)
+
+    args = parser.parse_args()
+    logging.basicConfig(**_log_options(args))
+    try:
+        kwargs = vars(args)
+        args.fn(**kwargs)
+    except Exception as e:
+        logger.exception(e)
+    sys.exit(0)
+
+if __name__ == "__main__":
+    main()
+

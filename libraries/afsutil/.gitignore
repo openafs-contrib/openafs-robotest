@@ -1,0 +1,5 @@
+*.pyc
+*.swp
+afsutil.egg-info/
+dist/
+build/
