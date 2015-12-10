@@ -25,7 +25,6 @@ from version import VERSION
 __version__ = VERSION
 
 class OpenAFSLibrary(
-    _InstallationKeywords,
     _SystemKeywords,
     _KeytabKeywords,
     _LoginKeywords,

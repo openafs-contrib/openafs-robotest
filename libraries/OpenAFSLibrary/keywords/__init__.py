@@ -19,7 +19,6 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
 
-from installation import _InstallationKeywords
 from system import _SystemKeywords
 from keytab import _KeytabKeywords
 from login import _LoginKeywords
@@ -29,7 +28,6 @@ from volume import _VolumeKeywords
 from rx import _RxKeywords
 
 __all__ = [
-    '_InstallationKeywords',
     '_SystemKeywords',
     '_KeytabKeywords',
     '_LoginKeywords',
@@ -38,3 +36,17 @@ __all__ = [
     '_VolumeKeywords',
     '_RxKeywords'
 ]
+
+def import_dist_variables():
+    import os
+    import glob
+    from OpenAFSLibrary.util import get_var,run_program,load_globals,DIST
+    if not get_var('AFS_DIST'):
+        raise AssertionError("AFS_DIST is not set!")
+    dist = os.path.abspath(os.path.join(DIST, "%s.py" % get_var('AFS_DIST')))
+    if not os.path.isfile(dist):
+        raise AssertionError("Unable to find dist file! %s" % dist)
+    load_globals(dist)
+
+import_dist_variables()
+
