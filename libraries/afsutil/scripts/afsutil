@@ -27,6 +27,11 @@ import gettext
 import re
 import time
 
+try:
+    import argcomplete
+except ImportError:
+    argcomplete = None
+
 import afsutil.system
 import afsutil.build
 import afsutil.init
@@ -283,6 +288,8 @@ def main():
     p.add_argument('--realm', help="realm name (default: detect from keytab)", default=None)
     p.set_defaults(fn=akimpersonate)
 
+    if argcomplete:
+        argcomplete.autocomplete(parser)
     args = parser.parse_args()
     logging.basicConfig(**_log_options(args))
     try:
