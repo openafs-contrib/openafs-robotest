@@ -26,7 +26,6 @@ __version__ = VERSION
 
 class OpenAFSLibrary(
     _SystemKeywords,
-    _KeytabKeywords,
     _LoginKeywords,
     _PathKeywords,
     _ACLKeywords,

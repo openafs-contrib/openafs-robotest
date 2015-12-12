@@ -20,7 +20,6 @@
 #
 
 from system import _SystemKeywords
-from keytab import _KeytabKeywords
 from login import _LoginKeywords
 from path import _PathKeywords
 from acl import _ACLKeywords
@@ -29,7 +28,6 @@ from rx import _RxKeywords
 
 __all__ = [
     '_SystemKeywords',
-    '_KeytabKeywords',
     '_LoginKeywords',
     '_PathKeywords',
     '_ACLKeywords',
