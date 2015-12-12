@@ -26,7 +26,8 @@ import math
 import socket
 from robot.api import logger
 from robot.libraries.BuiltIn import BuiltIn
-from OpenAFSLibrary.util import get_var,sudo,run_program
+from OpenAFSLibrary.variable import get_var
+from OpenAFSLibrary.command import run_program
 
 def set_global_variables():
     # Save this hostname as a global variable.

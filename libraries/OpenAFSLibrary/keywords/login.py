@@ -21,7 +21,10 @@
 
 import os
 from robot.api import logger
-from OpenAFSLibrary.util import get_var,run_program
+
+from OpenAFSLibrary.variable import get_var
+from OpenAFSLibrary.command import run_program
+
 
 def get_principal(user, realm):
     """Convert OpenAFS k4 style names to k5 style principals."""

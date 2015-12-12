@@ -28,7 +28,7 @@ import tempfile
 import unittest
 import mock
 from robot.api import logger
-from OpenAFSLibrary.util.command import vos, fs, NoSuchEntryError
+from OpenAFSLibrary.command import vos, fs, NoSuchEntryError
 
 def examine_path(path):
     info = {}
