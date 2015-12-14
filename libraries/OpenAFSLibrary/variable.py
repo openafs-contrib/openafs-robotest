@@ -26,26 +26,6 @@ from robot.api import logger
 from robot.libraries.BuiltIn import BuiltIn
 
 _rf = BuiltIn()
-DIST = os.path.abspath(os.path.join(os.path.dirname(__file__), "resources", "dist"))
-
-def load_globals(path):
-    """Load defaults into the global variable namespace."""
-    module = imp.load_source('globals', path)
-    for name in dir(module):
-        if name.startswith("_"):
-            continue
-        try:
-            value = getattr(module, name, None)
-            if value and not _rf.get_variable_value("${%s}" % name):
-                _rf.set_global_variable("${%s}" % name, value)
-        except AttributeError:
-            pass # allow to load outside of RF
-
-def import_dist_variables():
-    dist = os.path.abspath(os.path.join(DIST, "%s.py" % get_var('AFS_DIST')))
-    if not os.path.isfile(dist):
-        raise AssertionError("Unable to find dist file! %s" % dist)
-    load_globals(dist)
 
 def get_var(name):
     """Return the variable value."""
