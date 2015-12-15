@@ -48,7 +48,6 @@ def login_with_keytab(user):
     """Acquire an AFS token for authenticated access with Kerberos."""
     if not user:
         raise AsseritionError("User name is required")
-    site = get_var('SITE')
     kinit = get_var('KINIT')
     aklog = get_var('AKLOG')
     cell = get_var('AFS_CELL')
@@ -65,9 +64,7 @@ def login_with_keytab(user):
     logger.info("keytab: " + keytab)
     if not os.path.exists(keytab):
         raise AsseritionError("Keytab file '%s' is missing." % keytab)
-    if not os.path.isdir(site):
-        raise AsseritionError("SITE directory '%s' is missing." % site)
-    krb5cc = os.path.join(site, "krb5cc")
+    krb5cc = "/tmp/krb5cc-afs-robotest"
     cmd = "KRB5CCNAME=%s %s -5 -k -t %s %s" % (krb5cc, kinit, keytab, principal)
     rc,out,err = run_program(cmd)
     if rc:
@@ -91,9 +88,8 @@ class _LoginKeywords(object):
     def logout(self):
         """Release the AFS token."""
         if not get_var('AFS_AKIMPERSONATE'):
-            site = get_var('SITE')
             kdestroy = get_var('KDESTROY')
-            krb5cc = os.path.join(site, "krb5cc")
+            krb5cc = "/tmp/krb5cc-afs-robotest"
             cmd = "KRB5CCNAME=%s %s" % (krb5cc, kdestroy)
             rc,out,err = run_program(cmd)
             if rc:
