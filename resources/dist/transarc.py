@@ -26,7 +26,8 @@ AFS_CACHE_DIR = "/usr/vice/cache"
 #
 # Fully qualified AFS command paths for Transarc style installs.
 #
-AKLOG = "/usr/afsws/bin/aklog"
+#AKLOG = "/usr/afsws/bin/aklog"
+AKLOG = "/usr/local/bin/aklog-1.6"  # work around br0k3n aklog
 ASETKEY = "/usr/afs/bin/asetkey"
 BOS = "/usr/afs/bin/bos"
 FS = "/usr/afs/bin/fs"

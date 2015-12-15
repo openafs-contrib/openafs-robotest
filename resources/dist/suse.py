@@ -28,7 +28,8 @@ AFS_CACHE_DIR = "/var/cache/openafs"
 #
 # Fully qualified AFS command paths for SuSE installs.
 #
-AKLOG = "/usr/bin/aklog"
+#AKLOG = "/usr/bin/aklog"
+AKLOG = "/usr/local/bin/aklog-1.6"  # work around br0k3n aklog
 ASETKEY = "/usr/sbin/asetkey"
 BOS = "/usr/sbin/bos"
 FS = "/usr/bin/fs"
