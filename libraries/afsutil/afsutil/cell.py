@@ -212,7 +212,7 @@ class Cell(object):
         if fs is None:
             fs = [hostname]
         self.cell = cell
-        self.admin = admin
+        self.admin = admin.replace('/', '.') # afs uses k4-style seps
         self.dbhosts = [Host(n) for n in set(db)]
         self.fshosts = [Host(n) for n in set(fs)]
         self.servers = [Host(n) for n in set(db + fs)]

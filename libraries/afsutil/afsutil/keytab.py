@@ -493,6 +493,7 @@ class Keytab(object):
             raise AssertionError("Must read or write keytab file first.")
         if user is None:
             user = DEFAULT_USER
+        user = user.replace('.', '/')  # convert k4-style separators (used by afs) to k5-style
         sp = self._get_service_principal(cell, realm) # lookup the cell/realm if needed
         if self.get_kvno(sp) is None:
             raise AssertionError("No service principal found!")
