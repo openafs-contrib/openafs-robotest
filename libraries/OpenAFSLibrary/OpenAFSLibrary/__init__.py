@@ -19,8 +19,8 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
 
-from keywords import *
-from version import VERSION
+from OpenAFSLibrary.keywords import *
+from OpenAFSLibrary.version import VERSION
 
 __version__ = VERSION
 
