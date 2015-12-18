@@ -61,7 +61,8 @@ except ImportError:
 #
 # Configuration defaults.
 #
-DEFAULTS = """
+DEFAULT_CONFIG_FILE = os.path.join(os.getcwd(), 'afs-robotest.conf')
+DEFAULT_CONFIG_DATA = """
 [paths]
 dest = %(site)s/dest
 doc = %(root)s/doc
@@ -107,11 +108,11 @@ class TinyWebServer(object):
     This optional helper is provided to avoid apache (or other web server) to
     view the test reports and logs.  This servers static content only.
     """
-    def __init__(self, port, docroot, pidfile, foreground):
-        self.port = port
-        self.docroot = docroot
-        self.pidfile = pidfile
-        self.foreground = foreground
+    def __init__(self, config):
+        self.port = config.getint('web', 'port')
+        self.docroot = config.get('paths', 'output')
+        self.pidfile = config.get('web', 'pidfile')
+        self.foreground = config.getboolean('web', 'foreground')
 
     def _exit(self):
         """Clean up our pid file."""
@@ -195,19 +196,19 @@ class TinyWebServer(object):
             status = "Not running."
         return status
 
-def must_be_root():
+def must_be_root(cmd):
     """Fails unless running as root."""
     if os.geteuid() != 0:
-        sys.stderr.write("%s: Must run as root!\n" % sys.argv[0])
+        sys.stderr.write("%s %s: Must run as root!\n" % (sys.argv[0], cmd))
         sys.exit(1)
 
-def should_not_be_root():
+def should_not_be_root(cmd):
     """Fails if running as root."""
     if os.geteuid() == 0:
-        sys.stderr.write("%s: Should not be run as root!\n" % sys.argv[0])
+        sys.stderr.write("%s %s: Should not be run as root!\n" % (sys.argv[0], cmd))
         sys.exit(1)
 
-def cmd_config(args, config):
+def cmd_config_list(args, config):
     """List the current configuration."""
     if args.expand:
         for s in config.sections():
@@ -218,9 +219,21 @@ def cmd_config(args, config):
     else:
         config.write(sys.stdout)
 
+def cmd_config_set(args, config):
+    """Set a value in the config file.
+
+    This will create the config file if it does not exist. Use --config to set
+    the name of an alternate configuration file."""
+    should_not_be_root('config set')
+    if args.section not in config.sections():
+        config.add_section(args.section)
+    config.set(args.section, args.option, args.value)
+    with open(args.config, 'w') as f:
+        config.write(f)
+
 def cmd_setup(args, config):
     """Run the pre-test installation and setup."""
-    must_be_root()
+    must_be_root('setup')
     logging.basicConfig(level=logging.INFO)
 
     dest = config.get('paths', 'dest')
@@ -259,7 +272,7 @@ def cmd_setup(args, config):
 
 def cmd_run(args, config):
     """Run the Robotframework test suites."""
-    should_not_be_root()
+    should_not_be_root('run')
     if config.getboolean('options', 'auto_setup'):
         rc = subprocess.call(['sudo', '-n', sys.argv[0], 'setup'] + sys.argv[2:])
         if rc != 0:
@@ -306,33 +319,30 @@ def cmd_run(args, config):
 
 def cmd_teardown(args, config):
     """Perform the post-test uninstall and cleanup."""
-    must_be_root()
+    must_be_root('teardown')
     logging.basicConfig(level=logging.INFO)
     afsutil.init.stop(components=['server', 'client'])
     afsutil.transarc.TransarcUninstaller(purge=True).remove()
     return 0
 
-def cmd_web(args, config):
-    """Start and stop a minimal web server to view the test reports and logs."""
-    should_not_be_root()
-    pidfile = config.get('web', 'pidfile')
-    port = config.getint('web', 'port')
-    docroot = config.get('paths', 'output')
-    pidfile = config.get('web', 'pidfile')
-    foreground = config.getboolean('web', 'foreground')
-    server = TinyWebServer(port, docroot, pidfile, foreground)
-    if args.action == 'start':
-        server.start()
-    elif args.action == 'stop':
-        server.stop()
-    elif args.action == 'status':
-        sys.stdout.write("%s\n" % (server.status()))
-    else:
-        raise AssertionError("Invalid action: %s" % args.action)
-    return 0
+def cmd_web_start(args, config):
+    should_not_be_root('web')
+    server = TinyWebServer(config)
+    server.start()
+
+def cmd_web_stop(args, config):
+    should_not_be_root('web')
+    server = TinyWebServer(config)
+    server.stop()
+
+def cmd_web_status(args, config):
+    should_not_be_root('web')
+    server = TinyWebServer(config)
+    sys.stdout.write("%s\n" % (server.status()))
 
 def cmd_makedoc(args, config):
     """Generate library documentation."""
+    should_not_be_root('makedoc')
     libraries = config.get('paths', 'libraries')
     doc = config.get('paths', 'doc')
     ipath = os.path.join(libraries, 'OpenAFSLibrary', 'OpenAFSLibrary')
@@ -354,51 +364,91 @@ class CommandLineParser(argparse.ArgumentParser):
         self.print_help(sys.stderr)
         self.exit(2, gettext.gettext('\n%s: error: %s\n') % (self.prog, message))
 
+
 def common_options(p):
-    p.add_argument('-c', '--config', help="config file", default=None)
+    p.add_argument('-c', '--config', help="config file", default=DEFAULT_CONFIG_FILE)
 
 def main():
 
     # Parse command line options.
     parser = CommandLineParser()
-    subparsers = parser.add_subparsers(title="sub-commands", metavar="<command>")
+    subparsers = parser.add_subparsers(title="commands", metavar="<command>")
 
-    p = subparsers.add_parser('config', help='show configuration')
+    #
+    # afs-robotest config <list|set>
+    #
+    p = subparsers.add_parser('config', help="get or set configuration")
+    ssp = p.add_subparsers(title="actions", metavar="<action>")
+    p = ssp.add_parser('list', help="show configuration values")
     common_options(p)
     p.add_argument('-x', '--expand', action='store_true', help="expand interpolated values")
-    p.set_defaults(_cmd=cmd_config)
+    p.set_defaults(_cmd=cmd_config_list)
 
+    p = ssp.add_parser('set', help="set a configuration value")
+    common_options(p)
+    p.add_argument('section', metavar='<section>', help="section name")
+    p.add_argument('option', metavar='<option>', help="option name")
+    p.add_argument('value', metavar='<value>', help="option value")
+    p.set_defaults(_cmd=cmd_config_set)
+
+    #
+    # afs-robotest makedoc
+    #
     p = subparsers.add_parser('makedoc', help="generate library documentation")
     common_options(p)
     p.set_defaults(_cmd=cmd_makedoc)
 
+    #
+    # afs-robotest setup
+    #
     p = subparsers.add_parser('setup', help='install and setup OpenAFS')
     common_options(p)
     p.set_defaults(_cmd=cmd_setup)
 
+    #
+    # afs-robotest run
+    #
     p = subparsers.add_parser('run', help="run the tests")
     common_options(p)
     p.set_defaults(_cmd=cmd_run)
 
+    #
+    # afs-robotest teardown
+    #
     p = subparsers.add_parser('teardown', help="remove OpenAFS")
     common_options(p)
     p.set_defaults(_cmd=cmd_teardown)
 
+    #
+    # afs-robotest web <start|stop|status>
+    #
     p = subparsers.add_parser('web', help="run the test report web server")
+    ssp = p.add_subparsers(title="actions", metavar="<action>")
+
+    p = ssp.add_parser('start', help="start web server")
     common_options(p)
-    p.add_argument('action', choices=['start','stop','status'], help="action to perform")
-    p.set_defaults(_cmd=cmd_web)
+    p.set_defaults(_cmd=cmd_web_start)
+
+    p = ssp.add_parser('stop', help="stop web server")
+    common_options(p)
+    p.set_defaults(_cmd=cmd_web_start)
+
+    p = ssp.add_parser('status', help="show web server status")
+    common_options(p)
+    p.set_defaults(_cmd=cmd_web_status)
 
     args = parser.parse_args()
 
-    # Load configuration. First load defaults then overlay with user defined values.
+    # Load configuration.
+    # First load defaults then overlay with user defined values.
     config = ConfigParser.SafeConfigParser()
     config.add_section('paths')
     config.set('paths', 'root', os.getcwd())
-    config.readfp(StringIO.StringIO(DEFAULTS))
-    if args.config:
-        with open(args.config, 'r') as f:
-            config.readfp(f)
+    config.readfp(StringIO.StringIO(DEFAULT_CONFIG_DATA))
+    ok = config.read(args.config)
+    if not ok and args.config != DEFAULT_CONFIG_FILE:
+        sys.stderr.write("Could not read config file '%s'.\n" % (args.config))
+        sys.exit(1)
 
     rc = args._cmd(args, config)
     sys.exit(rc)
