@@ -38,6 +38,7 @@ try:
     import afsutil.keytab
     import afsutil.init
     import afsutil.cell
+    from afsutil.system import mkdirp
 except ImportError:
     sys.stderr.write("Cannot import afsutil packages.\n")
     sys.stderr.write("See README for installation instructions.\n");
@@ -64,22 +65,27 @@ except ImportError:
 DEFAULT_CONFIG_FILE = os.path.join(os.getcwd(), 'afs-robotest.conf')
 DEFAULT_CONFIG_DATA = """
 [paths]
-dest = %(site)s/dest
 doc = %(root)s/doc
-site = %(root)s/site
+log = %(root)s/log
 tests = %(root)s/tests
 output = %(root)s/output
 libraries = %(root)s/libraries
 resources = %(root)s/resources
 
-[options]
+[setup]
+installer = none
+install_client = yes
+install_server = yes
+
+[run]
+dist = transarc
 exclude_tags = todo,crash,slow
 log_level = INFO
 auto_setup = no
 auto_teardown = no
 
-[setup]
-dist = transarc
+[teardown]
+purge = yes
 
 [cell]
 name = robotest
@@ -150,8 +156,7 @@ class TinyWebServer(object):
         if pid:
             sys.stderr.write("Already running (pid %d).\n" % (pid))
             return
-        if not os.path.exists(self.docroot):
-            os.makedirs(self.docroot)
+        mkdirp(self.docroot)
         os.chdir(self.docroot)
         sys.stdout.write("Listening on port %d.\n" % (self.port))
         if not self.foreground:
@@ -231,52 +236,103 @@ def cmd_config_set(args, config):
     with open(args.config, 'w') as f:
         config.write(f)
 
+
+def install_transarc_bins(config, keytab):
+    """Install transarc-style binaries."""
+    cell = config.get('cell', 'name')
+    realm = config.get('kerberos', 'realm')
+    components = []
+    if config.getboolean('setup', 'install_server'):
+        components.append('server')
+    if config.getboolean('setup', 'install_client'):
+        components.append('client')
+
+    if len(components) == 0:
+        sys.stdout.write("Skipping install; server and client install disabled.\n")
+        return
+    if not config.has_option('paths', 'dest'):
+        sys.stderr.write("Cannot install; paths:dest is missing\n")
+        sys.exit(1)
+    dest = config.get('paths', 'dest')
+    if not os.path.exists(dest):
+        sys.stderr.write("Cannot install; paths:dest='%s' not found.\n" % (dest))
+        sys.exit(1)
+    sys.stdout.write("Installing transarc-style bins from '%s'... " % (dest))
+    sys.stdout.flush()
+    installer = afsutil.transarc.TransarcInstaller(dest=dest, cell=cell, realm=realm)
+    installer.install(components=components)
+    if 'server' in components:
+        keytab.set_service_key()
+    sys.stdout.write("done.\n")
+
+
 def cmd_setup(args, config):
     """Run the pre-test installation and setup."""
     must_be_root('setup')
-    logging.basicConfig(level=logging.INFO)
 
-    dest = config.get('paths', 'dest')
+    log = os.path.join(config.get('paths', 'log'), 'setup.log')
+    mkdirp(config.get('paths', 'log'))
+    sys.stdout.write("Writing to log '%s'.\n" % (log))
+    logging.basicConfig(level=logging.INFO, filename=log, format="%(asctime)s "+logging.BASIC_FORMAT)
+    logging.getLogger('afs-robotest').info("afs-robotest setup")
+
+    # Create service key.
     cell = config.get('cell', 'name')
     admin = config.get('cell', 'admin')
     realm = config.get('kerberos', 'realm')
     keytab = config.get('kerberos', 'keytab')
     akimpersonate = config.get('kerberos', 'akimpersonate')
 
-    # Create a fake key if the keytab does not exist.
     kt = afsutil.keytab.Keytab()
-    if akimpersonate:
+    if not akimpersonate:
+        kt.load(keytab)
+    else:
+        sys.stdout.write("Creating fake keytab '%s'... " % (keytab))
+        sys.stdout.flush()
         kt.add_fake_key("afs/%s@%s" % (cell, realm))
         kt.write(keytab)
-    else:
-        kt.load(keytab)
+        sys.stdout.write("done.\n")
 
-    # Install OpenAFS bins.
-    installer = afsutil.transarc.TransarcInstaller(dest=dest, cell=cell, realm=realm)
-    installer.install()
-    kt.set_service_key()
+    # Installation.
+    installer = config.get('setup', 'installer')
+    if installer == 'transarc':
+        install_transarc_bins(config, kt)
+    elif installer == 'none':
+        sys.stdout.write("Skipping installation; setup:installer is 'none'.\n")
+    else:
+        sys.stderr.write("Invalid installer name: '%s'.\n" % (installer))
+        sys.exit(1)
 
     # Create the test cell.
+    sys.stdout.write("Setting up test cell '%s'... " % (cell))
+    sys.stdout.flush()
     afsutil.init.start(components=['server'])
     c = afsutil.cell.Cell(cell=cell, realm=realm, keytab=keytab, admin=admin)
     c.newcell()
+    sys.stdout.write("done.\n")
 
-    # Setup the root volumes.
+    sys.stdout.write("Starting afs client... ")
+    sys.stdout.flush()
     afsutil.init.start(components=['client'])
+    sys.stdout.write("done.\n")
+
+    sys.stdout.write("Setting root volumes for test cell '%s'... " % (cell))
     if akimpersonate:
         kt.akimpersonate(user=admin, cell=cell, realm=realm)
     else:
-        raise AssertionError("not implemented")
+        raise AssertionError("sorry, not implemented")
     c.mount_root_volumes()
     c.create_top_volumes(['test'])
+    sys.stdout.write("done.\n")
 
 def cmd_run(args, config):
     """Run the Robotframework test suites."""
     should_not_be_root('run')
-    if config.getboolean('options', 'auto_setup'):
+    if config.getboolean('run', 'auto_setup'):
+        sys.stdout.write("Running setup...\n")
         rc = subprocess.call(['sudo', '-n', sys.argv[0], 'setup'] + sys.argv[2:])
         if rc != 0:
-            sys.stderr.write("setup failed!\n")
+            sys.stderr.write("Not running tests: setup failed!\n")
             sys.exit(1)
 
     # Setup the python paths for our libs and resources.
@@ -285,8 +341,7 @@ def cmd_run(args, config):
 
     # Create output dir if needed.
     output = config.get('paths', 'output')
-    if not os.path.exists(output):
-        os.makedirs(output)
+    mkdirp(output)
 
     # Verify we have a keytab.
     if not os.path.isfile(config.get('kerberos', 'keytab')):
@@ -297,7 +352,7 @@ def cmd_run(args, config):
     tests = config.get('paths', 'tests') # path to our tests
     options = {
         'variable': [
-            'AFS_DIST:%s' %  config.get('setup', 'dist'),
+            'AFS_DIST:%s' %  config.get('run', 'dist'),
             'AFS_ADMIN:%s' % config.get('cell', 'admin'),
             'AFS_AKIMPERSONATE:%s' % config.getboolean('kerberos', 'akimpersonate'),
             'AFS_CELL:%s' % config.get('cell', 'name'),
@@ -306,13 +361,14 @@ def cmd_run(args, config):
         ],
         'report': 'index.html',
         'outputdir': output,
-        'loglevel': config.get('options', 'log_level'),
-        'exclude': config.get('options', 'exclude_tags').split(','),
+        'loglevel': config.get('run', 'log_level'),
+        'exclude': config.get('run', 'exclude_tags').split(','),
         'runemptysuite': True,
         'exitonfailure': False,
     }
     rc = robot.run(tests, **options)
-    if rc == 0 and config.getboolean('options', 'auto_teardown'):
+    if rc == 0 and config.getboolean('run', 'auto_teardown'):
+        sys.stdout.write("Running teardown...\n")
         rc = subprocess.call(['sudo', '-n', sys.argv[0], 'teardown'] + sys.argv[2:])
 
     return rc
@@ -320,9 +376,20 @@ def cmd_run(args, config):
 def cmd_teardown(args, config):
     """Perform the post-test uninstall and cleanup."""
     must_be_root('teardown')
-    logging.basicConfig(level=logging.INFO)
+
+    log = os.path.join(config.get('paths', 'log'), 'teardown.log')
+    mkdirp(config.get('paths', 'log'))
+    sys.stdout.write("Writing to log '%s'.\n" % (log))
+    logging.basicConfig(level=logging.INFO, filename=log, format="%(asctime)s "+logging.BASIC_FORMAT)
+    logging.getLogger('afs-robotest').info("afs-robotest teardown")
+
+    purge = config.getboolean('teardown', 'purge')
     afsutil.init.stop(components=['server', 'client'])
-    afsutil.transarc.TransarcUninstaller(purge=True).remove()
+    remover = afsutil.transarc.TransarcUninstaller(purge=purge)
+    sys.stdout.write("Removing files... ")
+    sys.stdout.flush()
+    remover.remove()
+    sys.stdout.write("done.\n")
     return 0
 
 def cmd_web_start(args, config):
@@ -340,16 +407,15 @@ def cmd_web_status(args, config):
     server = TinyWebServer(config)
     sys.stdout.write("%s\n" % (server.status()))
 
-def cmd_makedoc(args, config):
+def cmd_doc(args, config):
     """Generate library documentation."""
-    should_not_be_root('makedoc')
+    should_not_be_root('doc')
     libraries = config.get('paths', 'libraries')
     doc = config.get('paths', 'doc')
     ipath = os.path.join(libraries, 'OpenAFSLibrary', 'OpenAFSLibrary')
     opath = os.path.join(doc, 'OpenAFSLibrary.html')
     sys.path.append(ipath)
-    if not os.path.exists(doc):
-        os.makedirs(doc)
+    mkdirp(doc)
     try:
         robot.libdoc.libdoc(ipath, opath)
     except (IndexError, KeyError):
@@ -392,11 +458,29 @@ def main():
     p.set_defaults(_cmd=cmd_config_set)
 
     #
-    # afs-robotest makedoc
+    # afs-robotest doc
     #
-    p = subparsers.add_parser('makedoc', help="generate library documentation")
+    p = subparsers.add_parser('doc', help="generate library documentation")
     common_options(p)
-    p.set_defaults(_cmd=cmd_makedoc)
+    p.set_defaults(_cmd=cmd_doc)
+
+    #
+    # afs-robotest web <start|stop|status>
+    #
+    p = subparsers.add_parser('web', help="run the test report web server")
+    ssp = p.add_subparsers(title="actions", metavar="<action>")
+
+    p = ssp.add_parser('start', help="start web server")
+    common_options(p)
+    p.set_defaults(_cmd=cmd_web_start)
+
+    p = ssp.add_parser('stop', help="stop web server")
+    common_options(p)
+    p.set_defaults(_cmd=cmd_web_stop)
+
+    p = ssp.add_parser('status', help="show web server status")
+    common_options(p)
+    p.set_defaults(_cmd=cmd_web_status)
 
     #
     # afs-robotest setup
@@ -418,24 +502,6 @@ def main():
     p = subparsers.add_parser('teardown', help="remove OpenAFS")
     common_options(p)
     p.set_defaults(_cmd=cmd_teardown)
-
-    #
-    # afs-robotest web <start|stop|status>
-    #
-    p = subparsers.add_parser('web', help="run the test report web server")
-    ssp = p.add_subparsers(title="actions", metavar="<action>")
-
-    p = ssp.add_parser('start', help="start web server")
-    common_options(p)
-    p.set_defaults(_cmd=cmd_web_start)
-
-    p = ssp.add_parser('stop', help="stop web server")
-    common_options(p)
-    p.set_defaults(_cmd=cmd_web_start)
-
-    p = ssp.add_parser('status', help="show web server status")
-    common_options(p)
-    p.set_defaults(_cmd=cmd_web_status)
 
     args = parser.parse_args()
 

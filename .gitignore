@@ -1,6 +1,8 @@
 *.pyc
 *.swp
-/settings.py
+*.conf
+*.ini
 /output
 /site
 /doc
+/log
