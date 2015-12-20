@@ -26,7 +26,7 @@ import socket
 import re
 import tempfile
 import unittest
-import mock
+
 from robot.api import logger
 from OpenAFSLibrary.command import vos, fs, NoSuchEntryError
 
