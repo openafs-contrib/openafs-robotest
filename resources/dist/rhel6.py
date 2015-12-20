@@ -26,8 +26,7 @@ AFS_CACHE_DIR = "/usr/vice/cache"
 #
 # Fully qualified AFS command paths for rpm-based installs.
 #
-#AKLOG = "/usr/bin/aklog"
-AKLOG = "/usr/local/bin/aklog-1.6"  # work around br0k3n aklog
+AKLOG = "/usr/bin/aklog"
 ASETKEY = "/usr/sbin/asetkey"
 BOS = "/usr/bin/bos"
 FS = "/usr/bin/fs"

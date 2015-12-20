@@ -78,11 +78,13 @@ install_client = yes
 install_server = yes
 
 [run]
-dist = transarc
 exclude_tags = todo,crash,slow
 log_level = INFO
 auto_setup = no
 auto_teardown = no
+
+[variables]
+afs_dist = transarc
 
 [teardown]
 purge = yes
@@ -352,10 +354,9 @@ def cmd_run(args, config):
     tests = config.get('paths', 'tests') # path to our tests
     options = {
         'variable': [
-            'AFS_DIST:%s' %  config.get('run', 'dist'),
+            'AFS_CELL:%s' % config.get('cell', 'name'),
             'AFS_ADMIN:%s' % config.get('cell', 'admin'),
             'AFS_AKIMPERSONATE:%s' % config.getboolean('kerberos', 'akimpersonate'),
-            'AFS_CELL:%s' % config.get('cell', 'name'),
             'KRB_REALM:%s' % config.get('kerberos', 'realm'),
             'KRB_AFS_KEYTAB:%s' % config.get('kerberos', 'keytab'),
         ],
@@ -366,6 +367,12 @@ def cmd_run(args, config):
         'runemptysuite': True,
         'exitonfailure': False,
     }
+
+    # Additional variables.
+    if config.has_section('variables'):
+        for o,v in config.items('variables'):
+            options['variable'].append("%s:%s" % (o.upper(), v))
+
     rc = robot.run(tests, **options)
     if rc == 0 and config.getboolean('run', 'auto_teardown'):
         sys.stdout.write("Running teardown...\n")
