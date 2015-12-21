@@ -1,7 +1,9 @@
 from setuptools import setup
 
+execfile("./OpenAFSLibrary/version.py") # sets VERSION
+
 setup(name='OpenAFSLibrary',
-      version='0.0.1',
+      version=VERSION,
       description='OpenAFS Robotframework Library',
       author='Michael Meffie',
       author_email='mmeffie@sinenomine.net',
