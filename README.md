@@ -39,6 +39,15 @@ Install the python packages provided by openafs-robotest:
     $ (cd libraries/afsutil && ./install.sh)
     $ (cd libraries/OpenAFSLibrary && ./install.sh)
 
+If not already present, install the python `argparse` package.  To see if
+`argparse` is installed:
+
+    $ python -m argparse
+
+Use `pip` to install `argparse` if it not present on your system.
+
+    $ sudo pip install argparse
+
 ## Setup
 
 Run the `afs-robotest` tool to set the configuration before running the setup
@@ -56,12 +65,13 @@ To configure robotest to install Transarc-style binaries:
 The `config set` command will create a configuration file called
 `afs-robotest.conf` in the current directory if it does not already exist. This
 is the default name of the configuration file. The `--config` option can be
-given to `afs-robotest` to specify a different configuration file, which can be
+given to `afs-robotest` to specify different configuration files, which can be
 useful when testing different versions on a single system.
 
-To install the binaries and to create the test cell:
+To install the OpenAFS binaries and create the test cell:
 
     $ sudo ./afs-robotest setup
+
 
 ## Running tests
 
@@ -85,9 +95,9 @@ report.
 
 To start the minimal web server:
 
-    $ afs-robotest web start
+    $ ./afs-robotest web start
 
 To stop the minimal web server:
 
-    $ afs-robotest web stop
+    $ ./afs-robotest web stop
 
