@@ -331,8 +331,12 @@ def cmd_run(args, config):
     """Run the Robotframework test suites."""
     should_not_be_root('run')
     if config.getboolean('run', 'auto_setup'):
+        cmd = ['sudo', '-n', sys.argv[0], 'setup']
+        if args.config:
+            cmd.append('--config')
+            cmd.append(args.config)
         sys.stdout.write("Running setup...\n")
-        rc = subprocess.call(['sudo', '-n', sys.argv[0], 'setup'] + sys.argv[2:])
+        rc = subprocess.call(cmd)
         if rc != 0:
             sys.stderr.write("Not running tests: setup failed!\n")
             sys.exit(1)
@@ -373,10 +377,19 @@ def cmd_run(args, config):
         for o,v in config.items('variables'):
             options['variable'].append("%s:%s" % (o.upper(), v))
 
+    # Additional options.
+    if args.suite:
+        options['suite'] = args.suite
+
     rc = robot.run(tests, **options)
+
     if rc == 0 and config.getboolean('run', 'auto_teardown'):
+        cmd = ['sudo', '-n', sys.argv[0], 'teardown']
+        if args.config:
+            cmd.append('--config')
+            cmd.append(args.config)
         sys.stdout.write("Running teardown...\n")
-        rc = subprocess.call(['sudo', '-n', sys.argv[0], 'teardown'] + sys.argv[2:])
+        rc = subprocess.call(cmd)
 
     return rc
 
@@ -501,6 +514,7 @@ def main():
     #
     p = subparsers.add_parser('run', help="run the tests")
     common_options(p)
+    p.add_argument('-s', '--suite', help="test suite to run (default: all)", default=None)
     p.set_defaults(_cmd=cmd_run)
 
     #
