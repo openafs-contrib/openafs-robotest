@@ -68,12 +68,25 @@ is the default name of the configuration file. The `--config` option can be
 given to `afs-robotest` to specify different configuration files, which can be
 useful when testing different versions on a single system.
 
-To install the OpenAFS binaries and create the test cell:
+The `akimpersonate` feature of `aklog` is used to create AFS tokens by
+accessing the service keytab directly, without the need for a Kerberos realm.
+This is configured by setting `akimpesonate` to `yes` in the `kerberos` section
+of the configuration.
 
-    $ sudo ./afs-robotest setup
+Note: Unfortunately, the `akimpersonate` feature may not be functional in
+developement releases of OpenAFS (the master branch).  For testing development
+releases, either use a Kerberos realm or provide a 1.6.x version of `aklog`.
+Set the `aklog` option in the `variables` section of the configuration file to
+specify which `aklog` program is to be used during the tests. For example:
+
+    $ ./afs-robotest config set variables aklog /usr/local/bin/aklog-1.6
 
 
 ## Running tests
+
+To install the OpenAFS binaries and create the test cell:
+
+    $ sudo ./afs-robotest setup
 
 To run the tests:
 
