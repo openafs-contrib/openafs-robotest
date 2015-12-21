@@ -62,7 +62,16 @@ except ImportError:
 #
 # Configuration defaults.
 #
-DEFAULT_CONFIG_FILE = os.path.join(os.getcwd(), 'afs-robotest.conf')
+# The AFS_ROBOTEST_ROOT env var will be used to set the default
+# root directory, otherwise the current working directory is
+# used as the default project root.
+#
+try:
+    DEFAULT_ROOT = os.environ['AFS_ROBOTEST_ROOT']
+except KeyError:
+    DEFAULT_ROOT = os.getcwd()
+
+DEFAULT_CONFIG_FILE = os.path.join(DEFAULT_ROOT, 'afs-robotest.conf')
 DEFAULT_CONFIG_DATA = """
 [paths]
 doc = %(root)s/doc
@@ -331,12 +340,8 @@ def cmd_run(args, config):
     """Run the Robotframework test suites."""
     should_not_be_root('run')
     if config.getboolean('run', 'auto_setup'):
-        cmd = ['sudo', '-n', sys.argv[0], 'setup']
-        if args.config:
-            cmd.append('--config')
-            cmd.append(args.config)
         sys.stdout.write("Running setup...\n")
-        rc = subprocess.call(cmd)
+        rc = subprocess.call(['sudo', '-n', sys.argv[0], 'setup', '--config', args.config])
         if rc != 0:
             sys.stderr.write("Not running tests: setup failed!\n")
             sys.exit(1)
@@ -358,6 +363,7 @@ def cmd_run(args, config):
     tests = config.get('paths', 'tests') # path to our tests
     options = {
         'variable': [
+            'RESOURCES:%s' % config.get('paths', 'resources'), # path to our resources
             'AFS_CELL:%s' % config.get('cell', 'name'),
             'AFS_ADMIN:%s' % config.get('cell', 'admin'),
             'AFS_AKIMPERSONATE:%s' % config.getboolean('kerberos', 'akimpersonate'),
@@ -384,10 +390,7 @@ def cmd_run(args, config):
     rc = robot.run(tests, **options)
 
     if rc == 0 and config.getboolean('run', 'auto_teardown'):
-        cmd = ['sudo', '-n', sys.argv[0], 'teardown']
-        if args.config:
-            cmd.append('--config')
-            cmd.append(args.config)
+        cmd = ['sudo', '-n', sys.argv[0], 'teardown', '--config', args.config]
         sys.stdout.write("Running teardown...\n")
         rc = subprocess.call(cmd)
 
@@ -530,7 +533,7 @@ def main():
     # First load defaults then overlay with user defined values.
     config = ConfigParser.SafeConfigParser()
     config.add_section('paths')
-    config.set('paths', 'root', os.getcwd())
+    config.set('paths', 'root', DEFAULT_ROOT)
     config.readfp(StringIO.StringIO(DEFAULT_CONFIG_DATA))
     ok = config.read(args.config)
     if not ok and args.config != DEFAULT_CONFIG_FILE:
