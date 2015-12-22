@@ -25,7 +25,15 @@ import os
 from afsutil.system import run, which
 from afsutil.transarc import AFS_SRV_BIN_DIR, AFS_SRV_SBIN_DIR, AFS_WS_DIR
 
-PATHS = ['/usr/bin', '/usr/sbin', AFS_SRV_BIN_DIR, AFS_SRV_SBIN_DIR]
+# Common hidding places.
+PATHS = [
+  '/usr/bin',
+  '/usr/sbin',
+  AFS_SRV_BIN_DIR,
+  AFS_SRV_SBIN_DIR,
+  os.path.join(AFS_WS_DIR, 'bin'),
+  os.path.join(AFS_WS_DIR, 'etc'),
+]
 
 ASETKEY = None
 AKLOG = None
@@ -45,10 +53,9 @@ def asetkey(*args, **kwargs):
     return run(ASETKEY, args=args, **kwargs)
 
 def aklog(*args, **kwargs):
-    # NOTE: The akimpersonate feature currently requires 1.6.x version of aklog!
     global AKLOG
     if AKLOG is None:
-        AKLOG = which('aklog-1.6', extra_paths=PATHS, raise_errors=True)
+        AKLOG = which('aklog', extra_paths=PATHS, raise_errors=True)
     return run(AKLOG, args=args, **kwargs)
 
 def bos(*args, **kwargs):

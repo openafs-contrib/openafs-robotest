@@ -152,6 +152,8 @@ def setkey(**kwargs):
 
 def newcell(**kwargs):
     _must_be_root()
+    if 'aklog' in kwargs and kwargs['aklog']:
+        afsutil.cli.AKLOG = kwargs['aklog']
     if not afsutil.system.is_running('bosserver'):
         logger.warning("bosserver is not running! trying to start it.")
         start(components=['server'])
@@ -176,6 +178,8 @@ def newcell(**kwargs):
 def akimpersonate(**kwargs):
     if os.geteuid() == 0:
         logger.warning("Running akimpersonate as root!")
+    if 'aklog' in kwargs and kwargs['aklog']:
+        afsutil.cli.AKLOG = kwargs['aklog']
     keytab = kwargs['keytab']
     k = Keytab.load(keytab)
     k.akimpersonate(**kwargs)
@@ -278,6 +282,7 @@ def main():
     p.add_argument('--fs', nargs='+', help="cell fileserver hosts (default: local hostname)", default=None)
     p.add_argument('--top', nargs='+', help="top level volumes (default: none)", default=[])
     p.add_argument('--no-client', dest='noclient', help='do not mount root and top level volumes', action='store_true')
+    p.add_argument('--aklog', help="path to aklog program (default: detect)", default=None)
     p.set_defaults(fn=newcell)
 
     p = subparsers.add_parser('login', help='create a token from the service key')
@@ -286,6 +291,7 @@ def main():
     p.add_argument('--user', help="user name (default: admin)", default="admin")
     p.add_argument('--cell', help="cell name (default: detect from keytab)", default=None)
     p.add_argument('--realm', help="realm name (default: detect from keytab)", default=None)
+    p.add_argument('--aklog', help="path to aklog program (default: detect)", default=None)
     p.set_defaults(fn=akimpersonate)
 
     if argcomplete:

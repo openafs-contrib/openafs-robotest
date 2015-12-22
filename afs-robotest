@@ -257,6 +257,8 @@ def install_transarc_bins(config, keytab):
         components.append('server')
     if config.getboolean('setup', 'install_client'):
         components.append('client')
+    if config.has_option('variables', 'aklog'):
+        afsutil.cli.AKLOG = config.get('variables', 'aklog')
 
     if len(components) == 0:
         sys.stdout.write("Skipping install; server and client install disabled.\n")
