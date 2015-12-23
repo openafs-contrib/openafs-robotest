@@ -38,7 +38,7 @@ try:
     import afsutil.keytab
     import afsutil.init
     import afsutil.cell
-    from afsutil.system import mkdirp
+    from afsutil.system import mkdirp,touch
 except ImportError:
     sys.stderr.write("Cannot import afsutil packages.\n")
     sys.stderr.write("See README for installation instructions.\n");
@@ -223,6 +223,23 @@ def should_not_be_root(cmd):
     if os.geteuid() == 0:
         sys.stderr.write("%s %s: Should not be run as root!\n" % (sys.argv[0], cmd))
         sys.exit(1)
+
+def cmd_init(args, config):
+    """Initialize the root dir."""
+    # Create the initial config file.
+    root = config.get('paths', 'root')
+    if not os.path.exists(args.config):
+        with open(args.config, "w") as f:
+            config.write(f)
+    # Create setup and teardown logs as a non-root user, to make
+    # it easier to clean up.
+    log = config.get('paths', 'log')
+    if not os.path.exists(log):
+        mkdirp(log)
+    for name in ('setup', 'teardown'):
+        filename = os.path.join(log, "%s.log" % (name))
+        if not os.path.exists(filename):
+            touch(filename)
 
 def cmd_config_list(args, config):
     """List the current configuration."""
@@ -464,6 +481,13 @@ def main():
     # Parse command line options.
     parser = CommandLineParser()
     subparsers = parser.add_subparsers(title="commands", metavar="<command>")
+
+    #
+    # afs-robotest init
+    #
+    p = subparsers.add_parser('init', help="initialize the afs-robotest directory")
+    common_options(p)
+    p.set_defaults(_cmd=cmd_init)
 
     #
     # afs-robotest config <list|set>

@@ -53,6 +53,13 @@ Use `pip` to install `argparse` if it not present on your system.
 Run the `afs-robotest` tool to set the configuration before running the setup
 and tests.
 
+First initialize the afs-robotest directory with:
+
+    $ ./afs-robotest init
+
+This will create a default configuration file and empty log files for the
+setup and teardown.
+
 To show the current configuration:
 
     $ ./afs-robotest config list
