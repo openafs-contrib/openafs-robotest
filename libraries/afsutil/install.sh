@@ -1,5 +1,5 @@
 #!/bin/sh
-#
-# Run bdist as the regular user first to avoid polluting this working directory
-# with files owned by root.
-python setup.py bdist && sudo python setup.py install
+
+python setup.py sdist --formats gztar --verbose || exit 1
+sdist=`ls dist/afsutil*.tar.gz` || exit 1
+sudo pip install "$sdist"
