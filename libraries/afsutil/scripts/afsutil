@@ -105,7 +105,7 @@ def install(**kwargs):
     kwargs['dest'] = _check_dest(getattr(kwargs, 'dest', None))
     installer = transarc.TransarcInstaller(**kwargs)
     installer.install(components=kwargs['components'])
-    if 'keytab' in kwargs:
+    if 'server' in kwargs['components'] and 'keytab' in kwargs:
         keytab = kwargs['keytab']
         if not os.path.exists(keytab):
             logger.warning("Skipping set key; keytab file %s not found", keytab)
@@ -219,7 +219,8 @@ def main():
                    choices=transarc.COMPONENTS,
                    help='components to install; names are %s %s' % \
                         (", ".join(transarc.COMPONENTS),
-                        '(default: install all components)'))
+                        '(default: install all components)'),
+                   default=transarc.COMPONENTS)
     p.add_argument('--cell', help='cell name (default: localcell)', default='localcell')
     p.add_argument('--hosts', nargs='+', help='cell service db hosts (default: this host)', default=None)
     p.add_argument('--realm', help='realm name (default: LOCALCELL)', default=None)
@@ -234,7 +235,8 @@ def main():
                    choices=transarc.COMPONENTS,
                    help='components to remove; names are %s %s' % \
                         (", ".join(transarc.COMPONENTS),
-                        '(default: remove all components)'))
+                        '(default: remove all components)'),
+                   default=transarc.COMPONENTS)
     p.add_argument('--purge', action='store_true', help='remove config and data too')
     p.set_defaults(fn=remove)
 
