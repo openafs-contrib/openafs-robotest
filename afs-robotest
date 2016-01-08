@@ -85,6 +85,8 @@ resources = %(root)s/resources
 installer = none
 install_client = yes
 install_server = yes
+nuke = no
+force = no
 
 [run]
 exclude_tags = todo,crash,slow
@@ -265,7 +267,7 @@ def cmd_config_set(args, config):
         config.write(f)
 
 
-def install_transarc_bins(config, keytab):
+def install_transarc_bins(config, keytab, force):
     """Install transarc-style binaries."""
     cell = config.get('cell', 'name')
     realm = config.get('kerberos', 'realm')
@@ -287,14 +289,25 @@ def install_transarc_bins(config, keytab):
     if not os.path.exists(dest):
         sys.stderr.write("Cannot install; paths:dest='%s' not found.\n" % (dest))
         sys.exit(1)
-    sys.stdout.write("Installing transarc-style bins from '%s'... " % (dest))
+    if force:
+        force_msg = " (forced)"
+    else:
+        force_msg = ""
+    sys.stdout.write("Installing transarc-style bins from '%s'%s... " % (dest,force_msg))
     sys.stdout.flush()
-    installer = afsutil.transarc.TransarcInstaller(dest=dest, cell=cell, realm=realm)
+    installer = afsutil.transarc.TransarcInstaller(dest=dest, cell=cell, realm=realm, force=force)
     installer.install(components=components)
     if 'server' in components:
         keytab.set_service_key()
     sys.stdout.write("done.\n")
 
+def remove_transarc_bins(purge):
+    afsutil.init.stop(components=['server', 'client'])
+    remover = afsutil.transarc.TransarcUninstaller(purge=purge)
+    sys.stdout.write("Removing files... ")
+    sys.stdout.flush()
+    remover.remove()
+    sys.stdout.write("done.\n")
 
 def cmd_setup(args, config):
     """Run the pre-test installation and setup."""
@@ -305,6 +318,20 @@ def cmd_setup(args, config):
     sys.stdout.write("Writing to log '%s'.\n" % (log))
     logging.basicConfig(level=logging.INFO, filename=log, format="%(asctime)s "+logging.BASIC_FORMAT)
     logging.getLogger('afs-robotest').info("afs-robotest setup")
+
+    installer = config.get('setup', 'installer')
+
+    # Options to cope with unclean systems. Use with care.
+    if config.has_option('setup', 'nuke'):
+        nuke = config.getboolean('setup', 'nuke')
+    else:
+        nuke = False
+    if args.force is not None:
+        force = args.force
+    elif config.has_option('setup', 'force'):
+        force = config.getboolean('setup', 'force')
+    else:
+        force = False
 
     # Create service key.
     cell = config.get('cell', 'name')
@@ -324,9 +351,10 @@ def cmd_setup(args, config):
         sys.stdout.write("done.\n")
 
     # Installation.
-    installer = config.get('setup', 'installer')
     if installer == 'transarc':
-        install_transarc_bins(config, kt)
+        if nuke:
+            remove_transarc_bins(True)
+        install_transarc_bins(config, kt, force)
     elif installer == 'none':
         sys.stdout.write("Skipping installation; setup:installer is 'none'.\n")
     else:
@@ -426,12 +454,7 @@ def cmd_teardown(args, config):
     logging.getLogger('afs-robotest').info("afs-robotest teardown")
 
     purge = config.getboolean('teardown', 'purge')
-    afsutil.init.stop(components=['server', 'client'])
-    remover = afsutil.transarc.TransarcUninstaller(purge=purge)
-    sys.stdout.write("Removing files... ")
-    sys.stdout.flush()
-    remover.remove()
-    sys.stdout.write("done.\n")
+    remove_transarc_bins(purge)
     return 0
 
 def cmd_web_start(args, config):
@@ -536,6 +559,7 @@ def main():
     #
     p = subparsers.add_parser('setup', help='install and setup OpenAFS')
     common_options(p)
+    p.add_argument('--force', action='store_true', help='overwrite existing files', default=None)
     p.set_defaults(_cmd=cmd_setup)
 
     #
