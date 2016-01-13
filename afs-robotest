@@ -283,7 +283,7 @@ def install_transarc_bins(config, keytab, force):
         sys.stdout.write("Skipping install; server and client install disabled.\n")
         return
     if not config.has_option('paths', 'dest'):
-        sys.stderr.write("Cannot install; paths:dest is missing\n")
+        sys.stderr.write("Cannot install; paths:dest is missing.\n")
         sys.exit(1)
     dest = config.get('paths', 'dest')
     if not os.path.exists(dest):
@@ -403,7 +403,7 @@ def cmd_run(args, config):
 
     # Verify we have a keytab.
     if not os.path.isfile(config.get('kerberos', 'keytab')):
-        sys.strerr.write("Cannot find keytab file '%s'!" % (config.get('kerberos', 'keytab')))
+        sys.stderr.write("Cannot find keytab file '%s'!\n" % (config.get('kerberos', 'keytab')))
         sys.exit(1)
 
     # Setup the rf options.
