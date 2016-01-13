@@ -205,17 +205,38 @@ class Host(object):
 
 
 class Cell(object):
-    def __init__(self, cell='localcell', db=None, fs=None, admin='admin', **kwargs):
+
+    def __init__(self, cell='localcell', db=None, fs=None, admins=None, **kwargs):
+        """Initialize the cell object."""
         hostname = os.uname()[1]
         if db is None:
             db = [hostname]
         if fs is None:
             fs = [hostname]
+        db = set(db)
+        fs = set(fs)
+
+        # Old versions had a non-list keyword argument. Use the list if given,
+        # otherwise the single name, otherwise default to the name 'admin'.
+        if admins is None:
+            admins = [kwargs.get('admin', 'admin')]
+
         self.cell = cell
-        self.admin = admin.replace('/', '.') # afs uses k4-style seps
-        self.dbhosts = [Host(n) for n in set(db)]
-        self.fshosts = [Host(n) for n in set(fs)]
-        self.servers = [Host(n) for n in set(db + fs)]
+        self.admins = [admin.replace('/', '.') for admin in admins] # afs uses k4-style seps
+        self.dbhosts = [Host(n) for n in db]
+        self.fshosts = [Host(n) for n in fs]
+        self.servers = [Host(n) for n in db.union(fs)]
+
+    @classmethod
+    def current(cls, **kwargs):
+        """Create a cell object from the existing cell."""
+        host = Host()
+        cell = host.getcellname()
+        db = host.getcellhosts()
+        fs = [] # get from vos listaddrs?
+        admins = host.listusers()
+        cell = cls(cell=cell, db=db, fs=fs, admins=admins, **kwargs)
+        return cell
 
     def _wait_for_quorum(self, name, wait=30):
         for attempt in xrange(0, wait):
@@ -230,14 +251,14 @@ class Cell(object):
                 return
         raise AssertionError("Failed to reach database quorum for %s." % (name))
 
-    def _create_admin(self):
+    def _create_admin(self, admin):
         try:
-            pts('createuser', '-name', self.admin)
+            pts('createuser', '-name', admin)
         except CommandFailed as e:
             if not "Entry for name already exists" in e.err:
                 raise
         try:
-            pts('adduser', '-user', self.admin, '-group', 'system:administrators')
+            pts('adduser', '-user', admin, '-group', 'system:administrators')
         except CommandFailed as e:
             if not "Entry for id already exists" in e.err:
                 raise
@@ -282,18 +303,37 @@ class Cell(object):
             for host in self.dbhosts:
                 host.create_database(db)
             self._wait_for_quorum(db)
-        logger.info("Creating the admin user (username: %s).", self.admin)
-        self._create_admin()
-        logger.info("Adding user %s to the server superuser list.", self.admin)
-        for h in self.servers:
-            h.adduser(self.admin)
+
+        logger.info("Setting up admin users.")
+        for admin in self.admins:
+            logger.info("Creating the admin user %s.", admin)
+            self._create_admin(admin)
+            for h in self.servers:
+                logger.info("Adding %s to the superuser list on %s.", admin, h._hostname)
+                h.adduser(admin)
+
         logger.info("Starting fileservers.")
         for h in self.fshosts:
             h.create_fileserver()
         logger.info("Creating root.afs and root.cell volumes.")
-        # Note: root.afs must be exist before non-dynroot clients are started.
+        # Note: root.afs must exist before non-dynroot clients are started.
         for name in ('root.afs', 'root.cell'):
             self.fshosts[0].create_volume('a', name)
+
+    def add_fileserver(self, hostname, dafs=True):
+        """Add a fileserver to this cell.
+
+        The remote host must have the binaries installed, the service key
+        installed, the bosserver started.  This function will setup the
+        cell name, the CellServDB configuration, add the superuser names,
+        and then create the bosserver configuration to run the fileserver.
+        """
+        host = Host(hostname)
+        host.setcellname(self.cell)
+        host.setcellhosts(self.dbhosts)
+        for admin in self.admins:
+            host.adduser(admin)
+        host.create_fileserver(dafs=dafs)
 
     def mount_root_volumes(self):
         """Mount and replicate the cell root volumes.

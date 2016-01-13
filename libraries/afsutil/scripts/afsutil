@@ -151,7 +151,7 @@ def setkey(**kwargs):
     k.set_service_key(**kwargs)
 
 def newcell(**kwargs):
-    _must_be_root()
+    _must_be_root() # Uses -localauth, since the cell is not setup yet.
     if 'aklog' in kwargs and kwargs['aklog']:
         afsutil.cli.AKLOG = kwargs['aklog']
     if not afsutil.system.is_running('bosserver'):
@@ -175,6 +175,11 @@ def newcell(**kwargs):
     cell.mount_root_volumes()
     cell.create_top_volumes(kwargs['top'])
 
+def addfs(**kwargs):
+    _must_be_root()  # Uses -localauth, since the target host does not have superusers setup yet.
+    cell = Cell.current(**kwargs)
+    cell.add_fileserver(kwargs['hostname'], kwargs['dafs'])
+
 def akimpersonate(**kwargs):
     if os.geteuid() == 0:
         logger.warning("Running akimpersonate as root!")
@@ -195,7 +200,7 @@ class ArgParser(argparse.ArgumentParser):
         self.exit(2, gettext.gettext('\n%s: error: %s\n') % (self.prog, message))
 
 def main():
-    parser = ArgParser(epilog="The following commands must be run as root: install, remove, setkey, newcell")
+    parser = ArgParser(epilog="The following commands must be run as root: install, remove, setkey, start, stop, newcell, addfs.")
     subparsers = parser.add_subparsers(title="sub-commands", metavar="<command>")
 
     def _common_opts(p):
@@ -276,16 +281,23 @@ def main():
                    choices=['transarc', 'rxkad-k5', 'extended'], default=None)
     p.set_defaults(fn=setkey)
 
-    p = subparsers.add_parser('newcell', help='setup the new cell')
+    p = subparsers.add_parser('newcell', help='setup a new cell')
     _common_opts(p)
     p.add_argument('--keytab', help="keytab file (default: /tmp/afs.keytab)", default="/tmp/afs.keytab")
     p.add_argument('--cell', help="cell name (default: localcell)", default='localcell')
+    p.add_argument('--admin', help="admin username (default: 'admin')", default=None)
     p.add_argument('--db', nargs='+', help="cell database hosts (default: local hostname)", default=None)
     p.add_argument('--fs', nargs='+', help="cell fileserver hosts (default: local hostname)", default=None)
     p.add_argument('--top', nargs='+', help="top level volumes (default: none)", default=[])
     p.add_argument('--no-client', dest='noclient', help='do not mount root and top level volumes', action='store_true')
     p.add_argument('--aklog', help="path to aklog program (default: detect)", default=None)
     p.set_defaults(fn=newcell)
+
+    p = subparsers.add_parser('addfs', help='add a new fileserver to the cell')
+    _common_opts(p)
+    p.add_argument('hostname', help="fileserver hostname")
+    p.add_argument('--no-dafs', dest='dafs', help='do not use demand attach fileserver mode', action='store_false')
+    p.set_defaults(fn=addfs)
 
     p = subparsers.add_parser('login', help='create a token from the service key')
     _common_opts(p)
