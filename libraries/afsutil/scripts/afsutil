@@ -102,7 +102,7 @@ def install(**kwargs):
         logger.info("Changing to directory %s", kwargs['chdir'])
         origdir = os.getcwd()
         os.chdir(kwargs['chdir'])
-    kwargs['dest'] = _check_dest(getattr(kwargs, 'dest', None))
+    kwargs['dest'] = _check_dest(kwargs.get('dest', None))
     installer = transarc.TransarcInstaller(**kwargs)
     installer.install(components=kwargs['components'])
     if 'server' in kwargs['components'] and 'keytab' in kwargs:
