@@ -316,10 +316,12 @@ def main():
     logging.basicConfig(**_log_options(args))
     try:
         kwargs = vars(args)
-        args.fn(**kwargs)
+        code = args.fn(**kwargs)
     except Exception as e:
+        code = 1
         logger.exception(e)
-    sys.exit(0)
+        sys.stderr.write("%s\n" % (e))
+    sys.exit(code)
 
 if __name__ == "__main__":
     main()
