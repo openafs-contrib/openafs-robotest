@@ -171,6 +171,8 @@ def newcell(**kwargs):
         logger.warning("afs is not running! trying to start it.")
         start(components=['client'])
     k = Keytab.load(kwargs['keytab'])
+    if 'admin' in kwargs:
+        kwargs['user'] = kwargs['admin']  # login as 'admin'
     k.akimpersonate(**kwargs)
     cell.mount_root_volumes()
     cell.create_top_volumes(kwargs['top'])
