@@ -7,6 +7,7 @@ setup(name='OpenAFSLibrary',
       description='OpenAFS Robotframework Library',
       author='Michael Meffie',
       author_email='mmeffie@sinenomine.net',
+      url='http://www.sinenomine.net',
       license='BSD',
       packages=['OpenAFSLibrary', 'OpenAFSLibrary.keywords'],
       zip_safe=False)
