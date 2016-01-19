@@ -176,8 +176,9 @@ class TinyWebServer(object):
         if not self.foreground:
             self._daemonize()
         address = ('', self.port)
-        handler = SilentRequestHandler
-        server = SocketServer.TCPServer(address, handler)
+        Handler = SilentRequestHandler
+        Handler.extensions_map['.log'] = 'text/plain'
+        server = SocketServer.TCPServer(address, Handler)
         try:
             server.serve_forever()
         except KeyboardInterrupt:
