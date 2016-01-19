@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (c) 2015 Sine Nomine Associates
+# Copyright (c) 2015-2016 Sine Nomine Associates
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -26,23 +26,12 @@ import logging
 import os
 import signal
 import SimpleHTTPServer
+import socket
 import SocketServer
 import StringIO
 import subprocess
 import sys
 import time
-
-# Try to give useful messages for non-standard package import errors.
-try:
-    import afsutil.transarc
-    import afsutil.keytab
-    import afsutil.init
-    import afsutil.cell
-    from afsutil.system import mkdirp,touch
-except ImportError:
-    sys.stderr.write("Cannot import afsutil packages.\n")
-    sys.stderr.write("See README for installation instructions.\n");
-    sys.exit(1)
 
 try:
     import robot.run
@@ -57,6 +46,12 @@ except ImportError:
     sys.stderr.write("Cannot import argparse package.\n")
     sys.stderr.write("Install argparse with `sudo pip install argparse`.\n")
     sys.exit(1)
+
+def mkdirp(path):
+    """Make a directory with parents.
+    Do not raise an execption if the directory already exists."""
+    if not os.path.isdir(path):
+        os.makedirs(path)
 
 #
 # Configuration defaults.
@@ -82,13 +77,6 @@ log = %(root)s/html/log
 output = %(root)s/html/output
 dist = %(root)s/html/dist
 
-[setup]
-installer = none
-install_client = yes
-install_server = yes
-nuke = no
-force = no
-
 [run]
 exclude_tags = todo,crash,slow
 log_level = INFO
@@ -98,13 +86,11 @@ auto_teardown = no
 [variables]
 afs_dist = transarc
 
-[teardown]
-purge = yes
-
 [cell]
 name = robotest
 user = robotest
 admin = robotest.admin
+secret = xyzzy
 
 [kerberos]
 realm = ROBOTEST
@@ -115,6 +101,18 @@ akimpersonate = yes
 port = 8000
 foreground = no
 pidfile = /tmp/afs-robotest-web.pid
+
+[host:localhost]
+installer = transarc
+isfileserver = yes
+isdbserver = yes
+isclient = yes
+setclock = no
+nuke = no
+dest = xxx
+build = no
+builddir = xxx
+
 """
 
 class Config(ConfigParser.SafeConfigParser):
@@ -166,6 +164,116 @@ class Config(ConfigParser.SafeConfigParser):
             value = default
         return value
 
+    def opthostnames(self, filter=None, lookupname=False):
+        """Return a list of host sections."""
+        hostnames = []
+        for s in self.sections():
+            if not s.startswith('host:'):
+                continue
+            hostname = s.replace('host:', '')
+            if hostname == '':
+                sys.stderr.write("Invalid config section name: %s\n" % (s))
+                sys.exit(1)
+            if filter is not None and not self.optbool(s, filter):
+                continue
+            if hostname == 'localhost' and lookupname:
+                hostname = socket.gethostname()
+            hostnames.append(hostname)
+        return hostnames
+
+    def optfakekey(self):
+        """Command line options for afsutil fakekey."""
+        cell = self.optstr('cell', 'name')
+        keytab = self.optstr('kerberos', 'keytab')
+        realm = self.optstr('kerberos', 'realm')
+        enctype = self.optstr('kerberos', 'enctype')
+        secret = self.optstr('cell', 'secret')
+        args = []
+        if cell:
+            args.append('--cell')
+            args.append(cell)
+        if keytab:
+            args.append('--keytab')
+            args.append(keytab)
+        if realm:
+            args.append('--realm')
+            args.append(realm)
+        if enctype:
+            args.append('--enctype')
+            args.append(enctype)
+        if secret:
+            args.append('--secret')
+            args.append(secret)
+        return args
+
+    def optcomponents(self, hostname):
+        """List of components for install, start, and stop for this host.."""
+        section = "host:%s" % (hostname)
+        comp = []
+        if self.optbool(section, 'isfileserver') or self.optbool(section, 'isdbserver'):
+            comp.append('server')
+        if self.optbool(section, 'isclient'):
+            comp.append('client')
+        return comp
+
+    def optinstall(self, hostname):
+        """Command line options for afsutil install."""
+        section = "host:%s" % (hostname)
+        hosts = self.opthostnames(filter='isdbserver', lookupname=True)
+        args = []
+        comp = self.optcomponents(hostname)
+        if comp:
+            args.append('--components')
+            args += comp
+        dest = self.optstr(section, 'dest')
+        if dest:
+            args.append('--dest')
+            args.append(dest)
+        cell = self.optstr('cell', 'name')
+        if cell:
+            args.append('--cell')
+            args.append(cell)
+        if hosts:
+            args.append('--hosts')
+            args += hosts
+        keytab = self.optstr('kerberos', 'keytab')
+        if keytab:
+            args.append('--keytab')
+            args.append(keytab)
+        realm = self.optstr('kerberos', 'realm')
+        if realm:
+            args.append('--realm')
+            args.append(realm)
+        csdb = self.optstr(section, 'csdb')
+        if csdb:
+            args.append('--csdb')
+            args.append(csdb)
+        if self.optbool(section, 'force'):
+            args.append('--force')
+        return args
+
+    def optnewcell(self):
+        """Command line options for afsutil newcell."""
+        fs = self.opthostnames(filter='isfileserver', lookupname=True)
+        db = self.opthostnames(filter='isdbserver', lookupname=True)
+        aklog = self.optstr('variables', 'aklog')
+        args = [
+            '--cell', self.optstr('cell', 'name', 'localcell'),
+            '--admin', self.optstr('cell', 'admin', 'admin'),
+            '--keytab', self.optstr('kerberos', 'keytab', '/tmp/afs.keytab'),
+            '--top', 'test',
+        ]
+        if fs:
+            args.append('--fs')
+            args += fs
+        if db:
+            args.append('--db')
+            args += db
+        if aklog:
+            args.append('--aklog')
+            args.append(aklog)
+        return args
+
 
 class CommandLineParser(argparse.ArgumentParser):
     """Subclass the argument parser to extend help messages."""
@@ -175,6 +283,54 @@ class CommandLineParser(argparse.ArgumentParser):
         """Display a full usage so all the sub-commands are shown."""
         self.print_help(sys.stderr)
         self.exit(2, gettext.gettext('\n%s: error: %s\n') % (self.prog, message))
+
+
+class Command(object):
+    """Run commands locally or remotely, with or without sudo.
+
+    This helper class runs afsutil commands locally when the hostname is
+    'localhost', otherwise uses ssh to run the command on the remote
+    host. The output is sent to the log file.
+    """
+
+    def __init__(self, hostname, keyfile, logfile=None):
+        self.hostname = hostname
+        self.keyfile = keyfile
+        self.logfile = logfile
+
+    def _exec(self, args): # args is a list here
+        """Run the process and print the stdout and stderr to a log file."""
+        if self.hostname != 'localhost':
+            command = subprocess.list2cmdline(args)
+            args = [
+                'ssh', '-q', '-t', '-o', 'PasswordAuthentication no',
+                '-i', self.keyfile, self.hostname, command
+            ]
+        cmdline = subprocess.list2cmdline(args)
+        if self.logfile is None:
+            #sys.stdout.writelines(["Running:", " ", cmdline, "\n"])
+            code = subprocess.call(args)
+        else:
+            with open(self.logfile, 'a') as log:
+                log.writelines(["localhost", " ", "INFO", " ", cmdline, "\n"])
+                p = subprocess.Popen(args, bufsize=1, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                with p.stdout:
+                    for line in iter(p.stdout.readline, ''):
+                        log.writelines([self.hostname, " ", line.rstrip(), "\n"])
+                code = p.wait()
+        return code
+
+    def sh(self, command, *args):
+        """Run the command."""
+        return self._exec([command] + list(args))
+
+    def sudo(self, command, *args):
+        """Run the command as sudo."""
+        return self._exec(['sudo', '-n', command] + list(args))
+
+    def afsutil(self, command, *args):
+        """Run the afsutil command on hostname as root."""
+        return self._exec(['sudo', '-n', 'afsutil', command] + list(args))
 
 
 class SilentRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
@@ -334,139 +490,154 @@ def cmd_config_set(args, config):
     with open(filename, 'w') as f:
         config.write(f)
 
-
-def install_transarc_bins(config, keytab, force):
-    """Install transarc-style binaries."""
-    cell = config.get('cell', 'name')
-    realm = config.get('kerberos', 'realm')
-    components = []
-    if config.getboolean('setup', 'install_server'):
-        components.append('server')
-    if config.getboolean('setup', 'install_client'):
-        components.append('client')
-    if config.has_option('variables', 'aklog'):
-        afsutil.cli.AKLOG = config.get('variables', 'aklog')
-
-    if len(components) == 0:
-        sys.stdout.write("Skipping install; server and client install disabled.\n")
-        return
-    if not config.has_option('paths', 'dest'):
-        sys.stderr.write("Cannot install; paths:dest is missing.\n")
-        sys.exit(1)
-    dest = config.get('paths', 'dest')
-    if not os.path.exists(dest):
-        sys.stderr.write("Cannot install; paths:dest='%s' not found.\n" % (dest))
-        sys.exit(1)
-    if force:
-        force_msg = " (forced)"
-    else:
-        force_msg = ""
-    sys.stdout.write("Installing transarc-style bins from '%s'%s... " % (dest,force_msg))
-    sys.stdout.flush()
-    installer = afsutil.transarc.TransarcInstaller(dest=dest, cell=cell, realm=realm, force=force)
-    installer.install(components=components)
-    if 'server' in components:
-        keytab.set_service_key()
-    sys.stdout.write("done.\n")
-
-def remove_transarc_bins(purge):
-    afsutil.init.stop(components=['server', 'client'])
-    remover = afsutil.transarc.TransarcUninstaller(purge=purge)
-    sys.stdout.write("Removing files... ")
-    sys.stdout.flush()
-    remover.remove()
-    sys.stdout.write("done.\n")
-
 def cmd_setup(args, config):
-    """Run the pre-test installation and setup."""
-    must_be_root('setup')
+    """Setup OpenAFS client and servers and create a test cell."""
+    keyfile = config.optstr('ssh', 'keyfile', DEFAULT_SSH_KEYFILE)
+    logfile = os.path.join(config.optstr('paths', 'log', '.'), "setup.log")
+    mkdirp(os.path.dirname(logfile))
+    if os.path.exists(logfile):
+        os.remove(logfile)
 
-    log = os.path.join(config.get('paths', 'log'), 'setup.log')
-    mkdirp(config.get('paths', 'log'))
-    sys.stdout.write("Writing to log '%s'.\n" % (log))
-    logging.basicConfig(level=logging.INFO, filename=log, format="%(asctime)s "+logging.BASIC_FORMAT)
-    logging.getLogger('afs-robotest').info("afs-robotest setup")
+    def log(msg):
+        with open(logfile, 'a') as f:
+            f.writelines(["localhost", " ", "INFO", " ", msg, "\n"])
 
-    installer = config.get('setup', 'installer')
+    sys.stdout.write("Running setup.\n")
+    log("==== SETUP ====")
 
-    # Options to cope with unclean systems. Use with care.
-    if config.has_option('setup', 'nuke'):
-        nuke = config.getboolean('setup', 'nuke')
-    else:
-        nuke = False
-    if args.force is not None:
-        force = args.force
-    elif config.has_option('setup', 'force'):
-        force = config.getboolean('setup', 'force')
-    else:
-        force = False
+    # Set system clock. (Also checks ssh access.)
+    for hostname in config.opthostnames():
+        cmd = Command(hostname, keyfile, logfile=logfile)
+        section = "host:%s" % (hostname)
+        if config.optbool(section, 'setclock'):
+            if cmd.sudo('ntpdate', 'pool.ntp.org') != 0:
+                sys.stdout.write("Failed to set clock on %s.\n" % (hostname))
+                return 1
 
-    # Create service key.
-    cell = config.get('cell', 'name')
-    admin = config.get('cell', 'admin')
-    realm = config.get('kerberos', 'realm')
-    keytab = config.get('kerberos', 'keytab')
-    akimpersonate = config.get('kerberos', 'akimpersonate')
+    # Build bins.
+    for hostname in config.opthostnames():
+        cmd = Command(hostname, keyfile, logfile=logfile)
+        section = "host:%s" % (hostname)
+        if config.optbool(section, 'build'):
+            sys.stdout.write("Building on %s... " % (hostname))
+            sys.stdout.flush()
+            builddir = config.optstr(section, 'builddir')
+            if cmd.sh('afsutil', 'build', '--chdir', builddir) != 0:
+                sys.stdout.write("Failed to build; see %s\n" % (logfile))
+                return 1
+            sys.stdout.write("ok\n")
 
-    kt = afsutil.keytab.Keytab()
-    if not akimpersonate:
-        kt.load(keytab)
-    else:
-        sys.stdout.write("Creating fake keytab '%s'... " % (keytab))
-        sys.stdout.flush()
-        kt.add_fake_key("afs/%s@%s" % (cell, realm))
-        kt.write(keytab)
-        sys.stdout.write("done.\n")
+    # Install
+    for hostname in config.opthostnames():
+        cmd = Command(hostname, keyfile, logfile=logfile)
+        section = "host:%s" % (hostname)
+        installer = config.optstr(section, 'installer', default='none')
+        if installer == 'transarc':
+            sys.stdout.write("Installing on %s... " % (hostname))
+            sys.stdout.flush()
+            if config.optbool(section, 'nuke'):
+                cmd.afsutil('stop')
+                cmd.afsutil('remove', '--purge')
+            if config.optbool('kerberos', 'akimpersonate'):
+                if cmd.afsutil('fakekey', *config.optfakekey()) != 0:
+                    sys.stdout.write("Failed to create fake service key; see %s\n" % (logfile))
+                    return 1
+            if cmd.afsutil('install', *config.optinstall(hostname)) != 0:
+                sys.stdout.write("Failed to install; see %s\n" % (logfile))
+                return 1
+            sys.stdout.write("ok\n")
+        elif installer == 'none':
+            log("Skipping install on hostname %s; installer is 'none'." % (hostname))
+        else:
+            log("Invalid installer option for hostname %s!; installer='%s'." % (hostname, installer))
+            return 1
 
-    # Installation.
-    if installer == 'transarc':
-        if nuke:
-            remove_transarc_bins(True)
-        install_transarc_bins(config, kt, force)
-    elif installer == 'none':
-        sys.stdout.write("Skipping installation; setup:installer is 'none'.\n")
-    else:
-        sys.stderr.write("Invalid installer name: '%s'.\n" % (installer))
-        sys.exit(1)
+    # Start clients and servers.
+    for hostname in config.opthostnames():
+        cmd = Command(hostname, keyfile, logfile=logfile)
+        section = "host:%s" % (hostname)
+        if config.optbool(section, "isfileserver") or config.optbool(section, "isdbserver"):
+            sys.stdout.write("Starting servers on %s... " % (hostname))
+            sys.stdout.flush()
+            if cmd.afsutil('start', '--components', 'server') != 0:
+                sys.stdout.write("Failed to start servers; see %s\n" % (logfile))
+                return 1
+            sys.stdout.write("ok\n")
+        if config.optbool(section, "isclient") and config.optbool(section, 'afsdb_dynroot', default=True):
+            sys.stdout.write("Starting client on %s... " % (hostname))
+            sys.stdout.flush()
+            if cmd.afsutil('start', '--components', 'client') != 0:
+                sys.stdout.write("Failed to start client; see %s\n" % (logfile))
+                return 1
+            sys.stdout.write("ok\n")
 
-    # Create the test cell.
-    sys.stdout.write("Setting up test cell '%s'... " % (cell))
+    # Create the new cell.
+    sys.stdout.write("Creating new cell... ")
     sys.stdout.flush()
-    afsutil.init.start(components=['server'])
-    c = afsutil.cell.Cell(cell=cell, realm=realm, keytab=keytab, admin=admin)
-    c.newcell()
-    sys.stdout.write("done.\n")
+    cmd = Command('localhost', keyfile, logfile=logfile)
+    if cmd.afsutil('newcell', *config.optnewcell()) != 0:
+        sys.stdout.write("Failed to setup cell; see %s\n" % (logfile))
+        return 1
+    sys.stdout.write("ok\n")
 
-    sys.stdout.write("Starting afs client... ")
-    sys.stdout.flush()
-    afsutil.init.start(components=['client'])
-    sys.stdout.write("done.\n")
+    # Now that the root volumes are ready, start any non-dynroot clients.
+    for hostname in config.opthostnames():
+        cmd = Command(hostname, keyfile, logfile=logfile)
+        section = "host:%s" % (hostname)
+        if config.optbool(section, "isclient") and not config.optbool(section, 'afsdb_dynroot', default=True):
+            sys.stdout.write("Starting non-dynroot client on %s... " % (hostname))
+            sys.stdout.flush()
+            if cmd.afsutil('start', '--components', 'client') != 0:
+                sys.stdout.write("Failed to start client; see %s\n" % (logfile))
+                return 1
+            sys.stdout.write("ok\n")
 
-    sys.stdout.write("Setting root volumes for test cell '%s'... " % (cell))
-    if akimpersonate:
-        kt.akimpersonate(user=admin, cell=cell, realm=realm)
-    else:
-        raise AssertionError("sorry, not implemented")
-    c.mount_root_volumes()
-    c.create_top_volumes(['test'])
-    sys.stdout.write("done.\n")
+    return 0
+
+def cmd_teardown(args, config):
+    keyfile = config.optstr('ssh', 'keyfile', DEFAULT_SSH_KEYFILE)
+    logfile = os.path.join(config.optstr('paths', 'log', '.'), "teardown.log")
+    mkdirp(os.path.dirname(logfile))
+    if os.path.exists(logfile):
+        os.remove(logfile)
+
+    def log(msg):
+        with open(logfile, 'a') as f:
+            f.writelines(["localhost", " ", "INFO", " ", msg, "\n"])
+
+    sys.stdout.write("Running teardown.\n")
+    log("==== TEARDOWN ====")
+
+    for hostname in config.opthostnames():
+        section = "host:%s" % (hostname)
+        cmd = Command(hostname, keyfile, logfile=logfile)
+        installer = config.optstr(section, 'installer', default='none')
+        if installer == 'transarc':
+            sys.stdout.write("Removing from on %s... " % (hostname))
+            sys.stdout.flush()
+            if cmd.afsutil('stop', '--components', *config.optcomponents(hostname)) != 0:
+                sys.stdout.write("Failed to stop; see %s\n" % (logfile))
+                return 1
+            if cmd.afsutil('remove', '--purge') != 0:
+                sys.stdout.write("Failed to remove; see %s\n" % (logfile))
+                return 1
+            sys.stdout.write("ok\n")
+        elif installer == 'none':
+            log("Skipping install on hostname %s; installer is 'none'." % (hostname))
+        else:
+            log("Invalid installer option for hostname %s!; installer='%s'.\n" % (hostname, installer))
+
+    return 0
 
 def cmd_run(args, config):
     """Run the Robotframework test suites."""
-    should_not_be_root('run')
-    if config.getboolean('run', 'auto_setup'):
-        sys.stdout.write("Running setup...\n")
-        rc = subprocess.call(['sudo', '-n', sys.argv[0], 'setup', '--config', args.config])
-        if rc != 0:
-            sys.stderr.write("Not running tests: setup failed!\n")
-            sys.exit(1)
 
     # Setup the python paths for our libs and resources.
     sys.path.append(os.path.join(config.get('paths', 'libraries'), 'OpenAFSLibrary'))
     sys.path.append(config.get('paths', 'resources'))
 
     # Create output dir if needed.
-    output = config.get('paths', 'output')
+    output = config.optstr('paths', 'output', os.path.join(DEFAULT_ROOT, "output"))
     mkdirp(output)
 
     # Verify we have a keytab.
@@ -502,41 +673,34 @@ def cmd_run(args, config):
     if args.suite:
         options['suite'] = args.suite
 
-    rc = robot.run(tests, **options)
+    # Optionally, run the system setup.
+    if config.optbool('run', 'auto_setup'):
+        code = cmd_setup(args, config)
+        if code != 0:
+            sys.stderr.write("Not running tests: setup failed!\n")
+            return code
 
-    if rc == 0 and config.getboolean('run', 'auto_teardown'):
-        cmd = ['sudo', '-n', sys.argv[0], 'teardown', '--config', args.config]
-        sys.stdout.write("Running teardown...\n")
-        rc = subprocess.call(cmd)
+    # Run the RF tests.
+    sys.stdout.write("Running tests.\n")
+    code = robot.run(tests, **options)
+    if code != 0:
+        sys.stderr.write("Tests failed.\n")
+        return code
 
-    return rc
-
-def cmd_teardown(args, config):
-    """Perform the post-test uninstall and cleanup."""
-    must_be_root('teardown')
-
-    log = os.path.join(config.get('paths', 'log'), 'teardown.log')
-    mkdirp(config.get('paths', 'log'))
-    sys.stdout.write("Writing to log '%s'.\n" % (log))
-    logging.basicConfig(level=logging.INFO, filename=log, format="%(asctime)s "+logging.BASIC_FORMAT)
-    logging.getLogger('afs-robotest').info("afs-robotest teardown")
-
-    purge = config.getboolean('teardown', 'purge')
-    remove_transarc_bins(purge)
-    return 0
+    # Optionally, run the system teardown.
+    if config.optbool('run', 'auto_teardown'):
+        code = cmd_teardown(args, config)
+    return code
 
 def cmd_web_start(args, config):
-    should_not_be_root('web')
     server = TinyWebServer(config)
     server.start()
 
 def cmd_web_stop(args, config):
-    should_not_be_root('web')
     server = TinyWebServer(config)
     server.stop()
 
 def cmd_web_status(args, config):
-    should_not_be_root('web')
     server = TinyWebServer(config)
     sys.stdout.write("%s\n" % (server.status()))
 
@@ -544,10 +708,14 @@ def cmd_web_status(args, config):
 def main():
     """Command line handling for the afs-robotest tool."""
 
-def common_options(p):
-    p.add_argument('-c', '--config', help="config file", default=DEFAULT_CONFIG_FILE)
+    def common_options(p):
+        p.add_argument('-c', '--config', help="config file", default=None)
+        p.add_argument('-v', '--verbose', help="run verbosely", default=False, action='store_true')
 
-def main():
+    # This should be run as a normal user; sudo is called for installation as needed.
+    if os.geteuid() == 0:
+        sys.stderr.write("%s: Should not be run as root!\n" % (sys.argv[0]))
+        sys.exit(1)
 
     # Parse command line options.
     parser = CommandLineParser()
@@ -579,7 +747,7 @@ def main():
     p.set_defaults(_cmd=cmd_config_set)
 
     #
-    # afs-robotest web <start|stop|status>
+    # afs-robotest web
     #
     p = subparsers.add_parser('web', help="run the test report web server")
     ssp = p.add_subparsers(title="actions", metavar="<action>")
