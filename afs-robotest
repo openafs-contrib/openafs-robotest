@@ -73,12 +73,14 @@ except KeyError:
 DEFAULT_CONFIG_FILE = os.path.join(DEFAULT_ROOT, 'afs-robotest.conf')
 DEFAULT_CONFIG_DATA = """
 [paths]
-doc = %(root)s/doc
-log = %(root)s/log
 tests = %(root)s/tests
-output = %(root)s/output
 libraries = %(root)s/libraries
 resources = %(root)s/resources
+html = %(root)s/html
+doc = %(root)s/html/doc
+log = %(root)s/html/log
+output = %(root)s/html/output
+dist = %(root)s/html/dist
 
 [setup]
 installer = none
@@ -123,12 +125,12 @@ class SilentRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 class TinyWebServer(object):
     """Minimal web server to display test reports and logs.
 
-    This optional helper is provided to avoid apache (or other web server) to
-    view the test reports and logs.  This servers static content only.
+    This optional helper is provided as a simple way to view the test
+    reports and logs.  This only serves static content.
     """
     def __init__(self, config):
         self.port = config.getint('web', 'port')
-        self.docroot = config.get('paths', 'output')
+        self.docroot = config.get('paths', 'html')
         self.pidfile = config.get('web', 'pidfile')
         self.foreground = config.getboolean('web', 'foreground')
 

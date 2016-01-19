@@ -2,7 +2,4 @@
 *.swp
 *.conf
 *.ini
-/output
-/site
-/doc
-/log
+/html
