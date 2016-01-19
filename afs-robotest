@@ -65,6 +65,7 @@ try:
 except KeyError:
     DEFAULT_ROOT = os.getcwd()
 
+DEFAULT_SSH_KEYFILE = os.path.join(os.environ['HOME'], '.ssh', 'afs-robotest')
 DEFAULT_CONFIG_FILE = os.path.join(DEFAULT_ROOT, 'afs-robotest.conf')
 DEFAULT_CONFIG_DATA = """
 [paths]
@@ -704,6 +705,89 @@ def cmd_web_status(args, config):
     server = TinyWebServer(config)
     sys.stdout.write("%s\n" % (server.status()))
 
+def cmd_sshkeys_create(args, config):
+    """Helper to create ssh key files with ssh-keygen."""
+    keyfile = config.optstr('ssh', 'keyfile', DEFAULT_SSH_KEYFILE)
+    if os.access(keyfile, os.F_OK):
+        # No not clobber the existing key file. (It can confuse the
+        # ssh-agent.)
+        sys.stderr.write("Key file %s already exists.\n" % (keyfile))
+        return 1
+    sys.stdout.write("Creating ssh key file %s.\n" % (keyfile))
+    cmd = ['ssh-keygen', '-t', args.keytype, '-f', keyfile]
+    code = subprocess.call(cmd)
+    if code != 0:
+        sys.stderr.write("ssh-keygen failed; exit code %d\n" % (code))
+    return code
+
+def cmd_sshkeys_dist(args, config):
+    """Copy the public key files to the configured hosts
+
+    The key file should have been prevously created with ssh-keygen."""
+    keyfile = config.optstr('ssh', 'keyfile', DEFAULT_SSH_KEYFILE)
+    if not os.access(keyfile, os.F_OK):
+        sys.stderr.write("Cannot access keyfile %s.\n" % (keyfile))
+        return 1
+    for hostname in config.opthostnames():
+        if hostname == 'localhost':
+            continue
+        # Unfortunately ssh-copy-id will create a duplicate key in the authorized_keys
+        # file if the key is already present. To keep this simple, for now, just
+        # let it make the duplicates (these are test systems anyway).
+        cmd = ['ssh-copy-id', '-i', keyfile, hostname]
+        sys.stdout.write("Installing public key on %s...\n" % (hostname))
+        code = subprocess.call(cmd)
+        if code != 0:
+            sys.stderr.write("Failed to copy ssh identity to host %s; exit code %d.\n" % (hostname, code))
+            return code
+    return cmd_sshkeys_check(args, config)
+
+def cmd_sshkeys_check(args, config):
+    """Check ssh access."""
+
+    def ssh(hostname, args, keyfile=None, sudo=False):
+        """Helper to run command on remote hosts using ssh."""
+        if sudo:
+            args.insert(0, "-n")  # requires NOPASSWD in sudoers
+            args.insert(0, "sudo")
+        command = subprocess.list2cmdline(args)
+        if keyfile:  # passwordless
+            args = ['ssh', '-q', '-t', '-i', keyfile, '-o', 'PasswordAuthentication no', hostname, command]
+        else:
+            args = ['ssh', '-q', hostname, command]
+        return subprocess.call(args)
+
+    keyfile = config.optstr('ssh', 'keyfile', DEFAULT_SSH_KEYFILE)
+    if not os.access(keyfile, os.F_OK):
+        sys.stderr.write("Cannot access keyfile %s.\n" % (keyfile))
+        return 1
+    sys.stdout.write("Checking ssh access...\n")
+    failed = False
+    for hostname in config.opthostnames():
+        if hostname == 'localhost':
+            continue
+        sys.stdout.write("Checking access to host %s...\n" % (hostname))
+        code = ssh(hostname, ['uname', '-a'], keyfile=keyfile, sudo=False)
+        if code != 0:
+            sys.stderr.write("Failed to ssh to host %s.\n%s" % (hostname, e))
+            failed = True
+            continue
+        installer = config.optstr('host:%s' % hostname, 'installer', default='none')
+        if installer == 'none':
+            continue
+        code = ssh(hostname, ['uname', '-a'], keyfile=keyfile, sudo=True)
+        if code != 0:
+            sys.stderr.write("Failed to run passwordless sudo on host %s.\n%s" % (hostname, e))
+            failed = True
+            continue
+    if failed:
+        sys.stderr.write("Failed to access all hosts.\n");
+        code = 1
+    else:
+        sys.stdout.write("Ok.\n");
+        code = 0
+    return code
+
 
 def main():
     """Command line handling for the afs-robotest tool."""
@@ -745,6 +829,24 @@ def main():
     p.add_argument('value', metavar='<value>', help="option value")
     p.add_argument('--newconfig', help="config filename to write", default=None)
     p.set_defaults(_cmd=cmd_config_set)
+
+    #
+    # afs-robotest sshkeys
+    #
+    p = subparsers.add_parser('sshkeys', help="distribute ssh keys")
+    ssp = p.add_subparsers(title="actions", metavar="<action>")
+    p = ssp.add_parser('create', help="create an ssh key pair")
+    common_options(p)
+    p.add_argument('-t', dest='keytype', metavar='<type>', help="ssh key type (default: rsa)", default='rsa')
+    p.set_defaults(_cmd=cmd_sshkeys_create)
+
+    p = ssp.add_parser('dist', help="distribute ssh public key to hosts")
+    common_options(p)
+    p.set_defaults(_cmd=cmd_sshkeys_dist)
+
+    p = ssp.add_parser('check', help="check passwordless ssh access to hosts")
+    common_options(p)
+    p.set_defaults(_cmd=cmd_sshkeys_check)
 
     #
     # afs-robotest web
@@ -799,3 +901,4 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
+
