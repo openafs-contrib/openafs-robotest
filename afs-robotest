@@ -46,7 +46,6 @@ except ImportError:
 
 try:
     import robot.run
-    import robot.libdoc
 except ImportError:
     sys.stderr.write("Cannot import robotframework packages.\n")
     sys.stderr.write("Install robotframework with `sudo pip install robotframework`.\n")
@@ -225,23 +224,6 @@ def should_not_be_root(cmd):
     if os.geteuid() == 0:
         sys.stderr.write("%s %s: Should not be run as root!\n" % (sys.argv[0], cmd))
         sys.exit(1)
-
-def cmd_init(args, config):
-    """Initialize the root dir."""
-    # Create the initial config file.
-    root = config.get('paths', 'root')
-    if not os.path.exists(args.config):
-        with open(args.config, "w") as f:
-            config.write(f)
-    # Create setup and teardown logs as a non-root user, to make
-    # it easier to clean up.
-    log = config.get('paths', 'log')
-    if not os.path.exists(log):
-        mkdirp(log)
-    for name in ('setup', 'teardown'):
-        filename = os.path.join(log, "%s.log" % (name))
-        if not os.path.exists(filename):
-            touch(filename)
 
 def cmd_config_list(args, config):
     """List the current configuration."""
@@ -472,19 +454,6 @@ def cmd_web_status(args, config):
     server = TinyWebServer(config)
     sys.stdout.write("%s\n" % (server.status()))
 
-def cmd_doc(args, config):
-    """Generate library documentation."""
-    should_not_be_root('doc')
-    libraries = config.get('paths', 'libraries')
-    doc = config.get('paths', 'doc')
-    ipath = os.path.join(libraries, 'OpenAFSLibrary', 'OpenAFSLibrary')
-    opath = os.path.join(doc, 'OpenAFSLibrary.html')
-    sys.path.append(ipath)
-    mkdirp(doc)
-    try:
-        robot.libdoc.libdoc(ipath, opath)
-    except (IndexError, KeyError):
-        print __doc__
 
 class CommandLineParser(argparse.ArgumentParser):
     """Subclass the argument parser to extend help messages."""
@@ -506,13 +475,6 @@ def main():
     subparsers = parser.add_subparsers(title="commands", metavar="<command>")
 
     #
-    # afs-robotest init
-    #
-    p = subparsers.add_parser('init', help="initialize the afs-robotest directory")
-    common_options(p)
-    p.set_defaults(_cmd=cmd_init)
-
-    #
     # afs-robotest config <list|set>
     #
     p = subparsers.add_parser('config', help="get or set configuration")
@@ -528,13 +490,6 @@ def main():
     p.add_argument('option', metavar='<option>', help="option name")
     p.add_argument('value', metavar='<value>', help="option value")
     p.set_defaults(_cmd=cmd_config_set)
-
-    #
-    # afs-robotest doc
-    #
-    p = subparsers.add_parser('doc', help="generate library documentation")
-    common_options(p)
-    p.set_defaults(_cmd=cmd_doc)
 
     #
     # afs-robotest web <start|stop|status>
