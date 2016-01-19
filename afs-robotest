@@ -117,6 +117,66 @@ foreground = no
 pidfile = /tmp/afs-robotest-web.pid
 """
 
+class Config(ConfigParser.SafeConfigParser):
+    """Config parser wrapper."""
+
+    def __init__(self, filename):
+        """Initalize the configuration.
+
+        Create a default configuration, then overwrite with
+        the user's configuration, if any.
+        """
+        ConfigParser.SafeConfigParser.__init__(self)
+        self.add_section('paths')
+        self.set('paths', 'root', DEFAULT_ROOT)
+        self.add_section('ssh')
+        self.set('ssh', 'keyfile', DEFAULT_SSH_KEYFILE)
+        self.readfp(StringIO.StringIO(DEFAULT_CONFIG_DATA))
+
+        # Read the user supplied filename if given, otherwise, read the default
+        # file if present.
+        if filename is not None:
+            if not os.access(filename, os.F_OK):
+                raise AssertionError("Cannot find config file %s." % (filename))
+            self.filename = filename
+        else:
+            if os.access(DEFAULT_CONFIG_FILE, os.F_OK):
+                self.filename = DEFAULT_CONFIG_FILE
+            else:
+                self.filename = None  # just use built-in defaults.
+
+        if self.filename:
+            ok = self.read(self.filename)
+            if self.filename not in ok:
+                raise AssertionError("Failed to read config file %s." % (self.filename))
+
+    def optstr(self, section, name, default=None):
+        """Helper to lookup a configuration string option."""
+        if self.has_option(section, name):
+            value = self.get(section, name)
+        else:
+            value = default
+        return value
+
+    def optbool(self, section, name, default=False):
+        """Helper to lookup a configuration boolean option."""
+        if self.has_option(section, name):
+            value = self.getboolean(section, name)
+        else:
+            value = default
+        return value
+
+
+class CommandLineParser(argparse.ArgumentParser):
+    """Subclass the argument parser to extend help messages."""
+    def __init__(self, *args, **kwargs):
+        argparse.ArgumentParser.__init__(self, *args, **kwargs)
+    def error(self, message):
+        """Display a full usage so all the sub-commands are shown."""
+        self.print_help(sys.stderr)
+        self.exit(2, gettext.gettext('\n%s: error: %s\n') % (self.prog, message))
+
+
 class SilentRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
     """Handle requests without printing messages."""
     def log_message(self, format, *args):
@@ -228,27 +288,50 @@ def should_not_be_root(cmd):
         sys.stderr.write("%s %s: Should not be run as root!\n" % (sys.argv[0], cmd))
         sys.exit(1)
 
+def cmd_config_init(args, config):
+    """Create the initial config file."""
+    filename = args.newconfig
+    if filename is None:
+        filename = config.filename
+    if filename is None:
+        filename = DEFAULT_CONFIG_FILE
+    if not os.access(filename, os.F_OK):
+        with open(filename, "w") as f:
+            config.write(f)
+
 def cmd_config_list(args, config):
     """List the current configuration."""
-    if args.expand:
+    def print_section(s):
+        sys.stdout.write("[%s]\n" % s)
+        for k,v in config.items(s):
+            sys.stdout.write("%s = %s\n" % (k, v))
+        sys.stdout.write("\n")
+
+    if args.section:
+        if not config.has_section(args.section):
+            sys.stderr.write("Section not found: %s\n" % (args.section))
+            return 1
+        print_section(args.section)
+    elif args.expand:
         for s in config.sections():
-            sys.stdout.write("[%s]\n" % s)
-            for k,v in config.items(s):
-                sys.stdout.write("%s = %s\n" % (k, v))
-            sys.stdout.write("\n")
+            print_section(s)
     else:
         config.write(sys.stdout)
 
 def cmd_config_set(args, config):
     """Set a value in the config file.
 
-    This will create the config file if it does not exist. Use --config to set
-    the name of an alternate configuration file."""
-    should_not_be_root('config set')
+    This will create the config file if it does not exist. Use --newconfig to set
+    the name of an alternate configuration file to write."""
     if args.section not in config.sections():
         config.add_section(args.section)
     config.set(args.section, args.option, args.value)
-    with open(args.config, 'w') as f:
+    filename = args.newconfig
+    if filename is None:
+        filename = config.filename
+    if filename is None:
+        filename = DEFAULT_CONFIG_FILE
+    with open(filename, 'w') as f:
         config.write(f)
 
 
@@ -458,15 +541,8 @@ def cmd_web_status(args, config):
     sys.stdout.write("%s\n" % (server.status()))
 
 
-class CommandLineParser(argparse.ArgumentParser):
-    """Subclass the argument parser to extend help messages."""
-    def __init__(self, *args, **kwargs):
-        argparse.ArgumentParser.__init__(self, *args, **kwargs)
-    def error(self, message):
-        """Display a full usage so all the sub-commands are shown."""
-        self.print_help(sys.stderr)
-        self.exit(2, gettext.gettext('\n%s: error: %s\n') % (self.prog, message))
-
+def main():
+    """Command line handling for the afs-robotest tool."""
 
 def common_options(p):
     p.add_argument('-c', '--config', help="config file", default=DEFAULT_CONFIG_FILE)
@@ -478,13 +554,20 @@ def main():
     subparsers = parser.add_subparsers(title="commands", metavar="<command>")
 
     #
-    # afs-robotest config <list|set>
+    # afs-robotest config
     #
     p = subparsers.add_parser('config', help="get or set configuration")
     ssp = p.add_subparsers(title="actions", metavar="<action>")
+
+    p = ssp.add_parser('init', help="create initial config file")
+    common_options(p)
+    p.add_argument('--newconfig', help="config filename to write", default=None)
+    p.set_defaults(_cmd=cmd_config_init)
+
     p = ssp.add_parser('list', help="show configuration values")
     common_options(p)
     p.add_argument('-x', '--expand', action='store_true', help="expand interpolated values")
+    p.add_argument('-s', '--section', help="config section")
     p.set_defaults(_cmd=cmd_config_list)
 
     p = ssp.add_parser('set', help="set a configuration value")
@@ -492,6 +575,7 @@ def main():
     p.add_argument('section', metavar='<section>', help="section name")
     p.add_argument('option', metavar='<option>', help="option name")
     p.add_argument('value', metavar='<value>', help="option value")
+    p.add_argument('--newconfig', help="config filename to write", default=None)
     p.set_defaults(_cmd=cmd_config_set)
 
     #
@@ -536,16 +620,10 @@ def main():
     p.set_defaults(_cmd=cmd_teardown)
 
     args = parser.parse_args()
-
-    # Load configuration.
-    # First load defaults then overlay with user defined values.
-    config = ConfigParser.SafeConfigParser()
-    config.add_section('paths')
-    config.set('paths', 'root', DEFAULT_ROOT)
-    config.readfp(StringIO.StringIO(DEFAULT_CONFIG_DATA))
-    ok = config.read(args.config)
-    if not ok and args.config != DEFAULT_CONFIG_FILE:
-        sys.stderr.write("Could not read config file '%s'.\n" % (args.config))
+    try:
+        config = Config(args.config)  # Optional path to the configuration file.
+    except Exception as e:
+        sys.stderr.write("Failed reading config file: %s\n" % (e))
         sys.exit(1)
 
     rc = args._cmd(args, config)
