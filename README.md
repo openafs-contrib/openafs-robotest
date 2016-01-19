@@ -18,67 +18,48 @@ setup a Kerberos realm and create keytabs.
 ## Installation
 
 This test suite should be run on a dedicated test system.  Typically, you will
-want to setup a virtual machine to install OpenAFS and the test suite.
+want to setup one or more virtual machines to install OpenAFS and the test
+suite.  If `afs-robotest` is used to install OpenAFS then sudo should be
+configured on the test machine. The NOPASSWD sudo option must be set to allow
+the command `afsutil` to be run with sudo without a password.
 
 Install `setuptools` and `pip` if not already present. On Debian this can be
 installed with:
 
     $ sudo apt-get install python-pip
 
-Install Robotframework with the `pip` command:
+Install Robotframework and argparse packages:
 
     $ sudo pip install robotframework
+    $ sudo pip install argparse
 
 Clone the OpenAFS Robotest to a directory of your choice:
 
     $ git clone https://github.com/openafs-contrib/openafs-robotest.git
     $ cd openafs-robotest
 
-Install the python packages provided by openafs-robotest:
+Install the python packages and scripts provided by openafs-robotest:
 
-    $ (cd libraries/afsutil && ./install.sh)
-    $ (cd libraries/OpenAFSLibrary && ./install.sh)
-
-If not already present, install the python `argparse` package.  To see if
-`argparse` is installed:
-
-    $ python -m argparse
-
-Use `pip` to install `argparse` if it not present on your system.
-
-    $ sudo pip install argparse
+    $ ./install.sh
 
 ## Setup
 
 Run the `afs-robotest` tool to set the configuration before running the setup
-and tests.
-
-First initialize the afs-robotest directory with:
-
-    $ ./afs-robotest init
-
-This will create a default configuration file and empty log files for the
-setup and teardown.
+and tests.  The default configuration file name is `afs-robotest.conf`.
 
 To show the current configuration:
 
-    $ ./afs-robotest config list
+    $ afs-robotest config list
 
 To configure robotest to install Transarc-style binaries:
 
-    $ ./afs-robotest config set setup installer transarc
-    $ ./afs-robotest config set paths dest <path-to-dest-directory>
-
-The `config set` command will create a configuration file called
-`afs-robotest.conf` in the current directory if it does not already exist. This
-is the default name of the configuration file. The `--config` option can be
-given to `afs-robotest` to specify different configuration files, which can be
-useful when testing different versions on a single system.
+    $ afs-robotest config set host:localhost installer transarc
+    $ afs-robotest config set host:localhot dest <path-to-dest-directory>
 
 The `akimpersonate` feature of `aklog` is used to create AFS tokens by
 accessing the service keytab directly, without the need for a Kerberos realm.
-This is configured by setting `akimpesonate` to `yes` in the `kerberos` section
-of the configuration.
+This is configured by setting `akimpersonate` to `yes` in the `kerberos`
+section of the configuration.
 
 Note: Unfortunately, the `akimpersonate` feature may not be functional in
 developement releases of OpenAFS (the master branch).  For testing development
@@ -86,38 +67,92 @@ releases, either use a Kerberos realm or provide a 1.6.x version of `aklog`.
 Set the `aklog` option in the `variables` section of the configuration file to
 specify which `aklog` program is to be used during the tests. For example:
 
-    $ ./afs-robotest config set variables aklog /usr/local/bin/aklog-1.6
+    $ afs-robotest config set variables aklog /usr/local/bin/aklog-1.6
 
 
 ## Running tests
 
 To install the OpenAFS binaries and create the test cell:
 
-    $ sudo ./afs-robotest setup
+    $ afs-robotest setup
 
 To run the tests:
 
-    $ ./afs-robotest run
+    $ afs-robotest run
 
 After running the tests, the AFS cell can be removed with the teardown
 command:
 
-    $ sudo ./afs-robotest teardown
+    $ afs-robotest teardown
 
 The `auto_setup` and `auto_teardown` configuration options can be set to `yes`
 to automatically run the setup and teardown.
 
 ## Test results
 
-The test results are saved as html files in the `output` directory.  A minimal
-web server is provided by `afs-robotest` as a convenience to view the test
-report.
+The setup logs and test results are saved in the `html` directory.  A minimal
+web server is provided as a convenience to view the test reports.
 
 To start the minimal web server:
 
-    $ ./afs-robotest web start
+    $ afs-robotest web start
 
 To stop the minimal web server:
 
-    $ ./afs-robotest web stop
+    $ afs-robotest web stop
 
+## Multiple Servers
+
+This tool supports setting multiple file and database servers. A configuration
+section should be added for each test server. The name of the test section is
+`[host:<hostname>]`.  For example:
+
+    [host:localhost]
+    installer = transarc
+    isfileserver = yes
+    isdbserver = yes
+    isclient = yes
+    dest = /usr/local/src/openafs-test/amd64_linux26/dest
+    nuke = no
+    setclock = no
+    
+    [host:mytesta]
+    installer = transarc
+    isfileserver = yes
+    isdbserver = no
+    isclient = yes
+    dest = /usr/local/src/openafs-test/amd64_linux26/dest
+    nuke = no
+    setclock = yes
+    
+    [host:mytestb]
+    installer = transarc
+    isfileserver = yes
+    isdbserver = no
+    isclient = no
+    dest = /home/mmeffie/src/openafs/amd64_linux26/dest
+    nuke = no
+    setclock = no
+
+The standard `argparse` and the afs-robotest `afsutil` python packages must be
+installed on each host.
+
+    $ ssh mytesta
+    $ sudo apt-get install python-pip
+    $ sudo pip install argparse
+    $ sudo pip install http://<primaryhost>:8000/html/dist/afsutil/afsutil-<version>.tar.gz
+    $ exit
+
+Sudo must be configured with NOPASSWD for the `afsutil` command.
+
+OpenAFS installation is done using ssh with keyfiles. The `sshkeys` helper
+command is provided to create an ssh key pair and distribute the public keys to
+the servers.  Run this on the primary host.
+
+    $ afs-robotest sshkeys create
+    $ afs-robotest dist
+    $ afs-robotest check
+
+Perform the setup on the primary host.
+
+    $ afs-robotest setup
