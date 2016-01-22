@@ -154,6 +154,9 @@ def newcell(**kwargs):
     _must_be_root() # Uses -localauth, since the cell is not setup yet.
     if 'aklog' in kwargs and kwargs['aklog']:
         afsutil.cli.AKLOG = kwargs['aklog']
+    kwargs['admins'] = [kwargs['admin']] # for Cell()
+    kwargs['user'] = kwargs['admin']     # for akimpersonate
+
     if not afsutil.system.is_running('bosserver'):
         logger.warning("bosserver is not running! trying to start it.")
         start(components=['server'])
@@ -171,8 +174,6 @@ def newcell(**kwargs):
         logger.warning("afs is not running! trying to start it.")
         start(components=['client'])
     k = Keytab.load(kwargs['keytab'])
-    if 'admin' in kwargs:
-        kwargs['user'] = kwargs['admin']  # login as 'admin'
     k.akimpersonate(**kwargs)
     cell.mount_root_volumes()
     cell.create_top_volumes(kwargs['top'])
@@ -287,7 +288,7 @@ def main():
     _common_opts(p)
     p.add_argument('--keytab', help="keytab file (default: /tmp/afs.keytab)", default="/tmp/afs.keytab")
     p.add_argument('--cell', help="cell name (default: localcell)", default='localcell')
-    p.add_argument('--admin', help="admin username (default: 'admin')", default=None)
+    p.add_argument('--admin', help="admin username (default: 'admin')", default='admin')
     p.add_argument('--db', nargs='+', help="cell database hosts (default: local hostname)", default=None)
     p.add_argument('--fs', nargs='+', help="cell fileserver hosts (default: local hostname)", default=None)
     p.add_argument('--top', nargs='+', help="top level volumes (default: none)", default=[])
