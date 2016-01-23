@@ -239,29 +239,24 @@ def main():
 
     p = subparsers.add_parser('remove', help="remove transarc-style binaries")
     _common_opts(p)
-    p.add_argument('--components', metavar='<name>', nargs='+',
-                   choices=transarc.COMPONENTS,
-                   help='components to remove; names are %s %s' % \
-                        (", ".join(transarc.COMPONENTS),
-                        '(default: remove all components)'),
+    p.add_argument('components', metavar='<name>', nargs='*',
+                   help='values: server, client (default: all)',
                    default=transarc.COMPONENTS)
     p.add_argument('--purge', action='store_true', help='remove config and data too')
     p.set_defaults(fn=remove)
 
     p = subparsers.add_parser('start', help="start afs services")
     _common_opts(p)
-    p.add_argument('--components', metavar='<name>', nargs='+',
-                   choices=['server','client'],
-                   help='one or more of: "server", "client" (default: all)',
-                   default=['server','client'])
+    p.add_argument('components', metavar='<name>', nargs='*',
+                   help='values: server, client (default: all)',
+                   default=transarc.COMPONENTS)
     p.set_defaults(fn=start)
 
     p = subparsers.add_parser('stop', help="stop afs services")
     _common_opts(p)
-    p.add_argument('--components', metavar='<name>', nargs='+',
-                   choices=['server','client'],
-                   help='one or more of: "server", "client" (default: all)',
-                   default=['server','client'])
+    p.add_argument('components', metavar='<name>', nargs='*',
+                   help='values: server, client (default: all)',
+                   default=transarc.COMPONENTS)
     p.set_defaults(fn=stop)
 
 

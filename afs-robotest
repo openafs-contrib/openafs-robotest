@@ -560,14 +560,14 @@ def cmd_setup(args, config):
         if config.optbool(section, "isfileserver") or config.optbool(section, "isdbserver"):
             sys.stdout.write("Starting servers on %s... " % (hostname))
             sys.stdout.flush()
-            if cmd.afsutil('start', '--components', 'server') != 0:
+            if cmd.afsutil('start', 'server') != 0:
                 sys.stdout.write("Failed to start servers; see %s\n" % (logfile))
                 return 1
             sys.stdout.write("ok\n")
         if config.optbool(section, "isclient") and config.optbool(section, 'afsdb_dynroot', default=True):
             sys.stdout.write("Starting client on %s... " % (hostname))
             sys.stdout.flush()
-            if cmd.afsutil('start', '--components', 'client') != 0:
+            if cmd.afsutil('start', 'client') != 0:
                 sys.stdout.write("Failed to start client; see %s\n" % (logfile))
                 return 1
             sys.stdout.write("ok\n")
@@ -588,7 +588,7 @@ def cmd_setup(args, config):
         if config.optbool(section, "isclient") and not config.optbool(section, 'afsdb_dynroot', default=True):
             sys.stdout.write("Starting non-dynroot client on %s... " % (hostname))
             sys.stdout.flush()
-            if cmd.afsutil('start', '--components', 'client') != 0:
+            if cmd.afsutil('start', 'client') != 0:
                 sys.stdout.write("Failed to start client; see %s\n" % (logfile))
                 return 1
             sys.stdout.write("ok\n")
@@ -616,7 +616,7 @@ def cmd_teardown(args, config):
         if installer == 'transarc':
             sys.stdout.write("Removing from on %s... " % (hostname))
             sys.stdout.flush()
-            if cmd.afsutil('stop', '--components', *config.optcomponents(hostname)) != 0:
+            if cmd.afsutil('stop', *config.optcomponents(hostname)) != 0:
                 sys.stdout.write("Failed to stop; see %s\n" % (logfile))
                 return 1
             if cmd.afsutil('remove', '--purge') != 0:
