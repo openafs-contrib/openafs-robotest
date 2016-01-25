@@ -28,7 +28,9 @@ import time
 import logging
 import os
 import re
+import socket
 import sys
+import subprocess
 
 from afsutil.cli import bos, vos, pts, fs, udebug, rxdebug
 from afsutil.system import CommandFailed, afs_mountpoint
@@ -36,33 +38,52 @@ from afsutil.transarc import AFS_SRV_LIBEXEC_DIR
 
 logger = logging.getLogger(__name__)
 
+DBNAMES = ('ptserver', 'vlserver')
+PORT = {
+    'fileserver': '7000',
+    'ptserver':   '7002',
+    'vlserver':   '7003',
+    'volserver':  '7005',
+    'bosserver':  '7007',
+}
+
 class Host(object):
     """Helper to configure an OpenAFS server using the bos command."""
 
-    def __init__(self, hostname=None, **kwargs):
+    def __init__(self, hostname='localhost', **kwargs):
         """Initialize the afs host object."""
-        self._cellname = None   # retrieved with bos
-        self._cellhosts = set() # retrieved with bos
-        if hostname is None:
-            hostname = os.uname()[1]
-        self._hostname = hostname
+        if hostname is None or hostname == 'localhost':
+            hostname = socket.gethostname()
+        self.cellname = None   # retrieved with bos when needed
+        self.cellhosts = None  # retrieved with bos when needed
+        self.hostname = hostname
+
+    def rxping(self, service='bosserver', retry=10):
+        try:
+            rxdebug('-server', self.hostname, '-port', PORT[service], '-version', retry=retry)
+        except CommandFailed:
+            success = False
+        else:
+            success = True
+        return success
 
     def cellinfo(self):
         """Retrieve the cell info."""
-        output = bos('listhosts', '-server', self._hostname)
-        self._cellhosts = set()
-        for line in output.splitlines():
-            match = re.match(r'Cell name is (\S+)', line)
-            if match:
-                self._cellname = match.group(1)
-            match = re.match(r'\s+Host \S+ is (\S+)', line)
-            if match:
-                self._cellhosts.add(match.group(1))
-        return (self._cellname, self._cellhosts)
+        if self.cellname is None or self.cellhosts is None:
+            output = bos('listhosts', '-server', self.hostname)
+            self.cellhosts = set()
+            for line in output.splitlines():
+                match = re.match(r'Cell name is (\S+)', line)
+                if match:
+                    self.cellname = match.group(1)
+                match = re.match(r'\s+Host \S+ is (\S+)', line)
+                if match:
+                    self.cellhosts.add(match.group(1))
+        return (self.cellname, tuple(self.cellhosts))
 
     def services(self):
         """Retrieve service names and current status."""
-        output = bos('status', '-server', self._hostname, '-long')
+        output = bos('status', '-server', self.hostname, '-long')
         services = {}
         bnode = None
         bstatus = None
@@ -70,7 +91,7 @@ class Host(object):
             match = re.match(r'Instance ([^,]+),', line)
             if match:
                 bnode = match.group(1)
-                match = re.search(r'currently (\S+)', line)
+                match = re.search(r'currently (\w+)', line)
                 if match:
                     bstatus = match.group(1)
                 else:
@@ -80,19 +101,40 @@ class Host(object):
                 bstatus = None
         return services
 
+    def getservice(self, name):
+        """Return the status information by name."""
+        return self.services().get(name, None)
+
+    def wait_for_status(self, name, target='running', attempts=30, delay=5):
+        """Wait for service to reach running state."""
+        status = 'unknown'
+        logger.info("Waiting for service %s to reach %s on host %s.", name, target, self.hostname)
+        for attempt in xrange(0, attempts+1):
+            service = self.getservice(name)
+            if service is None:
+                time.sleep(delay)
+                continue
+            if service['status'] == target:
+                logger.info("Service %s is running on host %s.", name, self.hostname)
+                return
+            time.sleep(delay)
+        if status is None:
+            status = 'unknown'
+        raise AssertionError("Service %s failed to start on %s; status=%s" % (name, self.hostname, status))
+
     def getcellname(self):
         """Get the configured cell name for this host (ThisCell)."""
         self.cellinfo()
-        return self._cellname
+        return self.cellname
 
     def getcellhosts(self):
         """Get the configured cell hosts for this host (CellServDB)."""
         self.cellinfo()
-        return self._cellhosts
+        return tuple(self.cellhosts)
 
     def setcellname(self, name):
         """Set the configured cell name for this host (ThisCell)."""
-        bos('setcellname', '-server', self._hostname, '-name', name)
+        bos('setcellname', '-server', self.hostname, '-name', name)
         if self.getcellname() != name:
             raise AssertionError("Failed to update cell name!")
 
@@ -101,72 +143,98 @@ class Host(object):
 
         hosts : a sequence of hostname strings or Host objects
         """
+        assert hosts is not None
+        assert not isinstance(hosts, basestring) # expect a list or tuple
+
         hostnames = set()
         for h in hosts:
             if isinstance(h, Host):
-                hostnames.add(h._hostname)
-            else:
+                hostnames.add(h.hostname)
+            elif isinstance(h, basestring):
                 hostnames.add(h)
-        logging.info("Setting cell hosts to %s", ",".join(hostnames))
+            else:
+                raise AssertionError("Expected a Host object or string.")
+
         self.cellinfo()
-        newhosts = hostnames - self._cellhosts
-        oldhosts = self._cellhosts - hostnames
-        for newhost in newhosts:
-            bos('addhost', '-server', self._hostname, '-host', newhost)
-        for oldhost in oldhosts:
-            bos('removehost', '-server', self._hostname, '-host', oldhost)
-        if self.getcellhosts() != hostnames:
-            raise AssertionError("Failed to update cell hosts!")
+        newhosts = hostnames - self.cellhosts
+        oldhosts = self.cellhosts - hostnames
+        if newhosts or oldhosts:
+            logging.info("Setting cell hosts to %s", ",".join(hostnames))
+            for newhost in newhosts:
+                bos('addhost', '-server', self.hostname, '-host', newhost)
+            for oldhost in oldhosts:
+                bos('removehost', '-server', self.hostname, '-host', oldhost)
+            self.cellname = None
+            self.cellhosts = None
+            self.cellinfo()
+            if self.cellhosts != hostnames:
+                raise AssertionError("Failed to update cell hosts!")
 
     def listusers(self):
-        output = bos('listusers', '-server', self._hostname)
+        output = bos('listusers', '-server', self.hostname)
         return output.replace('SUsers are:', '').split()
 
     def adduser(self, name):
         users = self.listusers()
         if name not in users:
-            bos('adduser', '-server', self._hostname, '-user', name)
+            bos('adduser', '-server', self.hostname, '-user', name)
 
     def create_database(self, name, *options):
         """Start the database server."""
-        if name in self.services():
-            logger.info("Skipping create database for %s; already exists.", name)
-            return
+        service = self.getservice(name)
+        if service is not None:
+            status = service['status']
+            if status == 'running':
+                logger.info("Skipping create database for %s; already running.", name)
+                return
+            if status == 'shutdown':
+                logger.info("Retarting database for %s.", name)
+                self.restart(name)
+                return
+            raise AssertionError("Unexpected status '%s' while trying to create db service %s on host %s." % \
+                                (status, name, self.hostname))
         cmd = os.path.join(AFS_SRV_LIBEXEC_DIR, name) # use canonical path
         if options:
-            cmd = '"%s %s"' % (cmd, " ".join(options)) # enclose in quotes too
-        bos('create', '-server', self._hostname, '-instance', name, '-type', 'simple', '-cmd', cmd)
+            cmd = subprocess.list2cmdline(list(cmd) + options)
+        bos('create', '-server', self.hostname, '-instance', name, '-type', 'simple', '-cmd', cmd)
 
-    def is_sync_site(self, name):
-        services = {'ptserver':'7002', 'vlserver':'7003'}
-        port = services[name]
+    def shutdown(self, name):
+        bos('shutdown', '-server', self.hostname, '-instance', name, '-wait')
+
+    def restart(self, name):
+        bos('restart', '-server', self.hostname, '-instance', name)
+
+    def is_recovered_sync_site(self, name):
+        """Returns true if this is the db sync site and the recovery state is good."""
+        port = PORT[name]
         try:
-            output = udebug('-server', self._hostname, '-port', port, retry=10)
+            output = udebug('-server', self.hostname, '-port', port, retry=10)
         except CommandFailed:
-            pass
-        else:
-            logger.debug("udebug for %s: %s", self._hostname, output)
-            if re.search(r'clock may be bad', output):
-                logger.info("Clock may be bad on host %s.", self._hostname)
-            if re.search(r'I am not sync site', output):
-                return False
-            if re.search(r'I am sync site', output):
-                logger.info("I am sync site: %s", self._hostname)
-                match = re.search(r'Recovery state (\S+)', output)
-                if match:
-                    recovery_state = match.group(1)
-                    logger.info("Recovery state: %s", recovery_state)
-                    if recovery_state == '1f' or recovery_state == 'f':
-                        logger.info("Host %s is %s sync site.", self._hostname, name)
-                        return True
+            return False
+        logger.debug("udebug for %s: %s", self.hostname, output)
+        if re.search(r'clock may be bad', output):
+            logger.info("Clock may be bad on host %s.", self.hostname)
+        if re.search(r'I am not sync site', output):
+            return False
+        if re.search(r'I am sync site', output):
+             match = re.search(r'Recovery state (\S+)', output)
+             if match:
+                 recovery_state = match.group(1)
+             else:
+                 recovery_state = '??'
+             if recovery_state == '1f' or recovery_state == 'f':
+                 logger.info("Database quorum reached for %s; sync site is %s; recovery state is %s.",
+                             name, self.hostname, recovery_state)
+                 return True
+             logger.debug("Host %s is sync site with recovery state %s", self.hostname, recovery_state)
         return False
 
     def create_fileserver(self, dafs=True):
         if dafs:
             if 'dafs' in self.services():
-                logger.info("Skipping create dafs on %s; already exists.", self._hostname)
+                logger.info("Skipping create dafs on %s; already exists.", self.hostname)
                 return
-            bos('create', '-server', self._hostname,
+            bos('create', '-server', self.hostname,
                       '-instance', 'dafs', '-type', 'dafs',
                       '-cmd',
                        os.path.join(AFS_SRV_LIBEXEC_DIR, 'dafileserver'),
@@ -175,18 +243,20 @@ class Host(object):
                        os.path.join(AFS_SRV_LIBEXEC_DIR, 'dasalvager'))
         else:
             if 'fs' in self.services():
-                logger.info("Skipping create fs on %s; already exists.", self._hostname)
+                logger.info("Skipping create fs on %s; already exists.", self.hostname)
                 return
-            bos('create', '-server', self._hostname,
+            bos('create', '-server', self.hostname,
                       '-instance', 'fs', '-type', 'fs',
                       '-cmd',
                        os.path.join(AFS_SRV_LIBEXEC_DIR, 'fileserver'),
                        os.path.join(AFS_SRV_LIBEXEC_DIR, 'volserver'),
                        os.path.join(AFS_SRV_LIBEXEC_DIR, 'salvager'))
-        # Unfortunataly, bos start does not have a -wait option. So try
-        # to use rxdebug to check for readiness.
-        time.sleep(10) # give the fileserver a chance to startup.
-        rxdebug('-server', self._hostname, '-port', '7000', retry=10)
+        ok = self.rxping(service='fileserver', retry=60)
+        if not ok:
+            raise AssertionError("Unable to contact file server at %s." % (self.hostname))
+        ok = self.rxping(service='volserver', retry=60)
+        if not ok:
+            raise AssertionError("Unable to contact volume server at %s." % (self.hostname))
 
     def _check_volume(self, name):
         try:
@@ -196,36 +266,56 @@ class Host(object):
         else:
             return True
 
-    def create_volume(self, partition, name):
+    def create_volume(self, name, partition="a"):
         """Create volume if it does not exist."""
         if self._check_volume(name):
             logger.info("Skipping create volume '%s'; already exists.", name)
         else:
-            vos('create', '-server', self._hostname, '-partition', partition, '-name', name, retry=10)
+            logger.info("Creating volume %s on host %s, partition %s.", name, self.hostname, partition)
+            vos('create', '-server', self.hostname, '-partition', partition, '-name', name, retry=60, wait=10)
 
 
 class Cell(object):
 
     def __init__(self, cell='localcell', db=None, fs=None, admins=None, **kwargs):
-        """Initialize the cell object."""
-        hostname = os.uname()[1]
-        if db is None:
-            db = [hostname]
-        if fs is None:
-            fs = [hostname]
-        db = set(db)
-        fs = set(fs)
+        """Initialize the cell object.
 
-        # Old versions had a non-list keyword argument. Use the list if given,
-        # otherwise the single name, otherwise default to the name 'admin'.
-        if admins is None:
-            admins = [kwargs.get('admin', 'admin')]
+        The first list element of the db list will be the primary db server,
+        and the first element of the fs list will be the primary fileserver.
+        """
+        # Some sanity checking.
+        assert cell is not None and isinstance(cell, basestring)  # expect a string
+        assert db is None or not isinstance(db, basestring) # expect a list or tuple
+        assert fs is None or not isinstance(fs, basestring) # expect a list or tuple
+        assert admins is None or not isinstance(admins, basestring) # expect a list or tuple
 
+        # Defaults.
+        localhost = socket.gethostname()
+        if admins is None: admins = ['admin']
+        if db is None: db = [localhost]
+        if fs is None: fs = [localhost]
+        # In case 'localhost' is given as a hostname, convert to the real name.
+        db = [localhost if x=='localhost' else x for x in db]
+        fs = [localhost if x=='localhost' else x for x in fs]
+
+        # Cell name.
         self.cell = cell
-        self.admins = [admin.replace('/', '.') for admin in admins] # afs uses k4-style seps
-        self.dbhosts = [Host(n) for n in db]
-        self.fshosts = [Host(n) for n in fs]
-        self.servers = [Host(n) for n in db.union(fs)]
+
+        # Super users for this cell. Convert k5 style names to k4 style for AFS.
+        self.admins = [name.replace('/', '.') for name in admins]
+
+        # Create the set of hosts objects for this cell. A given host may
+        # be a db server, a file server, or both. Avoid creating duplicate
+        # objects.  The first element in the given lists are the primary
+        # servers for the cell setup.
+        hosts = {}
+        for name in set(db + fs):
+            hosts[name] = Host(name)
+        self.primary_db = hosts[db[0]]
+        self.primary_fs = hosts[fs[0]]
+        self.db = [hosts[name] for name in set(db)]
+        self.fs = [hosts[name] for name in set(fs)]
+        self.hosts = hosts.values()
 
     @classmethod
     def current(cls, **kwargs):
@@ -233,22 +323,22 @@ class Cell(object):
         host = Host()
         cell = host.getcellname()
         db = host.getcellhosts()
-        fs = [] # get from vos listaddrs?
+        fs = ['localhost'] # get from vos listaddrs?
         admins = host.listusers()
         cell = cls(cell=cell, db=db, fs=fs, admins=admins, **kwargs)
         return cell
 
-    def _wait_for_quorum(self, name, wait=30):
-        for attempt in xrange(0, wait):
-            if attempt > 0:
-                time.sleep(5)
-            count = 0
-            for host in self.dbhosts:
-                if host.is_sync_site(name):
-                    count += 1
-            if count == 1:
-                logger.info("Database quorum reached for %s.", name)
+    def _wait_for_quorum(self, name, attempts=60, delay=10):
+        for attempt in xrange(0, attempts+1):
+            logger.info("Waiting for %s database quorum; attempt %d of %d.", name, (attempt+1), attempts)
+            num_sync_sites = 0
+            for host in self.db:
+                if host.is_recovered_sync_site(name):
+                    num_sync_sites += 1
+            if num_sync_sites == 1:
+                logger.debug("Database quorum reached for %s.", name)
                 return
+            time.sleep(delay)
         raise AssertionError("Failed to reach database quorum for %s." % (name))
 
     def _create_admin(self, admin):
@@ -290,35 +380,147 @@ class Cell(object):
         vos('addsite', '-server', server, '-partition', partition, '-id', name)
         vos('release', '-id', name)
 
-    def newcell(self):
-        """Setup a new cell.
+    def cellhostnames(self):
+        return [host.hostname for host in self.db]
 
-        Server bins must be installed and bosserver running. Client is not running yet."""
-        logger.info("Setting up server ThisCell and CellServDB files.")
-        for h in self.servers:
-            h.setcellname(self.cell)
-            h.setcellhosts(self.dbhosts)
-        logger.info("Starting the database services.")
-        for db in ('ptserver', 'vlserver'):
-            for host in self.dbhosts:
-                host.create_database(db)
-            self._wait_for_quorum(db)
+    def ping_hosts(self):
+        """Verify hosts are reachable and bosserver is running."""
+        failed = []
+        for host in self.hosts:
+            ok = host.rxping(service='bosserver', retry=0)
+            if not ok:
+                failed.append(host.hostname)
+        if failed:
+            s = 's' if len(failed) > 1 else ''
+            f = ', '.join(failed)
+            raise AssertionError("Failed to reach bosserver on host%s %s" % (s, f))
 
+    def _initial_db_setup(self):
+        """Setup the initial database server and db files."""
+        logger.info("Setting up initial database server.")
+
+        # Setup the cell info for a single database server so the empty db can
+        # be created and quorum established.
+        self.primary_db.setcellname(self.cell)
+        self.primary_db.setcellhosts([self.primary_db])
+        for dbname in DBNAMES:
+            self.primary_db.create_database(dbname)
+            self.primary_db.wait_for_status(dbname, target='running')
+
+        # Wait for for the empty db to be created and quorum established on
+        # this single db server for each database type. The database servers
+        # create emtpy prdb and vldb databases as side-effect of these queries,
+        # including the creation of the initial ubik database versions.
+        pts('listentries', retry=10)
+        vos('listvldb', retry=10)
+
+    def _complete_db_setup(self):
+        """Setup the remaining database servers."""
+        logger.info("Setting up additional database servers.")
+
+        # Shutdown the primary server since we are changing the
+        # cell hosts on it.
+        for dbname in DBNAMES:
+            self.primary_db.shutdown(dbname)
+            self.primary_db.wait_for_status(dbname, target='shutdown')
+
+        # Set the cell hosts on all the db servers, including the primary.
+        # Be sure keep the order of the hosts consistent, since that is
+        # the normal setup.
+        for host in self.db:
+            host.setcellname(self.cell)
+            host.setcellhosts([self.primary_db])
+            host.setcellhosts(self.db)
+
+        # Restart the primary and create the other database hosts.
+        # Use udebug to verify quorum is established.
+        for dbname in DBNAMES:
+            self.primary_db.restart(dbname)
+            self.primary_db.wait_for_status(dbname, target='running')
+            for host in self.db:
+                if host != self.primary_db:
+                    host.create_database(dbname)
+                    host.wait_for_status(dbname, target='running')
+            self._wait_for_quorum(dbname)
+
+    def check_databases(self):
+        """Returns true if databases are running and have quorum."""
+        logger.info("Checking databases.")
+        for dbname in DBNAMES:
+            for host in self.db:
+                try:
+                    cellname,cellhosts = host.cellinfo()
+                except:
+                    logger.info("Cannot retrieve cell info from host %s." % (host.hostname))
+                    return False
+                else:
+                    if cellname != self.cell:
+                        logger.info("Cell name not setup on host %s." % (host.hostname))
+                        return False
+                    if cellhosts != self.cellhostnames(): # also checks order
+                        logger.info("Cell hosts not setup on host %s." % (host.hostname))
+                        return False
+                try:
+                    host.wait_for_status(dbname, target='running', attempts=1)
+                except:
+                    logger.info("Database %s not running on host %s." % (dbname, host.hostname))
+                    return False
+                try:
+                    self._wait_for_quorum(dbname, attempts=1)
+                except:
+                    logger.info("No quorum for database %s." % (dbname))
+                    return False
+        return True
+
+    def setup_databases(self):
+        """Setup database servers."""
+        if self.check_databases():
+            logger.info("Databases are running.\n")
+        else:
+            self._initial_db_setup()
+            if len(self.db) > 1:
+                self._complete_db_setup()
+
+    def create_admin_users(self):
         logger.info("Setting up admin users.")
         for admin in self.admins:
             logger.info("Creating the admin user %s.", admin)
             self._create_admin(admin)
-            for h in self.servers:
-                logger.info("Adding %s to the superuser list on %s.", admin, h._hostname)
-                h.adduser(admin)
+            for host in self.hosts:
+                logger.info("Adding %s to the superuser list on %s.", admin, host.hostname)
+                host.adduser(admin)
 
+    def setup_fileservers(self):
+        """Startup the file server processes and create the root volumes if needed."""
         logger.info("Starting fileservers.")
-        for h in self.fshosts:
-            h.create_fileserver()
-        logger.info("Creating root.afs and root.cell volumes.")
+        for host in self.fs:
+            cellname,cellhosts = host.cellinfo()
+            if cellname != self.cell:
+                host.setcellname(self.cell)
+            if cellhosts != self.cellhostnames():
+                host.setcellhosts(self.db)
+            host.create_fileserver(dafs=True)
+            host.wait_for_status('dafs', target='running')
+
         # Note: root.afs must exist before non-dynroot clients are started.
-        for name in ('root.afs', 'root.cell'):
-            self.fshosts[0].create_volume('a', name)
+        self.primary_fs.create_volume('root.afs')
+        self.primary_fs.create_volume('root.cell')
+
+    def newcell(self):
+        """Setup a new cell.
+
+        Preconditions:
+
+          * Server bins are installed each host.
+          * Service key is set on each host.
+          * bosserver is running on each host.
+          * The client is not required to be running.
+
+        """
+        self.ping_hosts()
+        self.setup_databases()
+        self.create_admin_users()
+        self.setup_fileservers()
 
     def add_fileserver(self, hostname, dafs=True):
         """Add a fileserver to this cell.
@@ -330,7 +532,7 @@ class Cell(object):
         """
         host = Host(hostname)
         host.setcellname(self.cell)
-        host.setcellhosts(self.dbhosts)
+        host.setcellhosts(self.db)
         for admin in self.admins:
             host.adduser(admin)
         host.create_fileserver(dafs=dafs)
@@ -393,7 +595,7 @@ class Cell(object):
         root_cell_rw = os.path.join(afs, ".%s" % (self.cell))
         # Place top level volumes on the same fileserver as the root volumes.
         for name in volumes:
-            self.fshosts[0].create_volume('a', name)
+            self.primary_fs.create_volume(name)
             self._mount(root_cell_rw, name, name)
             fs('setacl', '-dir', os.path.join(root_cell_rw, name), '-acl', 'system:anyuser', 'read')
             self._create_replica(name)
