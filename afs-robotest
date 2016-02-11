@@ -48,7 +48,7 @@ try:
     import robot.run
     import robot.libdoc
 except ImportError:
-    sys.stderr.write("Cannot robotframework packages.\n")
+    sys.stderr.write("Cannot import robotframework packages.\n")
     sys.stderr.write("Install robotframework with `sudo pip install robotframework`.\n")
     sys.exit(1)
 
