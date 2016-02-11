@@ -448,20 +448,22 @@ class TransarcUninstaller(object):
     """Remove a Transarc-style distribution of OpenAFS."""
     def __init__(self, purge=False, **kwargs):
         self.purge = purge
+        self.verbose = kwargs.get('verbose', False)
 
     def _remove_file(self, path):
         if os.path.exists(path):
             logger.info("Removing %s", path)
             os.remove(path)
 
-    def _remove_files(self, path):
+    def _remove_files(self, path, quiet=False):
         if not os.path.exists(path):
             return
         if not (path.startswith("/usr/afs/") or
                 path.startswith("/usr/afsws/") or
                 path.startswith("/usr/vice/")):
-           raise AssertionError("Refusing to remove unrecognized directory %s" % (path))
-        logger.info("Removing %s", path)
+            raise AssertionError("Refusing to remove unrecognized directory %s" % (path))
+        if not quiet:
+            logger.info("Removing %s", path)
         shutil.rmtree(path)
 
     def _purge_volumes(self, path):
@@ -477,9 +479,10 @@ class TransarcUninstaller(object):
             self._remove_file("/usr/vice/cache/CacheItems")
             self._remove_file("/usr/vice/cache/CellItems")
             self._remove_file("/usr/vice/cache/VolumeItems")
+            logger.info("Removing /usr/vice/cache/D* files.")
             for d in os.listdir("/usr/vice/cache"):
                 if re.match(r'^D\d+$', d):
-                    self._remove_files("/usr/vice/cache/%s" % (d))
+                    self._remove_files("/usr/vice/cache/%s" % (d), quiet=(not self.verbose))
 
     def _remove_server(self):
         if is_running('bosserver'):
