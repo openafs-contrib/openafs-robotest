@@ -207,6 +207,38 @@ class Config(ConfigParser.SafeConfigParser):
             args.append(secret)
         return args
 
+    def optlogin(self):
+        """Command line options for afsutil login."""
+        user = self.optstr('cell', 'admin', 'admin')
+        cell = self.optstr('cell', 'name')
+        realm = self.optstr('kerberos', 'realm')
+        aklog = self.optstr('variables', 'aklog')
+        args = []
+        if user:
+            args.append('--user')
+            args.append(user)
+        if cell:
+            args.append('--cell')
+            args.append(cell)
+        if realm:
+            args.append('--realm')
+            args.append(realm)
+        if aklog:
+            args.append('--aklog')
+            args.append(aklog)
+        if self.optbool('kerberos', 'akimpersonate'):
+            args.append('--akimpersonate')
+            keytab = self.optstr('kerberos', 'keytab')
+            if keytab:
+                args.append('--keytab')
+                args.append(keytab)
+        else:
+            keytab = self.optstr('kerberos', 'user_keytab')
+            if keytab:
+                args.append('--keytab')
+                args.append(keytab)
+        return args
+
     def optcomponents(self, hostname):
         """List of components for install, start, and stop for this host.."""
         section = "host:%s" % (hostname)
@@ -595,6 +627,14 @@ def cmd_setup(args, config):
 
     return 0
 
+def cmd_login(args, config):
+    keyfile = config.optstr('ssh', 'keyfile', DEFAULT_SSH_KEYFILE)
+    args = config.optlogin()
+    cmd = Command('localhost', keyfile)
+    rc = cmd.sh('afsutil', 'login', *args)
+    if rc != 0:
+        sys.stdout.write("Failed to login.\n")
+
 def cmd_teardown(args, config):
     keyfile = config.optstr('ssh', 'keyfile', DEFAULT_SSH_KEYFILE)
     logfile = os.path.join(config.optstr('paths', 'log', '.'), "teardown.log")
@@ -881,6 +921,13 @@ def main():
     common_options(p)
     p.add_argument('-s', '--suite', help="test suite to run (default: all)", default=None)
     p.set_defaults(_cmd=cmd_run)
+
+    #
+    # afs-robotest login
+    #
+    p = subparsers.add_parser('login', help="obtain a token")
+    common_options(p)
+    p.set_defaults(_cmd=cmd_login)
 
     #
     # afs-robotest teardown
