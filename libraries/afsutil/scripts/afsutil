@@ -71,12 +71,10 @@ def _get_log_level(args):
 def _log_options(args):
     options = {}
     options['level'] = _get_log_level(args)
+    options['format'] = '%(asctime)s %(levelname)s %(message)s'
     log = getattr(args, 'log', None)
     if log:
         options['filename'] = log
-        options['format'] = '%(asctime)s %(levelname)s %(message)s'
-    else:
-        options['format'] = '%(levelname)s %(message)s'
     return options
 
 def _check_dest(dest):
