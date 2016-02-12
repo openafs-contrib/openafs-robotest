@@ -54,9 +54,11 @@ class Host(object):
         """Initialize the afs host object."""
         if hostname is None or hostname == 'localhost':
             hostname = socket.gethostname()
-        self.cellname = None   # retrieved with bos when needed
-        self.cellhosts = None  # retrieved with bos when needed
         self.hostname = hostname
+        # The following are retrieved with bos as needed.
+        self.cellname = None
+        self.cellhosts = None
+        self.users = None
 
     def rxping(self, service='bosserver', retry=10):
         try:
@@ -377,8 +379,8 @@ class Cell(object):
             logger.info("Skipping replication of %s; already have a read only site", name)
             return
         server,partition = re.findall(r'^\s+server (\S+) partition (\S+) RW Site', output, re.M)[0]
-        vos('addsite', '-server', server, '-partition', partition, '-id', name)
-        vos('release', '-id', name)
+        vos('addsite', '-server', server, '-partition', partition, '-id', name, retry=20, wait=15)
+        vos('release', '-id', name, retry=20, wait=15)
 
     def cellhostnames(self):
         return [host.hostname for host in self.db]
@@ -395,9 +397,9 @@ class Cell(object):
             f = ', '.join(failed)
             raise AssertionError("Failed to reach bosserver on host%s %s" % (s, f))
 
-    def _initial_db_setup(self):
+    def _setup_first_db_server(self):
         """Setup the initial database server and db files."""
-        logger.info("Setting up initial database server.")
+        logger.info("Setting up the first database server.")
 
         # Setup the cell info for a single database server so the empty db can
         # be created and quorum established.
@@ -414,7 +416,7 @@ class Cell(object):
         pts('listentries', retry=10)
         vos('listvldb', retry=10)
 
-    def _complete_db_setup(self):
+    def _add_db_servers(self):
         """Setup the remaining database servers."""
         logger.info("Setting up additional database servers.")
 
@@ -423,6 +425,7 @@ class Cell(object):
         for dbname in DBNAMES:
             self.primary_db.shutdown(dbname)
             self.primary_db.wait_for_status(dbname, target='shutdown')
+        time.sleep(1)
 
         # Set the cell hosts on all the db servers, including the primary.
         # Be sure keep the order of the hosts consistent, since that is
@@ -441,6 +444,10 @@ class Cell(object):
                 if host != self.primary_db:
                     host.create_database(dbname)
                     host.wait_for_status(dbname, target='running')
+
+        logger.info("Waiting for quorum.")
+        time.sleep(15)
+        for dbname in DBNAMES:
             self._wait_for_quorum(dbname)
 
     def check_databases(self):
@@ -472,57 +479,47 @@ class Cell(object):
                     return False
         return True
 
-    def setup_databases(self):
-        """Setup database servers."""
-        if self.check_databases():
-            logger.info("Databases are running.\n")
-        else:
-            self._initial_db_setup()
-            if len(self.db) > 1:
-                self._complete_db_setup()
-
-    def create_admin_users(self):
+    def _create_admin_users(self):
         logger.info("Setting up admin users.")
         for admin in self.admins:
             logger.info("Creating the admin user %s.", admin)
             self._create_admin(admin)
+
+    def _add_admin_users(self):
+        for admin in self.admins:
             for host in self.hosts:
                 logger.info("Adding %s to the superuser list on %s.", admin, host.hostname)
                 host.adduser(admin)
 
-    def setup_fileservers(self):
+    def _setup_first_fs_server(self):
         """Startup the file server processes and create the root volumes if needed."""
-        logger.info("Starting fileservers.")
-        for host in self.fs:
-            cellname,cellhosts = host.cellinfo()
-            if cellname != self.cell:
-                host.setcellname(self.cell)
-            if cellhosts != self.cellhostnames():
-                host.setcellhosts(self.db)
-            host.create_fileserver(dafs=True)
-            host.wait_for_status('dafs', target='running')
+        logger.info("Setting up the first file server.")
+        if self.primary_fs != self.primary_db:
+            self.primary_db.setcellname(self.cell)
+            self.primary_db.setcellhosts([self.primary_db])
+        self.primary_fs.create_fileserver(dafs=True)
+        self.primary_fs.wait_for_status('dafs', target='running')
 
+    def _create_root_vols(self):
         # Note: root.afs must exist before non-dynroot clients are started.
         self.primary_fs.create_volume('root.afs')
         self.primary_fs.create_volume('root.cell')
 
     def newcell(self):
-        """Setup a new cell.
+        """Setup the first server in a new cell."""
+        logger.info("Setting new cell.")
+        self._setup_first_db_server()
+        self._create_admin_users()
+        if self.primary_fs == self.primary_db:
+            self._setup_first_fs_server()
+            self._create_root_vols()
+        if len(self.db) > 1:
+            self._add_db_servers()
+        for fs in self.fs:
+            if fs != self.primary_fs:
+                self.add_fileserver(fs, dafs=True)
 
-        Preconditions:
-
-          * Server bins are installed each host.
-          * Service key is set on each host.
-          * bosserver is running on each host.
-          * The client is not required to be running.
-
-        """
-        self.ping_hosts()
-        self.setup_databases()
-        self.create_admin_users()
-        self.setup_fileservers()
-
-    def add_fileserver(self, hostname, dafs=True):
+    def add_fileserver(self, host, dafs=True):
         """Add a fileserver to this cell.
 
         The remote host must have the binaries installed, the service key
@@ -530,7 +527,9 @@ class Cell(object):
         cell name, the CellServDB configuration, add the superuser names,
         and then create the bosserver configuration to run the fileserver.
         """
-        host = Host(hostname)
+        if isinstance(host, basestring):
+            host = Host(host)
+        logger.info("Adding fileserver %s", host.hostname)
         host.setcellname(self.cell)
         host.setcellhosts(self.db)
         for admin in self.admins:
