@@ -1,5 +1,5 @@
-#!/usr/bin/python
-# Copyright (c) 2014-2015 Sine Nomine Associates
+#!/usr/bin/env python
+# Copyright (c) 2014-2016 Sine Nomine Associates
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -152,8 +152,9 @@ def setkey(**kwargs):
 
 def newcell(**kwargs):
     _must_be_root() # Uses -localauth, since the cell is not setup yet.
-    if 'aklog' in kwargs and kwargs['aklog']:
-        afsutil.cli.AKLOG = kwargs['aklog']
+    aklog = kwargs.get('aklog', None)
+    if aklog:
+        afsutil.cli.AKLOG = aklog
     kwargs['admins'] = [kwargs['admin']] # for Cell()
     kwargs['user'] = kwargs['admin']     # for akimpersonate
 
@@ -180,17 +181,53 @@ def newcell(**kwargs):
 
 def addfs(**kwargs):
     _must_be_root()  # Uses -localauth, since the target host does not have superusers setup yet.
+    keytab = kwargs['keytab']
+    if not keytab:
+        keytab = "/tmp/afs.keytab"
+    if not os.path.exists(keytab):
+        raise ValueError("Keytab file not found. Please specify --keytab")
     cell = Cell.current(**kwargs)
     cell.add_fileserver(kwargs['hostname'], kwargs['dafs'])
 
-def akimpersonate(**kwargs):
-    if os.geteuid() == 0:
-        logger.warning("Running akimpersonate as root!")
-    if 'aklog' in kwargs and kwargs['aklog']:
-        afsutil.cli.AKLOG = kwargs['aklog']
+def _akimpersonate(**kwargs):
     keytab = kwargs['keytab']
     k = Keytab.load(keytab)
     k.akimpersonate(**kwargs)
+
+def _kinit_aklog(**kwargs):
+    from pprint import pprint
+    pprint(kwargs)
+    user = kwargs['user']
+    cell = kwargs['cell']
+    realm = kwargs['realm']
+    keytab = kwargs['keytab']
+    if not keytab:
+        keytab = "/tmp/afs.keytab"
+    if not os.path.exists(keytab):
+        raise ValueError("Keytab file not found. Please specify --keytab")
+    if not realm:
+        realm = cell.upper()
+    output = afsutil.cli.kinit('-V', '-k', '-t', keytab, user.replace('.','/'))
+    for line in output.splitlines():
+        logger.info(line)
+    output = afsutil.cli.aklog('-d', '-c', cell, '-k', realm)
+    for line in output.splitlines():
+        logger.info(line)
+
+def login(**kwargs):
+    if os.geteuid() == 0:
+        logger.warning("Running afsutil login as root! Your regular user will not have a token.")
+    akimpersonate = kwargs['akimpersonate']
+    aklog = kwargs['aklog']
+    kinit = kwargs['kinit']
+    if aklog:
+        afsutil.cli.AKLOG = aklog
+    if kinit:
+        afsutil.cli.KINIT = kinit
+    if akimpersonate:
+        _akimpersonate(**kwargs)
+    else:
+        _kinit_aklog(**kwargs)
 
 # Customize the argument parser to display the full help instead
 # of the abbreviated usage message on errors. Perhaps overkill,
@@ -297,14 +334,16 @@ def main():
     p.add_argument('--no-dafs', dest='dafs', help='do not use demand attach fileserver mode', action='store_false')
     p.set_defaults(fn=addfs)
 
-    p = subparsers.add_parser('login', help='create a token from the service key')
+    p = subparsers.add_parser('login', help='obtain token with a keytab')
     _common_opts(p)
+    p.add_argument('--akimpersonate', help="print a ticket for the service key in the keytab", action='store_true')
     p.add_argument('--keytab', help="keytab file (default: /tmp/afs.keytab)", default="/tmp/afs.keytab")
     p.add_argument('--user', help="user name (default: admin)", default="admin")
-    p.add_argument('--cell', help="cell name (default: detect from keytab)", default=None)
-    p.add_argument('--realm', help="realm name (default: detect from keytab)", default=None)
-    p.add_argument('--aklog', help="path to aklog program (default: detect)", default=None)
-    p.set_defaults(fn=akimpersonate)
+    p.add_argument('--cell', help="cell name (default: detect with --akimpersonate)", default="localcell")
+    p.add_argument('--realm', help="realm name (default: detect with --akimpersonate)", default="LOCALCELL")
+    p.add_argument('--aklog', help="path to the aklog program (default: detect)", default=None)
+    p.add_argument('--kinit', help="path to the kinit program (default: detect)", default=None)
+    p.set_defaults(fn=login)
 
     if argcomplete:
         argcomplete.autocomplete(parser)

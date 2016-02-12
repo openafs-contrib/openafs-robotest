@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2015 Sine Nomine Associates
+# Copyright (c) 2014-2016 Sine Nomine Associates
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -35,6 +35,7 @@ PATHS = [
   os.path.join(AFS_WS_DIR, 'etc'),
 ]
 
+KINIT = None
 ASETKEY = None
 AKLOG = None
 BOS = None
@@ -51,6 +52,13 @@ def asetkey(*args, **kwargs):
     if ASETKEY is None:
         ASETKEY = which('asetkey', extra_paths=PATHS, raise_errors=True)
     return run(ASETKEY, args=args, **kwargs)
+
+def kinit(*args, **kwargs):
+    global KINIT
+    extra_paths = ['/usr/bin', '/usr/sbin', '/usr/kerberos/bin', '/usr/heimdal/bin']
+    if KINIT is None:
+        KINIT = which('kinit', extra_paths=extra_paths, raise_errors=True)
+    return run(KINIT, args=args, **kwargs)
 
 def aklog(*args, **kwargs):
     global AKLOG
