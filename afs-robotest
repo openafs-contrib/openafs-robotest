@@ -549,7 +549,7 @@ def cmd_setup(args, config):
     def start(msg):
         sys.stdout.write(msg)
         sys.stdout.write("...")
-        if args.taillog:
+        if getattr(args, 'taillog', False):
             sys.stdout.write("\n")
         sys.stdout.flush()
 
@@ -574,7 +574,7 @@ def cmd_setup(args, config):
         sys.stdout.write(".")
         sys.stdout.flush()
 
-    if args.taillog:
+    if getattr(args, 'taillog', False):
         listener = tail
     else:
         listener = progress
