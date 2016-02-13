@@ -23,18 +23,20 @@ suite.  If `afs-robotest` is used to install OpenAFS then sudo should be
 configured on the test machine. The NOPASSWD sudo option must be set to allow
 the command `afsutil` to be run with sudo without a password.
 
-Install `setuptools` and `pip` if not already present. On Debian this can be
-installed with:
+Python 2.6 or 2.7 must be present. Install the `python-xml` and `python-pip`
+packages using your system's package manager. On Debian based systems, this
+is done with the command:
 
-    $ sudo apt-get install python-pip
+    $ sudo apt-get install python-xml python-pip
 
-Install Robotframework and argparse packages:
+Install the `Robotframework` and `argparse` Python packages using the `pip'
+command:
 
-    $ sudo pip install robotframework
-    $ sudo pip install argparse
+    $ sudo pip install robotframework argparse
 
-Clone the OpenAFS Robotest to a directory of your choice:
+Use git to clone the OpenAFS Robotest projects to a directory of your choice:
 
+    $ cd ${projects}
     $ git clone https://github.com/openafs-contrib/openafs-robotest.git
     $ cd openafs-robotest
 
@@ -69,6 +71,13 @@ specify which `aklog` program is to be used during the tests. For example:
 
     $ afs-robotest config set variables aklog /usr/local/bin/aklog-1.6
 
+Finally, set the following environment variable in your shell profile:
+
+    AFS_ROBOTEST_PROFILE=<path>/afs-robotest.conf
+
+where `<path>` is the path to the openafs-robotest installation directory. This
+environment variable sets the default path to the configuration file, making it
+easier to run `afs-robotest` from any directory.
 
 ## Running tests
 
@@ -103,9 +112,13 @@ To stop the minimal web server:
 
 ## Multiple Servers
 
-This tool supports setting multiple file and database servers. A configuration
-section should be added for each test server. The name of the test section is
-`[host:<hostname>]`.  For example:
+This test harness supports setting up multiple file and database servers.
+Install `openafs-robotest` on each server, as described above.  `sudo` must be
+configured with NOPASSWD for the test user account on each host.
+
+A configuration section must be added for each test server. The name of the
+test section is `[host:<hostname>]`, in addition to the `[host:localhost]` for
+the "primary" server.  For example:
 
     [host:localhost]
     installer = transarc
@@ -134,25 +147,19 @@ section should be added for each test server. The name of the test section is
     nuke = no
     setclock = no
 
-The standard `argparse` and the afs-robotest `afsutil` python packages must be
-installed on each host.
-
-    $ ssh mytesta
-    $ sudo apt-get install python-pip
-    $ sudo pip install argparse
-    $ sudo pip install http://<primaryhost>:8000/html/dist/afsutil/afsutil-<version>.tar.gz
-    $ exit
-
-Sudo must be configured with NOPASSWD for the `afsutil` command.
-
-OpenAFS installation is done using ssh with keyfiles. The `sshkeys` helper
-command is provided to create an ssh key pair and distribute the public keys to
-the servers.  Run this on the primary host.
+The OpenAFS installation and setup is done using ssh with keyfiles. The
+`sshkeys` helper command is provided to create an ssh key pair and distribute
+the public keys to each test servers.  Run the following on the primary host to
+create and distribute the ssh keys.
 
     $ afs-robotest sshkeys create
     $ afs-robotest dist
     $ afs-robotest check
 
-Perform the setup on the primary host.
+Perform the setup on the primary host. This will take serveral minutes to
+complete the setup of the new AFS cell.
 
     $ afs-robotest setup
+
+Check the `setup.log` to diagnose errors.
+
