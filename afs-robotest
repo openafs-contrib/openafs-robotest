@@ -54,19 +54,23 @@ def mkdirp(path):
         os.makedirs(path)
 
 #
-# Configuration defaults.
+# Environment Variables
 #
-# The AFS_ROBOTEST_ROOT env var will be used to set the default
-# root directory, otherwise the current working directory is
-# used as the default project root.
+# The AFS_ROBOTEST_PROFILE variable may be used to specify the path to the
+# config file. The command line options override this value.
 #
 try:
+    # Deprecated: The root is set in the config file. Use AFS_ROBOTEST_PROFILE.
     DEFAULT_ROOT = os.environ['AFS_ROBOTEST_ROOT']
 except KeyError:
     DEFAULT_ROOT = os.getcwd()
-
+try:
+    DEFAULT_CONFIG_FILE = os.environ['AFS_ROBOTEST_PROFILE']
+except KeyError:
+    DEFAULT_CONFIG_FILE = os.path.join(DEFAULT_ROOT, 'afs-robotest.conf')
 DEFAULT_SSH_KEYFILE = os.path.join(os.environ['HOME'], '.ssh', 'afs-robotest')
-DEFAULT_CONFIG_FILE = os.path.join(DEFAULT_ROOT, 'afs-robotest.conf')
+
+# Configuration defaults.
 DEFAULT_CONFIG_DATA = """
 [paths]
 tests = %(root)s/tests
