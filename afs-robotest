@@ -347,7 +347,7 @@ class Command(object):
             ]
         cmdline = subprocess.list2cmdline(args)
         if self.logfile is None:
-            if verbose:
+            if self.verbose:
                 sys.stdout.writelines(["Running:", " ", cmdline, "\n"])
             code = subprocess.call(args)
         else:
