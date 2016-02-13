@@ -179,6 +179,7 @@ class Host(object):
     def adduser(self, name):
         users = self.listusers()
         if name not in users:
+            logger.info("Adding %s to the superuser list on %s.", name, self.hostname)
             bos('adduser', '-server', self.hostname, '-user', name)
 
     def create_database(self, name, *options):
@@ -418,6 +419,8 @@ class Cell(object):
         # be created and quorum established.
         self.primary_db.setcellname(self.cell)
         self.primary_db.setcellhosts([self.primary_db])
+        for admin in self.admins:
+            self.primary_db.adduser(admin)
         for dbname in DBNAMES:
             self.primary_db.create_database(dbname)
             self.primary_db.wait_for_status(dbname, target='running')
@@ -498,18 +501,14 @@ class Cell(object):
             logger.info("Creating the admin user %s.", admin)
             self._create_admin(admin)
 
-    def _add_admin_users(self):
-        for admin in self.admins:
-            for host in self.hosts:
-                logger.info("Adding %s to the superuser list on %s.", admin, host.hostname)
-                host.adduser(admin)
-
     def _setup_first_fs_server(self):
         """Startup the file server processes and create the root volumes if needed."""
         logger.info("Setting up the first file server.")
         if self.primary_fs != self.primary_db:
             self.primary_db.setcellname(self.cell)
             self.primary_db.setcellhosts([self.primary_db])
+            for admin in self.admins:
+                self.primary_fs.adduser(admin)
         self.primary_fs.create_fileserver(dafs=True)
         self.primary_fs.wait_for_status('dafs', target='running')
 
