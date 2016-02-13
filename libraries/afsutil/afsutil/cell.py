@@ -379,8 +379,21 @@ class Cell(object):
             logger.info("Skipping replication of %s; already have a read only site", name)
             return
         server,partition = re.findall(r'^\s+server (\S+) partition (\S+) RW Site', output, re.M)[0]
-        vos('addsite', '-server', server, '-partition', partition, '-id', name, retry=20, wait=15)
-        vos('release', '-id', name, retry=20, wait=15)
+        # Sometimes the db drops quorum the first time we write to it after the
+        # first election. vos fails with a uquorum error and and the volume is
+        # left locked. Use this closure to unlock the the volume before
+        # retrying the vos command.
+        def _unlocker(name):
+            def _unlock():
+                try:
+                    vos('unlock', '-id', name)
+                except:
+                    pass
+            return _unlock
+        vos('addsite', '-server', server, '-partition', partition, '-id', name,
+            retry=20, wait=15, cleanup=_unlocker(name))
+        vos('release', '-id', name,
+            retry=20, wait=15, cleanup=_unlocker(name))
 
     def cellhostnames(self):
         return [host.hostname for host in self.db]

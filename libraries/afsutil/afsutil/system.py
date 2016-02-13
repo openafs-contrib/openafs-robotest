@@ -42,7 +42,7 @@ class CommandFailed(Exception):
               (" ".join(self.args), self.code, self.err.strip())
         return repr(msg)
 
-def run(cmd, args=None, quiet=False, retry=0, wait=1):
+def run(cmd, args=None, quiet=False, retry=0, wait=1, cleanup=None):
     """Run a command and return the output.
 
     Raises a CommandFailed exception if the command exits with an
@@ -57,6 +57,8 @@ def run(cmd, args=None, quiet=False, retry=0, wait=1):
             c = os.path.basename(cmd)
             logger.info("Retrying %s command in %d seconds; retry %d of %d.", c, wait, attempt, retry)
             time.sleep(wait)
+            if cleanup:
+                cleanup()  # Try to cleanup the mess from the last failure.
         logger.debug("Running %s", " ".join(args))
         proc = subprocess.Popen(args, executable=cmd, shell=False, bufsize=-1, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         output,error = proc.communicate()
