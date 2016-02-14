@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2015 Sine Nomine Associates
+# Copyright (c) 2014-2016 Sine Nomine Associates
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -345,6 +345,7 @@ class Cell(object):
         raise AssertionError("Failed to reach database quorum for %s." % (name))
 
     def _create_admin(self, admin):
+        logger.info("Creating the admin user %s.", admin)
         try:
             pts('createuser', '-name', admin)
         except CommandFailed as e:
@@ -396,9 +397,6 @@ class Cell(object):
         vos('release', '-id', name,
             retry=20, wait=15, cleanup=_unlocker(name))
 
-    def cellhostnames(self):
-        return [host.hostname for host in self.db]
-
     def ping_hosts(self):
         """Verify hosts are reachable and bosserver is running."""
         failed = []
@@ -431,6 +429,11 @@ class Cell(object):
         # including the creation of the initial ubik database versions.
         pts('listentries', retry=10)
         vos('listvldb', retry=10)
+
+        # Create the superusers and add them to this first server's userlist.
+        for admin in self.admins:
+            self._create_admin(admin)
+            self.primary_db.adduser(admin)
 
     def _add_db_servers(self):
         """Setup the remaining database servers."""
@@ -466,40 +469,11 @@ class Cell(object):
         for dbname in DBNAMES:
             self._wait_for_quorum(dbname)
 
-    def check_databases(self):
-        """Returns true if databases are running and have quorum."""
-        logger.info("Checking databases.")
-        for dbname in DBNAMES:
-            for host in self.db:
-                try:
-                    cellname,cellhosts = host.cellinfo()
-                except:
-                    logger.info("Cannot retrieve cell info from host %s." % (host.hostname))
-                    return False
-                else:
-                    if cellname != self.cell:
-                        logger.info("Cell name not setup on host %s." % (host.hostname))
-                        return False
-                    if cellhosts != self.cellhostnames(): # also checks order
-                        logger.info("Cell hosts not setup on host %s." % (host.hostname))
-                        return False
-                try:
-                    host.wait_for_status(dbname, target='running', attempts=1)
-                except:
-                    logger.info("Database %s not running on host %s." % (dbname, host.hostname))
-                    return False
-                try:
-                    self._wait_for_quorum(dbname, attempts=1)
-                except:
-                    logger.info("No quorum for database %s." % (dbname))
-                    return False
-        return True
-
-    def _create_admin_users(self):
-        logger.info("Setting up admin users.")
-        for admin in self.admins:
-            logger.info("Creating the admin user %s.", admin)
-            self._create_admin(admin)
+    def _add_fs_servers(self):
+        """Add remaining file servers."""
+        for fs in self.fs:
+            if fs != self.primary_fs:
+                self.add_fileserver(fs, dafs=True)
 
     def _setup_first_fs_server(self):
         """Startup the file server processes and create the root volumes if needed."""
@@ -511,25 +485,20 @@ class Cell(object):
                 self.primary_fs.adduser(admin)
         self.primary_fs.create_fileserver(dafs=True)
         self.primary_fs.wait_for_status('dafs', target='running')
-
-    def _create_root_vols(self):
         # Note: root.afs must exist before non-dynroot clients are started.
         self.primary_fs.create_volume('root.afs')
         self.primary_fs.create_volume('root.cell')
 
     def newcell(self):
-        """Setup the first server in a new cell."""
-        logger.info("Setting new cell.")
+        """Setup a new cell."""
+        logger.info("Setting up new cell.")
+        self.ping_hosts()
         self._setup_first_db_server()
-        self._create_admin_users()
-        if self.primary_fs == self.primary_db:
-            self._setup_first_fs_server()
-            self._create_root_vols()
+        self._setup_first_fs_server()
         if len(self.db) > 1:
             self._add_db_servers()
-        for fs in self.fs:
-            if fs != self.primary_fs:
-                self.add_fileserver(fs, dafs=True)
+        if len(self.fs) > 1:
+            self._add_fs_servers()
 
     def add_fileserver(self, host, dafs=True):
         """Add a fileserver to this cell.
