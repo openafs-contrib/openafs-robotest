@@ -59,8 +59,14 @@ def run(cmd, args=None, quiet=False, retry=0, wait=1, cleanup=None):
             time.sleep(wait)
             if cleanup:
                 cleanup()  # Try to cleanup the mess from the last failure.
-        logger.debug("Running %s", " ".join(args))
-        proc = subprocess.Popen(args, executable=cmd, shell=False, bufsize=-1, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        logger.debug("Running: %s", subprocess.list2cmdline(args))
+        proc = subprocess.Popen(
+                   args,
+                   executable=cmd,
+                   shell=False,
+                   bufsize=-1,
+                   stdout=subprocess.PIPE,
+                   stderr=subprocess.PIPE)
         output,error = proc.communicate()
         rc = proc.returncode
         logger.debug("Result of %s; rc=%d, output=%s, error=%s", cmd, rc, output, error)

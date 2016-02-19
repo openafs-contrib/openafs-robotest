@@ -47,6 +47,26 @@ PORT = {
     'bosserver':  '7007',
 }
 
+def _optfsbnode(options):
+    """Helper to get the fs bnode type."""
+    dafs = True  # dafs by default.
+    if 'dafs' in options:
+        if options['dafs'] == "no" or options['dafs'] == "false":
+            dafs = False
+    if dafs:
+        bnode = 'dafs'
+    else:
+        bnode = 'fs'
+    return bnode
+
+def _optcmdstring(options, program):
+    """Helper to get the server cmd line string for bos create."""
+    # Use the canonical path, bosserver will convert to the actual path.
+    cmd = os.path.join(AFS_SRV_LIBEXEC_DIR, program)
+    if program in options:
+        cmd += " " + options[program]
+    return cmd
+
 class Host(object):
     """Helper to configure an OpenAFS server using the bos command."""
 
@@ -182,7 +202,7 @@ class Host(object):
             logger.info("Adding %s to the superuser list on %s.", name, self.hostname)
             bos('adduser', '-server', self.hostname, '-user', name)
 
-    def create_database(self, name, *options):
+    def create_database(self, name, options):
         """Start the database server."""
         service = self.getservice(name)
         if service is not None:
@@ -196,10 +216,9 @@ class Host(object):
                 return
             raise AssertionError("Unexpected status '%s' while trying to create db service %s on host %s." % \
                                 (status, name, self.hostname))
-        cmd = os.path.join(AFS_SRV_LIBEXEC_DIR, name) # use canonical path
-        if options:
-            cmd = subprocess.list2cmdline(list(cmd) + options)
-        bos('create', '-server', self.hostname, '-instance', name, '-type', 'simple', '-cmd', cmd)
+        bos('create', '-server', self.hostname,
+            '-instance', name, '-type', 'simple',
+            '-cmd', _optcmdstring(options, name))
 
     def shutdown(self, name):
         bos('shutdown', '-server', self.hostname, '-instance', name, '-wait')
@@ -232,28 +251,26 @@ class Host(object):
              logger.debug("Host %s is sync site with recovery state %s", self.hostname, recovery_state)
         return False
 
-    def create_fileserver(self, dafs=True):
-        if dafs:
-            if 'dafs' in self.services():
-                logger.info("Skipping create dafs on %s; already exists.", self.hostname)
-                return
+    def create_fileserver(self, bnode, options):
+        if bnode in self.services():
+            logger.info("Skipping create %s on %s; already exists.", bnode, self.hostname)
+            return
+        if bnode == 'dafs':
             bos('create', '-server', self.hostname,
-                      '-instance', 'dafs', '-type', 'dafs',
-                      '-cmd',
-                       os.path.join(AFS_SRV_LIBEXEC_DIR, 'dafileserver'),
-                       os.path.join(AFS_SRV_LIBEXEC_DIR, 'davolserver'),
-                       os.path.join(AFS_SRV_LIBEXEC_DIR, 'salvageserver'),
-                       os.path.join(AFS_SRV_LIBEXEC_DIR, 'dasalvager'))
+                '-instance', bnode, '-type', bnode,
+                '-cmd', _optcmdstring(options, 'dafileserver'),
+                '-cmd', _optcmdstring(options, 'davolserver'),
+                '-cmd', _optcmdstring(options, 'salvageserver'),
+                '-cmd', _optcmdstring(options, 'dasalvager'))
+        elif bnode == 'fs':
+            bos('create', '-server', self.hostname,
+                '-instance', bnode, '-type', bnode,
+                '-cmd', _optcmdstring(options, 'fileserver'),
+                '-cmd', _optcmdstring(options, 'volserver'),
+                '-cmd', _optcmdstring(options, 'salvager'))
         else:
-            if 'fs' in self.services():
-                logger.info("Skipping create fs on %s; already exists.", self.hostname)
-                return
-            bos('create', '-server', self.hostname,
-                      '-instance', 'fs', '-type', 'fs',
-                      '-cmd',
-                       os.path.join(AFS_SRV_LIBEXEC_DIR, 'fileserver'),
-                       os.path.join(AFS_SRV_LIBEXEC_DIR, 'volserver'),
-                       os.path.join(AFS_SRV_LIBEXEC_DIR, 'salvager'))
+            raise AssertionError("Invalid fs bnode!")
+
         ok = self.rxping(service='fileserver', retry=60)
         if not ok:
             raise AssertionError("Unable to contact file server at %s." % (self.hostname))
@@ -280,7 +297,7 @@ class Host(object):
 
 class Cell(object):
 
-    def __init__(self, cell='localcell', db=None, fs=None, admins=None, **kwargs):
+    def __init__(self, cell='localcell', db=None, fs=None, admins=None, options=None, **kwargs):
         """Initialize the cell object.
 
         The first list element of the db list will be the primary db server,
@@ -291,6 +308,18 @@ class Cell(object):
         assert db is None or not isinstance(db, basestring) # expect a list or tuple
         assert fs is None or not isinstance(fs, basestring) # expect a list or tuple
         assert admins is None or not isinstance(admins, basestring) # expect a list or tuple
+        assert options is None or not isinstance(options, basestring) # expect a list or tuple
+
+        # Covert the option list of lists to a dict.
+        def optlists2dict(options):
+            names = {}
+            for optlist in options:
+                for o in optlist:
+                    name,value = o.split('=')
+                    names[name] = value
+            return names
+        if options is None: options = [[]]
+        self.options = optlists2dict(options)
 
         # Defaults.
         localhost = socket.gethostname()
@@ -420,7 +449,7 @@ class Cell(object):
         for admin in self.admins:
             self.primary_db.adduser(admin)
         for dbname in DBNAMES:
-            self.primary_db.create_database(dbname)
+            self.primary_db.create_database(dbname, self.options)
             self.primary_db.wait_for_status(dbname, target='running')
 
         # Wait for for the empty db to be created and quorum established on
@@ -461,7 +490,7 @@ class Cell(object):
             self.primary_db.wait_for_status(dbname, target='running')
             for host in self.db:
                 if host != self.primary_db:
-                    host.create_database(dbname)
+                    host.create_database(dbname, self.options)
                     host.wait_for_status(dbname, target='running')
 
         logger.info("Waiting for quorum.")
@@ -473,7 +502,7 @@ class Cell(object):
         """Add remaining file servers."""
         for fs in self.fs:
             if fs != self.primary_fs:
-                self.add_fileserver(fs, dafs=True)
+                self.add_fileserver(fs, self.options)
 
     def _setup_first_fs_server(self):
         """Startup the file server processes and create the root volumes if needed."""
@@ -483,8 +512,11 @@ class Cell(object):
             self.primary_db.setcellhosts([self.primary_db])
             for admin in self.admins:
                 self.primary_fs.adduser(admin)
-        self.primary_fs.create_fileserver(dafs=True)
-        self.primary_fs.wait_for_status('dafs', target='running')
+
+        bnode = _optfsbnode(self.options)
+        self.primary_fs.create_fileserver(bnode, self.options)
+        self.primary_fs.wait_for_status(bnode, target='running')
+
         # Note: root.afs must exist before non-dynroot clients are started.
         self.primary_fs.create_volume('root.afs')
         self.primary_fs.create_volume('root.cell')
@@ -500,7 +532,7 @@ class Cell(object):
         if len(self.fs) > 1:
             self._add_fs_servers()
 
-    def add_fileserver(self, host, dafs=True):
+    def add_fileserver(self, host, options):
         """Add a fileserver to this cell.
 
         The remote host must have the binaries installed, the service key
@@ -515,7 +547,8 @@ class Cell(object):
         host.setcellhosts(self.db)
         for admin in self.admins:
             host.adduser(admin)
-        host.create_fileserver(dafs=dafs)
+        bnode = _optfsbnode(self.options)
+        host.create_fileserver(bnode, self.options)
 
     def mount_root_volumes(self):
         """Mount and replicate the cell root volumes.

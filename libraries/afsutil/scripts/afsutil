@@ -324,6 +324,7 @@ def main():
     p.add_argument('--top', nargs='+', help="top level volumes (default: none)", default=[])
     p.add_argument('--no-client', dest='noclient', help='do not mount root and top level volumes', action='store_true')
     p.add_argument('--aklog', help="path to aklog program (default: detect)", default=None)
+    p.add_argument('-o', '--options', nargs='+', help="server or client options; <option>=<value>", action='append')
     p.set_defaults(fn=newcell)
 
     p = subparsers.add_parser('addfs', help='add a new fileserver to the cell')
