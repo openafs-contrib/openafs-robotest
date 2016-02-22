@@ -107,6 +107,10 @@ port = 8000
 foreground = no
 pidfile = /tmp/afs-robotest-web.pid
 
+[servers]
+dafileserver = -d 5 -L
+davolserver = -d 5
+
 [host:localhost]
 installer = transarc
 isfileserver = yes
@@ -309,6 +313,11 @@ class Config(ConfigParser.SafeConfigParser):
         if aklog:
             args.append('--aklog')
             args.append(aklog)
+        # Server command line options.
+        if self.has_section('servers'):
+            for k,v in self.items('servers'):
+                args.append('-o')
+                args.append("%s=%s" % (k,v))
         return args
 
 
