@@ -339,11 +339,10 @@ class Command(object):
     host. The output is sent to the log file.
     """
 
-    def __init__(self, hostname, keyfile, logfile=None, listener=None, verbose=False):
+    def __init__(self, hostname, keyfile, logfile=None, verbose=False):
         self.hostname = hostname
         self.keyfile = keyfile
         self.logfile = logfile
-        self.listener = listener
         self.verbose = verbose
 
     def _exec(self, args): # args is a list here
@@ -368,8 +367,6 @@ class Command(object):
                         line = line.rstrip()
                         log.writelines([self.hostname, " ", line, "\n"])
                         log.flush()
-                        if self.listener:
-                            self.listener(self.hostname, line)
                 code = p.wait()
         return code
 
@@ -387,7 +384,6 @@ class Command(object):
         if self.verbose:
             args.append('--verbose')
         return self._exec(['sudo', '-n', 'afsutil', command] + args)
-
 
 class SilentRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
     """Handle requests without printing messages."""
@@ -558,8 +554,6 @@ def cmd_setup(args, config):
     def start(msg):
         sys.stdout.write(msg)
         sys.stdout.write("...")
-        if getattr(args, 'taillog', False):
-            sys.stdout.write("\n")
         sys.stdout.flush()
 
     def fail(msg):
@@ -579,22 +573,13 @@ def cmd_setup(args, config):
         sys.stdout.writelines([hostname, " ", msg, "\n"])
         sys.stdout.flush()
 
-    def progress(host, msg):
-        sys.stdout.write(".")
-        sys.stdout.flush()
-
-    if getattr(args, 'taillog', False):
-        listener = tail
-    else:
-        listener = progress
-
     sys.stdout.write("Running setup. (see %s)\n" % (logfile))
     sys.stdout.flush()
     log("==== SETUP ====")
 
     # Set system clock. (Also checks ssh access.)
     for hostname in config.opthostnames():
-        cmd = Command(hostname, keyfile, logfile=logfile, listener=listener)
+        cmd = Command(hostname, keyfile, logfile=logfile)
         section = "host:%s" % (hostname)
         if config.optbool(section, 'setclock'):
             start("Setting clock on %s" % (hostname))
@@ -604,7 +589,7 @@ def cmd_setup(args, config):
 
     # Build bins.
     for hostname in config.opthostnames():
-        cmd = Command(hostname, keyfile, logfile=logfile, listener=listener)
+        cmd = Command(hostname, keyfile, logfile=logfile)
         section = "host:%s" % (hostname)
         if config.optbool(section, 'build'):
             start("Building on %s" % (hostname))
@@ -615,7 +600,7 @@ def cmd_setup(args, config):
 
     # Install
     for hostname in config.opthostnames():
-        cmd = Command(hostname, keyfile, logfile=logfile, listener=listener)
+        cmd = Command(hostname, keyfile, logfile=logfile)
         section = "host:%s" % (hostname)
         installer = config.optstr(section, 'installer', default='none')
         if installer == 'transarc':
@@ -636,7 +621,7 @@ def cmd_setup(args, config):
 
     # Start clients and servers.
     for hostname in config.opthostnames():
-        cmd = Command(hostname, keyfile, logfile=logfile, listener=listener)
+        cmd = Command(hostname, keyfile, logfile=logfile)
         section = "host:%s" % (hostname)
         if config.optbool(section, "isfileserver") or config.optbool(section, "isdbserver"):
             start("Starting servers on %s" % (hostname))
@@ -649,8 +634,8 @@ def cmd_setup(args, config):
                 fail("Failed to start client; see %s\n" % (logfile))
             ok()
 
-    cmd = Command('localhost', keyfile, logfile=logfile, listener=listener, verbose=args.verbose)
-    start("Setting up new cell (please wait)")
+    cmd = Command('localhost', keyfile, logfile=logfile, verbose=args.verbose)
+    start("Setting up new cell")
     if cmd.afsutil('newcell', *config.optnewcell()) != 0:
         fail("Failed to setup cell; see %s\n" % (logfile))
     ok()
@@ -951,7 +936,6 @@ def main():
     p = subparsers.add_parser('setup', help='install and setup OpenAFS')
     common_options(p)
     p.add_argument('--force', action='store_true', help='overwrite existing files', default=None)
-    p.add_argument('--taillog', help="follow the log on stdout", default=False, action='store_true')
     p.set_defaults(_cmd=cmd_setup)
 
     #
