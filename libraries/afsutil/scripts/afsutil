@@ -179,13 +179,8 @@ def newcell(**kwargs):
 
 def addfs(**kwargs):
     _must_be_root()  # Uses -localauth, since the target host does not have superusers setup yet.
-    keytab = kwargs['keytab']
-    if not keytab:
-        keytab = "/tmp/afs.keytab"
-    if not os.path.exists(keytab):
-        raise ValueError("Keytab file not found. Please specify --keytab")
     cell = Cell.current(**kwargs)
-    cell.add_fileserver(kwargs['hostname'], kwargs['dafs'])
+    cell.add_fileserver(kwargs['hostname'])
 
 def _akimpersonate(**kwargs):
     keytab = kwargs['keytab']
@@ -330,7 +325,8 @@ def main():
     p = subparsers.add_parser('addfs', help='add a new fileserver to the cell')
     _common_opts(p)
     p.add_argument('hostname', help="fileserver hostname")
-    p.add_argument('--no-dafs', dest='dafs', help='do not use demand attach fileserver mode', action='store_false')
+    p.add_argument('--keytab', help="keytab file (default: /tmp/afs.keytab)", default="/tmp/afs.keytab")
+    p.add_argument('-o', '--options', nargs='+', help="server options; <option>=<value>", action='append')
     p.set_defaults(fn=addfs)
 
     p = subparsers.add_parser('login', help='obtain token with a keytab')

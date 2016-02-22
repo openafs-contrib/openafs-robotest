@@ -502,7 +502,7 @@ class Cell(object):
         """Add remaining file servers."""
         for fs in self.fs:
             if fs != self.primary_fs:
-                self.add_fileserver(fs, self.options)
+                self.add_fileserver(fs)
 
     def _setup_first_fs_server(self):
         """Startup the file server processes and create the root volumes if needed."""
@@ -532,7 +532,7 @@ class Cell(object):
         if len(self.fs) > 1:
             self._add_fs_servers()
 
-    def add_fileserver(self, host, options):
+    def add_fileserver(self, host):
         """Add a fileserver to this cell.
 
         The remote host must have the binaries installed, the service key
