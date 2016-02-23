@@ -108,8 +108,8 @@ foreground = no
 pidfile = /tmp/afs-robotest-web.pid
 
 [servers]
-dafileserver = -d 5 -L
-davolserver = -d 5
+dafileserver = -d 1 -L
+davolserver = -d 1
 
 [host:localhost]
 installer = transarc
