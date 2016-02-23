@@ -64,7 +64,9 @@ def _optcmdstring(options, program):
     # Use the canonical path, bosserver will convert to the actual path.
     cmd = os.path.join(AFS_SRV_LIBEXEC_DIR, program)
     if program in options:
-        cmd += " " + options[program]
+        opts = options[program].strip()
+        if opts:
+            cmd += " " + opts
     return cmd
 
 class Host(object):
