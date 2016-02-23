@@ -56,7 +56,7 @@ To show the current configuration:
 To configure robotest to install Transarc-style binaries:
 
     $ afs-robotest config set host:localhost installer transarc
-    $ afs-robotest config set host:localhot dest <path-to-dest-directory>
+    $ afs-robotest config set host:localhost dest <path-to-dest-directory>
 
 The `akimpersonate` feature of `aklog` is used to create AFS tokens by
 accessing the service keytab directly, without the need for a Kerberos realm.
