@@ -496,6 +496,20 @@ def should_not_be_root(cmd):
         sys.stderr.write("%s %s: Should not be run as root!\n" % (sys.argv[0], cmd))
         sys.exit(1)
 
+def start(msg):
+    sys.stdout.write(msg.ljust(62, '.'))
+    sys.stdout.flush()
+
+def fail(msg):
+    sys.stdout.write("%s\n" % (msg))
+    sys.stdout.flush()
+    sys.exit(1)
+
+def ok():
+    sys.stdout.write("ok\n")
+    sys.stdout.flush()
+
+
 def cmd_config_init(args, config):
     """Create the initial config file."""
     filename = args.newconfig
@@ -551,29 +565,11 @@ def cmd_setup(args, config):
     if os.path.exists(logfile):
         os.remove(logfile)
 
-    def start(msg):
-        sys.stdout.write(msg)
-        sys.stdout.write("...")
-        sys.stdout.flush()
-
-    def fail(msg):
-        sys.stdout.write("%s\n" % (msg))
-        sys.stdout.flush()
-        sys.exit(1)
-
-    def ok():
-        sys.stdout.write("ok\n")
-        sys.stdout.flush()
-
     def log(msg):
         with open(logfile, 'a') as f:
             f.writelines(["localhost", " ", "INFO", " ", msg, "\n"])
 
-    def tail(hostname, msg):
-        sys.stdout.writelines([hostname, " ", msg, "\n"])
-        sys.stdout.flush()
-
-    sys.stdout.write("Running setup. (see %s)\n" % (logfile))
+    sys.stdout.write("Running setup.\n")
     sys.stdout.flush()
     log("==== SETUP ====")
 
@@ -652,12 +648,18 @@ def cmd_setup(args, config):
     return 0
 
 def cmd_login(args, config):
+    logfile = os.path.join(config.optstr('paths', 'log', '.'), "login.log")
+    mkdirp(os.path.dirname(logfile))
+    if os.path.exists(logfile):
+        os.remove(logfile)
     keyfile = config.optstr('ssh', 'keyfile', DEFAULT_SSH_KEYFILE)
     args = config.optlogin()
-    cmd = Command('localhost', keyfile)
+    cmd = Command('localhost', keyfile, logfile=logfile)
+    start("Obtaining token")
     rc = cmd.sh('afsutil', 'login', *args)
     if rc != 0:
-        sys.stdout.write("Failed to login.\n")
+        fail("Failed to login; see %s." % (logfile))
+    ok()
 
 def cmd_teardown(args, config):
     keyfile = config.optstr('ssh', 'keyfile', DEFAULT_SSH_KEYFILE)
@@ -678,15 +680,12 @@ def cmd_teardown(args, config):
         cmd = Command(hostname, keyfile, logfile=logfile)
         installer = config.optstr(section, 'installer', default='none')
         if installer == 'transarc':
-            sys.stdout.write("Removing clients and servers on %s... " % (hostname))
-            sys.stdout.flush()
+            start("Removing clients and servers on %s" % (hostname))
             if cmd.afsutil('stop', *config.optcomponents(hostname)) != 0:
-                sys.stdout.write("Failed to stop; see %s\n" % (logfile))
-                return 1
+                fail("Failed to stop; see %s\n" % (logfile))
             if cmd.afsutil('remove', '--purge') != 0:
-                sys.stdout.write("Failed to remove; see %s\n" % (logfile))
-                return 1
-            sys.stdout.write("ok\n")
+                fail("Failed to remove; see %s\n" % (logfile))
+            ok()
         elif installer == 'none':
             log("Skipping remove on hostname %s; installer is 'none'." % (hostname))
         else:
