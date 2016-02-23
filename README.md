@@ -153,8 +153,8 @@ the public keys to each test servers.  Run the following on the primary host to
 create and distribute the ssh keys.
 
     $ afs-robotest sshkeys create
-    $ afs-robotest dist
-    $ afs-robotest check
+    $ afs-robotest sshkeys dist
+    $ afs-robotest sshkeys check
 
 Perform the setup on the primary host. This will take serveral minutes to
 complete the setup of the new AFS cell.
