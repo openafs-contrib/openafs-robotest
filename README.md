@@ -23,24 +23,29 @@ suite.  If `afs-robotest` is used to install OpenAFS then sudo should be
 configured on the test machine. The NOPASSWD sudo option must be set to allow
 the command `afsutil` to be run with sudo without a password.
 
-Python 2.6 or 2.7 must be present. Install the `python-xml` and `python-pip`
-packages using your system's package manager. On Debian based systems, this
-is done with the command:
+Python 2.6 or 2.7 must be present. Install the `python-pip` package using your
+system's package manager. On Debian based systems, this is done with the
+command:
 
-    $ sudo apt-get install python-xml python-pip
+    $ sudo apt-get install python-pip
+
+On Centos, `pip` may be installed from the `python-pip` package in the EPEL
+repo:
+
+    $ sudo yum install python-pip
 
 Install the `Robotframework` and `argparse` Python packages using the `pip'
 command:
 
     $ sudo pip install robotframework argparse
 
-Use git to clone the OpenAFS Robotest projects to a directory of your choice:
+Clone the OpenAFS Robotest project to a directory of your choice:
 
     $ cd ${projects}
     $ git clone https://github.com/openafs-contrib/openafs-robotest.git
     $ cd openafs-robotest
 
-Install the python packages and scripts provided by openafs-robotest:
+Install the custom python packages and scripts provided by openafs-robotest:
 
     $ ./install.sh
 
@@ -48,6 +53,14 @@ Install the python packages and scripts provided by openafs-robotest:
 
 Run the `afs-robotest` tool to set the configuration before running the setup
 and tests.  The default configuration file name is `afs-robotest.conf`.
+
+First, set the following environment variable in your shell profile:
+
+    AFS_ROBOTEST_PROFILE=${HOME}/afs-robotest.conf
+    export AFS_ROBOTEST_PROFILE
+
+This environment variable sets the default path to the configuration file,
+making it easier to run `afs-robotest` from any directory.
 
 To show the current configuration:
 
@@ -71,13 +84,12 @@ specify which `aklog` program is to be used during the tests. For example:
 
     $ afs-robotest config set variables aklog /usr/local/bin/aklog-1.6
 
-Finally, set the following environment variable in your shell profile:
+Note: Unfortunately, the OpenAFS client init script still uses the deprecated
+`ifconfig` command, which is no longer installed by default on RHEL 7 (and
+Centos 7). Be sure to install the net-tools package until this is fixed.
 
-    AFS_ROBOTEST_PROFILE=<path>/afs-robotest.conf
+    $ sudo yum install net-tools
 
-where `<path>` is the path to the openafs-robotest installation directory. This
-environment variable sets the default path to the configuration file, making it
-easier to run `afs-robotest` from any directory.
 
 ## Running tests
 
@@ -128,7 +140,7 @@ the "primary" server.  For example:
     dest = /usr/local/src/openafs-test/amd64_linux26/dest
     nuke = no
     setclock = no
-    
+
     [host:mytesta]
     installer = transarc
     isfileserver = yes
@@ -137,7 +149,7 @@ the "primary" server.  For example:
     dest = /usr/local/src/openafs-test/amd64_linux26/dest
     nuke = no
     setclock = yes
-    
+
     [host:mytestb]
     installer = transarc
     isfileserver = yes
