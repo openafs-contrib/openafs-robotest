@@ -77,10 +77,11 @@ This is configured by setting `akimpersonate` to `yes` in the `kerberos`
 section of the configuration.
 
 Note: Unfortunately, the `akimpersonate` feature may not be functional in
-developement releases of OpenAFS (the master branch).  For testing development
-releases, either use a Kerberos realm or provide a 1.6.x version of `aklog`.
-Set the `aklog` option in the `variables` section of the configuration file to
-specify which `aklog` program is to be used during the tests. For example:
+developement releases of OpenAFS, a.k.a, the master branch.  For testing
+development releases, either use a Kerberos realm or provide a 1.6.10 (or
+better) version of `aklog`.  Set the `aklog` option in the `variables` section
+of the configuration file to specify which `aklog` program is to be used during
+the tests. For example:
 
     $ afs-robotest config set variables aklog /usr/local/bin/aklog-1.6
 
