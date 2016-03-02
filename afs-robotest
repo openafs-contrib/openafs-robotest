@@ -559,6 +559,8 @@ def cmd_config_set(args, config):
 
 def cmd_setup(args, config):
     """Setup OpenAFS client and servers and create a test cell."""
+    aklog_workaround_check(args, config)
+
     keyfile = config.optstr('ssh', 'keyfile', DEFAULT_SSH_KEYFILE)
     logfile = os.path.join(config.optstr('paths', 'log', '.'), "setup.log")
     mkdirp(os.path.dirname(logfile))
@@ -695,6 +697,8 @@ def cmd_teardown(args, config):
 
 def cmd_run(args, config):
     """Run the Robotframework test suites."""
+
+    aklog_workaround_check(args, config)
 
     # Setup the python paths for our libs and resources.
     sys.path.append(os.path.join(config.get('paths', 'libraries'), 'OpenAFSLibrary'))
@@ -851,6 +855,54 @@ def cmd_sshkeys_check(args, config):
         code = 0
     return code
 
+def aklog_workaround_check(args, config):
+    # Sadly, akimpersonate is broken on the master branch at this time. To
+    # workaround this users must setup an aklog 1.6.10+ in some directory
+    # and then set a option to specify the location. Since this is easy to
+    # get wrong, do a sanity check up front, at least until aklog is fixed.
+    import mmap
+    import re
+    required = (1, 6, 10)
+    def _fail(msg=None):
+        sys.stderr.write("Failed aklog check!\n")
+        if msg:
+            sys.stderr.write("%s\n" % (msg))
+        sys.stderr.write("Please set the aklog option in the [variables] section of the config.\n")
+        sys.stderr.write("Require aklog version %d.%d.x " % (required[0:2]))
+        sys.stderr.write("and at least version %d.%d.%d.\n" % required)
+        sys.exit(1)
+    def _find_version(filename):
+        with open(filename, "rb") as f:
+            mm = mmap.mmap(f.fileno(), 0, prot=mmap.PROT_READ)
+            i = mm.find("@(#)")
+            if i == -1:
+                raise RuntimeError("Unable to find version string.")
+            j = mm.find("\0", i)
+            if j == -1:
+                raise RuntimeError("Unable to find end of version string.")
+            version_string = mm[i:j]
+            mm.close()
+        m = re.match(r'^@\(#\)\s*OpenAFS (\d+)\.(\d+)\.(\d+) ', version_string)
+        if m is None:
+            # We need a non-dirty version number.
+            raise RuntimeError("Unrecognized or dirty version string '%s'." % (version_string))
+        return tuple([int(x) for x in m.groups()])
+    if config.optbool('kerberos', 'akimpersonate'):
+        aklog = config.optstr('variables', 'aklog')
+        if aklog is None:
+            _fail()
+        if not os.access(aklog, os.F_OK):
+            _fail("File '%s' not found." % (aklog))
+        if not os.access(aklog, os.X_OK):
+            _fail("File '%s' not executable." % (aklog))
+        try:
+            version = _find_version(aklog)
+        except RuntimeError as e:
+            _fail("Failed to get version number in file %s.\n%s" % (aklog, e))
+        if version[0:2] != required[0:2] or version[2] < required[2]:
+            msg = "Bad aklog version in file %s; " % (aklog)
+            msg += "found version %d.%d.%d in file." % (version)
+            _fail(msg)
 
 def main():
     """Command line handling for the afs-robotest tool."""
