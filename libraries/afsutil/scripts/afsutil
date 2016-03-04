@@ -91,7 +91,7 @@ def _check_dest(dest):
     return dest
 
 def build(**kwargs):
-    afsutil.build.rebuild(**kwargs)
+    return afsutil.build.build(**kwargs)
 
 def install(**kwargs):
     _must_be_root()
@@ -244,9 +244,12 @@ def main():
     p = subparsers.add_parser('build', help='build binaries')
     _common_opts(p)
     p.add_argument('--chdir', help='change to directory', default=None)
-    p.add_argument('--cf', help='configure options (default: depends on platform)', default=None)
-    p.add_argument('--target', help='make target (default: detect all or dest)', default=None)
+    p.add_argument('--cf', nargs='*', help='configure options (without leading dashes)', default=None)
+    p.add_argument('--target', help='make target (default: all)',
+                               choices=['all', 'dist', 'pkg-rhel'],
+                               default='all')
     p.add_argument('--no-clean', dest='clean', help='do not run git clean', action='store_false')
+    p.add_argument('--no-transarc', dest='transarc', help='do not use transarc paths', action='store_false')
     p.set_defaults(fn=build)
 
     p = subparsers.add_parser('install', help='install transarc-style binaries')
