@@ -34,14 +34,6 @@ DEFAULT_CF = [
     'without-dot',
 ]
 
-def _cd(chdir):
-    lastdir = None
-    if chdir is not None:
-        logger.info("Changing to directory %s", chdir)
-        origdir = os.getcwd()
-        os.chdir(chdir)
-    return lastdir
-
 def _cf(cf, transarc):
     if cf is None:
         cf = DEFAULT_CF
@@ -99,27 +91,18 @@ def _make_package_rhel(srpm):
         'packages/%s' % (srpm))
     logger.info("Packages written to %s/packages/rpmbuild/RPMS/%s" % (cwd, arch))
 
-def build(chdir=None, cf=None, target='all', clean=True, transarc=True, **kwargs):
-    lastdir = _cd(chdir)
-    try:
-        cf = _cf(cf, transarc)
-        if target == 'all' and '--enable-transarc-paths' in cf:
-            target = 'dest'
-        if clean:
-            _clean()
-        sh('./regen.sh')
-        sh('./configure', *cf)
-        if target == 'pkg-rhel':
-            sh('make', 'dist')
-            srpm = _make_package_rhel_srpm()
-            _make_package_rhel(srpm)
-        else:
-            sh('make', target)
-        code = 0
-    except CommandFailed as e:
-        logger.error("%s" % (e))
-        code = e.code
-    finally:
-        _cd(lastdir)
-    return code
+def build(cf=None, target='all', clean=True, transarc=True, **kwargs):
+    cf = _cf(cf, transarc)
+    if target == 'all' and '--enable-transarc-paths' in cf:
+        target = 'dest'
+    if clean:
+        _clean()
+    sh('./regen.sh')
+    sh('./configure', *cf)
+    if target == 'pkg-rhel':
+        sh('make', 'dist')
+        srpm = _make_package_rhel_srpm()
+        _make_package_rhel(srpm)
+    else:
+       sh('make', target)
 

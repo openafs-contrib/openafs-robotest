@@ -46,6 +46,15 @@ def _must_be_root():
         sys.stderr.write("afsutil: Must run as root!\n")
         sys.exit(1)
 
+def _cd(chdir):
+    """Change directory if given and returning the old directory."""
+    savedir = None
+    if chdir is not None:
+        logger.info("Changing to directory %s", chdir)
+        savedir = os.getcwd()
+        os.chdir(chdir)
+    return savedir
+
 def _detect_sysname():
     sysname = None
     try:
@@ -91,15 +100,10 @@ def _check_dest(dest):
     return dest
 
 def build(**kwargs):
-    return afsutil.build.build(**kwargs)
+    afsutil.build.build(**kwargs)
 
 def install(**kwargs):
     _must_be_root()
-    origdir = None
-    if kwargs['chdir'] is not None:
-        logger.info("Changing to directory %s", kwargs['chdir'])
-        origdir = os.getcwd()
-        os.chdir(kwargs['chdir'])
     kwargs['dest'] = _check_dest(kwargs.get('dest', None))
     installer = transarc.TransarcInstaller(**kwargs)
     installer.install(components=kwargs['components'])
@@ -110,9 +114,6 @@ def install(**kwargs):
         else:
             k = Keytab.load(keytab)
             k.set_service_key(**kwargs)
-    if origdir:
-        logger.info("Changing to directory %s", origdir)
-        os.chdir(origdir)
 
 def remove(**kwargs):
     _must_be_root()
@@ -347,6 +348,8 @@ def main():
         argcomplete.autocomplete(parser)
     args = parser.parse_args()
     logging.basicConfig(**_log_options(args))
+
+    savedir = _cd(getattr(args, 'chdir', None))
     try:
         kwargs = vars(args)
         code = args.fn(**kwargs)
@@ -362,6 +365,8 @@ def main():
         code = 1
         logger.exception(e)
         sys.stderr.write("%s\n" % (e))
+    finally:
+        _cd(savedir)
     sys.exit(code)
 
 if __name__ == "__main__":
