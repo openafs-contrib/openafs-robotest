@@ -233,7 +233,7 @@ def main():
     p = subparsers.add_parser('build', help='build binaries')
     _common_opts(p)
     p.add_argument('--chdir', help='change to directory', default=None)
-    p.add_argument('--cf', nargs='*', help='configure options (without leading dashes)', default=None)
+    p.add_argument('--cf', help='configure options, e.g., --cf="--enable-debug"', default=None)
     p.add_argument('--target', help='make target (default: all)',
                                choices=['all', 'dist', 'pkg-rhel'],
                                default='all')

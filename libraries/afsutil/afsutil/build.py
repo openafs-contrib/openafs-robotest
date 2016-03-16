@@ -23,26 +23,18 @@
 import logging
 import os
 import sys
+import shlex
 from afsutil.system import sh, CommandFailed
 
 logger = logging.getLogger(__name__)
-DEFAULT_CF = [
-    'enable-debug',
-    'enable-debug-kernel',
-    'disable-optimize',
-    'disable-optimize-kernel',
-    'without-dot',
-]
 
-def _cf(cf, transarc):
-    if cf is None:
-        cf = DEFAULT_CF
-        if os.uname()[0] == "Linux":
-            cf.append('enable-checking')
-    if transarc:
-        cf.append('enable-transarc-paths')
-    cf = ['--' + x.lstrip('-') for x in cf]
-    return cf
+DEFAULT_CF = [
+    '--enable-debug',
+    '--enable-debug-kernel',
+    '--disable-optimize',
+    '--disable-optimize-kernel',
+    '--without-dot',
+]
 
 def _clean():
     if os.path.isdir('.git'):
@@ -92,9 +84,25 @@ def _make_package_rhel(srpm):
     logger.info("Packages written to %s/packages/rpmbuild/RPMS/%s" % (cwd, arch))
 
 def build(cf=None, target='all', clean=True, transarc=True, **kwargs):
-    cf = _cf(cf, transarc)
+    """Build the OpenAFS binaries.
+
+    Build the transarc-path compatible bins by default, which are
+    deprecated, but old habits die hard.
+    """
+    if cf is None:
+        cf = DEFAULT_CF
+    else:
+        cf = shlex.split(cf)  # Note: shlex handles quoting properly.
+    if os.uname()[0] == "Linux":
+        cf.append('--enable-checking')
+    if transarc and not '--enable-transarc-paths' in cf:
+        cf.append('--enable-transarc-paths')
+
+    # Sadly, the top-level target depends on the mode we are
+    # building.
     if target == 'all' and '--enable-transarc-paths' in cf:
         target = 'dest'
+
     if clean:
         _clean()
     sh('./regen.sh')
