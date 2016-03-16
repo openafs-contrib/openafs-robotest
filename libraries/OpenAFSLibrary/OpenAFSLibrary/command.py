@@ -25,17 +25,18 @@ from robot.api import logger
 from OpenAFSLibrary.variable import get_var
 
 class CommandFailed(Exception):
-    def __init__(self, name, err):
+    def __init__(self, name, args, err):
         self.name = name
         self.err = err
+	self.args = list(args)
 
     def __str__(self):
-        msg = "%s failed! %s" % (self.name, self.err.strip())
+        msg = "%s %s failed! %s" % (self.name, self.args, self.err.strip())
         return repr(msg)
 
 class NoSuchEntryError(CommandFailed):
-    def __init__(self):
-        CommandFailed.__init__(self, "vos", "no such volume in the vldb")
+    def __init__(self, args):
+        CommandFailed.__init__(self, "vos", args, "no such volume in the vldb")
 
 def run_program(args):
     if isinstance(args, types.StringTypes):
@@ -56,13 +57,13 @@ def run_program(args):
 def rxdebug(*args):
     rc,out,err = run_program([get_var('RXDEBUG')] + list(args))
     if rc != 0:
-        raise CommandFailed('rxdebug', err)
+        raise CommandFailed('rxdebug', args, err)
     return out
 
 def bos(*args):
     rc,out,err = run_program([get_var('BOS')] + list(args))
     if rc != 0:
-        raise CommandFailed('bos', err)
+        raise CommandFailed('bos', args, err)
     return out
 
 def vos(*args):
@@ -70,15 +71,15 @@ def vos(*args):
     if rc != 0:
         lines = err.splitlines()
         if len(lines) > 0 and lines[0] == "VLDB: no such entry":
-            raise NoSuchEntryError()
+            raise NoSuchEntryError(args)
         else:
-            raise CommandFailed('vos', err)
+            raise CommandFailed('vos', args, err)
     return out
 
 def fs(*args):
     rc,out,err = run_program([get_var('FS')] + list(args))
     if rc != 0:
-        raise CommandFailed('fs', err)
+        raise CommandFailed('fs', args, err)
     return out
 
 
