@@ -31,7 +31,7 @@ Write and Execute a Script in a Directory
     #Should Not Exist        ${file}
     ${code}=  Catenate
     ...  \#!/bin/sh\n
-    ...  echo -n ${text}\n
+    ...  echo ${text}\n
     Create File                  ${file}  ${code}
     Should Exist                 ${file}
     Command Should Succeed       chmod +x ${file}
