@@ -27,6 +27,22 @@ from afsutil.system import run, afs_mountpoint, unload_module, get_running, is_r
 
 logger = logging.getLogger(__name__)
 
+COMPONENTS = ['client', 'server']
+
+def check_component_names(components):
+    """Raises a value error if an unknown component name is given."""
+    ALL = set(COMPONENTS)
+    if components is None:
+        c = ALL
+    else:
+        c = set(components)        # remove duplicates
+    unknown = c.difference(ALL)    # find unknowns
+    if unknown:
+        s = 's' if len(unknown) > 1 else ''
+        unknown = ', '.join(unknown)
+        raise ValueError("Unknown component%s: %s" % (s, unknown))
+    return list(c)
+
 def _rc(component, action):
     rc = "/etc/init.d/openafs-%s" % (component)
     if not os.path.isfile(rc):
@@ -34,7 +50,7 @@ def _rc(component, action):
     run(rc, args=[action])
 
 def start(**kwargs):
-    components = kwargs['components']
+    components = check_component_names(kwargs['components'])
     if 'server' in components:
         if not is_running('bosserver'):
             _rc('server', 'start')
@@ -43,7 +59,7 @@ def start(**kwargs):
             _rc('client', 'start')
 
 def stop(**kwargs):
-    components = kwargs['components']
+    components = check_component_names(kwargs['components'])
     if 'client' in components:
         if afs_mountpoint():
             _rc('client', 'stop')

@@ -32,14 +32,9 @@ import glob
 from afsutil.system import file_should_exist, directory_should_exist, directory_should_not_exist, \
                            is_loaded, is_running, mkdirp, run, touch, cat, \
                            network_interfaces, configure_dynamic_linker
+from afsutil.init import check_component_names
 
 logger = logging.getLogger(__name__)
-
-#
-# Valid component names for install and remove.  This may be expanded in the
-# future if we want more fine grained installs.
-#
-COMPONENTS = ['client', 'server']
 
 #
 # Transarc style install paths.
@@ -148,28 +143,6 @@ case "$1" in
       exit 1
 esac
 """
-
-def _check_component_names(components=None):
-    """Check the given list of component names.
-
-    components may be a string consisting of a comma separated list of names,
-    or a list() of strings.  Returns a list of valid component names with
-    duplicates removed.  Raises a value error if an unknown component name
-    is given.
-    """
-    all_ = set(COMPONENTS)
-    if components is None:
-        components = all_
-    else:
-        if isinstance(components, basestring):
-            components = components.split(",")
-        components = set(components)
-    unknown = components.difference(all_)
-    if unknown:
-        msg = "Unknown component%s: %s" % \
-            ("s" if len(unknown)>1 else "", ", ".join(unknown))
-        raise ValueError(msg)
-    return list(components)
 
 def _solaris_afs_driver():
     """Return the name of the afs driver for the current platform."""
@@ -437,7 +410,7 @@ class TransarcInstaller(object):
 
     def install(self, components=None):
         """Install Transarc-style binaries."""
-        components = _check_component_names(components)
+        components = check_component_names(components)
         # Always install the server first.
         if 'server' in components:
             self._install_server()
@@ -513,7 +486,7 @@ class TransarcUninstaller(object):
             self._purge_cache()
 
     def remove(self, components=None):
-        components = _check_component_names(components)
+        components = check_component_names(components)
         # Always remove the client server first.
         if 'client' in components:
             self._remove_client()

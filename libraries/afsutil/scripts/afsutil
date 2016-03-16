@@ -246,11 +246,11 @@ def main():
     p.add_argument('--chdir', help='change to directory', default=None)
     p.add_argument('--dest', help='dest directory (default: <sysname>/dest)', default=None)
     p.add_argument('--components', metavar='<name>', nargs='+',
-                   choices=transarc.COMPONENTS,
+                   choices=afsutil.init.COMPONENTS,
                    help='components to install; names are %s %s' % \
-                        (", ".join(transarc.COMPONENTS),
+                        (", ".join(afsutil.init.COMPONENTS),
                         '(default: install all components)'),
-                   default=transarc.COMPONENTS)
+                   default=afsutil.init.COMPONENTS)
     p.add_argument('--cell', help='cell name (default: localcell)', default='localcell')
     p.add_argument('--hosts', nargs='+', help='cell service db hosts (default: this host)', default=None)
     p.add_argument('--realm', help='realm name (default: LOCALCELL)', default=None)
@@ -263,7 +263,7 @@ def main():
     _common_opts(p)
     p.add_argument('components', metavar='<name>', nargs='*',
                    help='values: server, client (default: all)',
-                   default=transarc.COMPONENTS)
+                   default=afsutil.init.COMPONENTS)
     p.add_argument('--purge', action='store_true', help='remove config and data too')
     p.set_defaults(fn=remove, must_be_root=True)
 
@@ -271,14 +271,14 @@ def main():
     _common_opts(p)
     p.add_argument('components', metavar='<name>', nargs='*',
                    help='values: server, client (default: all)',
-                   default=transarc.COMPONENTS)
+                   default=afsutil.init.COMPONENTS)
     p.set_defaults(fn=start, must_be_root=True)
 
     p = subparsers.add_parser('stop', help="stop afs services")
     _common_opts(p)
     p.add_argument('components', metavar='<name>', nargs='*',
                    help='values: server, client (default: all)',
-                   default=transarc.COMPONENTS)
+                   default=afsutil.init.COMPONENTS)
     p.set_defaults(fn=stop, must_be_root=True)
 
     p = subparsers.add_parser('fakekey', help='generate a keytab file for testing')
