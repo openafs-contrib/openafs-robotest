@@ -32,7 +32,7 @@ import glob
 from afsutil.system import file_should_exist, directory_should_exist, directory_should_not_exist, \
                            is_loaded, is_running, mkdirp, run, touch, cat, \
                            network_interfaces, configure_dynamic_linker
-from afsutil.init import check_component_names
+from afsutil.service import check_component_names
 
 logger = logging.getLogger(__name__)
 
