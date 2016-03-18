@@ -56,7 +56,8 @@ def stop(**kwargs):
     if 'server' in components:
         if is_running('bosserver'):
             _rc('server', 'stop')
-        servers = ('bosserver', 'upserver',
+        servers = ('bosserver', 'upserver', 'upclient',
+		   'buserver', 'bucoord', 'butc',
                    'vlserver', 'ptserver',
                    'fileserver', 'volserver',
                    'dafileserver', 'davolserver', 'salvageserver')
