@@ -100,6 +100,7 @@ def release_parent(path):
     parent = get_volume_entry(info['vid'])
     if 'ro' in parent:
        vos('release', parent['name'], '-verbose')
+       fs("checkvol") # HACK ALERT!
 
 class VolumeDump(object):
     """Helper class to create and check volume dumps."""
@@ -180,6 +181,7 @@ class _VolumeKeywords(object):
         if path:
             release_parent(path)
         fs("flushall") # HACK ALERT!
+        fs("checkvol") # HACK ALERT!
         return vid
 
     def remove_volume(self, name, path=None):
@@ -208,6 +210,8 @@ class _VolumeKeywords(object):
             vos('remove', '-id', name)
         if removed_mtpt:
             release_parent(path)
+        fs("flushall") # HACK ALERT!
+        fs("checkvol") # HACK ALERT!
 
     def mount_volume(self, path, vol, *options):
         """Mount an AFS volume."""
@@ -215,6 +219,7 @@ class _VolumeKeywords(object):
 
     def release_volume(self, name):
         vos('release', '-id', name, '-verbose')
+        fs("checkvol") # HACK ALERT!
 
     def volume_should_exist(self, name_or_id):
         """Verify the existence of a read-write volume.
