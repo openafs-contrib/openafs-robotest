@@ -74,13 +74,6 @@ def build(**kwargs):
 def install(**kwargs):
     installer = transarc.TransarcInstaller(**kwargs)
     installer.install(components=kwargs['components'])
-    if 'server' in kwargs['components'] and 'keytab' in kwargs:
-        keytab = kwargs['keytab']
-        if not os.path.exists(keytab):
-            logger.warning("Skipping set key; keytab file %s not found", keytab)
-        else:
-            k = Keytab.load(keytab)
-            k.set_service_key(**kwargs)
 
 def remove(**kwargs):
     uninstaller = transarc.TransarcUninstaller(**kwargs)
@@ -228,7 +221,6 @@ def main():
     p.add_argument('--hosts', nargs='+', help='cell service db hosts (default: this host)', default=None)
     p.add_argument('--realm', help='realm name (default: LOCALCELL)', default=None)
     p.add_argument('--csdb', help='path to CellServDB.dist file for client (default: none)', default=None)
-    p.add_argument('--keytab', help="keytab file (default: /tmp/afs.keytab)", default="/tmp/afs.keytab")
     p.add_argument('--force', action='store_true', help='overwrite existing files')
     p.set_defaults(fn=install, must_be_root=True)
 
