@@ -155,6 +155,31 @@ def _solaris_afs_driver():
         driver = '/kernel/drv/afs'
     return driver
 
+def _detect_sysname():
+    sysname = None
+    try:
+        with open("src/config/Makefile.config", "r") as f:
+            for line in f.readlines():
+                match = re.match(r'SYS_NAME\s*=\s*(\S+)', line)
+                if match:
+                    sysname = match.group(1)
+                    break
+    except IOError as e:
+        pass
+    return sysname
+
+def _detect_dest():
+    dest = None
+    sysname = _detect_sysname()
+    if sysname:
+        dest = "%s/dest" % (sysname)
+    return dest
+
+def _check_dest(dest):
+    if dest is None:
+        raise ValueError("Unable to find dest in current directory.")
+    if not os.path.exists(dest):
+        raise ValueError("dest dir '%s' not found." % dest)
 
 class TransarcInstaller(object):
     """Install a Transarc-style distribution of OpenAFS on linux or solaris."""
@@ -173,7 +198,8 @@ class TransarcInstaller(object):
         csdb:  path to optional CellServDB.dist listing foreign cells
         """
         if dest is None:
-            raise AssertionError("dest directory is None.")
+            dest = _detect_dest()
+        _check_dest(dest)
         if realm is None:
             realm = cell.upper()
         directory_should_exist(dest)

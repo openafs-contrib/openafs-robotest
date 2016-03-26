@@ -50,19 +50,6 @@ def _cd(chdir):
         os.chdir(chdir)
     return savedir
 
-def _detect_sysname():
-    sysname = None
-    try:
-        with open("src/config/Makefile.config", "r") as f:
-            for line in f.readlines():
-                match = re.match(r'SYS_NAME\s*=\s*(\S+)', line)
-                if match:
-                    sysname = match.group(1)
-                    break
-    except IOError as e:
-        pass
-    return sysname
-
 def _get_log_level(args):
     if getattr(args, 'verbose', False):
         level = logging.DEBUG
@@ -81,24 +68,10 @@ def _log_options(args):
         options['filename'] = log
     return options
 
-def _check_dest(dest):
-    if dest is None:
-        sysname = _detect_sysname()
-        if sysname:
-            dest = "%s/dest" % (sysname)
-        else:
-            sys.stderr.write("afsutil: Unable to find dest in current directory; try --dest\n")
-            sys.exit(1)
-    if not os.path.exists(dest):
-        sys.stderr.write("dest dir '%s' not found.\n" % dest)
-        sys.exit(1)
-    return dest
-
 def build(**kwargs):
     afsutil.build.build(**kwargs)
 
 def install(**kwargs):
-    kwargs['dest'] = _check_dest(kwargs.get('dest', None))
     installer = transarc.TransarcInstaller(**kwargs)
     installer.install(components=kwargs['components'])
     if 'server' in kwargs['components'] and 'keytab' in kwargs:
