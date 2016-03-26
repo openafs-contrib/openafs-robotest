@@ -73,11 +73,19 @@ def build(**kwargs):
 
 def install(**kwargs):
     installer = transarc.TransarcInstaller(**kwargs)
-    installer.install(components=kwargs['components'])
+    components = kwargs['components']
+    if 'server' in components:
+        installer.install_server()
+    if 'client' in components:
+        installer.install_client()
 
 def remove(**kwargs):
     uninstaller = transarc.TransarcUninstaller(**kwargs)
-    uninstaller.remove(components=kwargs['components'])
+    components = kwargs['components']
+    if 'client' in components:
+        uninstaller.revmove_client()
+    if 'server' in components:
+        uninstaller.remove_server()
 
 def start(**kwargs):
     afsutil.service.start(**kwargs)

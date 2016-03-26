@@ -32,7 +32,6 @@ import glob
 from afsutil.system import file_should_exist, directory_should_exist, directory_should_not_exist, \
                            is_loaded, is_running, mkdirp, run, touch, cat, \
                            network_interfaces, configure_dynamic_linker
-from afsutil.service import check_component_names
 
 logger = logging.getLogger(__name__)
 
@@ -378,7 +377,7 @@ class TransarcInstaller(object):
         with open(dst, 'w') as f:
             f.write("%s:%s:%d\n" % (root, cache, size))
 
-    def _install_server(self):
+    def install_server(self):
         """Install server binaries."""
         for path in ["/vicepa", "/vicepb"]:
             if not os.path.exists(path):
@@ -399,7 +398,7 @@ class TransarcInstaller(object):
         self.installed['server'] = True
         logger.info("Servers installed.")
 
-    def _install_client(self):
+    def install_client(self):
         """Install client binaries."""
         kdir = AFS_KERNEL_DIR.lstrip('/')
         uname = os.uname()[0]
@@ -433,15 +432,6 @@ class TransarcInstaller(object):
             raise AssertionError("Unsupported operating system: %s" % (uname))
         self.installed['client'] = True
         logger.info("Client installed.")
-
-    def install(self, components=None):
-        """Install Transarc-style binaries."""
-        components = check_component_names(components)
-        # Always install the server first.
-        if 'server' in components:
-            self._install_server()
-        if 'client' in components:
-            self._install_client()
 
 class TransarcUninstaller(object):
     """Remove a Transarc-style distribution of OpenAFS."""
@@ -483,7 +473,7 @@ class TransarcUninstaller(object):
                 if re.match(r'^D\d+$', d):
                     self._remove_files("/usr/vice/cache/%s" % (d), quiet=(not self.verbose))
 
-    def _remove_server(self):
+    def remove_server(self):
         if is_running('bosserver'):
             raise AssertionError("Refusing to remove: bosserver is running.")
         self._remove_files("/usr/afs/bin/")
@@ -495,7 +485,7 @@ class TransarcUninstaller(object):
                 if re.match(r'/vicep([a-z]|[a-h][a-z]|i[a-v])$', part):
                     self._purge_volumes(part)
 
-    def _remove_client(self):
+    def remove_client(self):
         uname = os.uname()[0]
         if is_running('afsd'):
             raise AssertionError("Refusing to remove: afsd is running.")
@@ -510,12 +500,4 @@ class TransarcUninstaller(object):
             self._remove_file(_solaris_afs_driver())
         if self.purge:
             self._purge_cache()
-
-    def remove(self, components=None):
-        components = check_component_names(components)
-        # Always remove the client server first.
-        if 'client' in components:
-            self._remove_client()
-        if 'server' in components:
-            self._remove_server()
 
