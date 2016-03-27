@@ -183,10 +183,10 @@ def _check_dest(dest):
 class TransarcInstaller(object):
     """Install a Transarc-style distribution of OpenAFS on linux or solaris."""
 
-    def __init__(self, dest=None, cell='localcell', hosts=None, realm=None, csdb=None, force=False, **kwargs):
+    def __init__(self, pkgdir=None, cell='localcell', hosts=None, realm=None, csdb=None, force=False, **kwargs):
         """Initialize the Transarc-style installer.
 
-        dest: path to the 'dest' directory created by previous make dest
+        pkgdir: path to the 'dest' directory created by previous make dest
               If None, try to detect the sysname and find the dest directory
               in the current working directory.
         cell: afs cell name to be configured
@@ -196,19 +196,19 @@ class TransarcInstaller(object):
         force: overwrite existing files, otherwise raise an AssertionError
         csdb:  path to optional CellServDB.dist listing foreign cells
         """
-        if dest is None:
-            dest = _detect_dest()
-        _check_dest(dest)
+        if pkgdir is None:
+            pkgdir = _detect_dest()
+        _check_dest(pkgdir)
         if realm is None:
             realm = cell.upper()
-        directory_should_exist(dest)
-        directory_should_exist(os.path.join(dest, 'root.server'))
-        directory_should_exist(os.path.join(dest, 'root.client'))
-        directory_should_exist(os.path.join(dest, 'lib'))
+        directory_should_exist(pkgdir)
+        directory_should_exist(os.path.join(pkgdir, 'root.server'))
+        directory_should_exist(os.path.join(pkgdir, 'root.client'))
+        directory_should_exist(os.path.join(pkgdir, 'lib'))
         if csdb is not None:
             file_should_exist(csdb)
         self.installed = {'libs':False, 'client':False, 'server':False, 'ws':False}
-        self.dest = dest
+        self.dest = pkgdir
         self.cell = cell
         self.realm = realm
         self.force = force
