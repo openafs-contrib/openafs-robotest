@@ -268,7 +268,7 @@ class Config(ConfigParser.SafeConfigParser):
             args += comp
         dest = self.optstr(section, 'dest')
         if dest:
-            args.append('--dest')
+            args.append('--pkgdir')
             args.append(dest)
         cell = self.optstr('cell', 'name')
         if cell:
@@ -277,10 +277,6 @@ class Config(ConfigParser.SafeConfigParser):
         if hosts:
             args.append('--hosts')
             args += hosts
-        keytab = self.optstr('kerberos', 'keytab')
-        if keytab:
-            args.append('--keytab')
-            args.append(keytab)
         realm = self.optstr('kerberos', 'realm')
         if realm:
             args.append('--realm')
@@ -291,6 +287,23 @@ class Config(ConfigParser.SafeConfigParser):
             args.append(csdb)
         if self.optbool(section, 'force'):
             args.append('--force')
+        return args
+
+    def optsetkey(self, hostname):
+        args = []
+        section = "host:%s" % (hostname)
+        cell = self.optstr('cell', 'name')
+        if cell:
+            args.append('--cell')
+            args.append(cell)
+        realm = self.optstr('kerberos', 'realm')
+        if realm:
+            args.append('--realm')
+            args.append(realm)
+        keytab = self.optstr('kerberos', 'keytab')
+        if keytab:
+            args.append('--keytab')
+            args.append(keytab)
         return args
 
     def optnewcell(self):
@@ -616,6 +629,17 @@ def cmd_setup(args, config):
             log("Skipping install on hostname %s; installer is 'none'." % (hostname))
         else:
             fail("Invalid installer option for hostname %s!; installer='%s'." % (hostname, installer))
+
+    # Set key
+    for hostname in config.opthostnames():
+        cmd = Command(hostname, keyfile, logfile=logfile)
+        section = "host:%s" % (hostname)
+        installer = config.optstr(section, 'installer', default='none')
+        if installer == 'none':
+            log("Skipping setkey on hostname %s; installer is 'none'." % (hostname))
+            continue
+        if cmd.afsutil('setkey', *config.optsetkey(hostname)) != 0:
+            fail("Failed to setkey; see %s\n" % (logfile))
 
     # Start clients and servers.
     for hostname in config.opthostnames():
