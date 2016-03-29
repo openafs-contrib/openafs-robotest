@@ -92,7 +92,7 @@ def remove(**kwargs):
     elif dist == 'rhel':
         installer = afsutil.rhel.RhelRpmUninstaller(**kwargs)
     if 'client' in components:
-        uninstaller.revmove_client()
+        uninstaller.remove_client()
     if 'server' in components:
         uninstaller.remove_server()
 
