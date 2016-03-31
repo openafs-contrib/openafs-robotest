@@ -53,7 +53,9 @@ class _SystemKeywords(object):
     def command_should_succeed(self, cmd, msg=None):
         """Fails if command does not exit with a zero status code."""
         rc,out,err = run_program(cmd)
-        if rc != 0:
+	logger.info("Output: " + out)
+	logger.info("Error: " + err)
+	if rc != 0:
             if not msg:
                 msg = "Command Failed! %s" % cmd
             raise AssertionError(msg)
@@ -61,6 +63,8 @@ class _SystemKeywords(object):
     def command_should_fail(self, cmd):
         """Fails if command exits with a zero status code."""
         rc,out,err = run_program(cmd)
+	logger.info("Output: " + out)
+	logger.info("Error: " + err)
         if rc == 0:
             raise AssertionError("Command should have failed: %s" % cmd)
 
