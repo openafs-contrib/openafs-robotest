@@ -737,6 +737,9 @@ def cmd_run(args, config):
     if args.suite:
         options['suite'] = args.suite
 
+    if args.include:
+	options['include'] = args.include
+
     # Optionally, run the system setup.
     if config.optbool('run', 'auto_setup'):
         code = cmd_setup(args, config)
@@ -943,6 +946,7 @@ def main():
     p = subparsers.add_parser('run', help="run the tests")
     common_options(p)
     p.add_argument('-s', '--suite', help="test suite to run (default: all)", default=None)
+    p.add_argument('-i', '--include', help="test tags to include (default: all)", default=None)
     p.set_defaults(_cmd=cmd_run)
 
     #
