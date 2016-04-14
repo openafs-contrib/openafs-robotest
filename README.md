@@ -23,11 +23,11 @@ suite.  If `afs-robotest` is used to install OpenAFS then sudo should be
 configured on the test machine. The NOPASSWD sudo option must be set to allow
 the command `afsutil` to be run with sudo without a password.
 
-Python 2.6 or 2.7 must be present. Install the `python-xml` and `python-pip`
+Python 2.6 or 2.7 must be present. Install the `python-pip`
 packages using your system's package manager. On Debian based systems, this
 is done with the command:
 
-    $ sudo apt-get install python-xml python-pip
+    $ sudo apt-get install python-pip
 
 Install the `Robotframework` and `argparse` Python packages using the `pip'
 command:
