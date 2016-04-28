@@ -90,7 +90,8 @@ is_on() {
     fi
 }
 
-SYSCNF=${SYSCNF:-/etc/sysconfig/afs}
+BOSSERVER_OPTIONS=""
+SYSCNF=${SYSCNF:-/etc/sysconfig/openafs-server}
 if [ -f $SYSCNF ] ; then
     . $SYSCNF
 fi
@@ -99,11 +100,11 @@ BOS=${BOS:-/usr/afs/bin/bos}
 BOSSERVER=${BOSSERVER:-/usr/afs/bin/bosserver}
 
 start() {
-    if [ ! "$afs_rh" -o ! -f /var/lock/subsys/afs-server ]; then
+    if [ ! "$afs_rh" -o ! -f /var/lock/subsys/openafs-server ]; then
         if test -x $BOSSERVER ; then
             echo "Starting AFS servers..... "
-            $BOSSERVER
-            test "$afs_rh" && touch /var/lock/subsys/afs-server
+            $BOSSERVER $BOSSERVER_OPTIONS
+            test "$afs_rh" && touch /var/lock/subsys/openafs-server
             if is_on $WAIT_FOR_SALVAGE; then
                 sleep 10
                 while $BOS status localhost fs 2>&1 | grep 'Auxiliary.*salvaging'; do
@@ -116,13 +117,13 @@ start() {
 }
 
 stop() {
-    if [ ! "$afs_rh" -o -f /var/lock/subsys/afs-server ]; then
+    if [ ! "$afs_rh" -o -f /var/lock/subsys/openafs-server ]; then
         if  test -x $BOS ; then
             echo "Stopping AFS servers..... "
             $BOS shutdown localhost -localauth -wait
             pkill -HUP bosserver
         fi
-        rm -f /var/lock/subsys/afs-server
+        rm -f /var/lock/subsys/openafs-server
     fi
 }
 
