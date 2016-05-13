@@ -1,0 +1,53 @@
+
+Goals for v0.5
+--------------
+
+* tests:
+  - implement or remove tests tagged as TODO
+* afsutil setkey - do not depend on asetkey when --format is given.
+* setup: remove the --force option
+  - print a message to tell the user to try teardown
+* setup: [host:localhost] is confusing and inconsistent.
+  - use [host:<hostname>] for all host sections?
+  - this means the same file can be used on each host
+* setup: afsutil build rpms
+* setup: afsutil install rpms
+* setup: afstuil install debs
+* script: login --user option. I don't always need to be admin.
+* script: configs/profiles in home dir
+ - use the $HOME directory, instead of the current directory
+   when AFS_ROBOTEST_PROFILE is not set
+ - create dir ${HOME}/.afsrobotestrc/ to keep the profiles
+* more startup options in config file
+
+
+Post v0.5
+---------
+
+* OpenAFSLibrary
+  - new keywords
+  - more complete unit tests
+* Server setup and cell creation sans libafs.ko.
+  Some options are:
+  a. Ideally, a new util based on libafscp (afsutil?)
+     to mount dirs and set acls (etc)
+  b. Generate root vols, with cmu-dumpscan or refactor
+     the volume dump stream code from OpenAFSLibrary
+
+Done
+----
+
+* setup: separate server and client startup options
+* setup: aklog workaround check
+   - add a check to verify the option variable:aklog is set.
+   - check to see the file is present and executable
+   - run strings to find the openafs version, and verify
+     it is not a dirty version and is 1.6.10 or better
+   - only if akimpersonate option is yes
+* centos7 - /etc/init.d/openafs-client is br0k3n
+* ubik sadness: setup the lowest ip first in newcell
+* afs-robotest login - use the options from the config
+* afsutil rc file
+* afsutil build: config options
+* afsutil remove: dont log each and every cache dir removed
+
