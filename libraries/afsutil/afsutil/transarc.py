@@ -385,6 +385,7 @@ class TransarcInstaller(object):
                 logger.info("Making vice partition '%s'.", path)
                 os.mkdir(path)
                 touch(os.path.join(path, "AlwaysAttach"))
+                touch(os.path.join(path, "PURGE_VOLUMES"))
         src = os.path.join(self.dest, "root.server", AFS_SRV_BIN_DIR.lstrip('/'))
         self._copy_files(src, AFS_SRV_BIN_DIR)
         self._install_shared_libs(os.path.join(self.dest, 'lib'), AFS_SRV_LIB_DIR)
@@ -484,7 +485,8 @@ class TransarcUninstaller(object):
             self._remove_files("/usr/afs/")
             for part in glob.glob('/vicep*'):
                 if re.match(r'/vicep([a-z]|[a-h][a-z]|i[a-v])$', part):
-                    self._purge_volumes(part)
+                    if os.path.exists(os.path.join(part, "PURGE_VOLUMES")):
+                        self._purge_volumes(part)
 
     def remove_client(self):
         uname = os.uname()[0]
