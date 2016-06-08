@@ -5,6 +5,8 @@ Goals for v0.5
 * tests:
   - implement or remove tests tagged as TODO
 * afsutil setkey - do not depend on asetkey when --format is given.
+* setup should be completely idempotent
+  - e.g., afs-robotest setup && afs-robotest setup
 * setup: remove the --force option
   - print a message to tell the user to try teardown
 * setup: [host:localhost] is confusing and inconsistent.
