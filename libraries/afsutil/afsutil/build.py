@@ -114,7 +114,7 @@ def build(cf=None, target='all', clean=True, transarc=True, **kwargs):
         cf = DEFAULT_CF
     else:
         cf = shlex.split(cf)  # Note: shlex handles quoting properly.
-    if os.uname()[0] == "Linux":
+    if os.uname()[0] == "Linux" and not '--disable-checking' in cf:
         cf.append('--enable-checking')
     if transarc and not '--enable-transarc-paths' in cf:
         cf.append('--enable-transarc-paths')
