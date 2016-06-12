@@ -43,18 +43,17 @@ def _clean():
         if os.path.isfile('./Makefile'):
             sh('make', 'clean')
 
-def _make_package_rhel_srpm():
-    # The script which builds the srpm prints the name of the srpm file
-    # generated, so grab it from the output.  The srpm target runs the
-    # rhel script to build the source rpm.
+def _make_srpm():
+    # Get the filename of the generated source rpm from the output of the
+    # script. The source rpm filename is needed to build the rpms.
     output = sh('make', 'srpm', output=True)
     for line in output:
         if line.startswith('SRPM is '):
             return line.split()[2]
     raise CommandFailed('make', ['srpm'], 1, '', 'Failed to get the srpm filename.')
 
-def _make_package_rhel(srpm):
-    # This probably should be moved to a Makefile target.
+def _make_rpm(srpm):
+    # These commands should probably be moved to the OpenAFS Makefile.
     cwd = os.getcwd()
     arch = os.uname()[4]
     # Build kmod packages.
@@ -107,10 +106,16 @@ def build(cf=None, target='all', clean=True, transarc=True, **kwargs):
         _clean()
     sh('./regen.sh')
     sh('./configure', *cf)
-    if target == 'pkg-rhel':
-        sh('make', 'dist')
-        srpm = _make_package_rhel_srpm()
-        _make_package_rhel(srpm)
-    else:
-       sh('make', target)
+    sh('make', target)
 
+def package(clean=True, package=None, **kwargs):
+    """Build the OpenAFS rpm packages."""
+    # The rpm spec file contains the configure options for the actual build.
+    # We run configure here just to bootstrap the process.
+    if clean:
+        _clean()
+    sh('./regen.sh', '-q')
+    sh('./configure')
+    sh('make', 'dist')
+    srpm = _make_srpm()
+    _make_rpm(srpm)
