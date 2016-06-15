@@ -74,6 +74,31 @@ def run(cmd, args=None, quiet=False, retry=0, wait=1, cleanup=None):
             return output
     raise CommandFailed(cmd, args, rc, output, error);
 
+def sh(*args, **kwargs):
+    """Run the command line and write the output to the logger."""
+    output = []
+    capture_output = kwargs.get('output', False)
+    quiet = kwargs.get('quiet', False)
+    if quiet:
+        logger.debug("Running %s", subprocess.list2cmdline(args))
+    else:
+        logger.info("Running %s", subprocess.list2cmdline(args))
+    # Redirect stderr to the same pipe to capture errors too.
+    p = subprocess.Popen(args, bufsize=1, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    with p.stdout:
+        for line in iter(p.stdout.readline, ''):
+            line = line.rstrip()
+            if not quiet:
+                logger.info(line)
+            if capture_output:
+                output.append(line)
+    code = p.wait()
+    if code != 0:
+        raise CommandFailed(args[0], args[1:], code, "", "")
+    if capture_output:
+        return output
+    return
+
 def which(program, extra_paths=None, raise_errors=False):
     """Find a program in the PATH."""
     dirname, basename = os.path.split(program)

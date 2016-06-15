@@ -23,8 +23,29 @@
 import logging
 import os
 import sys
+from afsutil.system import sh, CommandFailed
 
 logger = logging.getLogger(__name__)
+
+def _sanity_check_dir():
+    msg = "Missing '%s'; are you in the OpenAFS source top-level directory?"
+    for d in ('src', 'src/afs', 'src/viced'):
+        if not os.path.isdir(d):
+            raise AssertionError(msg % (d))
+
+def _allow_git_clean():
+    clean = False
+    try:
+        output = sh('git', 'config', '--bool', '--get', 'afsutil.clean', output=True)
+        if output[0] == 'true':
+            clean = True
+    except CommandFailed as e:
+        if e.code == 1:
+            logger.info("To enable git clean before builds:")
+            logger.info("    git config --local afsutil.clean true");
+        else:
+            raise e
+    return clean
 
 def run(cmd):
     logger.info("Running %s", cmd)
@@ -60,9 +81,11 @@ def rebuild(chdir=None, cf=None, target=None, clean=True, **kwargs):
         else:
             target = 'all'
 
+    _sanity_check_dir()
     if clean:
         if os.path.isdir('.git'):
-            run('git clean -f -d -x -q')
+            if _allow_git_clean():
+                run('git clean -f -d -x -q')
         else:
             if os.path.isfile('./Makefile'):
                 run('make clean')
