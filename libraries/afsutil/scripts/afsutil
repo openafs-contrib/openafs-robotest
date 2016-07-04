@@ -36,6 +36,7 @@ import afsutil.system
 import afsutil.build
 import afsutil.service
 import afsutil.transarc
+import afsutil.rpm
 from afsutil.keytab import Keytab
 from afsutil.cell import Cell
 
@@ -78,6 +79,8 @@ def install(**kwargs):
     dist = kwargs['dist']
     if dist == 'transarc':
         installer = afsutil.transarc.TransarcInstaller(**kwargs)
+    elif dist == 'rpm':
+        installer = afsutil.rpm.RpmInstaller(**kwargs)
     else:
         raise AssertionError("Unsupported 'dist' option")
     installer.install()
@@ -86,6 +89,8 @@ def remove(**kwargs):
     dist = kwargs['dist']
     if dist == 'transarc':
         installer = afsutil.transarc.TransarcInstaller(**kwargs)
+    elif dist == 'rpm':
+        installer = afsutil.rpm.RpmInstaller(**kwargs)
     else:
         raise AssertionError("Unsupported 'dist' option")
     installer.remove()
@@ -225,7 +230,7 @@ def main():
     p = subparsers.add_parser('install', help='install binaries')
     _common_opts(p)
     p.add_argument('--chdir', help='change to directory', default=None)
-    p.add_argument('--dist', choices=['transarc'], help='distribution type', default='transarc')
+    p.add_argument('--dist', choices=['transarc', 'rpm'], help='distribution type', default='transarc')
     p.add_argument('--dir', help='distribution directory', default=None)
     p.add_argument('--components', metavar='<name>', nargs='+', choices=['client', 'server'],
                    help='components to install', default=['client', 'server']),
@@ -238,7 +243,7 @@ def main():
 
     p = subparsers.add_parser('remove', help="remove transarc-style binaries")
     _common_opts(p)
-    p.add_argument('--dist', choices=['transarc'], help='distribution type', default='transarc')
+    p.add_argument('--dist', choices=['transarc', 'rpm'], help='distribution type', default='transarc')
     p.add_argument('--components', metavar='<name>', nargs='+', choices=['client', 'server'],
                    help='components to remove', default=['client', 'server']),
     p.add_argument('--purge', action='store_true', help='remove config and data too')
