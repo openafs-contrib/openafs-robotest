@@ -95,10 +95,8 @@ def sh(*args, **kwargs):
                 output.append(line)
     code = p.wait()
     if code != 0:
-        raise CommandFailed(args[0], args[1:], code, "", "")
-    if capture_output:
-        return output
-    return
+        raise CommandFailed(args[0], args[1:], code, "", "/n".join(output))
+    return output
 
 def which(program, extra_paths=None, raise_errors=False):
     """Find a program in the PATH."""
