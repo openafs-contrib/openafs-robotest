@@ -36,7 +36,6 @@ import afsutil.system
 import afsutil.build
 import afsutil.service
 import afsutil.transarc
-import afsutil.rhel
 from afsutil.keytab import Keytab
 from afsutil.cell import Cell
 
@@ -77,27 +76,19 @@ def package(**kwargs):
 
 def install(**kwargs):
     dist = kwargs['dist']
-    components = kwargs['components']
     if dist == 'transarc':
         installer = afsutil.transarc.TransarcInstaller(**kwargs)
-    elif dist == 'rhel':
-        installer = afsutil.rhel.RhelRpmInstaller(**kwargs)
-    if 'server' in components:
-        installer.install_server()
-    if 'client' in components:
-        installer.install_client()
+    else:
+        raise AssertionError("Unsupported 'dist' option")
+    installer.install()
 
 def remove(**kwargs):
     dist = kwargs['dist']
-    components = kwargs['components']
     if dist == 'transarc':
-        uninstaller = afsutil.transarc.TransarcUninstaller(**kwargs)
-    elif dist == 'rhel':
-        installer = afsutil.rhel.RhelRpmUninstaller(**kwargs)
-    if 'client' in components:
-        uninstaller.remove_client()
-    if 'server' in components:
-        uninstaller.remove_server()
+        installer = afsutil.transarc.TransarcInstaller(**kwargs)
+    else:
+        raise AssertionError("Unsupported 'dist' option")
+    installer.remove()
 
 def start(**kwargs):
     afsutil.service.start(**kwargs)
@@ -234,8 +225,8 @@ def main():
     p = subparsers.add_parser('install', help='install binaries')
     _common_opts(p)
     p.add_argument('--chdir', help='change to directory', default=None)
-    p.add_argument('--dist', choices=['transarc', 'rhel'], help='distribution type', default='transarc')
-    p.add_argument('--pkgdir', help='package directory', default=None)
+    p.add_argument('--dist', choices=['transarc'], help='distribution type', default='transarc')
+    p.add_argument('--dir', help='distribution directory', default=None)
     p.add_argument('--components', metavar='<name>', nargs='+', choices=['client', 'server'],
                    help='components to install', default=['client', 'server']),
     p.add_argument('--cell', help='cell name (default: localcell)', default='localcell')
@@ -247,7 +238,7 @@ def main():
 
     p = subparsers.add_parser('remove', help="remove transarc-style binaries")
     _common_opts(p)
-    p.add_argument('--dist', choices=['transarc', 'rhel'], help='distribution type', default='transarc')
+    p.add_argument('--dist', choices=['transarc'], help='distribution type', default='transarc')
     p.add_argument('--components', metavar='<name>', nargs='+', choices=['client', 'server'],
                    help='components to remove', default=['client', 'server']),
     p.add_argument('--purge', action='store_true', help='remove config and data too')
