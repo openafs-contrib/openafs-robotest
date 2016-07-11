@@ -909,10 +909,10 @@ def aklog_workaround_check(args, config):
                 raise RuntimeError("Unable to find end of version string.")
             version_string = mm[i:j]
             mm.close()
-        m = re.match(r'^@\(#\)\s*OpenAFS (\d+)\.(\d+)\.(\d+) ', version_string)
+	m = re.match(r'^@\(#\)\s*OpenAFS (\d+)\.(\d+)\.(\d+)-.* ', version_string)
         if m is None:
-            # We need a non-dirty version number.
-            raise RuntimeError("Unrecognized or dirty version string '%s'." % (version_string))
+            # We need a valid n.n.n version number (dirty is tolerated)
+            raise RuntimeError("Unrecognized version string '%s'." % (version_string))
         return tuple([int(x) for x in m.groups()])
     if config.optbool('kerberos', 'akimpersonate'):
         aklog = config.optstr('variables', 'aklog')
