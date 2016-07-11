@@ -513,11 +513,12 @@ def should_not_be_root(cmd):
         sys.exit(1)
 
 def start(msg):
-    sys.stdout.write(msg.ljust(62, '.'))
+    sys.stdout.write(msg.ljust(61, '.'))
+    sys.stdout.write(' ')
     sys.stdout.flush()
 
 def fail(msg):
-    sys.stdout.write("%s\n" % (msg))
+    sys.stdout.write("fail\n%s\n" % (msg))
     sys.stdout.flush()
     sys.exit(1)
 
