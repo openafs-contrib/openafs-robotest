@@ -57,7 +57,7 @@ def stop(**kwargs):
         if is_running('bosserver'):
             _rc('server', 'stop')
         servers = ('bosserver', 'upserver', 'upclient',
-		   'buserver', 'bucoord', 'butc',
+                   'buserver', 'bucoord', 'butc',
                    'vlserver', 'ptserver',
                    'fileserver', 'volserver',
                    'dafileserver', 'davolserver', 'salvageserver')

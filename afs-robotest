@@ -738,7 +738,7 @@ def cmd_run(args, config):
         options['suite'] = args.suite
 
     if args.include:
-	options['include'] = args.include
+        options['include'] = args.include
 
     # Optionally, run the system setup.
     if config.optbool('run', 'auto_setup'):

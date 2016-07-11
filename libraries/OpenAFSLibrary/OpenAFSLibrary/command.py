@@ -28,7 +28,7 @@ class CommandFailed(Exception):
     def __init__(self, name, args, err):
         self.name = name
         self.err = err
-	self.args = list(args)
+        self.args = list(args)
 
     def __str__(self):
         msg = "%s %s failed! %s" % (self.name, self.args, self.err.strip())
