@@ -262,13 +262,16 @@ class Config(ConfigParser.SafeConfigParser):
         section = "host:%s" % (hostname)
         hosts = self.opthostnames(filter='isdbserver', lookupname=True)
         args = []
+        dist = self.optstr(section, 'installer', default='transarc')
+        args.append('--dist')
+        args.append(dist)
         comp = self.optcomponents(hostname)
         if comp:
             args.append('--components')
             args += comp
         dest = self.optstr(section, 'dest')
         if dest:
-            args.append('--pkgdir')
+            args.append('--dir')
             args.append(dest)
         cell = self.optstr('cell', 'name')
         if cell:
@@ -614,7 +617,7 @@ def cmd_setup(args, config):
         cmd = Command(hostname, keyfile, logfile=logfile)
         section = "host:%s" % (hostname)
         installer = config.optstr(section, 'installer', default='none')
-        if installer == 'transarc':
+        if installer == 'transarc' or installer == 'rpm':
             start("Installing on %s" % (hostname))
             if config.optbool(section, 'nuke'):
                 cmd.afsutil('stop')
