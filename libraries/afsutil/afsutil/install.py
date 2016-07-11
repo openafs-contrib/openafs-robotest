@@ -231,7 +231,7 @@ class Installer(object):
             self._make_vice_dirs()
         if self.do_client:
             if self.csdb is not None:
-                file_should_exist(csdb)
+                file_should_exist(self.csdb)
 
     def post_install(self):
         """Post installation steps."""
