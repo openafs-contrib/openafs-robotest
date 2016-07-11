@@ -34,30 +34,22 @@ except ImportError:
 
 import afsutil.system
 import afsutil.build
-import afsutil.init
-import afsutil.transarc as transarc
+import afsutil.service
+import afsutil.transarc
+import afsutil.rpm
 from afsutil.keytab import Keytab
 from afsutil.cell import Cell
 
 logger = logging.getLogger('afsutil')
 
-def _must_be_root():
-    if os.geteuid() != 0:
-        sys.stderr.write("afsutil: Must run as root!\n")
-        sys.exit(1)
-
-def _detect_sysname():
-    sysname = None
-    try:
-        with open("src/config/Makefile.config", "r") as f:
-            for line in f.readlines():
-                match = re.match(r'SYS_NAME\s*=\s*(\S+)', line)
-                if match:
-                    sysname = match.group(1)
-                    break
-    except IOError as e:
-        pass
-    return sysname
+def _cd(chdir):
+    """Change directory if given and returning the old directory."""
+    savedir = None
+    if chdir is not None:
+        logger.info("Changing to directory %s", chdir)
+        savedir = os.getcwd()
+        os.chdir(chdir)
+    return savedir
 
 def _get_log_level(args):
     if getattr(args, 'verbose', False):
@@ -77,55 +69,37 @@ def _log_options(args):
         options['filename'] = log
     return options
 
-def _check_dest(dest):
-    if dest is None:
-        sysname = _detect_sysname()
-        if sysname:
-            dest = "%s/dest" % (sysname)
-        else:
-            sys.stderr.write("afsutil: Unable to find dest in current directory; try --dest\n")
-            sys.exit(1)
-    if not os.path.exists(dest):
-        sys.stderr.write("dest dir '%s' not found.\n" % dest)
-        sys.exit(1)
-    return dest
-
 def build(**kwargs):
-    afsutil.build.rebuild(**kwargs)
+    afsutil.build.build(**kwargs)
+
+def package(**kwargs):
+    afsutil.build.package(**kwargs)
 
 def install(**kwargs):
-    _must_be_root()
-    origdir = None
-    if kwargs['chdir'] is not None:
-        logger.info("Changing to directory %s", kwargs['chdir'])
-        origdir = os.getcwd()
-        os.chdir(kwargs['chdir'])
-    kwargs['dest'] = _check_dest(kwargs.get('dest', None))
-    installer = transarc.TransarcInstaller(**kwargs)
-    installer.install(components=kwargs['components'])
-    if 'server' in kwargs['components'] and 'keytab' in kwargs:
-        keytab = kwargs['keytab']
-        if not os.path.exists(keytab):
-            logger.warning("Skipping set key; keytab file %s not found", keytab)
-        else:
-            k = Keytab.load(keytab)
-            k.set_service_key(**kwargs)
-    if origdir:
-        logger.info("Changing to directory %s", origdir)
-        os.chdir(origdir)
+    dist = kwargs['dist']
+    if dist == 'transarc':
+        installer = afsutil.transarc.TransarcInstaller(**kwargs)
+    elif dist == 'rpm':
+        installer = afsutil.rpm.RpmInstaller(**kwargs)
+    else:
+        raise AssertionError("Unsupported 'dist' option")
+    installer.install()
 
 def remove(**kwargs):
-    _must_be_root()
-    uninstaller = transarc.TransarcUninstaller(**kwargs)
-    uninstaller.remove(components=kwargs['components'])
+    dist = kwargs['dist']
+    if dist == 'transarc':
+        installer = afsutil.transarc.TransarcInstaller(**kwargs)
+    elif dist == 'rpm':
+        installer = afsutil.rpm.RpmInstaller(**kwargs)
+    else:
+        raise AssertionError("Unsupported 'dist' option")
+    installer.remove()
 
 def start(**kwargs):
-    _must_be_root()
-    afsutil.init.start(**kwargs)
+    afsutil.service.start(**kwargs)
 
 def stop(**kwargs):
-    _must_be_root()
-    afsutil.init.stop(**kwargs)
+    afsutil.service.stop(**kwargs)
 
 def fakekey(**kwargs):
     cell = kwargs['cell']
@@ -143,13 +117,11 @@ def fakekey(**kwargs):
     k.write(keytab)
 
 def setkey(**kwargs):
-    _must_be_root()
     keytab = kwargs['keytab']
     k = Keytab.load(keytab)
     k.set_service_key(**kwargs)
 
 def newcell(**kwargs):
-    _must_be_root() # Uses -localauth, since the cell is not setup yet.
     aklog = kwargs.get('aklog', None)
     if aklog:
         afsutil.cli.AKLOG = aklog
@@ -178,7 +150,6 @@ def newcell(**kwargs):
     cell.create_top_volumes(kwargs['top'])
 
 def addfs(**kwargs):
-    _must_be_root()  # Uses -localauth, since the target host does not have superusers setup yet.
     cell = Cell.current(**kwargs)
     cell.add_fileserver(kwargs['hostname'])
 
@@ -244,51 +215,53 @@ def main():
     p = subparsers.add_parser('build', help='build binaries')
     _common_opts(p)
     p.add_argument('--chdir', help='change to directory', default=None)
-    p.add_argument('--cf', help='configure options (default: depends on platform)', default=None)
-    p.add_argument('--target', help='make target (default: detect all or dest)', default=None)
+    p.add_argument('--cf', help='configure options, e.g., --cf="--enable-debug"', default=None)
+    p.add_argument('--target', help='make target (default: all)', default='all')
     p.add_argument('--no-clean', dest='clean', help='do not run git clean', action='store_false')
-    p.set_defaults(fn=build)
+    p.add_argument('--no-transarc', dest='transarc', help='do not use transarc paths', action='store_false')
+    p.set_defaults(fn=build, must_be_root=False)
 
-    p = subparsers.add_parser('install', help='install transarc-style binaries')
+    p = subparsers.add_parser('package', help='build packages')
     _common_opts(p)
     p.add_argument('--chdir', help='change to directory', default=None)
-    p.add_argument('--dest', help='dest directory (default: <sysname>/dest)', default=None)
-    p.add_argument('--components', metavar='<name>', nargs='+',
-                   choices=transarc.COMPONENTS,
-                   help='components to install; names are %s %s' % \
-                        (", ".join(transarc.COMPONENTS),
-                        '(default: install all components)'),
-                   default=transarc.COMPONENTS)
+    p.add_argument('--no-clean', dest='clean', help='do not run git clean', action='store_false')
+    p.set_defaults(fn=package, must_be_root=False)
+
+    p = subparsers.add_parser('install', help='install binaries')
+    _common_opts(p)
+    p.add_argument('--chdir', help='change to directory', default=None)
+    p.add_argument('--dist', choices=['transarc', 'rpm'], help='distribution type', default='transarc')
+    p.add_argument('--dir', help='distribution directory', default=None)
+    p.add_argument('--components', metavar='<name>', nargs='+', choices=['client', 'server'],
+                   help='components to install', default=['client', 'server']),
     p.add_argument('--cell', help='cell name (default: localcell)', default='localcell')
     p.add_argument('--hosts', nargs='+', help='cell service db hosts (default: this host)', default=None)
     p.add_argument('--realm', help='realm name (default: LOCALCELL)', default=None)
     p.add_argument('--csdb', help='path to CellServDB.dist file for client (default: none)', default=None)
-    p.add_argument('--keytab', help="keytab file (default: /tmp/afs.keytab)", default="/tmp/afs.keytab")
     p.add_argument('--force', action='store_true', help='overwrite existing files')
-    p.set_defaults(fn=install)
+    p.set_defaults(fn=install, must_be_root=True)
 
     p = subparsers.add_parser('remove', help="remove transarc-style binaries")
     _common_opts(p)
-    p.add_argument('components', metavar='<name>', nargs='*',
-                   help='values: server, client (default: all)',
-                   default=transarc.COMPONENTS)
+    p.add_argument('--dist', choices=['transarc', 'rpm'], help='distribution type', default='transarc')
+    p.add_argument('--components', metavar='<name>', nargs='+', choices=['client', 'server'],
+                   help='components to remove', default=['client', 'server']),
     p.add_argument('--purge', action='store_true', help='remove config and data too')
-    p.set_defaults(fn=remove)
+    p.set_defaults(fn=remove, must_be_root=True)
 
     p = subparsers.add_parser('start', help="start afs services")
     _common_opts(p)
     p.add_argument('components', metavar='<name>', nargs='*',
                    help='values: server, client (default: all)',
-                   default=transarc.COMPONENTS)
-    p.set_defaults(fn=start)
+                   default=afsutil.service.COMPONENTS)
+    p.set_defaults(fn=start, must_be_root=True)
 
     p = subparsers.add_parser('stop', help="stop afs services")
     _common_opts(p)
     p.add_argument('components', metavar='<name>', nargs='*',
                    help='values: server, client (default: all)',
-                   default=transarc.COMPONENTS)
-    p.set_defaults(fn=stop)
-
+                   default=afsutil.service.COMPONENTS)
+    p.set_defaults(fn=stop, must_be_root=True)
 
     p = subparsers.add_parser('fakekey', help='generate a keytab file for testing')
     _common_opts(p)
@@ -297,7 +270,7 @@ def main():
     p.add_argument('--realm', help='realm name (default: LOCALCELL)', default=None)
     p.add_argument('--enctype', help='encryption type (default: aes256-cts-hmac-sha1-96)', default='aes256-cts-hmac-sha1-96')
     p.add_argument('--secret', help='passphrase (default: random)', default=None)
-    p.set_defaults(fn=fakekey)
+    p.set_defaults(fn=fakekey, must_be_root=False)
 
     p = subparsers.add_parser('setkey', help='add a service key from a keytab file')
     _common_opts(p)
@@ -307,7 +280,7 @@ def main():
     p.add_argument('--confdir', help="server config directory (default: /usr/afs/etc)", default="/usr/afs/etc")
     p.add_argument('--format', help="key file format (default: detect)",
                    choices=['transarc', 'rxkad-k5', 'extended'], default=None)
-    p.set_defaults(fn=setkey)
+    p.set_defaults(fn=setkey, must_be_root=True)
 
     p = subparsers.add_parser('newcell', help='setup a new cell')
     _common_opts(p)
@@ -320,14 +293,14 @@ def main():
     p.add_argument('--no-client', dest='noclient', help='do not mount root and top level volumes', action='store_true')
     p.add_argument('--aklog', help="path to aklog program (default: detect)", default=None)
     p.add_argument('-o', '--options', nargs='+', help="server or client options; <option>=<value>", action='append')
-    p.set_defaults(fn=newcell)
+    p.set_defaults(fn=newcell, must_be_root=True)
 
     p = subparsers.add_parser('addfs', help='add a new fileserver to the cell')
     _common_opts(p)
     p.add_argument('hostname', help="fileserver hostname")
     p.add_argument('--keytab', help="keytab file (default: /tmp/afs.keytab)", default="/tmp/afs.keytab")
     p.add_argument('-o', '--options', nargs='+', help="server options; <option>=<value>", action='append')
-    p.set_defaults(fn=addfs)
+    p.set_defaults(fn=addfs, must_be_root=True)
 
     p = subparsers.add_parser('login', help='obtain token with a keytab')
     _common_opts(p)
@@ -338,12 +311,17 @@ def main():
     p.add_argument('--realm', help="realm name (default: detect with --akimpersonate)", default="LOCALCELL")
     p.add_argument('--aklog', help="path to the aklog program (default: detect)", default=None)
     p.add_argument('--kinit', help="path to the kinit program (default: detect)", default=None)
-    p.set_defaults(fn=login)
+    p.set_defaults(fn=login, must_be_root=False)
 
     if argcomplete:
         argcomplete.autocomplete(parser)
     args = parser.parse_args()
     logging.basicConfig(**_log_options(args))
+    if args.must_be_root:
+        if os.geteuid() != 0:
+            sys.stderr.write("afsutil: Must run as root!\n")
+            sys.exit(1)
+    savedir = _cd(getattr(args, 'chdir', None))
     try:
         kwargs = vars(args)
         code = args.fn(**kwargs)
@@ -359,6 +337,8 @@ def main():
         code = 1
         logger.exception(e)
         sys.stderr.write("%s\n" % (e))
+    finally:
+        _cd(savedir)
     sys.exit(code)
 
 if __name__ == "__main__":

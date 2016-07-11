@@ -49,25 +49,19 @@ PORT = {
 
 def _optfsbnode(options):
     """Helper to get the fs bnode type."""
-    dafs = True  # dafs by default.
-    if 'dafs' in options:
-        if options['dafs'] == "no" or options['dafs'] == "false":
-            dafs = False
-    if dafs:
-        bnode = 'dafs'
-    else:
+    dafs = options.get('dafs', 'yes').strip() # dafs by default.
+    if dafs == 'no' or dafs == 'false' or dafs == '0':
         bnode = 'fs'
+    else:
+        bnode = 'dafs'
     return bnode
 
 def _optcmdstring(options, program):
     """Helper to get the server cmd line string for bos create."""
     # Use the canonical path, bosserver will convert to the actual path.
     cmd = os.path.join(AFS_SRV_LIBEXEC_DIR, program)
-    if program in options:
-        opts = options[program].strip()
-        if opts:
-            cmd += " " + opts
-    return cmd
+    opts = options.get(program, '').strip()
+    return ' '.join(filter(None, [cmd, opts]))
 
 class Host(object):
     """Helper to configure an OpenAFS server using the bos command."""

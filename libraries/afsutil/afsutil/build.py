@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2015 Sine Nomine Associates
+# Copyright (c) 2014-2016 Sine Nomine Associates
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -23,9 +23,18 @@
 import logging
 import os
 import sys
+import shlex
 from afsutil.system import sh, CommandFailed
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_CF = [
+    '--enable-debug',
+    '--enable-debug-kernel',
+    '--disable-optimize',
+    '--disable-optimize-kernel',
+    '--without-dot',
+]
 
 def _sanity_check_dir():
     msg = "Missing '%s'; are you in the OpenAFS source top-level directory?"
@@ -47,55 +56,88 @@ def _allow_git_clean():
             raise e
     return clean
 
-def run(cmd):
-    logger.info("Running %s", cmd)
-    code = os.system(cmd)
-    if code != 0:
-        logger.error("Command failed with code %d" % (code))
-        sys.exit(code)
+def _clean():
+    if os.path.isdir('.git'):
+        if _allow_git_clean():
+            sh('git', 'clean', '-f', '-d', '-x', '-q')
+    else:
+        if os.path.isfile('./Makefile'):
+            sh('make', 'clean')
 
-def rebuild(chdir=None, cf=None, target=None, clean=True, **kwargs):
-    origdir = None
-    if chdir is not None:
-        logger.info("Changing to directory %s", chdir)
-        origdir = os.getcwd()
-        os.chdir(chdir)
+def _make_srpm():
+    # Get the filename of the generated source rpm from the output of the
+    # script. The source rpm filename is needed to build the rpms.
+    output = sh('make', 'srpm', output=True)
+    for line in output:
+        if line.startswith('SRPM is '):
+            return line.split()[2]
+    raise CommandFailed('make', ['srpm'], 1, '', 'Failed to get the srpm filename.')
 
+def _make_rpm(srpm):
+    # These commands should probably be moved to the OpenAFS Makefile.
+    cwd = os.getcwd()
+    arch = os.uname()[4]
+    # Build kmod packages.
+    packages = sh('rpm', '-q', '-a', 'kernel-devel', output=True)
+    for package in packages:
+        kernvers = package.lstrip('kernel-devel-')
+        logger.info("Building kmod rpm for kernel version %s." % (kernvers))
+        sh('rpmbuild',
+            '--rebuild',
+            '-ba',
+            '--target=%s' % (arch),
+            '--define', '_topdir %s/packages/rpmbuild' % (cwd),
+            '--define', 'build_userspace 0',
+            '--define', 'build_modules 1',
+            '--define', 'kernvers %s' % (kernvers),
+            'packages/%s' % (srpm))
+    # Build userspace packages.
+    logger.info("Building userspace rpms.")
+    sh('rpmbuild',
+        '--rebuild',
+        '-ba',
+        '--target=%s' % (arch),
+        '--define', '_topdir %s/packages/rpmbuild' % (cwd),
+        '--define', 'build_userspace 1',
+        '--define', 'build_modules 0',
+        'packages/%s' % (srpm))
+    logger.info("Packages written to %s/packages/rpmbuild/RPMS/%s" % (cwd, arch))
+
+def build(cf=None, target='all', clean=True, transarc=True, **kwargs):
+    """Build the OpenAFS binaries.
+
+    Build the transarc-path compatible bins by default, which are
+    deprecated, but old habits die hard.
+    """
     if cf is None:
-        uname = os.uname()[0]
-        options = [
-            '--enable-debug',
-            '--enable-debug-kernel',
-            '--disable-optimize',
-            '--disable-optimize-kernel',
-            '--without-dot',
-            '--enable-transarc-paths',
-        ]
-        if uname == "Linux":
-            options.append('--enable-checking')
-        cf = ' '.join(options)
+        cf = DEFAULT_CF
+    else:
+        cf = shlex.split(cf)  # Note: shlex handles quoting properly.
+    if os.uname()[0] == "Linux" and not '--disable-checking' in cf:
+        cf.append('--enable-checking')
+    if transarc and not '--enable-transarc-paths' in cf:
+        cf.append('--enable-transarc-paths')
 
-    if target is None:
-        if '--enable-transarc-paths' in cf:
-            target = 'dest'
-        else:
-            target = 'all'
+    # Sadly, the top-level target depends on the mode we are
+    # building.
+    if target == 'all' and '--enable-transarc-paths' in cf:
+        target = 'dest'
 
     _sanity_check_dir()
     if clean:
-        if os.path.isdir('.git'):
-            if _allow_git_clean():
-                run('git clean -f -d -x -q')
-        else:
-            if os.path.isfile('./Makefile'):
-                run('make clean')
-    run('./regen.sh')
-    run('./configure %s' % (cf))
-    run('make %s' % (target))
-    if origdir:
-        logger.info("Changing to directory %s", origdir)
-        os.chdir(origdir)
+        _clean()
+    sh('./regen.sh')
+    sh('./configure', *cf)
+    sh('make', target)
 
-if __name__ == '__main__':
-    logging.basicConfig(format='%(levelname)s %(message)s',level=logging.INFO)
-    rebuild()
+def package(clean=True, package=None, **kwargs):
+    """Build the OpenAFS rpm packages."""
+    # The rpm spec file contains the configure options for the actual build.
+    # We run configure here just to bootstrap the process.
+    if clean:
+        _clean()
+    sh('./regen.sh', '-q')
+    sh('./configure')
+    sh('make', 'dist')
+    srpm = _make_srpm()
+    _make_rpm(srpm)
