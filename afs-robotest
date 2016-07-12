@@ -894,6 +894,10 @@ def aklog_workaround_check(args, config):
     import mmap
     import re
     required = (1, 6, 10)
+    def _warn():
+        sys.stderr.write("Warning: The akimpersonate feature is enabled but the path to a supported\n")
+        sys.stderr.write("         aklog is missing.  See the README.md for more information about\n")
+        sys.stderr.write("         testing without Kerberos.\n")
     def _fail(msg=None):
         sys.stderr.write("Failed aklog check!\n")
         if msg:
@@ -921,7 +925,8 @@ def aklog_workaround_check(args, config):
     if config.optbool('kerberos', 'akimpersonate'):
         aklog = config.optstr('variables', 'aklog')
         if aklog is None:
-            _fail()
+            _warn()
+            return
         if not os.access(aklog, os.F_OK):
             _fail("File '%s' not found." % (aklog))
         if not os.access(aklog, os.X_OK):
