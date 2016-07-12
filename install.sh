@@ -11,6 +11,7 @@ PACKAGES="afsutil OpenAFSLibrary"  # Our packages
 
 # Our directories.
 ROOT=`pwd`
+ETC=$HOME/.afsrobotestrc # Put the rc under HOME, instead of ROOT.
 TESTS=$ROOT/tests
 LIBRARIES=$ROOT/libraries
 RESOURCES=$ROOT/resources
@@ -24,6 +25,7 @@ DIST=$ROOT/html/dist
 # Make our directories.
 #
 make_dirs() {
+    mkdir -p $ETC
     mkdir -p $HTML
     mkdir -p $DOC
     mkdir -p $LOG

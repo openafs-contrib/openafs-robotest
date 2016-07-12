@@ -56,19 +56,30 @@ def mkdirp(path):
 #
 # Environment Variables
 #
-# The AFS_ROBOTEST_PROFILE variable may be used to specify the path to the
-# config file. The command line options override this value.
+# AFS_ROBOTEST_ROOT  Path to the test and output directories.
+#                    Defaults to the current working directory.
+#                    Overridden by the path:root configuration value.
 #
-try:
-    # Deprecated: The root is set in the config file. Use AFS_ROBOTEST_PROFILE.
-    DEFAULT_ROOT = os.environ['AFS_ROBOTEST_ROOT']
-except KeyError:
-    DEFAULT_ROOT = os.getcwd()
-try:
-    DEFAULT_CONFIG_FILE = os.environ['AFS_ROBOTEST_PROFILE']
-except KeyError:
-    DEFAULT_CONFIG_FILE = os.path.join(DEFAULT_ROOT, 'afs-robotest.conf')
-DEFAULT_SSH_KEYFILE = os.path.join(os.environ['HOME'], '.ssh', 'afs-robotest')
+# AFS_ROBOTEST_ETC   Path to of configuration files.
+#                    Defaults to $HOME/.afsrobotestrc
+#                    Overridden by the path:etc configuration value.
+#
+# AFS_ROBOTEST_CONF  Fully qualified filename of the configuration file.
+#                    Defaults to $AFS_ROBOTEST_ETC/afs-robotest.conf
+#                    Overridden by the --config (-c) command line option.
+#
+# AFS_ROBOTEST_SSH   Fully qualified filename of the ssh public key file
+#                    for multi-server setup.
+#                    Defaults to $HOME/.ssh/afs-robotest
+#                    Overridden by the ssh:keyfile configuration value.
+#
+AFS_ROBOTEST_ROOT = os.getenv('AFS_ROBOTEST_ROOT', os.getcwd())
+AFS_ROBOTEST_ETC = os.getenv('AFS_ROBOTEST_ENV',
+                        os.path.join(os.environ['HOME'], '.afsrobotestrc'))
+AFS_ROBOTEST_CONF = os.getenv('AFS_ROBOTEST_CONF',
+                        os.path.join(AFS_ROBOTEST_ETC, 'afs-robotest.conf'))
+AFS_ROBOTEST_SSH = os.getenv('AFS_ROBOTEST_SSH',
+                        os.path.join(os.environ['HOME'], '.ssh', 'afs-robotest'))
 
 # Configuration defaults.
 DEFAULT_CONFIG_DATA = """
@@ -135,9 +146,9 @@ class Config(ConfigParser.SafeConfigParser):
         """
         ConfigParser.SafeConfigParser.__init__(self)
         self.add_section('paths')
-        self.set('paths', 'root', DEFAULT_ROOT)
+        self.set('paths', 'root', AFS_ROBOTEST_ROOT)
         self.add_section('ssh')
-        self.set('ssh', 'keyfile', DEFAULT_SSH_KEYFILE)
+        self.set('ssh', 'keyfile', AFS_ROBOTEST_SSH)
         self.readfp(StringIO.StringIO(DEFAULT_CONFIG_DATA))
 
         # Read the user supplied filename if given, otherwise, read the default
@@ -147,8 +158,8 @@ class Config(ConfigParser.SafeConfigParser):
                 raise AssertionError("Cannot find config file %s." % (filename))
             self.filename = filename
         else:
-            if os.access(DEFAULT_CONFIG_FILE, os.F_OK):
-                self.filename = DEFAULT_CONFIG_FILE
+            if os.access(AFS_ROBOTEST_CONF, os.F_OK):
+                self.filename = AFS_ROBOTEST_CONF
             else:
                 self.filename = None  # just use built-in defaults.
 
@@ -533,7 +544,7 @@ def cmd_config_init(args, config):
     if filename is None:
         filename = config.filename
     if filename is None:
-        filename = DEFAULT_CONFIG_FILE
+        filename = AFS_ROBOTEST_CONF
     if not os.access(filename, os.F_OK):
         with open(filename, "w") as f:
             config.write(f)
@@ -546,6 +557,8 @@ def cmd_config_list(args, config):
             sys.stdout.write("%s = %s\n" % (k, v))
         sys.stdout.write("\n")
 
+    if config.filename:
+        sys.stdout.write("# file: %s\n\n" % (config.filename))
     if args.section:
         if not config.has_section(args.section):
             sys.stderr.write("Section not found: %s\n" % (args.section))
@@ -569,7 +582,7 @@ def cmd_config_set(args, config):
     if filename is None:
         filename = config.filename
     if filename is None:
-        filename = DEFAULT_CONFIG_FILE
+        filename = AFS_ROBOTEST_CONF
     with open(filename, 'w') as f:
         config.write(f)
 
@@ -578,7 +591,7 @@ def cmd_setup(args, config):
     """Setup OpenAFS client and servers and create a test cell."""
     aklog_workaround_check(args, config)
 
-    keyfile = config.optstr('ssh', 'keyfile', DEFAULT_SSH_KEYFILE)
+    keyfile = config.optstr('ssh', 'keyfile', AFS_ROBOTEST_SSH)
     logfile = os.path.join(config.optstr('paths', 'log', '.'), "setup.log")
     mkdirp(os.path.dirname(logfile))
     if os.path.exists(logfile):
@@ -682,7 +695,7 @@ def cmd_login(args, config):
     mkdirp(os.path.dirname(logfile))
     if os.path.exists(logfile):
         os.remove(logfile)
-    keyfile = config.optstr('ssh', 'keyfile', DEFAULT_SSH_KEYFILE)
+    keyfile = config.optstr('ssh', 'keyfile', AFS_ROBOTEST_SSH)
     args = config.optlogin()
     cmd = Command('localhost', keyfile, logfile=logfile)
     start("Obtaining token")
@@ -692,7 +705,7 @@ def cmd_login(args, config):
     ok()
 
 def cmd_teardown(args, config):
-    keyfile = config.optstr('ssh', 'keyfile', DEFAULT_SSH_KEYFILE)
+    keyfile = config.optstr('ssh', 'keyfile', AFS_ROBOTEST_SSH)
     logfile = os.path.join(config.optstr('paths', 'log', '.'), "teardown.log")
     mkdirp(os.path.dirname(logfile))
     if os.path.exists(logfile):
@@ -733,7 +746,7 @@ def cmd_run(args, config):
     sys.path.append(config.get('paths', 'resources'))
 
     # Create output dir if needed.
-    output = config.optstr('paths', 'output', os.path.join(DEFAULT_ROOT, "output"))
+    output = config.optstr('paths', 'output', os.path.join(AFS_ROBOTEST_ROOT, "output"))
     mkdirp(output)
 
     # Verify we have a keytab.
@@ -805,7 +818,7 @@ def cmd_web_status(args, config):
 
 def cmd_sshkeys_create(args, config):
     """Helper to create ssh key files with ssh-keygen."""
-    keyfile = config.optstr('ssh', 'keyfile', DEFAULT_SSH_KEYFILE)
+    keyfile = config.optstr('ssh', 'keyfile', AFS_ROBOTEST_SSH)
     if os.access(keyfile, os.F_OK):
         # No not clobber the existing key file. (It can confuse the
         # ssh-agent.)
@@ -822,7 +835,7 @@ def cmd_sshkeys_dist(args, config):
     """Copy the public key files to the configured hosts
 
     The key file should have been prevously created with ssh-keygen."""
-    keyfile = config.optstr('ssh', 'keyfile', DEFAULT_SSH_KEYFILE)
+    keyfile = config.optstr('ssh', 'keyfile', AFS_ROBOTEST_SSH)
     if not os.access(keyfile, os.F_OK):
         sys.stderr.write("Cannot access keyfile %s.\n" % (keyfile))
         return 1
@@ -855,7 +868,7 @@ def cmd_sshkeys_check(args, config):
             args = ['ssh', '-q', hostname, command]
         return subprocess.call(args)
 
-    keyfile = config.optstr('ssh', 'keyfile', DEFAULT_SSH_KEYFILE)
+    keyfile = config.optstr('ssh', 'keyfile', AFS_ROBOTEST_SSH)
     if not os.access(keyfile, os.F_OK):
         sys.stderr.write("Cannot access keyfile %s.\n" % (keyfile))
         return 1
