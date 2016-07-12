@@ -71,7 +71,7 @@ def _make_srpm():
     for line in output:
         if line.startswith('SRPM is '):
             return line.split()[2]
-    raise CommandFailed('make', ['srpm'], 1, '', 'Failed to get the srpm filename.')
+    raise CommandFailed(['make', 'srpm'], 1, '', 'Failed to get the srpm filename.')
 
 def _make_rpm(srpm):
     # These commands should probably be moved to the OpenAFS Makefile.

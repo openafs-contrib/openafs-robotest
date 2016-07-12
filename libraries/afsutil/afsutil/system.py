@@ -30,17 +30,16 @@ logger = logging.getLogger(__name__)
 
 class CommandFailed(Exception):
     """Command exited with a non-zero exit code."""
-    def __init__(self, cmd, args, code, out, err):
-        self.cmd = cmd
+    def __init__(self, args, code, out, err):
+        self.cmd = subprocess.list2cmdline(args)
         self.args = args
         self.code = code
         self.out = out
         self.err = err
 
     def __str__(self):
-        cmd = subprocess.list2cmdline([self.cmd] + list(self.args))
         msg = "Command failed! %s; code=%d, stderr='%s'" % \
-              (cmd, self.code, self.err.strip())
+              (self.cmd, self.code, self.err.strip())
         return repr(msg)
 
 def run(cmd, args=None, quiet=False, retry=0, wait=1, cleanup=None):
@@ -73,7 +72,7 @@ def run(cmd, args=None, quiet=False, retry=0, wait=1, cleanup=None):
         logger.debug("Result of %s; rc=%d, output=%s, error=%s", cmd, rc, output, error)
         if rc == 0:
             return output
-    raise CommandFailed(cmd, args, rc, output, error);
+    raise CommandFailed(args, rc, output, error);
 
 def sh(*args, **kwargs):
     """Run the command line and write the output to the logger."""
@@ -95,7 +94,7 @@ def sh(*args, **kwargs):
                 output.append(line)
     code = p.wait()
     if code != 0:
-        raise CommandFailed(args[0], args[1:], code, "", "/n".join(output))
+        raise CommandFailed(args, code, "", "/n".join(output))
     return output
 
 def which(program, extra_paths=None, raise_errors=False):
