@@ -299,8 +299,7 @@ class Config(ConfigParser.SafeConfigParser):
         if csdb:
             args.append('--csdb')
             args.append(csdb)
-        if self.optbool(section, 'force'):
-            args.append('--force')
+        args.append('--force')
         return args
 
     def optsetkey(self, hostname):
