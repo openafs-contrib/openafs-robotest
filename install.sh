@@ -88,10 +88,8 @@ install_package() {
 install_script() {
     echo "Installing script to $BINDIR."
     sudo cp afs-robotest $BINDIR || exit 1
-    if test ! -f afs-robotest.conf ; then
-        echo "Creating default config file."
-        afs-robotest config init || exit 1
-    fi
+    echo "Creating default config file."
+    afs-robotest config init || exit 1
 }
 
 #
