@@ -28,6 +28,7 @@ import shutil
 import sys
 import socket
 import glob
+import pprint
 
 from afsutil.system import file_should_exist, \
                            directory_should_exist, \
@@ -131,20 +132,8 @@ class Installer(object):
         self.force = force
         self.purge = purge
         self.verbose = verbose
-        # Create a list of (addr,name) tuples.
-        self.cellhosts = []
-        if hosts:
-            # Use the addresses from the reverse DNS lookups for the given hostnames.
-            for name in hosts: # hosts is a list of names or quad-dot-address strings.
-                addr = socket.gethostbyname(name)
-                self.cellhosts.append((addr, name))
-        else:
-            # Detect a non-loopack address from the system's network interfaces.
-            addr = network_interfaces()[0]
-            name = os.uname()[1]
-            self.cellhosts.append((addr, name))
-        if len(self.cellhosts) == 0:
-            raise AssertionError("Could not detect cell hosts.")
+        self.hostnames = hosts
+        self.cellhosts = None # Defer to pre-install.
 
     def install(self):
         """This sould be implemented by the children."""
@@ -153,6 +142,40 @@ class Installer(object):
     def remove(self):
         """This sould be implemented by the children."""
         raise AssertionError("Not implemented.")
+
+    def _detect_cellhosts(self, hostnames):
+        """Create a list of (address,hostname) tuples from a list of hostnames.
+        If hostnames is None, then detect the (address,hostname) for the local
+        system by checking the network interfaces on this system."""
+        cellhosts = []
+        if hostnames:
+            # Use the addresses from the DNS lookup of the given hostnames.
+            # We do not want loopback addresses in the CellServDB file.
+            logger.info("Looking up ip address(es) for given hostname(s): %s", ", ".join(hostnames))
+            for name in hostnames: # hosts is a list of names or quad-dot-address strings.
+                addr = socket.gethostbyname(name)
+                if addr.startswith('127.'):
+                    raise AssertionError("Loopback address %s given for hostname %s."
+                                         " Please check your /etc/hosts file." % (addr,name))
+                cellhosts.append((addr, name))
+        else:
+            # Detect a non-loopack address from the system's network interfaces.
+            # If this host has multiple interfaces, there's no good way to
+            # detect which ones are internal only.
+            logger.info("Looking up ip address from network interfaces.")
+            name = os.uname()[1]          # our hostname
+            addrs = network_interfaces()  # should return non-loopback ip addresses.
+            if len(addrs) == 0:
+                raise AssertionError("No network interfaces found.")
+            if len(addrs) > 1:
+                raise AssertionError("Multiple network interfaces present."
+                                     " Please specify a hostname.")
+            addr = addrs[0]
+            if addr.startswith('127.'):
+                raise AssertionError("Loopback address returned by network_interfaces.")
+            cellhosts.append((addr, name))
+        logger.info("Cell hosts are: %s", pprint.pformat(cellhosts))
+        return cellhosts
 
     def _make_vice_dirs(self):
         """Create test vice directories."""
@@ -227,6 +250,8 @@ class Installer(object):
         # and local interface if the cell hosts are not specified. Do this
         # before we start installing to catch errors early.
         logger.debug("pre_install")
+        if self.cellhosts is None:
+            self.cellhosts = self._detect_cellhosts(self.hostnames)
         if self.do_server:
             self._make_vice_dirs()
         if self.do_client:
@@ -279,8 +304,18 @@ class Installer(object):
 # Test Driver
 #
 class _Test(object):
+    def test_detect_cellhosts(self):
+        i = Installer()
+        cellhosts = i._detect_cellhosts(None)
+        pprint.pprint(cellhosts)
+        cellhosts = i._detect_cellhosts(['mantis'])
+        pprint.pprint(cellhosts)
+        cellhosts = i._detect_cellhosts(['mantis', 'wasp'])
+        pprint.pprint(cellhosts)
+
     def test(self):
         logging.basicConfig(level=logging.DEBUG)
+        self.test_detect_cellhosts()
 
 if __name__ == '__main__':
     t = _Test()
