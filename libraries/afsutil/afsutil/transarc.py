@@ -32,7 +32,7 @@ import glob
 from afsutil.install import Installer, \
                             copy_files, remove_file, remove_files
 
-from afsutil.system import directory_should_exist, \
+from afsutil.system import sh, directory_should_exist, \
                            configure_dynamic_linker, \
                            is_loaded, is_running, mkdirp \
 
@@ -183,10 +183,10 @@ class SolarisClientSetup(object):
 
     def _afs_driver(self):
         """Return the name of the afs driver for the current platform."""
-        out = run('/bin/isalist')
-        if 'amd64' in out:
+        output = sh('/bin/isalist', output=True)[0]
+        if 'amd64' in output:
             driver = '/kernel/drv/amd64/afs'
-        elif 'sparcv9' in out:
+        elif 'sparcv9' in output:
             driver = '/kernel/drv/sparcv9/afs'
         else:
             driver = '/kernel/drv/afs'
