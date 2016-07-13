@@ -52,15 +52,8 @@ Install the custom python packages and scripts provided by openafs-robotest:
 ## Setup
 
 Run the `afs-robotest` tool to set the configuration before running the setup
-and tests.  The default configuration file name is `afs-robotest.conf`.
-
-First, set the following environment variable in your shell profile:
-
-    AFS_ROBOTEST_PROFILE=${HOME}/afs-robotest.conf
-    export AFS_ROBOTEST_PROFILE
-
-This environment variable sets the default path to the configuration file,
-making it easier to run `afs-robotest` from any directory.
+and tests.  The default configuration filename is
+`~/.afsrobotestrc/afs-robotest.conf`.
 
 To show the current configuration:
 
@@ -71,26 +64,22 @@ To configure robotest to install Transarc-style binaries:
     $ afs-robotest config set host:localhost installer transarc
     $ afs-robotest config set host:localhost dest <path-to-dest-directory>
 
+## akimpersonate notes
+
 The `akimpersonate` feature of `aklog` is used to create AFS tokens by
 accessing the service keytab directly, without the need for a Kerberos realm.
 This is configured by setting `akimpersonate` to `yes` in the `kerberos`
 section of the configuration.
 
-Note: Unfortunately, the `akimpersonate` feature may not be functional in
+Unfortunately, the `akimpersonate` feature may not be functional in
 developement releases of OpenAFS, a.k.a, the master branch.  For testing
 development releases, either use a Kerberos realm or provide a 1.6.10 (or
-better) version of `aklog`.  Set the `aklog` option in the `variables` section
-of the configuration file to specify which `aklog` program is to be used during
-the tests. For example:
+better) version of `aklog`.  Build a recent version of 1.6.x, and copy the
+`aklog` binary to a local path, then set the `aklog` option in the `variables`
+section of the configuration file to specify which `aklog` program is to be
+used during the setup and tests. For example:
 
     $ afs-robotest config set variables aklog /usr/local/bin/aklog-1.6
-
-Note: Unfortunately, the OpenAFS client init script still uses the deprecated
-`ifconfig` command, which is no longer installed by default on RHEL 7 (and
-Centos 7). Be sure to install the net-tools package until this is fixed.
-
-    $ sudo yum install net-tools
-
 
 ## Running tests
 
@@ -107,9 +96,6 @@ command:
 
     $ afs-robotest teardown
 
-The `auto_setup` and `auto_teardown` configuration options can be set to `yes`
-to automatically run the setup and teardown.
-
 ## Test results
 
 The setup logs and test results are saved in the `html` directory.  A minimal
@@ -123,7 +109,20 @@ To stop the minimal web server:
 
     $ afs-robotest web stop
 
-## Multiple Servers
+## Multiple configuration files
+
+It can be useful to have more than one configuration file, instead of changing
+values in the default configuration file.
+
+Set the `AFS_ROBOTEST_CONF` environment variable to specify the fully qualified
+file name of the configuration file to be used by `afs-robotest`.  This value
+is overridden by the `--config` command line option.
+
+Example:
+
+    $ export AFS_ROBOTEST_CONF=~/.afsrobotestrc/example.conf
+
+## Multiple servers
 
 This test harness supports setting up multiple file and database servers.
 Install `openafs-robotest` on each server, as described above.  `sudo` must be
