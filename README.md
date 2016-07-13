@@ -59,10 +59,15 @@ To show the current configuration:
 
     $ afs-robotest config list
 
-To configure robotest to install Transarc-style binaries:
+To install Transarc-style binaries:
 
     $ afs-robotest config set host:localhost installer transarc
     $ afs-robotest config set host:localhost dest <path-to-dest-directory>
+
+To install RPM packages:
+
+    $ afs-robotest config set host:localhost installer rpm
+    $ afs-robotest config set host:localhost rpms <path-to-packages>
 
 ## akimpersonate notes
 
