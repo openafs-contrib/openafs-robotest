@@ -75,6 +75,9 @@ def build(**kwargs):
 def package(**kwargs):
     afsutil.build.package(**kwargs)
 
+def modreload(**kwargs):
+    afsutil.build.modreload(**kwargs)
+
 def install(**kwargs):
     dist = kwargs['dist']
     if dist == 'transarc':
@@ -204,7 +207,7 @@ class ArgParser(argparse.ArgumentParser):
         self.exit(2, gettext.gettext('\n%s: error: %s\n') % (self.prog, message))
 
 def main():
-    parser = ArgParser(epilog="The following commands must be run as root: install, remove, setkey, start, stop, newcell, addfs.")
+    parser = ArgParser()
     subparsers = parser.add_subparsers(title="sub-commands", metavar="<command>")
 
     def _common_opts(p):
@@ -220,6 +223,11 @@ def main():
     p.add_argument('--no-clean', dest='clean', help='do not run git clean', action='store_false')
     p.add_argument('--no-transarc', dest='transarc', help='do not use transarc paths', action='store_false')
     p.set_defaults(fn=build, must_be_root=False)
+
+    p = subparsers.add_parser('reload', help='reload the kernel module after a build')
+    _common_opts(p)
+    p.add_argument('--chdir', help='change to directory', default=None)
+    p.set_defaults(fn=modreload, must_be_root=True)
 
     p = subparsers.add_parser('package', help='build packages')
     _common_opts(p)

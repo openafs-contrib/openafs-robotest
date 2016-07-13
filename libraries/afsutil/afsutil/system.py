@@ -181,6 +181,16 @@ def afs_mountpoint():
         mountpoint = None
     return mountpoint
 
+def is_afs_mounted():
+    """Returns true if afs is mounted."""
+    return afs_mountpoint() is not None
+
+def afs_umount():
+    """Attempt to unmount afs, if mounted."""
+    afs = afs_mountpoint()
+    if afs:
+        run('umount', args=[afs])
+
 def _linux_network_interfaces():
     """Return list of non-loopback network interfaces."""
     addrs = []
@@ -227,6 +237,9 @@ def _linux_unload_module():
     kmods = re.findall(r'^(libafs|openafs)\s', output, re.M)
     for kmod in kmods:
         run('rmmod', args=[kmod])
+
+def _linux_load_module(kmod):
+    run('insmod', args=[kmod])
 
 def _solaris_network_interfaces():
     """Return list of non-loopback network interfaces."""
@@ -310,17 +323,26 @@ def _solaris_unload_module():
     if module_id != 0:
         run('modunload', args=["-i", module_id])
 
+def _solaris_load_module(kmod):
+    # Adpapted from the solaris openafs-client init script.
+    afs = '/kernel/drv/amd64/afs' # modern path
+    sh('cp', kmod, afs)
+    logger.info("Loading AFS kernel extensions.")
+    sh('modload', afs)
+
 _uname = os.uname()[0]
 if _uname == "Linux":
     network_interfaces = _linux_network_interfaces
     is_loaded = _linux_is_loaded
     configure_dynamic_linker = _linux_configure_dynamic_linker
     unload_module = _linux_unload_module
+    load_module = _linux_load_module
 elif _uname == "SunOS":
     network_interfaces = _solaris_network_interfaces
     is_loaded = _solaris_is_loaded
     configure_dynamic_linker = _solaris_configure_dynamic_linker
     unload_module = _solaris_unload_module
+    load_module = _solaris_load_module
 else:
     raise AssertionError("Unsupported operating system: %s" % (uname))
 

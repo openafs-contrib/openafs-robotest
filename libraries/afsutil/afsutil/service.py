@@ -23,7 +23,7 @@
 import os
 import logging
 
-from afsutil.system import run, afs_mountpoint, unload_module, get_running, is_running
+from afsutil.system import run, is_afs_mounted, afs_umount, unload_module, get_running, is_running
 
 logger = logging.getLogger(__name__)
 
@@ -55,19 +55,15 @@ def start(**kwargs):
         if not is_running('bosserver'):
             _rc('server', 'start')
     if 'client' in components:
-        if not afs_mountpoint():
+        if not is_afs_mounted():
             _rc('client', 'start')
 
 def stop(**kwargs):
     components = check_component_names(kwargs['components'])
     if 'client' in components:
-        if afs_mountpoint():
+        if is_afs_mounted():
             _rc('client', 'stop')
-        # The solaris init script does not unload the module. Be
-        # sure afs is unmounted before trying to unload.
-        mount = afs_mountpoint()
-        if mount:
-            run('umount', args=[mount])
+        afs_umount() # Be sure afs is unmounted before trying to unload.
         unload_module()
     if 'server' in components:
         if is_running('bosserver'):

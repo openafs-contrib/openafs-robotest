@@ -24,7 +24,9 @@ import logging
 import os
 import sys
 import shlex
-from afsutil.system import sh, CommandFailed
+from afsutil.system import sh, CommandFailed, \
+                           is_afs_mounted, afs_umount, \
+                           unload_module, load_module
 
 logger = logging.getLogger(__name__)
 
@@ -130,6 +132,48 @@ def build(cf=None, target='all', clean=True, transarc=True, **kwargs):
     sh('./configure', *cf)
     sh('make', target)
 
+def _kmod():
+    uname = os.uname()[0]
+    kernel = os.uname()[2]
+    if uname == 'Linux':
+        kmod = os.path.abspath("./src/libafs/MODLOAD-%s-MP/libafs-%s.mp.ko" % (kernel, kernel))
+    elif uname == 'SunOS':
+        kmod = os.path.abspath("./src/libafs/MODLOAD64/libafs.o")
+    else:
+        raise AssertionError("Unsuppored platform: %s" % (uname))
+    return kmod
+
+def modreload(**kwargs):
+    """Reload the kernel module and restart the cache manager after a build.
+    Should be run as root in the top level directory."""
+
+    _sanity_check_dir() # Run this in the top level source directory.
+    afsd = os.path.abspath("./src/afsd/afsd")
+    kmod = _kmod()
+    for f in (afsd, kmod):
+        if not os.path.exists(f):
+            raise AssertionError("File not found: %s" % (f))
+    if is_afs_mounted():
+        for rc in ("/etc/init.d/openafs-client", "/etc/init.d/afs"):
+            if os.path.isfile(rc):
+                sh(rc, 'stop')
+                break
+    if is_afs_mounted():
+        try:
+            sh(afsd, '-shutdown')  # may return non-zero!
+        except CommandFailed:
+            pass
+        afs_umount()
+    if is_afs_mounted():
+        logger.error("Unable to umount afs.")
+        return 1
+    unload_module()
+
+    logger.info("Loading kernel module: %s" % (kmod))
+    load_module(kmod)
+    logger.info("Starting the cache manager.")
+    sh(afsd, '-dynroot', '-fakestat', '-afsdb')  # xxx: how to set these?
+
 def package(clean=True, package=None, **kwargs):
     """Build the OpenAFS rpm packages."""
     # The rpm spec file contains the configure options for the actual build.
@@ -141,3 +185,25 @@ def package(clean=True, package=None, **kwargs):
     sh('make', 'dist')
     srpm = _make_srpm()
     _make_rpm(srpm)
+
+
+#
+# Test driver.
+#
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
+    if len(sys.argv) < 2:
+        sys.stderr.write("usage: python build.py build\n")
+        sys.stderr.write("       python build.py package\n")
+        sys.stderr.write("       python build.py modreload\n")
+        sys.exit(1)
+    if sys.argv[1] == 'build':
+        build()
+    elif sys.argv[1] == 'package':
+        package()
+    else:
+        if os.geteuid() != 0:
+            sys.stderr.write("Must run as root!\n")
+            sys.exit(1)
+        modreload()
+
