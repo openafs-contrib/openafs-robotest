@@ -96,8 +96,6 @@ dist = %(root)s/html/dist
 [run]
 exclude_tags = todo,crash,slow
 log_level = INFO
-auto_setup = no
-auto_teardown = no
 
 [variables]
 afs_dist = transarc
@@ -128,7 +126,6 @@ isfileserver = yes
 isdbserver = yes
 isclient = yes
 setclock = no
-nuke = no
 dest = xxx
 build = no
 builddir = xxx
@@ -638,9 +635,6 @@ def cmd_setup(args, config):
         installer = config.optstr(section, 'installer', default='none')
         if installer == 'transarc' or installer == 'rpm':
             start("Installing on %s" % (hostname))
-            if config.optbool(section, 'nuke'):
-                cmd.afsutil('stop')
-                cmd.afsutil('remove', '--purge')
             if config.optbool('kerberos', 'akimpersonate'):
                 if cmd.afsutil('fakekey', *config.optfakekey()) != 0:
                     fail("Failed to create fake service key; see %s\n" % (logfile))
@@ -790,23 +784,12 @@ def cmd_run(args, config):
     if args.include:
         options['include'] = args.include
 
-    # Optionally, run the system setup.
-    if config.optbool('run', 'auto_setup'):
-        code = cmd_setup(args, config)
-        if code != 0:
-            sys.stderr.write("Not running tests: setup failed!\n")
-            return code
-
     # Run the RF tests.
     sys.stdout.write("Running tests.\n")
     code = robot.run(tests, **options)
     if code != 0:
         sys.stderr.write("Tests failed.\n")
-        return code
 
-    # Optionally, run the system teardown.
-    if config.optbool('run', 'auto_teardown'):
-        code = cmd_teardown(args, config)
     return code
 
 def cmd_web_start(args, config):
