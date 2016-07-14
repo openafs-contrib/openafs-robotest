@@ -120,12 +120,11 @@ dafileserver = -d 1 -L
 davolserver = -d 1
 
 [host:localhost]
-installer = transarc
+installer = none
 isfileserver = yes
 isdbserver = yes
 isclient = yes
 setclock = no
-dest = xxx
 
 """
 
