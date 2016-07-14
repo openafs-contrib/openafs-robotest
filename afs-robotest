@@ -465,7 +465,7 @@ class TinyWebServer(object):
             return
         mkdirp(self.docroot)
         os.chdir(self.docroot)
-        sys.stdout.write("Listening on port %d.\n" % (self.port))
+        sys.stdout.write("Listening at http://%s:%d\n" % (os.uname()[1], self.port))
         if not self.foreground:
             self._daemonize()
         address = ('', self.port)
