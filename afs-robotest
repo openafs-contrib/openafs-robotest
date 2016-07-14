@@ -505,7 +505,7 @@ class TinyWebServer(object):
             return ""
         pid = self._getpid()
         if pid:
-            status = "Process %d listening on port %d." % (pid, self.port)
+            status = "Process %d listening at http://%s:%d." % (pid, os.uname()[1], self.port)
         else:
             status = "Not running."
         return status
