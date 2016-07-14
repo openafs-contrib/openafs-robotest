@@ -30,6 +30,7 @@ import socket
 import SocketServer
 import StringIO
 import subprocess
+import shlex
 import sys
 import time
 
@@ -826,21 +827,20 @@ def cmd_sshkeys_dist(args, config):
             return code
     return cmd_sshkeys_check(args, config)
 
+def ssh(hostname, args, keyfile=None, sudo=False):
+    """Helper to run command on remote hosts using ssh."""
+    if sudo:
+        args.insert(0, "-n")  # requires NOPASSWD in sudoers
+        args.insert(0, "sudo")
+    command = subprocess.list2cmdline(args)
+    if keyfile:  # passwordless
+        args = ['ssh', '-q', '-t', '-i', keyfile, '-o', 'PasswordAuthentication no', hostname, command]
+    else:
+        args = ['ssh', '-q', hostname, command]
+    return subprocess.call(args)
+
 def cmd_sshkeys_check(args, config):
     """Check ssh access."""
-
-    def ssh(hostname, args, keyfile=None, sudo=False):
-        """Helper to run command on remote hosts using ssh."""
-        if sudo:
-            args.insert(0, "-n")  # requires NOPASSWD in sudoers
-            args.insert(0, "sudo")
-        command = subprocess.list2cmdline(args)
-        if keyfile:  # passwordless
-            args = ['ssh', '-q', '-t', '-i', keyfile, '-o', 'PasswordAuthentication no', hostname, command]
-        else:
-            args = ['ssh', '-q', hostname, command]
-        return subprocess.call(args)
-
     keyfile = config.optstr('ssh', 'keyfile', AFS_ROBOTEST_SSH)
     if not os.access(keyfile, os.F_OK):
         sys.stderr.write("Cannot access keyfile %s.\n" % (keyfile))
@@ -870,6 +870,29 @@ def cmd_sshkeys_check(args, config):
     else:
         sys.stdout.write("Ok.\n");
         code = 0
+    return code
+
+def cmd_sshkeys_exec(args, config):
+    """Run a command on each remote server."""
+    if not args.command:
+        sys.stderr.write("Missing command")
+        return 1
+    cargs = shlex.split(args.command)  # Note: shlex handles quoting properly.
+    keyfile = config.optstr('ssh', 'keyfile', AFS_ROBOTEST_SSH)
+    if not os.access(keyfile, os.F_OK):
+        sys.stderr.write("Cannot access keyfile %s.\n" % (keyfile))
+        return 1
+    code = 0
+    for hostname in config.opthostnames():
+        if hostname == 'localhost':
+            continue
+        if hostname in args.exclude.split(','):
+            continue
+        if not args.quiet:
+            sys.stdout.write("%s\n" % (hostname))
+        code = ssh(hostname, cargs, keyfile=keyfile, sudo=args.sudo)
+        if code != 0:
+            sys.stderr.write("Failed to ssh to host %s.\n" % (hostname))
     return code
 
 def aklog_workaround_check(args, config):
@@ -970,7 +993,7 @@ def main():
     #
     # afs-robotest sshkeys
     #
-    p = subparsers.add_parser('sshkeys', help="distribute ssh keys")
+    p = subparsers.add_parser('sshkeys', help="distribute ssh keys and run commands")
     ssp = p.add_subparsers(title="actions", metavar="<action>")
     p = ssp.add_parser('create', help="create an ssh key pair")
     common_options(p)
@@ -984,6 +1007,14 @@ def main():
     p = ssp.add_parser('check', help="check passwordless ssh access to hosts")
     common_options(p)
     p.set_defaults(_cmd=cmd_sshkeys_check)
+
+    p = ssp.add_parser('exec', help="execute a command on each remote host")
+    common_options(p)
+    p.add_argument('-s', '--sudo', action='store_true', help="run remote command as root")
+    p.add_argument('-q', '--quiet', action='store_true', help="do not print hostnames")
+    p.add_argument('-x', '--exclude', metavar='<hosts>', help="hosts to exclude (comma separated)", default='')
+    p.add_argument('command', help='command line')
+    p.set_defaults(_cmd=cmd_sshkeys_exec)
 
     #
     # afs-robotest web
