@@ -790,7 +790,7 @@ def cmd_web_status(args, config):
     server = TinyWebServer(config)
     sys.stdout.write("%s\n" % (server.status()))
 
-def cmd_sshkeys_create(args, config):
+def cmd_ssh_create(args, config):
     """Helper to create ssh key files with ssh-keygen."""
     keyfile = config.optstr('ssh', 'keyfile', AFS_ROBOTEST_SSH)
     if os.access(keyfile, os.F_OK):
@@ -805,7 +805,7 @@ def cmd_sshkeys_create(args, config):
         sys.stderr.write("ssh-keygen failed; exit code %d\n" % (code))
     return code
 
-def cmd_sshkeys_dist(args, config):
+def cmd_ssh_dist(args, config):
     """Copy the public key files to the configured hosts
 
     The key file should have been prevously created with ssh-keygen."""
@@ -825,7 +825,7 @@ def cmd_sshkeys_dist(args, config):
         if code != 0:
             sys.stderr.write("Failed to copy ssh identity to host %s; exit code %d.\n" % (hostname, code))
             return code
-    return cmd_sshkeys_check(args, config)
+    return cmd_ssh_check(args, config)
 
 def ssh(hostname, args, keyfile=None, sudo=False):
     """Helper to run command on remote hosts using ssh."""
@@ -839,7 +839,7 @@ def ssh(hostname, args, keyfile=None, sudo=False):
         args = ['ssh', '-q', hostname, command]
     return subprocess.call(args)
 
-def cmd_sshkeys_check(args, config):
+def cmd_ssh_check(args, config):
     """Check ssh access."""
     keyfile = config.optstr('ssh', 'keyfile', AFS_ROBOTEST_SSH)
     if not os.access(keyfile, os.F_OK):
@@ -872,7 +872,7 @@ def cmd_sshkeys_check(args, config):
         code = 0
     return code
 
-def cmd_sshkeys_exec(args, config):
+def cmd_ssh_exec(args, config):
     """Run a command on each remote server."""
     if not args.command:
         sys.stderr.write("Missing command")
@@ -991,22 +991,22 @@ def main():
     p.set_defaults(_cmd=cmd_config_set)
 
     #
-    # afs-robotest sshkeys
+    # afs-robotest ssh
     #
-    p = subparsers.add_parser('sshkeys', help="distribute ssh keys and run commands")
+    p = subparsers.add_parser('ssh', help="manage ssh keys and run commands")
     ssp = p.add_subparsers(title="actions", metavar="<action>")
-    p = ssp.add_parser('create', help="create an ssh key pair")
+    p = ssp.add_parser('genkey', help="generate a ssh key pair")
     common_options(p)
     p.add_argument('-t', dest='keytype', metavar='<type>', help="ssh key type (default: rsa)", default='rsa')
-    p.set_defaults(_cmd=cmd_sshkeys_create)
+    p.set_defaults(_cmd=cmd_ssh_create)
 
-    p = ssp.add_parser('dist', help="distribute ssh public key to hosts")
+    p = ssp.add_parser('distkey', help="distribute the ssh public key to remote hosts")
     common_options(p)
-    p.set_defaults(_cmd=cmd_sshkeys_dist)
+    p.set_defaults(_cmd=cmd_ssh_dist)
 
-    p = ssp.add_parser('check', help="check passwordless ssh access to hosts")
+    p = ssp.add_parser('check', help="check passwordless ssh access to remote hosts")
     common_options(p)
-    p.set_defaults(_cmd=cmd_sshkeys_check)
+    p.set_defaults(_cmd=cmd_ssh_check)
 
     p = ssp.add_parser('exec', help="execute a command on each remote host")
     common_options(p)
@@ -1014,7 +1014,7 @@ def main():
     p.add_argument('-q', '--quiet', action='store_true', help="do not print hostnames")
     p.add_argument('-x', '--exclude', metavar='<hosts>', help="hosts to exclude (comma separated)", default='')
     p.add_argument('command', help='command line')
-    p.set_defaults(_cmd=cmd_sshkeys_exec)
+    p.set_defaults(_cmd=cmd_ssh_exec)
 
     #
     # afs-robotest web
