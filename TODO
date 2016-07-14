@@ -7,17 +7,23 @@ Goals for v0.5
 * setup: [host:localhost] is confusing and inconsistent.
   - use [host:<hostname>] for all host sections?
   - this means the same file can be used on each host
-* setup: afstuil install debs
-* script: login --user option. I don't always need to be admin.
-* more startup options in config file
+* config: more startup options in config file, per host section
+  - afsd
+  - bosserver
+* config: dafs vs fs
 
 
 Post v0.5
 ---------
 
+* more packaging formats
+  - debs
 * OpenAFSLibrary
   - new keywords
   - more complete unit tests
+* refactor afs-robotest script
+  - move python classes/functions to a package
+  - script should just handle cmd line args
 * Server setup and cell creation sans libafs.ko.
   Some options are:
   a. Ideally, a new util based on libafscp (afsutil?)

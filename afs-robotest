@@ -219,9 +219,10 @@ class Config(ConfigParser.SafeConfigParser):
             args.append(secret)
         return args
 
-    def optlogin(self):
+    def optlogin(self, user=None):
         """Command line options for afsutil login."""
-        user = self.optstr('cell', 'admin', 'admin')
+        if not user:
+            user = self.optstr('cell', 'admin', 'admin')
         cell = self.optstr('cell', 'name')
         realm = self.optstr('kerberos', 'realm')
         aklog = self.optstr('variables', 'aklog')
@@ -670,10 +671,14 @@ def cmd_login(args, config):
     if os.path.exists(logfile):
         os.remove(logfile)
     keyfile = config.optstr('ssh', 'keyfile', AFS_ROBOTEST_SSH)
-    args = config.optlogin()
+    cargs = config.optlogin(args.user)
+    if '--user' in cargs:
+        user = cargs[cargs.index('--user') + 1]
+    else:
+        user = 'admin'
     cmd = Command('localhost', keyfile, logfile=logfile)
-    start("Obtaining token")
-    rc = cmd.sh('afsutil', 'login', *args)
+    start("Obtaining token for %s" % (user))
+    rc = cmd.sh('afsutil', 'login', *cargs)
     if rc != 0:
         fail("Failed to login; see %s." % (logfile))
     ok()
@@ -1045,6 +1050,7 @@ def main():
     #
     p = subparsers.add_parser('login', help="obtain a token")
     common_options(p)
+    p.add_argument('-u', '--user', help="user name (default: admin)", default=None)
     p.set_defaults(_cmd=cmd_login)
 
     #
