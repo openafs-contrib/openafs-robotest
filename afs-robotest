@@ -127,8 +127,6 @@ isdbserver = yes
 isclient = yes
 setclock = no
 dest = xxx
-build = no
-builddir = xxx
 
 """
 
@@ -615,17 +613,6 @@ def cmd_setup(args, config):
             start("Setting clock on %s" % (hostname))
             if cmd.sudo('ntpdate', 'pool.ntp.org') != 0:
                 fail("Failed to set clock on %s.\n" % (hostname))
-            ok()
-
-    # Build bins.
-    for hostname in config.opthostnames():
-        cmd = Command(hostname, keyfile, logfile=logfile)
-        section = "host:%s" % (hostname)
-        if config.optbool(section, 'build'):
-            start("Building on %s" % (hostname))
-            builddir = config.optstr(section, 'builddir')
-            if cmd.sh('afsutil', 'build', '--chdir', builddir) != 0:
-                fail("Failed to build; see %s\n" % (logfile))
             ok()
 
     # Install
