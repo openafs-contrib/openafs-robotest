@@ -104,7 +104,6 @@ afs_dist = transarc
 name = robotest
 user = robotest
 admin = robotest.admin
-secret = xyzzy
 
 [kerberos]
 realm = ROBOTEST
@@ -202,7 +201,7 @@ class Config(ConfigParser.SafeConfigParser):
         keytab = self.optstr('kerberos', 'keytab')
         realm = self.optstr('kerberos', 'realm')
         enctype = self.optstr('kerberos', 'enctype')
-        secret = self.optstr('cell', 'secret')
+        secret = self.optstr('kerberos', 'secret')
         args = []
         if cell:
             args.append('--cell')
