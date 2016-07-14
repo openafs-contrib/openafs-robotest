@@ -286,7 +286,7 @@ def main():
     p.add_argument('--cell', help="cell name (default: detect)", default=None)
     p.add_argument('--realm', help="realm name (default: detect)", default=None)
     p.add_argument('--confdir', help="server config directory (default: /usr/afs/etc)", default="/usr/afs/etc")
-    p.add_argument('--format', help="key file format (default: detect)",
+    p.add_argument('--format', dest='kformat', help="key file format (default: detect)",
                    choices=['transarc', 'rxkad-k5', 'extended'], default=None)
     p.set_defaults(fn=setkey, must_be_root=True)
 

@@ -4,7 +4,6 @@ Goals for v0.5
 
 * tests:
   - implement or remove tests tagged as TODO
-* afsutil setkey - do not depend on asetkey when --format is given.
 * setup: [host:localhost] is confusing and inconsistent.
   - use [host:<hostname>] for all host sections?
   - this means the same file can be used on each host
