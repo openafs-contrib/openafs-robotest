@@ -125,7 +125,6 @@ installer = none
 isfileserver = yes
 isdbserver = yes
 isclient = yes
-setclock = no
 
 """
 
@@ -603,16 +602,6 @@ def cmd_setup(args, config):
     sys.stdout.write("Running setup.\n")
     sys.stdout.flush()
     log("==== SETUP ====")
-
-    # Set system clock. (Also checks ssh access.)
-    for hostname in config.opthostnames():
-        cmd = Command(hostname, keyfile, logfile=logfile)
-        section = "host:%s" % (hostname)
-        if config.optbool(section, 'setclock'):
-            start("Setting clock on %s" % (hostname))
-            if cmd.sudo('ntpdate', 'pool.ntp.org') != 0:
-                fail("Failed to set clock on %s.\n" % (hostname))
-            ok()
 
     # Install
     for hostname in config.opthostnames():
