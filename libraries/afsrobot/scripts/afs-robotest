@@ -58,18 +58,6 @@ class CommandLineParser(argparse.ArgumentParser):
         self.print_help(sys.stderr)
         self.exit(2, gettext.gettext('\n%s: error: %s\n') % (self.prog, message))
 
-def must_be_root(cmd):
-    """Fails unless running as root."""
-    if os.geteuid() != 0:
-        sys.stderr.write("%s %s: Must run as root!\n" % (sys.argv[0], cmd))
-        sys.exit(1)
-
-def should_not_be_root(cmd):
-    """Fails if running as root."""
-    if os.geteuid() == 0:
-        sys.stderr.write("%s %s: Should not be run as root!\n" % (sys.argv[0], cmd))
-        sys.exit(1)
-
 def start(msg):
     sys.stdout.write(msg.ljust(61, '.'))
     sys.stdout.write(' ')
