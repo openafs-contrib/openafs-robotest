@@ -111,14 +111,14 @@ def build(cf=None, target='all', clean=True, transarc=True, **kwargs):
     Build the transarc-path compatible bins by default, which are
     deprecated, but old habits die hard.
     """
-    if cf is None:
-        cf = DEFAULT_CF
-    else:
+    if cf is not None:
         cf = shlex.split(cf)  # Note: shlex handles quoting properly.
-    if os.uname()[0] == "Linux" and not '--disable-checking' in cf:
-        cf.append('--enable-checking')
-    if transarc and not '--enable-transarc-paths' in cf:
-        cf.append('--enable-transarc-paths')
+    else:
+        cf = DEFAULT_CF
+        if os.uname()[0] == "Linux" and not '--disable-checking' in cf:
+            cf.append('--enable-checking')
+        if transarc and not '--enable-transarc-paths' in cf:
+            cf.append('--enable-transarc-paths')
 
     # Sadly, the top-level target depends on the mode we are
     # building.
