@@ -1,0 +1,5 @@
+*.pyc
+*.swp
+afsrobot.egg-info/
+dist/
+build/
