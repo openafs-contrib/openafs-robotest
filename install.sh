@@ -1,13 +1,12 @@
 #!/bin/sh
 #
-# Install afs-robotest script and python packages.
+# Install our python packages and scripts.
 # Run as a not-root user; invokes sudo as needed.
 #
 
 PROGNAME=`basename $0`
 VERBOSITY="--quiet"      # Change to "--verbose" for chatty pip commands.
-BINDIR="/usr/local/bin"  # Where to install scripts; customize as desired.
-PACKAGES="afsutil OpenAFSLibrary"  # Our packages
+PACKAGES="afsutil afsrobot OpenAFSLibrary"  # Our packages
 
 # Our directories.
 ROOT=`pwd`
@@ -83,16 +82,6 @@ install_package() {
 }
 
 #
-# Install the front-end script to a directory in the path.
-#
-install_script() {
-    echo "Installing script to $BINDIR."
-    sudo cp afs-robotest $BINDIR || exit 1
-    echo "Creating default config file."
-    afs-robotest config init || exit 1
-}
-
-#
 # Make source dist archives for each package.
 #
 make_sdists() {
@@ -154,16 +143,12 @@ case "$1" in
         make_sdists
         install_packages
         ;;
-    script)
-        install_script
-        ;;
     ""|all)
         make_dirs
         make_doc
         make_sdists
         update_repo
         install_packages
-        install_script
         ;;
     *)
         usage
