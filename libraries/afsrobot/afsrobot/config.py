@@ -25,35 +25,6 @@ import socket
 import StringIO
 import sys
 
-
-#
-# Environment Variables
-#
-# AFS_ROBOTEST_ROOT  Path to the test and output directories.
-#                    Defaults to the current working directory.
-#                    Overridden by the path:root configuration value.
-#
-# AFS_ROBOTEST_ETC   Path to of configuration files.
-#                    Defaults to $HOME/.afsrobotestrc
-#                    Overridden by the path:etc configuration value.
-#
-# AFS_ROBOTEST_CONF  Fully qualified filename of the configuration file.
-#                    Defaults to $AFS_ROBOTEST_ETC/afs-robotest.conf
-#                    Overridden by the --config (-c) command line option.
-#
-# AFS_ROBOTEST_SSH   Fully qualified filename of the ssh public key file
-#                    for multi-server setup.
-#                    Defaults to $HOME/.ssh/afs-robotest
-#                    Overridden by the ssh:keyfile configuration value.
-#
-AFS_ROBOTEST_ROOT = os.getenv('AFS_ROBOTEST_ROOT', os.getcwd())
-AFS_ROBOTEST_ETC = os.getenv('AFS_ROBOTEST_ENV',
-                        os.path.join(os.environ['HOME'], '.afsrobotestrc'))
-AFS_ROBOTEST_CONF = os.getenv('AFS_ROBOTEST_CONF',
-                        os.path.join(AFS_ROBOTEST_ETC, 'afs-robotest.conf'))
-AFS_ROBOTEST_SSH = os.getenv('AFS_ROBOTEST_SSH',
-                        os.path.join(os.environ['HOME'], '.ssh', 'afs-robotest'))
-
 # Configuration defaults.
 DEFAULT_CONFIG_DATA = """
 [paths]
@@ -103,35 +74,72 @@ isclient = yes
 class Config(ConfigParser.SafeConfigParser):
     """Config parser wrapper."""
 
-    def __init__(self, filename):
-        """Initalize the configuration.
-
-        Create a default configuration, then overwrite with
-        the user's configuration, if any.
-        """
+    def __init__(self, **kwargs):
+        """Initalize the configuration."""
         ConfigParser.SafeConfigParser.__init__(self)
-        self.add_section('paths')
-        self.set('paths', 'root', AFS_ROBOTEST_ROOT)
-        self.add_section('ssh')
-        self.set('ssh', 'keyfile', AFS_ROBOTEST_SSH)
-        self.readfp(StringIO.StringIO(DEFAULT_CONFIG_DATA))
+        self.filename = None
 
-        # Read the user supplied filename if given, otherwise, read the default
-        # file if present.
-        if filename is not None:
-            if not os.access(filename, os.F_OK):
-                raise AssertionError("Cannot find config file %s." % (filename))
-            self.filename = filename
+    def load_from_string(self, string):
+        """Load values from a string."""
+        fp = StringIO.StringIO(string)
+        self.readfp(fp)
+
+    def load_defaults(self):
+        self.load_from_string(DEFAULT_CONFIG_DATA)
+
+    def load_from_file(self, filename):
+        """Load values from a file."""
+        ok = self.read(filename)
+        if filename not in ok:
+            raise AssertionError("Failed to read config file %s." % (filename))
+        self.filename = filename
+
+    def set_value(self, section, option, value):
+        if section not in self.sections():
+            self.add_section(section)
+        self.set(section, option, value)
+
+    def unset_value(self, section, option):
+        self.remove_option(section, option) # raise exception if not found.
+        if len(self.items(section)) == 0:
+            self.remove_section(section)
+
+    def save_as(self, filename):
+        """Save values to a file. Will overwrite an existing file."""
+        with open(filename, 'w') as f:
+            self.write(f)
+        self.filename = filename
+
+    def save(self):
+        """Save values to the current file. load_from_file() or save_as() must
+        be called sometime before this function."""
+        if self.filename is None:
+            raise AssertionError("No filename.")
+        with open(self.filename, 'w') as f:
+            self.write(f)
+
+    def _print_section(self, out, section, raw):
+        """Print one section to stdout."""
+        out.write("[%s]\n" % section)
+        for k,v in self.items(section, raw=raw):
+            out.write("%s = %s\n" % (k, v))
+        out.write("\n")
+
+    def print_values(self, out=sys.stdout, section=None, raw=False):
+        """Print the values to stdout.
+
+        out:      output stream
+        section:  section name to print [optional]
+        raw:      do not expand %() interpolations
+        """
+        if section:
+            if not self.has_section(section):
+                sys.stderr.write("Section not found: %s\n" % (section))
+                return 1
+            self._print_section(out, section, raw)
         else:
-            if os.access(AFS_ROBOTEST_CONF, os.F_OK):
-                self.filename = AFS_ROBOTEST_CONF
-            else:
-                self.filename = None  # just use built-in defaults.
-
-        if self.filename:
-            ok = self.read(self.filename)
-            if self.filename not in ok:
-                raise AssertionError("Failed to read config file %s." % (self.filename))
+            for section in self.sections():
+                self._print_section(out, section, raw)
 
     def optstr(self, section, name, default=None):
         """Helper to lookup a configuration string option."""

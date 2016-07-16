@@ -44,6 +44,61 @@ except ImportError:
     sys.stderr.write("Install argparse with `sudo pip install argparse`.\n")
     sys.exit(1)
 
+#
+# Environment Variables
+#
+# AFS_ROBOTEST_ROOT  Path to the test and output directories.
+#                    Defaults to the current working directory.
+#                    Overridden by the path:root configuration value.
+#
+# AFS_ROBOTEST_ETC   Path to of configuration files.
+#                    Defaults to $HOME/.afsrobotestrc
+#                    Overridden by the path:etc configuration value.
+#
+# AFS_ROBOTEST_CONF  Fully qualified filename of the configuration file.
+#                    Defaults to $AFS_ROBOTEST_ETC/afs-robotest.conf
+#                    Overridden by the --config (-c) command line option.
+#
+# AFS_ROBOTEST_SSH   Fully qualified filename of the ssh public key file
+#                    for multi-server setup.
+#                    Defaults to $HOME/.ssh/afs-robotest
+#                    Overridden by the ssh:keyfile configuration value.
+#
+AFS_ROBOTEST_ROOT = os.getenv('AFS_ROBOTEST_ROOT', os.getcwd())
+AFS_ROBOTEST_ETC = os.getenv('AFS_ROBOTEST_ENV',
+                        os.path.join(os.environ['HOME'], '.afsrobotestrc'))
+AFS_ROBOTEST_CONF = os.getenv('AFS_ROBOTEST_CONF',
+                        os.path.join(AFS_ROBOTEST_ETC, 'afs-robotest.conf'))
+AFS_ROBOTEST_SSH = os.getenv('AFS_ROBOTEST_SSH',
+                        os.path.join(os.environ['HOME'], '.ssh', 'afs-robotest'))
+
+
+#
+# config sub-commands
+#
+
+def cmd_config_init(args, config):
+    filename = args.config
+    if os.path.exists(filename):
+        if args.verbose:
+            sys.stdout.write("Skipping config init; file %s already exists.\n" % (filename))
+        return 0
+    if args.verbose:
+        sys.stdout.write("Creating config file %s.\n" % (filename))
+    config = afsrobot.config.Config()
+    config.load_defaults()
+    config.set_value('paths', 'root', AFS_ROBOTEST_ROOT)
+    config.set_value('ssh', 'keyfile', AFS_ROBOTEST_SSH)
+    config.save_as(filename)
+
+def cmd_config_list(args, config):
+    config.print_values(section=args.section, raw=args.raw)
+
+def cmd_config_set(args, config):
+    config.set_value(args.section, args.option, args.value)
+    config.save()
+
+
 def mkdirp(path):
     """Make a directory with parents.
     Do not raise an execption if the directory already exists."""
@@ -73,61 +128,11 @@ def ok():
     sys.stdout.write("ok\n")
     sys.stdout.flush()
 
-
-def cmd_config_init(args, config):
-    """Create the initial config file."""
-    filename = args.newconfig
-    if filename is None:
-        filename = config.filename
-    if filename is None:
-        filename = afsrobot.config.AFS_ROBOTEST_CONF
-    if not os.access(filename, os.F_OK):
-        with open(filename, "w") as f:
-            config.write(f)
-
-def cmd_config_list(args, config):
-    """List the current configuration."""
-    def print_section(s):
-        sys.stdout.write("[%s]\n" % s)
-        for k,v in config.items(s):
-            sys.stdout.write("%s = %s\n" % (k, v))
-        sys.stdout.write("\n")
-
-    if config.filename:
-        sys.stdout.write("# file: %s\n\n" % (config.filename))
-    if args.section:
-        if not config.has_section(args.section):
-            sys.stderr.write("Section not found: %s\n" % (args.section))
-            return 1
-        print_section(args.section)
-    elif args.expand:
-        for s in config.sections():
-            print_section(s)
-    else:
-        config.write(sys.stdout)
-
-def cmd_config_set(args, config):
-    """Set a value in the config file.
-
-    This will create the config file if it does not exist. Use --newconfig to set
-    the name of an alternate configuration file to write."""
-    if args.section not in config.sections():
-        config.add_section(args.section)
-    config.set(args.section, args.option, args.value)
-    filename = args.newconfig
-    if filename is None:
-        filename = config.filename
-    if filename is None:
-        filename = afsrobot.config.AFS_ROBOTEST_CONF
-    with open(filename, 'w') as f:
-        config.write(f)
-
-
 def cmd_setup(args, config):
     """Setup OpenAFS client and servers and create a test cell."""
     aklog_workaround_check(args, config)
 
-    keyfile = config.optstr('ssh', 'keyfile', afsrobot.config.AFS_ROBOTEST_SSH)
+    keyfile = config.optstr('ssh', 'keyfile', AFS_ROBOTEST_SSH)
     logfile = os.path.join(config.optstr('paths', 'log', '.'), "setup.log")
     mkdirp(os.path.dirname(logfile))
     if os.path.exists(logfile):
@@ -207,7 +212,7 @@ def cmd_login(args, config):
     mkdirp(os.path.dirname(logfile))
     if os.path.exists(logfile):
         os.remove(logfile)
-    keyfile = config.optstr('ssh', 'keyfile', afsrobot.config.AFS_ROBOTEST_SSH)
+    keyfile = config.optstr('ssh', 'keyfile', AFS_ROBOTEST_SSH)
     cargs = config.optlogin(args.user)
     if '--user' in cargs:
         user = cargs[cargs.index('--user') + 1]
@@ -221,7 +226,7 @@ def cmd_login(args, config):
     ok()
 
 def cmd_teardown(args, config):
-    keyfile = config.optstr('ssh', 'keyfile', afsrobot.config.AFS_ROBOTEST_SSH)
+    keyfile = config.optstr('ssh', 'keyfile', AFS_ROBOTEST_SSH)
     logfile = os.path.join(config.optstr('paths', 'log', '.'), "teardown.log")
     mkdirp(os.path.dirname(logfile))
     if os.path.exists(logfile):
@@ -262,7 +267,7 @@ def cmd_run(args, config):
     sys.path.append(config.get('paths', 'resources'))
 
     # Create output dir if needed.
-    output = config.optstr('paths', 'output', os.path.join(afsrobot.config.AFS_ROBOTEST_ROOT, "output"))
+    output = config.optstr('paths', 'output', os.path.join(AFS_ROBOTEST_ROOT, "output"))
     mkdirp(output)
 
     # Verify we have a keytab.
@@ -323,24 +328,24 @@ def cmd_web_status(args, config):
 
 
 def cmd_ssh_create(args, config):
-    keyfile = config.optstr('ssh', 'keyfile', afsrobot.config.AFS_ROBOTEST_SSH)
+    keyfile = config.optstr('ssh', 'keyfile', AFS_ROBOTEST_SSH)
     kwargs = vars(args)
     return afsrobot.ssh.generate_key(keyfile, **kwargs)
 
 def cmd_ssh_dist(args, config):
-    keyfile = config.optstr('ssh', 'keyfile', afsrobot.config.AFS_ROBOTEST_SSH)
+    keyfile = config.optstr('ssh', 'keyfile', AFS_ROBOTEST_SSH)
     hostnames = config.opthostnames()
     kwargs = vars(args)
     return afsrobot.ssh.distribute_key(keyfile, hostnames, **kwargs)
 
 def cmd_ssh_check(args, config):
-    keyfile = config.optstr('ssh', 'keyfile', afsrobot.config.AFS_ROBOTEST_SSH)
+    keyfile = config.optstr('ssh', 'keyfile', AFS_ROBOTEST_SSH)
     hostnames = config.opthostnames()
     kwargs = vars(args)
     return afsrobot.ssh.check_access(keyfile, hostnames, **kwargs)
 
 def cmd_ssh_exec(args, config):
-    keyfile = config.optstr('ssh', 'keyfile', afsrobot.config.AFS_ROBOTEST_SSH)
+    keyfile = config.optstr('ssh', 'keyfile', AFS_ROBOTEST_SSH)
     hostnames = config.opthostnames()
     kwargs = vars(args)
     return afsrobot.ssh.execute(keyfile, hostnames, args.command, **kwargs)
@@ -400,11 +405,28 @@ def aklog_workaround_check(args, config):
             msg += "found version %d.%d.%d in file." % (version)
             _fail(msg)
 
+
+def defer_config(args):
+    return None # Defer config creation.
+
+def read_config(args):
+    filename = args.config
+    if not os.path.exists(filename):
+        sys.stderr.write("Config file %s not found.\n" % (filename))
+        sys.stderr.write("Please run 'afs-robotest config init' to create a new file\n")
+        sys.stderr.write("or specify the path to an exising file with the --config option.\n")
+        sys.exit(1)
+    if args.verbose:
+        sys.stdout.write("Loading config file %s.\n" % (filename))
+    config = afsrobot.config.Config()
+    config.load_from_file(filename)
+    return config
+
 def main():
     """Command line handling for the afs-robotest tool."""
 
     def common_options(p):
-        p.add_argument('-c', '--config', help="config file", default=None)
+        p.add_argument('-c', '--config', metavar='<filename>', help="config file", default=AFS_ROBOTEST_CONF)
         p.add_argument('-v', '--verbose', help="run verbosely", default=False, action='store_true')
 
     # This should be run as a normal user; sudo is called for installation as needed.
@@ -422,24 +444,22 @@ def main():
     p = subparsers.add_parser('config', help="get or set configuration")
     ssp = p.add_subparsers(title="actions", metavar="<action>")
 
-    p = ssp.add_parser('init', help="create initial config file")
+    p = ssp.add_parser('init', help="create a config file with default values")
     common_options(p)
-    p.add_argument('--newconfig', help="config filename to write", default=None)
-    p.set_defaults(_cmd=cmd_config_init)
+    p.set_defaults(_cmd=cmd_config_init, _cf=defer_config)
 
     p = ssp.add_parser('list', help="show configuration values")
     common_options(p)
-    p.add_argument('-x', '--expand', action='store_true', help="expand interpolated values")
+    p.add_argument('-r', '--raw', action='store_true', help="do not expand interpolated values")
     p.add_argument('-s', '--section', help="config section")
-    p.set_defaults(_cmd=cmd_config_list)
+    p.set_defaults(_cmd=cmd_config_list, _cf=read_config)
 
     p = ssp.add_parser('set', help="set a configuration value")
     common_options(p)
     p.add_argument('section', metavar='<section>', help="section name")
     p.add_argument('option', metavar='<option>', help="option name")
     p.add_argument('value', metavar='<value>', help="option value")
-    p.add_argument('--newconfig', help="config filename to write", default=None)
-    p.set_defaults(_cmd=cmd_config_set)
+    p.set_defaults(_cmd=cmd_config_set, _cf=read_config)
 
     #
     # afs-robotest ssh
@@ -449,7 +469,7 @@ def main():
     p = ssp.add_parser('create', help="generate a ssh key pair")
     common_options(p)
     p.add_argument('-t', dest='keytype', metavar='<type>', help="ssh key type (default: rsa)", default='rsa')
-    p.set_defaults(_cmd=cmd_ssh_create)
+    p.set_defaults(_cmd=cmd_ssh_create, _cf=read_config)
 
     p = ssp.add_parser('dist', help="distribute the ssh public key to remote hosts")
     common_options(p)
@@ -457,7 +477,7 @@ def main():
 
     p = ssp.add_parser('check', help="check passwordless ssh access to remote hosts")
     common_options(p)
-    p.set_defaults(_cmd=cmd_ssh_check)
+    p.set_defaults(_cmd=cmd_ssh_check, _cf=read_config)
 
     p = ssp.add_parser('exec', help="execute a command on each remote host")
     common_options(p)
@@ -465,7 +485,7 @@ def main():
     p.add_argument('-q', '--quiet', action='store_true', help="do not print hostnames")
     p.add_argument('-x', '--exclude', metavar='<hosts>', help="hosts to exclude (comma separated)", default='')
     p.add_argument('command', help='command line')
-    p.set_defaults(_cmd=cmd_ssh_exec)
+    p.set_defaults(_cmd=cmd_ssh_exec, _cf=read_config)
 
     #
     # afs-robotest web
@@ -475,7 +495,7 @@ def main():
 
     p = ssp.add_parser('start', help="start web server")
     common_options(p)
-    p.set_defaults(_cmd=cmd_web_start)
+    p.set_defaults(_cmd=cmd_web_start, _cf=read_config)
 
     p = ssp.add_parser('stop', help="stop web server")
     common_options(p)
@@ -483,7 +503,7 @@ def main():
 
     p = ssp.add_parser('status', help="show web server status")
     common_options(p)
-    p.set_defaults(_cmd=cmd_web_status)
+    p.set_defaults(_cmd=cmd_web_status, _cf=read_config)
 
     #
     # afs-robotest setup
@@ -491,7 +511,7 @@ def main():
     p = subparsers.add_parser('setup', help='install and setup OpenAFS')
     common_options(p)
     p.add_argument('--force', action='store_true', help='overwrite existing files', default=None)
-    p.set_defaults(_cmd=cmd_setup)
+    p.set_defaults(_cmd=cmd_setup, _cf=read_config)
 
     #
     # afs-robotest run
@@ -500,7 +520,7 @@ def main():
     common_options(p)
     p.add_argument('-s', '--suite', help="test suite to run (default: all)", default=None)
     p.add_argument('-i', '--include', help="test tags to include (default: all)", default=None)
-    p.set_defaults(_cmd=cmd_run)
+    p.set_defaults(_cmd=cmd_run, _cf=read_config)
 
     #
     # afs-robotest login
@@ -508,7 +528,7 @@ def main():
     p = subparsers.add_parser('login', help="obtain a token")
     common_options(p)
     p.add_argument('-u', '--user', help="user name (default: admin)", default=None)
-    p.set_defaults(_cmd=cmd_login)
+    p.set_defaults(_cmd=cmd_login, _cf=read_config)
 
     #
     # afs-robotest teardown
@@ -518,14 +538,9 @@ def main():
     p.set_defaults(_cmd=cmd_teardown)
 
     args = parser.parse_args()
-    try:
-        config = afsrobot.config.Config(args.config)  # Optional path to the configuration file.
-    except Exception as e:
-        sys.stderr.write("Failed reading config file: %s\n" % (e))
-        sys.exit(1)
-
+    config = args._cf(args)
     rc = args._cmd(args, config)
-    sys.exit(rc)
+    return rc
 
 if __name__ == "__main__":
     sys.exit(main())

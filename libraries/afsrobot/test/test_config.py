@@ -30,13 +30,244 @@ import afsrobot.config
 
 class ConfigTest(unittest.TestCase):
 
-    def test_xxx(self):
-        self.assertTrue(True)
-        #self.assertIsNotNone(...)
-        #self.assertIn(..)
-        #self.assertRaises(...)
-        #self.assertEqual(...)
-        #self.assertTrue(...)
+    def test_init(self):
+        c = afsrobot.config.Config()
+        self.assertIsNotNone(c)
+
+    def test_load_from_string(self):
+        c = afsrobot.config.Config()
+        c.load_from_string(string="[x]\na = s\n")
+        self.assertEqual(c.optstr('x', 'a'), 's')
+
+    def test_set_value__change_value(self):
+        c = afsrobot.config.Config()
+        c.load_from_string(string="[x]\na = s\n")
+        self.assertEqual(c.optstr('x', 'a'), 's')
+        c.set_value('x', 'a', 't')
+        self.assertEqual(c.optstr('x', 'a'), 't')
+
+    def test_set_value__add_value(self):
+        c = afsrobot.config.Config()
+        c.load_from_string(string="[x]\na = s\n")
+        self.assertEqual(c.optstr('x', 'a'), 's')
+        c.set_value('x', 'b', 'u')
+        self.assertEqual(c.optstr('x', 'a'), 's')
+        self.assertEqual(c.optstr('x', 'b'), 'u')
+
+    def test_set_value__add_section_and_value(self):
+        c = afsrobot.config.Config()
+        c.load_from_string(string="[x]\na = s\n")
+        self.assertEqual(c.optstr('x', 'a'), 's')
+        c.set_value('y', 'b', 'u')
+        self.assertEqual(c.optstr('x', 'a'), 's')
+        self.assertEqual(c.optstr('y', 'b'), 'u')
+
+    def test_unset_value__option_exists(self):
+        c = afsrobot.config.Config()
+        c.load_from_string(string="[x]\na = s\n")
+        self.assertEqual(c.optstr('x', 'a'), 's')
+        c.unset_value('x', 'a')
+        out = StringIO.StringIO()
+        c.print_values(out=out)
+        self.assertEqual(out.getvalue().strip(), "")
+
+    def test_unset_value__option_missing(self):
+        c = afsrobot.config.Config()
+        c.load_from_string(string="[x]\na = s\n")
+        c.unset_value('x', 'b')
+        out = StringIO.StringIO()
+        c.print_values(out=out)
+        self.assertEqual(out.getvalue().strip(), "[x]\na = s")
+
+    def test_unset_value__section_missing(self):
+        c = afsrobot.config.Config()
+        c.load_from_string(string="[x]\na = s\n")
+        with self.assertRaises(Exception):
+            c.unset_value('y', 'b')
+
+    def test_optstr(self):
+        c = afsrobot.config.Config()
+        c.load_from_string(string="[x]\na = s1\nb = s2")
+        self.assertEqual(c.optstr('x', 'a'), 's1')
+        self.assertEqual(c.optstr('x', 'b'), 's2')
+
+    def test_optbool(self):
+        c = afsrobot.config.Config()
+        c.load_from_string(string="[x]\na = yes\nb = no\nc = 1\nd = 0\ne = true\nf = false")
+        self.assertTrue(c.optbool('x', 'a'))
+        self.assertFalse(c.optbool('x', 'b'))
+        self.assertTrue(c.optbool('x', 'c'))
+        self.assertFalse(c.optbool('x', 'd'))
+        self.assertTrue(c.optbool('x', 'e'))
+        self.assertFalse(c.optbool('x', 'f'))
+
+    def test_opthostnames__empty(self):
+        c = afsrobot.config.Config()
+        hostnames = c.opthostnames()
+        self.assertTrue(isinstance(hostnames, list))
+        self.assertTrue(len(hostnames) == 0)
+
+    def test_opthostnames__not_empty(self):
+        c = afsrobot.config.Config()
+        c.load_from_string(string="[host:a]\na = b\n[host:b]\na = b\n[host:c]\na = b")
+        hostnames = c.opthostnames()
+        self.assertTrue(isinstance(hostnames, list))
+        self.assertTrue(len(hostnames) == 3)
+
+    def test_optfakekey(self):
+        expect = '--cell robotest --keytab /tmp/afs.keytab --realm ROBOTEST'
+        c = afsrobot.config.Config()
+        c.load_defaults()
+        args = c.optfakekey()
+        self.assertEqual(expect, " ".join(args))
+
+    def test_optlogin(self):
+        expect = '--user robotest.admin --cell robotest --realm ROBOTEST ' \
+                 '--akimpersonate --keytab /tmp/afs.keytab'
+        c = afsrobot.config.Config()
+        c.load_defaults()
+        args = c.optlogin()
+        self.assertEqual(expect, " ".join(args))
+
+    def test_optcomponents(self):
+        expect = 'server client'
+        c = afsrobot.config.Config()
+        c.load_defaults()
+        args = c.optcomponents('localhost')
+        self.assertEqual(expect, " ".join(args))
+
+    def test_optinstall(self):
+        hostname = os.uname()[1]
+        expect = '--dist none --components server client --cell robotest --hosts %s ' \
+                 '--realm ROBOTEST --force' % (hostname)
+        c = afsrobot.config.Config()
+        c.load_defaults()
+        args = c.optinstall('localhost')
+        self.assertEqual(expect, " ".join(args))
+
+    def test_optsetkey(self):
+        expect = '--cell robotest --realm ROBOTEST --keytab /tmp/afs.keytab'
+        c = afsrobot.config.Config()
+        c.load_defaults()
+        args = c.optsetkey('localhost')
+        self.assertEqual(expect, " ".join(args))
+
+    def test_optnewcell(self):
+        hostname = os.uname()[1]
+        expect = '--cell robotest --admin robotest.admin --keytab /tmp/afs.keytab ' \
+                 '--top test --fs %s --db %s -o dafileserver=-d 1 -L -o davolserver=-d 1' % \
+                 (hostname, hostname)
+        c = afsrobot.config.Config()
+        c.load_defaults()
+        args = c.optnewcell()
+        self.assertEqual(expect, " ".join(args))
+
+    def test_print_values(self):
+        c = afsrobot.config.Config()
+        c.load_from_string(string="[x]\na = s\n")
+        out = StringIO.StringIO()
+        c.print_values(out=out)
+        self.assertEqual(out.getvalue().strip(), "[x]\na = s")
+
+    def test_print_values__expanded(self):
+        c = afsrobot.config.Config()
+        c.load_from_string(string="[x]\na = s\nb = %(a)s")
+        out = StringIO.StringIO()
+        c.print_values(out=out)
+        self.assertEqual(out.getvalue().strip(), "[x]\na = s\nb = s")
+        out = StringIO.StringIO()
+        c.print_values(out=out, raw=False)
+        self.assertEqual(out.getvalue().strip(), "[x]\na = s\nb = s")
+
+    def test_print_values__raw(self):
+        c = afsrobot.config.Config()
+        c.load_from_string(string="[x]\na = s\nb = %(a)s")
+        out = StringIO.StringIO()
+        c.print_values(out=out, raw=True)
+        self.assertEqual(out.getvalue().strip(), "[x]\na = s\nb = %(a)s")
+
+    def test_print_values__by_section_expanded(self):
+        c = afsrobot.config.Config()
+        c.load_from_string(string="[x]\na = s\nb = %(a)s")
+        out = StringIO.StringIO()
+        c.print_values(out=out, section="x")
+        self.assertEqual(out.getvalue().strip(), "[x]\na = s\nb = s")
+        out = StringIO.StringIO()
+        c.print_values(out=out, section="x", raw=False)
+        self.assertEqual(out.getvalue().strip(), "[x]\na = s\nb = s")
+
+    def test_print_values__by_section_raw(self):
+        c = afsrobot.config.Config()
+        c.load_from_string(string="[x]\na = s\nb = %(a)s")
+        out = StringIO.StringIO()
+        c.print_values(out=out, section="x", raw=True)
+        self.assertEqual(out.getvalue().strip(), "[x]\na = s\nb = %(a)s")
+
+    def test_load_from_file(self):
+        fd,filename = tempfile.mkstemp()
+        try:
+            os.write(fd, "[x]\na = s\n")
+            c = afsrobot.config.Config()
+            c.load_from_file(filename)
+            out = StringIO.StringIO()
+            c.print_values(out=out)
+            self.assertEqual(out.getvalue().strip(), "[x]\na = s")
+        finally:
+            os.close(fd)
+            os.remove(filename)
+
+    def test_load_from_file__with_missing_file(self):
+        fd,filename = tempfile.mkstemp()
+        try:
+            c = afsrobot.config.Config()
+            bogus = filename + "-bogus"
+            self.assertFalse(os.path.exists(bogus))
+            with self.assertRaises(AssertionError):
+                c.load_from_file(bogus)
+        finally:
+            os.close(fd)
+            os.remove(filename)
+
+    def test_save_as(self):
+        fd,filename = tempfile.mkstemp()
+        try:
+            c = afsrobot.config.Config()
+            c.load_from_string(string="[x]\na = s\n")
+            c.save_as(filename)
+            with open(filename) as f:
+                out = f.read()
+            self.assertEqual(out, "[x]\na = s\n\n")
+        finally:
+            os.close(fd)
+            os.remove(filename)
+
+    def test_save(self):
+        fd,filename = tempfile.mkstemp()
+        try:
+            c = afsrobot.config.Config()
+            os.write(fd, "[x]\na = s\n")
+            c.load_from_file(filename)
+            out = StringIO.StringIO()
+            c.print_values(out=out)
+            self.assertEqual(out.getvalue().strip(), "[x]\na = s")
+            c.set('x', 'a', 't')
+            out = StringIO.StringIO()
+            c.print_values(out=out)
+            self.assertEqual(out.getvalue().strip(), "[x]\na = t")
+            c.save()
+            with open(filename) as f:
+                out = f.read()
+            self.assertEqual(out, "[x]\na = t\n\n")
+        finally:
+            os.close(fd)
+            os.remove(filename)
+
+    def test_save__with_sequence_error(self):
+        # save() without a prior load_from_file() or save_as() should
+        # throw an exception.
+        c = afsrobot.config.Config()
+        with self.assertRaises(AssertionError):
+            c.save()
 
 if __name__ == "__main__":
      unittest.main()
