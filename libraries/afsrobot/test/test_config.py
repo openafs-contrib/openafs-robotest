@@ -18,8 +18,14 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
+import sys
 import os
 import unittest
+import StringIO
+import tempfile
+
+sys.path.insert(0, "..")
+sys.path.insert(0, ".")
 import afsrobot.config
 
 class ConfigTest(unittest.TestCase):
