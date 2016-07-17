@@ -91,12 +91,31 @@ def cmd_config_init(args, config):
     config.set_value('ssh', 'keyfile', AFS_ROBOTEST_SSH)
     config.save_as(filename)
 
+def cmd_config_copy(args, config):
+    if args.verbose:
+        sys.stdout.write("Copying to file %s.\n" % (args.dest))
+    new_config = afsrobot.config.Config()
+    new_config.load_from_file(config.filename)
+    new_config.save_as(args.dest)
+
 def cmd_config_list(args, config):
     config.print_values(section=args.section, raw=args.raw)
 
 def cmd_config_set(args, config):
-    config.set_value(args.section, args.option, args.value)
-    config.save()
+    try:
+        config.set_value(args.section, args.option, args.value)
+        config.save()
+    except Exception as e:
+        sys.stderr.write("Unable to set: %s\n" % (e))
+        return 1
+
+def cmd_config_unset(args, config):
+    try:
+        config.unset_value(args.section, args.option)
+        config.save()
+    except Exception as e:
+        sys.stderr.write("Unable to remove: %s\n" % (e))
+        return 1
 
 
 def mkdirp(path):
@@ -448,6 +467,11 @@ def main():
     common_options(p)
     p.set_defaults(_cmd=cmd_config_init, _cf=defer_config)
 
+    p = ssp.add_parser('copy', help="copy configuration values to a new file")
+    common_options(p)
+    p.add_argument('dest', metavar='<tofile>', help="destination filename")
+    p.set_defaults(_cmd=cmd_config_copy, _cf=read_config)
+
     p = ssp.add_parser('list', help="show configuration values")
     common_options(p)
     p.add_argument('-r', '--raw', action='store_true', help="do not expand interpolated values")
@@ -460,6 +484,12 @@ def main():
     p.add_argument('option', metavar='<option>', help="option name")
     p.add_argument('value', metavar='<value>', help="option value")
     p.set_defaults(_cmd=cmd_config_set, _cf=read_config)
+
+    p = ssp.add_parser('unset', help="unset a configuration value")
+    common_options(p)
+    p.add_argument('section', metavar='<section>', help="section name")
+    p.add_argument('option', metavar='<option>', help="option name")
+    p.set_defaults(_cmd=cmd_config_unset, _cf=read_config)
 
     #
     # afs-robotest ssh
