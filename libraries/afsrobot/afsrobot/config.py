@@ -141,20 +141,30 @@ class Config(ConfigParser.SafeConfigParser):
             for section in self.sections():
                 self._print_section(out, section, raw)
 
-    def optstr(self, section, name, default=None):
+    def optstr(self, section, option, default=None, required=False):
         """Helper to lookup a configuration string option."""
-        if self.has_option(section, name):
-            value = self.get(section, name)
-        else:
-            value = default
+        value = default
+        try:
+            value = self.get(section, option)
+        except ConfigParser.NoSectionError:
+            if required:
+                raise ValueError("Required config section is missing; section=%s, option=%s." % (section, option))
+        except ConfigParser.NoOptionError:
+            if required:
+                raise ValueError("Required config option is missing; section=%s, option=%s." % (section, option))
         return value
 
-    def optbool(self, section, name, default=False):
+    def optbool(self, section, option, default=False, required=False):
         """Helper to lookup a configuration boolean option."""
-        if self.has_option(section, name):
-            value = self.getboolean(section, name)
-        else:
-            value = default
+        value = default
+        try:
+            value = self.getboolean(section, option)
+        except ConfigParser.NoSectionError:
+            if required:
+                raise ValueError("Required config section is missing; section=%s, option=%s." % (section, option))
+        except ConfigParser.NoOptionError:
+            if required:
+                raise ValueError("Required config option is missing; section=%s, option=%s." % (section, option))
         return value
 
     def opthostnames(self, filter=None, lookupname=False):

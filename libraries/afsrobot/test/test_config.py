@@ -85,11 +85,31 @@ class ConfigTest(unittest.TestCase):
         with self.assertRaises(Exception):
             c.unset_value('y', 'b')
 
-    def test_optstr(self):
+    def test_optstr__found(self):
         c = afsrobot.config.Config()
         c.load_from_string(string="[x]\na = s1\nb = s2")
         self.assertEqual(c.optstr('x', 'a'), 's1')
         self.assertEqual(c.optstr('x', 'b'), 's2')
+
+    def test_optstr__missing_with_default(self):
+        c = afsrobot.config.Config()
+        c.load_from_string(string="[x]\na = s1\nb = s2")
+        self.assertEquals(c.optstr('x', 'c', 'd'), 'd')
+        self.assertEquals(c.optstr('y', 'c', 'd'), 'd')
+
+    def test_optstr__missing_without_default(self):
+        c = afsrobot.config.Config()
+        c.load_from_string(string="[x]\na = s1\nb = s2")
+        self.assertIsNone(c.optstr('x', 'c'))
+        self.assertIsNone(c.optstr('y', 'c'))
+
+    def test_optstr__required_and_missing(self):
+        c = afsrobot.config.Config()
+        c.load_from_string(string="[x]\na = s1\nb = s2")
+        with self.assertRaises(ValueError):
+            c.optstr('x', 'c', required=True)
+        with self.assertRaises(ValueError):
+            c.optstr('y', 'c', required=True)
 
     def test_optbool(self):
         c = afsrobot.config.Config()
@@ -100,6 +120,14 @@ class ConfigTest(unittest.TestCase):
         self.assertFalse(c.optbool('x', 'd'))
         self.assertTrue(c.optbool('x', 'e'))
         self.assertFalse(c.optbool('x', 'f'))
+
+    def test_optbool__required_and_missing(self):
+        c = afsrobot.config.Config()
+        c.load_from_string(string="[x]\na = s1\nb = s2")
+        with self.assertRaises(ValueError):
+            c.optbool('x', 'c', required=True)
+        with self.assertRaises(ValueError):
+            c.optbool('y', 'c', required=True)
 
     def test_opthostnames__empty(self):
         c = afsrobot.config.Config()
