@@ -22,7 +22,7 @@ import os
 import sys
 import subprocess
 
-def ssh(hostname, args, keyfile=None, sudo=False, **kwargs):
+def ssh(hostname, args, keyfile=None, sudo=False):
     """Helper to run command on remote hosts using ssh."""
     if sudo:
         args.insert(0, "-n")  # requires NOPASSWD in sudoers
@@ -34,7 +34,7 @@ def ssh(hostname, args, keyfile=None, sudo=False, **kwargs):
         args = ['ssh', '-q', hostname, command]
     return subprocess.call(args)
 
-def generate_key(keyfile, **kwargs):
+def generate_key(keyfile, keytype='rsa'):
     """Create a public/private key pair.
 
     Uses ssh-keygen to create the key files."""
@@ -44,13 +44,13 @@ def generate_key(keyfile, **kwargs):
         sys.stderr.write("Key file %s already exists.\n" % (keyfile))
         return 1
     sys.stdout.write("Creating ssh key file %s.\n" % (keyfile))
-    cmd = ['ssh-keygen', '-t', args.keytype, '-f', keyfile]
+    cmd = ['ssh-keygen', '-t', keytype, '-f', keyfile]
     code = subprocess.call(cmd)
     if code != 0:
         sys.stderr.write("ssh-keygen failed; exit code %d\n" % (code))
     return code
 
-def distribute_key(keyfile, hostnames, **kwargs):
+def distribute_key(keyfile, hostnames):
     """Distribute the public key files to the remote hosts.
 
     Uses ssh-copy-id to copy the key.
@@ -72,7 +72,7 @@ def distribute_key(keyfile, hostnames, **kwargs):
             return code
     return 0
 
-def check_access(keyfile, hostnames, check_sudo=True, **kwargs):
+def check_access(keyfile, hostnames, check_sudo=True):
     """Check ssh access to the remote hosts."""
     if not os.access(keyfile, os.F_OK):
         sys.stderr.write("Cannot access keyfile %s.\n" % (keyfile))
@@ -102,7 +102,7 @@ def check_access(keyfile, hostnames, check_sudo=True, **kwargs):
         code = 0
     return code
 
-def execute(keyfile, hostnames, command, exclude='', quiet=False, sudo=False, **kwargs):
+def execute(keyfile, hostnames, command, exclude='', quiet=False, sudo=False):
     """Run a command on each remote host."""
     if not command:
         sys.stderr.write("Missing command")

@@ -59,19 +59,11 @@ except ImportError:
 #                    Defaults to $AFS_ROBOTEST_ETC/afs-robotest.conf
 #                    Overridden by the --config (-c) command line option.
 #
-# AFS_ROBOTEST_SSH   Fully qualified filename of the ssh public key file
-#                    for multi-server setup.
-#                    Defaults to $HOME/.ssh/afs-robotest
-#                    Overridden by the ssh:keyfile configuration value.
-#
 AFS_ROBOTEST_ROOT = os.getenv('AFS_ROBOTEST_ROOT', os.getcwd())
 AFS_ROBOTEST_ETC = os.getenv('AFS_ROBOTEST_ENV',
                         os.path.join(os.environ['HOME'], '.afsrobotestrc'))
 AFS_ROBOTEST_CONF = os.getenv('AFS_ROBOTEST_CONF',
                         os.path.join(AFS_ROBOTEST_ETC, 'afs-robotest.conf'))
-AFS_ROBOTEST_SSH = os.getenv('AFS_ROBOTEST_SSH',
-                        os.path.join(os.environ['HOME'], '.ssh', 'afs-robotest'))
-
 
 #
 # config sub-commands
@@ -88,7 +80,6 @@ def cmd_config_init(args, config):
     config = afsrobot.config.Config()
     config.load_defaults()
     config.set_value('paths', 'root', AFS_ROBOTEST_ROOT)
-    config.set_value('ssh', 'keyfile', AFS_ROBOTEST_SSH)
     config.save_as(filename)
 
 def cmd_config_copy(args, config):
@@ -151,7 +142,7 @@ def cmd_setup(args, config):
     """Setup OpenAFS client and servers and create a test cell."""
     aklog_workaround_check(args, config)
 
-    keyfile = config.optstr('ssh', 'keyfile', AFS_ROBOTEST_SSH)
+    keyfile = config.optstr('ssh', 'keyfile', required=True)
     logfile = os.path.join(config.optstr('paths', 'log', '.'), "setup.log")
     mkdirp(os.path.dirname(logfile))
     if os.path.exists(logfile):
@@ -231,7 +222,7 @@ def cmd_login(args, config):
     mkdirp(os.path.dirname(logfile))
     if os.path.exists(logfile):
         os.remove(logfile)
-    keyfile = config.optstr('ssh', 'keyfile', AFS_ROBOTEST_SSH)
+    keyfile = config.optstr('ssh', 'keyfile', required=True)
     cargs = config.optlogin(args.user)
     if '--user' in cargs:
         user = cargs[cargs.index('--user') + 1]
@@ -245,7 +236,7 @@ def cmd_login(args, config):
     ok()
 
 def cmd_teardown(args, config):
-    keyfile = config.optstr('ssh', 'keyfile', AFS_ROBOTEST_SSH)
+    keyfile = config.optstr('ssh', 'keyfile', required=True)
     logfile = os.path.join(config.optstr('paths', 'log', '.'), "teardown.log")
     mkdirp(os.path.dirname(logfile))
     if os.path.exists(logfile):
@@ -345,29 +336,27 @@ def cmd_web_status(args, config):
     server = afsrobot.web.TinyWebServer(config)
     sys.stdout.write("%s\n" % (server.status()))
 
-
 def cmd_ssh_create(args, config):
-    keyfile = config.optstr('ssh', 'keyfile', AFS_ROBOTEST_SSH)
-    kwargs = vars(args)
-    return afsrobot.ssh.generate_key(keyfile, **kwargs)
+    rc = afsrobot.ssh.generate_key(args.keyfile)
+    if rc == 0:
+        config.set_value('ssh', 'keyfile', args.keyfile)
+        config.save()
+    return rc
 
 def cmd_ssh_dist(args, config):
-    keyfile = config.optstr('ssh', 'keyfile', AFS_ROBOTEST_SSH)
+    keyfile = config.optstr('ssh', 'keyfile', required=True)
     hostnames = config.opthostnames()
-    kwargs = vars(args)
-    return afsrobot.ssh.distribute_key(keyfile, hostnames, **kwargs)
+    return afsrobot.ssh.distribute_key(keyfile, hostnames)
 
 def cmd_ssh_check(args, config):
-    keyfile = config.optstr('ssh', 'keyfile', AFS_ROBOTEST_SSH)
+    keyfile = config.optstr('ssh', 'keyfile', required=True)
     hostnames = config.opthostnames()
-    kwargs = vars(args)
-    return afsrobot.ssh.check_access(keyfile, hostnames, **kwargs)
+    return afsrobot.ssh.check_access(keyfile, hostnames)
 
 def cmd_ssh_exec(args, config):
-    keyfile = config.optstr('ssh', 'keyfile', AFS_ROBOTEST_SSH)
+    keyfile = config.optstr('ssh', 'keyfile', required=True)
     hostnames = config.opthostnames()
-    kwargs = vars(args)
-    return afsrobot.ssh.execute(keyfile, hostnames, args.command, **kwargs)
+    return afsrobot.ssh.execute(keyfile, hostnames, args.command)
 
 
 def aklog_workaround_check(args, config):
@@ -496,8 +485,11 @@ def main():
     #
     p = subparsers.add_parser('ssh', help="manage ssh keys and run commands")
     ssp = p.add_subparsers(title="actions", metavar="<action>")
+
     p = ssp.add_parser('create', help="generate a ssh key pair")
     common_options(p)
+    keyfile = os.path.join(os.environ['HOME'], '.ssh', 'afs-robotest')
+    p.add_argument('--keyfile', help="ssh keyfile name (default: %s)" % (keyfile), default=keyfile)
     p.add_argument('-t', dest='keytype', metavar='<type>', help="ssh key type (default: rsa)", default='rsa')
     p.set_defaults(_cmd=cmd_ssh_create, _cf=read_config)
 
