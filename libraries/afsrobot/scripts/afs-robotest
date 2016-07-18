@@ -21,8 +21,6 @@
 
 import gettext
 import os
-import subprocess
-import shlex
 import sys
 
 import afsrobot.config
@@ -57,7 +55,6 @@ AFS_ROBOTEST_CONF = os.getenv('AFS_ROBOTEST_CONF',
 #
 # config sub-commands
 #
-
 def cmd_config_init(args, config):
     filename = args.config
     if os.path.exists(filename):
@@ -102,17 +99,9 @@ def cmd_config_unset(args, config):
         sys.stderr.write("Unable to remove: %s\n" % (e))
         return 1
 
-
-class CommandLineParser(argparse.ArgumentParser):
-    """Subclass the argument parser to extend help messages."""
-    def __init__(self, *args, **kwargs):
-        argparse.ArgumentParser.__init__(self, *args, **kwargs)
-    def error(self, message):
-        """Display a full usage so all the sub-commands are shown."""
-        self.print_help(sys.stderr)
-        self.exit(2, gettext.gettext('\n%s: error: %s\n') % (self.prog, message))
-
-
+#
+# web sub-commands
+#
 def cmd_web_start(args, config):
     server = afsrobot.web.TinyWebServer(config)
     server.start()
@@ -125,6 +114,9 @@ def cmd_web_status(args, config):
     server = afsrobot.web.TinyWebServer(config)
     sys.stdout.write("%s\n" % (server.status()))
 
+#
+# ssh sub-commands
+#
 def cmd_ssh_create(args, config):
     rc = afsrobot.ssh.generate_key(args.keyfile)
     if rc == 0:
@@ -163,6 +155,15 @@ def read_config(args):
     config = afsrobot.config.Config()
     config.load_from_file(filename)
     return config
+
+class CommandLineParser(argparse.ArgumentParser):
+    """Subclass the argument parser to extend help messages."""
+    def __init__(self, *args, **kwargs):
+        argparse.ArgumentParser.__init__(self, *args, **kwargs)
+    def error(self, message):
+        """Display a full usage so all the sub-commands are shown."""
+        self.print_help(sys.stderr)
+        self.exit(2, gettext.gettext('\n%s: error: %s\n') % (self.prog, message))
 
 def main():
     """Command line handling for the afs-robotest tool."""
