@@ -51,19 +51,14 @@ except ImportError:
 #                    Defaults to the current working directory.
 #                    Overridden by the path:root configuration value.
 #
-# AFS_ROBOTEST_ETC   Path to of configuration files.
-#                    Defaults to $HOME/.afsrobotestrc
-#                    Overridden by the path:etc configuration value.
-#
 # AFS_ROBOTEST_CONF  Fully qualified filename of the configuration file.
-#                    Defaults to $AFS_ROBOTEST_ETC/afs-robotest.conf
+#                    Defaults to ~/.afsrobotestrc/afs-robotest.conf
 #                    Overridden by the --config (-c) command line option.
 #
 AFS_ROBOTEST_ROOT = os.getenv('AFS_ROBOTEST_ROOT', os.getcwd())
-AFS_ROBOTEST_ETC = os.getenv('AFS_ROBOTEST_ENV',
-                        os.path.join(os.environ['HOME'], '.afsrobotestrc'))
 AFS_ROBOTEST_CONF = os.getenv('AFS_ROBOTEST_CONF',
-                        os.path.join(AFS_ROBOTEST_ETC, 'afs-robotest.conf'))
+                      os.path.join(
+                        os.environ['HOME'], '.afsrobotestrc', 'afs-robotest.conf'))
 
 #
 # config sub-commands
@@ -75,11 +70,16 @@ def cmd_config_init(args, config):
         if args.verbose:
             sys.stdout.write("Skipping config init; file %s already exists.\n" % (filename))
         return 0
-    if args.verbose:
-        sys.stdout.write("Creating config file %s.\n" % (filename))
+    dirname = os.path.dirname(filename)
+    if not os.path.exists(dirname):
+        if args.verbose:
+            sys.stdout.write("Making directory %s.\n" % (dirname))
+        os.makedirs(dirname)
     config = afsrobot.config.Config()
     config.load_defaults()
-    config.set_value('paths', 'root', AFS_ROBOTEST_ROOT)
+    config.set_value('paths', 'root', args.root)
+    if args.verbose:
+        sys.stdout.write("Creating config file %s.\n" % (filename))
     config.save_as(filename)
 
 def cmd_config_copy(args, config):
@@ -277,7 +277,7 @@ def cmd_run(args, config):
     sys.path.append(config.get('paths', 'resources'))
 
     # Create output dir if needed.
-    output = config.optstr('paths', 'output', os.path.join(AFS_ROBOTEST_ROOT, "output"))
+    output = config.optstr('paths', 'output', required=True)
     mkdirp(output)
 
     # Verify we have a keytab.
@@ -434,7 +434,9 @@ def main():
     """Command line handling for the afs-robotest tool."""
 
     def common_options(p):
-        p.add_argument('-c', '--config', metavar='<filename>', help="config file", default=AFS_ROBOTEST_CONF)
+        p.add_argument('-c', '--config', metavar='<filename>',
+                       help="config file (default: %s)" % AFS_ROBOTEST_CONF,
+                       default=AFS_ROBOTEST_CONF)
         p.add_argument('-v', '--verbose', help="run verbosely", default=False, action='store_true')
 
     # This should be run as a normal user; sudo is called for installation as needed.
@@ -454,6 +456,8 @@ def main():
 
     p = ssp.add_parser('init', help="create a config file with default values")
     common_options(p)
+    p.add_argument('--root', help="afs-rototest root directory (default: %s)" % (AFS_ROBOTEST_ROOT),
+                   default=AFS_ROBOTEST_ROOT)
     p.set_defaults(_cmd=cmd_config_init, _cf=defer_config)
 
     p = ssp.add_parser('copy', help="copy configuration values to a new file")
