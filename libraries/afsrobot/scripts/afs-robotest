@@ -139,7 +139,6 @@ def cmd_ssh_exec(args, config):
     hostnames = config.opthostnames()
     return afsrobot.ssh.execute(keyfile, hostnames, args.command)
 
-
 def defer_config(args):
     return None # Defer config creation.
 
@@ -148,7 +147,7 @@ def read_config(args):
     if not os.path.exists(filename):
         sys.stderr.write("Config file %s not found.\n" % (filename))
         sys.stderr.write("Please run 'afs-robotest config init' to create a new file\n")
-        sys.stderr.write("or specify the path to an exising file with the --config option.\n")
+        sys.stderr.write("or specify the path to an existing file with the --config option.\n")
         sys.exit(1)
     if args.verbose:
         sys.stdout.write("Loading config file %s.\n" % (filename))
