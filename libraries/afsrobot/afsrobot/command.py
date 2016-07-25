@@ -30,10 +30,10 @@ class Command(object):
     host. The output is sent to the log file.
     """
 
-    def __init__(self, hostname, keyfile, logfile=None, verbose=False):
+    def __init__(self, hostname, keyfile, log=None, verbose=False):
         self.hostname = hostname
         self.keyfile = keyfile
-        self.logfile = logfile
+        self.log = log
         self.verbose = verbose
 
     def _exec(self, args): # args is a list here
@@ -45,20 +45,18 @@ class Command(object):
                 '-i', self.keyfile, self.hostname, command
             ]
         cmdline = subprocess.list2cmdline(args)
-        if self.logfile is None:
+        if self.log is None:
             if self.verbose:
                 sys.stdout.writelines(["Running:", " ", cmdline, "\n"])
             code = subprocess.call(args)
         else:
-            with open(self.logfile, 'a') as log:
-                log.writelines(["localhost", " ", "INFO", " ", cmdline, "\n"])
-                p = subprocess.Popen(args, bufsize=1, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                with p.stdout:
-                    for line in iter(p.stdout.readline, ''):
-                        line = line.rstrip()
-                        log.writelines([self.hostname, " ", line, "\n"])
-                        log.flush()
-                code = p.wait()
+            self.log.writelines(["localhost", " ", "INFO", " ", cmdline, "\n"])
+            p = subprocess.Popen(args, bufsize=1, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            with p.stdout:
+                for line in iter(p.stdout.readline, ''):
+                    line = line.rstrip()
+                    self.log.writelines([self.hostname, " ", line, "\n"])
+            code = p.wait()
         return code
 
     def sh(self, command, *args):

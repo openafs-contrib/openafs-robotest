@@ -45,143 +45,129 @@ def start(msg):
 def fail(msg):
     sys.stdout.write("fail\n%s\n" % (msg))
     sys.stdout.flush()
-    sys.exit(1)
+    raise AssertionError(msg)
 
 def ok():
     sys.stdout.write("ok\n")
     sys.stdout.flush()
 
-def run_setup(args, config):
+def run_setup(c):
     """Setup OpenAFS client and servers and create a test cell."""
+    args = c.args
+    config = c.config
     aklog_workaround_check(args, config)
 
+
     keyfile = config.optstr('ssh', 'keyfile', required=True)
-    logfile = os.path.join(config.optstr('paths', 'log', '.'), "setup.log")
-    mkdirp(os.path.dirname(logfile))
-    if os.path.exists(logfile):
-        os.remove(logfile)
-
-    def log(msg):
-        with open(logfile, 'a') as f:
-            f.writelines(["localhost", " ", "INFO", " ", msg, "\n"])
-
-    sys.stdout.write("Running setup.\n")
-    sys.stdout.flush()
-    log("==== SETUP ====")
+    c.info("==== SETUP ====")
 
     # Install
     for hostname in config.opthostnames():
-        cmd = afsrobot.command.Command(hostname, keyfile, logfile=logfile)
+        cmd = afsrobot.command.Command(hostname, keyfile, log=c._log)
         section = "host:%s" % (hostname)
         installer = config.optstr(section, 'installer', default='none')
         if installer == 'transarc' or installer == 'rpm':
             start("Installing on %s" % (hostname))
             if config.optbool('kerberos', 'akimpersonate'):
                 if cmd.afsutil('fakekey', *config.optfakekey()) != 0:
-                    fail("Failed to create fake service key; see %s\n" % (logfile))
+                    fail("Failed to create fake service key.\n")
             if cmd.afsutil('install', *config.optinstall(hostname)) != 0:
-                fail("Failed to install; see %s\n" % (logfile))
+                fail("Failed to install.\n")
             ok()
         elif installer == 'none':
-            log("Skipping install on hostname %s; installer is 'none'." % (hostname))
+            c.info("Skipping install on hostname %s; installer is 'none'." % (hostname))
         else:
             fail("Invalid installer option for hostname %s!; installer='%s'." % (hostname, installer))
 
     # Set key
     for hostname in config.opthostnames():
-        cmd = afsrobot.command.Command(hostname, keyfile, logfile=logfile)
+        cmd = afsrobot.command.Command(hostname, keyfile, log=c._log)
         section = "host:%s" % (hostname)
         installer = config.optstr(section, 'installer', default='none')
         if installer == 'none':
-            log("Skipping setkey on hostname %s; installer is 'none'." % (hostname))
+            info("Skipping setkey on hostname %s; installer is 'none'." % (hostname))
             continue
         if cmd.afsutil('setkey', *config.optsetkey(hostname)) != 0:
-            fail("Failed to setkey; see %s\n" % (logfile))
+            fail("Failed to setkey.\n")
 
     # Start clients and servers.
     for hostname in config.opthostnames():
-        cmd = afsrobot.command.Command(hostname, keyfile, logfile=logfile)
+        cmd = afsrobot.command.Command(hostname, keyfile, log=c._log)
         section = "host:%s" % (hostname)
         if config.optbool(section, "isfileserver") or config.optbool(section, "isdbserver"):
             start("Starting servers on %s" % (hostname))
             if cmd.afsutil('start', 'server') != 0:
-                fail("Failed to start servers; see %s\n" % (logfile))
+                fail("Failed to start servers.\n")
             ok()
         if config.optbool(section, "isclient") and config.optbool(section, 'afsdb_dynroot', default=True):
             start("Starting client on %s" % (hostname))
             if cmd.afsutil('start', 'client') != 0:
-                fail("Failed to start client; see %s\n" % (logfile))
+                fail("Failed to start client.\n")
             ok()
 
-    cmd = afsrobot.command.Command('localhost', keyfile, logfile=logfile, verbose=args.verbose)
+    cmd = afsrobot.command.Command('localhost', keyfile, log=c._log, verbose=args.verbose)
     start("Setting up new cell")
     if cmd.afsutil('newcell', *config.optnewcell()) != 0:
-        fail("Failed to setup cell; see %s\n" % (logfile))
+        fail("Failed to setup cell.\n")
     ok()
 
     # Now that the root volumes are ready, start any non-dynroot clients.
     for hostname in config.opthostnames():
-        cmd = afsrobot.command.Command(hostname, keyfile, logfile=logfile)
+        cmd = afsrobot.command.Command(hostname, keyfile, log=c._log)
         section = "host:%s" % (hostname)
         if config.optbool(section, "isclient") and not config.optbool(section, 'afsdb_dynroot', default=True):
             start("Starting non-dynroot client on %s" % (hostname))
             if cmd.afsutil('start', 'client') != 0:
-                fail("Failed to start client; see %s\n" % (logfile))
+                fail("Failed to start client.\n")
             ok()
     return 0
 
-def run_login(args, config):
-    logfile = os.path.join(config.optstr('paths', 'log', '.'), "login.log")
-    mkdirp(os.path.dirname(logfile))
-    if os.path.exists(logfile):
-        os.remove(logfile)
+def run_login(c):
+    args = c.args
+    config = c.config
+
     keyfile = config.optstr('ssh', 'keyfile', required=True)
     cargs = config.optlogin(args.user)
     if '--user' in cargs:
         user = cargs[cargs.index('--user') + 1]
     else:
         user = 'admin'
-    cmd = afsrobot.command.Command('localhost', keyfile, logfile=logfile)
+    cmd = afsrobot.command.Command('localhost', keyfile, log=c._log)
     start("Obtaining token for %s" % (user))
     rc = cmd.sh('afsutil', 'login', *cargs)
     if rc != 0:
-        fail("Failed to login; see %s." % (logfile))
+        fail("Failed to login.")
     ok()
 
-def run_teardown(args, config):
+def run_teardown(c):
+    args = c.args
+    config = c.config
     keyfile = config.optstr('ssh', 'keyfile', required=True)
-    logfile = os.path.join(config.optstr('paths', 'log', '.'), "teardown.log")
-    mkdirp(os.path.dirname(logfile))
-    if os.path.exists(logfile):
-        os.remove(logfile)
 
-    def log(msg):
-        with open(logfile, 'a') as f:
-            f.writelines(["localhost", " ", "INFO", " ", msg, "\n"])
-
-    sys.stdout.write("Running teardown.\n")
-    log("==== TEARDOWN ====")
+    c.info("==== TEARDOWN ====")
 
     for hostname in config.opthostnames():
         section = "host:%s" % (hostname)
-        cmd = afsrobot.command.Command(hostname, keyfile, logfile=logfile)
+        cmd = afsrobot.command.Command(hostname, keyfile, log=c._log)
         installer = config.optstr(section, 'installer', default='none')
         if installer == 'transarc':
             start("Removing clients and servers on %s" % (hostname))
             if cmd.afsutil('stop', *config.optcomponents(hostname)) != 0:
-                fail("Failed to stop; see %s\n" % (logfile))
+                fail("Failed to stop.\n")
             if cmd.afsutil('remove', '--purge') != 0:
-                fail("Failed to remove; see %s\n" % (logfile))
+                fail("Failed to remove.\n")
             ok()
         elif installer == 'none':
-            log("Skipping remove on hostname %s; installer is 'none'." % (hostname))
+            info("Skipping remove on hostname %s; installer is 'none'." % (hostname))
         else:
-            log("Invalid installer option for hostname %s!; installer='%s'.\n" % (hostname, installer))
+            info("Invalid installer option for hostname %s!; installer='%s'.\n" % (hostname, installer))
 
     return 0
 
-def run_tests(args, config):
+def run_tests(c):
     """Run the Robotframework test suites."""
+    args = c.args
+    config = c.config
 
     aklog_workaround_check(args, config)
 
