@@ -25,7 +25,6 @@ import sys
 import pprint
 
 import afsrobot.config
-import afsrobot.command
 import afsrobot.ssh
 import afsrobot.web
 import afsrobot.runner
@@ -133,6 +132,22 @@ def cmd_ssh_exec(c):
     keyfile = c.config.optstr('ssh', 'keyfile', required=True)
     hostnames = c.config.opthostnames()
     return afsrobot.ssh.execute(keyfile, hostnames, c.args.command)
+
+def cmd_setup(c):
+    r = afsrobot.runner.Runner(c.config, c._log)
+    r.setup(**vars(c.args))
+
+def cmd_login(c):
+    r = afsrobot.runner.Runner(c.config, c._log)
+    r.login(**vars(c.args))
+
+def cmd_test(c):
+    r = afsrobot.runner.Runner(c.config, c._log)
+    r.test(**vars(c.args))
+
+def cmd_teardown(c):
+    r = afsrobot.runner.Runner(c.config, c._log)
+    r.teardown(**vars(c.args))
 
 
 class SubCommandContext(object):
@@ -296,7 +311,7 @@ def main():
     p = subparsers.add_parser('setup', help='install and setup OpenAFS')
     common_options(p)
     p.add_argument('--force', action='store_true', help='overwrite existing files', default=None)
-    p.set_defaults(_cmd=afsrobot.runner.run_setup)
+    p.set_defaults(_cmd=cmd_setup)
 
     #
     # afs-robotest run
@@ -305,7 +320,7 @@ def main():
     common_options(p)
     p.add_argument('-s', '--suite', help="test suite to run (default: all)", default=None)
     p.add_argument('-i', '--include', help="test tags to include (default: all)", default=None)
-    p.set_defaults(_cmd=afsrobot.runner.run_tests)
+    p.set_defaults(_cmd=cmd_test)
 
     #
     # afs-robotest login
@@ -313,14 +328,14 @@ def main():
     p = subparsers.add_parser('login', help="obtain a token")
     common_options(p)
     p.add_argument('-u', '--user', help="user name (default: admin)", default=None)
-    p.set_defaults(_cmd=afsrobot.runner.run_login)
+    p.set_defaults(_cmd=cmd_login)
 
     #
     # afs-robotest teardown
     #
     p = subparsers.add_parser('teardown', help="remove OpenAFS")
     common_options(p)
-    p.set_defaults(_cmd=afsrobot.runner.run_teardown)
+    p.set_defaults(_cmd=cmd_teardown)
 
     args = parser.parse_args()
     with SubCommandContext(args) as c:

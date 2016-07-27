@@ -20,19 +20,14 @@
 
 import os
 import sys
-
+import subprocess
 import afsrobot.config
-import afsrobot.command
 
-try:
-    import robot.run
-except ImportError:
-    sys.stderr.write("Cannot import robotframework packages.\n")
-    sys.stderr.write("Install robotframework with `sudo pip install robotframework`.\n")
-    sys.exit(1)
-
+# Install robotframework with `sudo pip install robotframework`
+import robot.run
 
 class ProgressMessage(object):
+    """Display a progress message followed by ok or fail."""
     def __init__(self, msg):
         self.msg = msg
 
@@ -48,222 +43,203 @@ class ProgressMessage(object):
             sys.stdout.write(" fail\n")
         return False
 
-def run_setup(c):
-    """Setup OpenAFS client and servers and create a test cell."""
-    args = c.args
-    config = c.config
-    aklog_workaround_check(args, config)
+class CommandError(RuntimeError):
+    """Command failure."""
+    def __init__(self, cmdline, code):
+        self.cmdline = cmdline
+        self.code = code
+    def __str__(self):
+        return "Command failed: %s; code=%d" % (self.cmdline, self.code)
 
-    keyfile = config.optstr('ssh', 'keyfile', required=True)
-    c.info("==== SETUP ====")
+class Runner(object):
 
-    # Install
-    for hostname in config.opthostnames():
-        cmd = afsrobot.command.Command(hostname, keyfile, log=c._log)
-        section = "host:%s" % (hostname)
-        installer = config.optstr(section, 'installer', default='none')
-        if installer == 'transarc' or installer == 'rpm':
-            with ProgressMessage("Installing on %s" % (hostname)):
-                if config.optbool('kerberos', 'akimpersonate'):
-                    if cmd.afsutil('fakekey', *config.optfakekey()) != 0:
-                        raise AssertionError("Failed to create fake service key.")
-                if cmd.afsutil('install', *config.optinstall(hostname)) != 0:
-                    raise AssertionError("Failed to install.")
-        elif installer == 'none':
-            c.info("Skipping install on hostname %s; installer is 'none'." % (hostname))
-        else:
-            raise ValueError("Invalid installer option for hostname %s!; installer='%s'." % (hostname, installer))
+    def __init__(self, config=None, log=None):
+        if config is None:
+            config = afsrobot.config.Config()
+            config.load_defaults()
+        if log is None:
+            log = sys.stdout
+        self.config = config
+        self.log = log
 
-    # Set key
-    for hostname in config.opthostnames():
-        cmd = afsrobot.command.Command(hostname, keyfile, log=c._log)
-        section = "host:%s" % (hostname)
-        installer = config.optstr(section, 'installer', default='none')
-        if installer == 'none':
-            info("Skipping setkey on hostname %s; installer is 'none'." % (hostname))
-            continue
-        if cmd.afsutil('setkey', *config.optsetkey(hostname)) != 0:
-            fail("Failed to setkey.\n")
+    def _aklog_workaround_check(self):
+        # Sadly, akimpersonate is broken on the master branch at this time. To
+        # workaround this users must setup an aklog 1.6.10+ in some directory
+        # and then set a option to specify the location. Since this is easy to
+        # get wrong, do a sanity check up front, at least until aklog is fixed.
+        if self.config.optbool('kerberos', 'akimpersonate'):
+            aklog = self.config.optstr('variables', 'aklog')
+            if aklog is None:
+                sys.stderr.write("Warning: The akimpersonate feature is enabled but the aklog option\n")
+                sys.stderr.write("         is not set. See the README.md for more information about\n")
+                sys.stderr.write("         testing without Kerberos.\n")
 
-    # Start clients and servers.
-    for hostname in config.opthostnames():
-        cmd = afsrobot.command.Command(hostname, keyfile, log=c._log)
-        section = "host:%s" % (hostname)
-        if config.optbool(section, "isfileserver") or config.optbool(section, "isdbserver"):
-            with ProgressMessage("Starting servers on %s" % (hostname)):
-                if cmd.afsutil('start', 'server') != 0:
-                    raise AssertionError("Failed to start servers.")
-        if config.optbool(section, "isclient") and config.optbool(section, 'afsdb_dynroot', default=True):
-            with ProgressMessage("Starting client on %s" % (hostname)):
-                if cmd.afsutil('start', 'client') != 0:
-                    raise AssertionError("Failed to start client.")
+    def _logmsg(self, hostname, sev, msg):
+        self.log.writelines([hostname, " ", sev.upper(), " ", msg, "\n"])
 
-    cmd = afsrobot.command.Command('localhost', keyfile, log=c._log, verbose=args.verbose)
-    with ProgressMessage("Setting up new cell"):
-        if cmd.afsutil('newcell', *config.optnewcell()) != 0:
-            raise AssertionError("Failed to setup cell.")
+    def _info(self, msg):
+        self._logmsg('localhost', 'info', msg)
 
-    # Now that the root volumes are ready, start any non-dynroot clients.
-    for hostname in config.opthostnames():
-        cmd = afsrobot.command.Command(hostname, keyfile, log=c._log)
-        section = "host:%s" % (hostname)
-        if config.optbool(section, "isclient") and not config.optbool(section, 'afsdb_dynroot', default=True):
-            with ProgressMessage("Starting non-dynroot client on %s" % (hostname)):
-                if cmd.afsutil('start', 'client') != 0:
-                    raise AssertionError("Failed to start client.")
-    return 0
+    def _run(self, hostname, args, sudo=False):
+        """Run commands locally or remotely, with or without sudo."""
+        if sudo:
+            args.insert(0, 'sudo')
+            args.insert(1, '-n')
+        if hostname != 'localhost':
+            command = subprocess.list2cmdline(args)
+            args = [
+                'ssh', '-q', '-t', '-o', 'PasswordAuthentication no'
+            ]
+            if self.keyfile:
+                 args.append('-i')
+                 args.append(self.keyfile)
+            args.append(hostname)
+            args.append(command)
+        cmdline = subprocess.list2cmdline(args)
+        self._info("running: %s" % (cmdline))
+        p = subprocess.Popen(args, bufsize=1, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        with p.stdout:
+            for line in iter(p.stdout.readline, ''):
+                line = line.rstrip()
+                self.log.writelines([hostname, " ", line, "\n"])
+        code = p.wait()
+        if code != 0:
+            raise CommandError(cmdline, code)
 
-def run_login(c):
-    args = c.args
-    config = c.config
+    def _afsutil(self, hostname, command, args, sudo=True):
+        args.insert(0, 'afsutil')
+        args.insert(1, command)
+        self._run(hostname, args, sudo=sudo)
 
-    keyfile = config.optstr('ssh', 'keyfile', required=True)
-    cargs = config.optlogin(args.user)
-    if '--user' in cargs:
-        user = cargs[cargs.index('--user') + 1]
-    else:
-        user = 'admin'
-    cmd = afsrobot.command.Command('localhost', keyfile, log=c._log)
-    with ProgressMessage("Obtaining token for %s" % (user)):
-        rc = cmd.sh('afsutil', 'login', *cargs)
-        if rc != 0:
-            raise AssertionError("Failed to login.")
+    def setup(self, **kwargs):
+        """Setup OpenAFS client and servers and create a test cell."""
+        self._aklog_workaround_check()
+        # Installation.
+        for hostname in self.config.opthostnames():
+            section = "host:%s" % (hostname)
+            installer = self.config.optstr(section, 'installer', default='none')
+            if installer == 'none':
+                self._info("Skipping install on hostname %s; installer is 'none'." % (hostname))
+            elif installer == 'transarc' or installer == 'rpm':
+                with ProgressMessage("Installing on %s" % (hostname)):
+                    if self.config.optbool('kerberos', 'akimpersonate'):
+                        self._afsutil(hostname, 'fakekey', self.config.optfakekey())
+                    self._afsutil(hostname, 'install', self.config.optinstall(hostname))
+                with ProgressMessage("Setting key on %s" % (hostname)):
+                    self._afsutil(hostname, 'setkey', self.config.optsetkey(hostname))
+                if self.config.optbool(section, "isfileserver") or \
+                   self.config.optbool(section, "isdbserver"):
+                    with ProgressMessage("Starting servers on %s" % (hostname)):
+                        self._afsutil(hostname, 'start', ['server'])
+                if self.config.optbool(section, "isclient") and \
+                   self.config.optbool(section, 'afsdb_dynroot', default=True):
+                    with ProgressMessage("Starting client on %s" % (hostname)):
+                        self._afsutil(hostname, 'start', ['client'])
+            else:
+                raise ValueError("Invalid installer option for hostname %s!; installer='%s'." % (hostname, installer))
+        # Setup new cell.
+        with ProgressMessage("Setting up new cell"):
+            self._afsutil('localhost', 'newcell', self.config.optnewcell())
+        # Now that the root volumes are ready, start any non-dynroot clients.
+        for hostname in self.config.opthostnames():
+            section = "host:%s" % (hostname)
+            if self.config.optbool(section, "isclient") and \
+               not self.config.optbool(section, 'afsdb_dynroot', default=True):
+                with ProgressMessage("Starting non-dynroot client on %s" % (hostname)):
+                    self._afsutil(hostname, 'start', ['client'])
 
-def run_teardown(c):
-    args = c.args
-    config = c.config
-    keyfile = config.optstr('ssh', 'keyfile', required=True)
+    def login(self, **kwargs):
+        """Obtain a token for manual usage.
 
-    c.info("==== TEARDOWN ====")
+        The test harness will obtain and remove tokens as needed for the RF
+        tests, but this sub-command is a useful short cut to get a token for
+        the configured admin user.
+        """
+        user = kwargs.get('user')
+        if user is None:
+            user = self.config.optstr('cell', 'admin', 'admin')
+        args = self.config.optlogin(user=user)
+        with ProgressMessage("Obtaining token for %s" % (user)):
+            self._afsutil('localhost', 'login', args, sudo=False)
 
-    for hostname in config.opthostnames():
-        section = "host:%s" % (hostname)
-        cmd = afsrobot.command.Command(hostname, keyfile, log=c._log)
-        installer = config.optstr(section, 'installer', default='none')
-        if installer == 'transarc':
-            with ProgressMessage("Removing clients and servers on %s" % (hostname)):
-                if cmd.afsutil('stop', *config.optcomponents(hostname)) != 0:
-                    raise AssertionError("Failed to stop.")
-                if cmd.afsutil('remove', '--purge') != 0:
-                    raise AssertionError("Failed to remove.")
-        elif installer == 'none':
-            info("Skipping remove on hostname %s; installer is 'none'." % (hostname))
-        else:
-            info("Invalid installer option for hostname %s!; installer='%s'.\n" % (hostname, installer))
+    def test(self, **kwargs):
+        """Run the Robotframework test suites."""
+        self._aklog_workaround_check()
+        config = self.config
 
-    return 0
+        # Setup the python paths for our libs and resources.
+        sys.path.append(os.path.join(config.get('paths', 'libraries'), 'OpenAFSLibrary'))
+        sys.path.append(config.get('paths', 'resources'))
 
-def run_tests(c):
-    """Run the Robotframework test suites."""
-    args = c.args
-    config = c.config
+        # Create output dir if needed.
+        output = config.optstr('paths', 'output', required=True)
+        if not os.path.isdir(output):
+            os.makedirs(output)
 
-    aklog_workaround_check(args, config)
+        # Verify we have a keytab.
+        if not os.path.isfile(config.get('kerberos', 'keytab')):
+            raise ValueError("Cannot find keytab file '%s'!\n" % (config.get('kerberos', 'keytab')))
 
-    # Setup the python paths for our libs and resources.
-    sys.path.append(os.path.join(config.get('paths', 'libraries'), 'OpenAFSLibrary'))
-    sys.path.append(config.get('paths', 'resources'))
+        # Setup the rf options.
+        tests = config.get('paths', 'tests') # path to our tests
+        options = {
+            'variable': [
+                'RESOURCES:%s' % config.get('paths', 'resources'), # path to our resources
+                'AFS_CELL:%s' % config.get('cell', 'name'),
+                'AFS_ADMIN:%s' % config.get('cell', 'admin'),
+                'AFS_AKIMPERSONATE:%s' % config.getboolean('kerberos', 'akimpersonate'),
+                'KRB_REALM:%s' % config.get('kerberos', 'realm'),
+                'KRB_AFS_KEYTAB:%s' % config.get('kerberos', 'keytab'),
+            ],
+            'report': 'index.html',
+            'outputdir': output,
+            'loglevel': config.get('run', 'log_level'),
+            'exclude': config.get('run', 'exclude_tags').split(','),
+            'runemptysuite': True,
+            'exitonfailure': False,
+        }
 
-    # Create output dir if needed.
-    output = config.optstr('paths', 'output', required=True)
-    if not os.path.isdir(output):
-        os.makedirs(output)
+        # Additional variables.
+        if config.has_section('variables'):
+            for o,v in config.items('variables'):
+                options['variable'].append("%s:%s" % (o.upper(), v))
 
-    # Verify we have a keytab.
-    if not os.path.isfile(config.get('kerberos', 'keytab')):
-        sys.stderr.write("Cannot find keytab file '%s'!\n" % (config.get('kerberos', 'keytab')))
+        # Additional options.
+        if kwargs.has_key('suite') and kwargs['suite']:
+            options['suite'] = kwargs['suite']
+
+        if kwargs.has_key('include') and kwargs['include']:
+            options['include'] = kwargs['include']
+
+        # Run the RF tests.
+        code = robot.run(tests, **options)
+        if code != 0:
+            sys.stderr.write("Tests failed.\n")
+        return code
+
+    def teardown(self, **kwargs):
+        """Uninstall and purge files."""
+        for hostname in self.config.opthostnames():
+            section = "host:%s" % (hostname)
+            installer = self.config.optstr(section, 'installer', default='none')
+            if installer == 'none':
+                self._info("Skipping remove on hostname %s; installer is 'none'." % (hostname))
+            elif installer == 'transarc' or installer == 'rpm':
+                with ProgressMessage("Removing clients and servers on %s" % (hostname)):
+                    self._afsutil(hostname, 'stop', self.config.optcomponents(hostname))
+                    self._afsutil(hostname, 'remove', ['--purge'])
+            else:
+                self._info("Invalid installer option for hostname %s!; installer='%s'.\n" % (hostname, installer))
+
+
+# Test driver.
+if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        sys.stderr.write("usage: python runner.py [command]\n")
         sys.exit(1)
-
-    # Setup the rf options.
-    tests = config.get('paths', 'tests') # path to our tests
-    options = {
-        'variable': [
-            'RESOURCES:%s' % config.get('paths', 'resources'), # path to our resources
-            'AFS_CELL:%s' % config.get('cell', 'name'),
-            'AFS_ADMIN:%s' % config.get('cell', 'admin'),
-            'AFS_AKIMPERSONATE:%s' % config.getboolean('kerberos', 'akimpersonate'),
-            'KRB_REALM:%s' % config.get('kerberos', 'realm'),
-            'KRB_AFS_KEYTAB:%s' % config.get('kerberos', 'keytab'),
-        ],
-        'report': 'index.html',
-        'outputdir': output,
-        'loglevel': config.get('run', 'log_level'),
-        'exclude': config.get('run', 'exclude_tags').split(','),
-        'runemptysuite': True,
-        'exitonfailure': False,
-    }
-
-    # Additional variables.
-    if config.has_section('variables'):
-        for o,v in config.items('variables'):
-            options['variable'].append("%s:%s" % (o.upper(), v))
-
-    # Additional options.
-    if args.suite:
-        options['suite'] = args.suite
-
-    if args.include:
-        options['include'] = args.include
-
-    # Run the RF tests.
-    sys.stdout.write("Running tests.\n")
-    code = robot.run(tests, **options)
-    if code != 0:
-        sys.stderr.write("Tests failed.\n")
-
-    return code
-
-def aklog_workaround_check(args, config):
-    # Sadly, akimpersonate is broken on the master branch at this time. To
-    # workaround this users must setup an aklog 1.6.10+ in some directory
-    # and then set a option to specify the location. Since this is easy to
-    # get wrong, do a sanity check up front, at least until aklog is fixed.
-    import mmap
-    import re
-    required = (1, 6, 10)
-    def _warn():
-        sys.stderr.write("Warning: The akimpersonate feature is enabled but the path to a supported\n")
-        sys.stderr.write("         aklog is missing.  See the README.md for more information about\n")
-        sys.stderr.write("         testing without Kerberos.\n")
-    def _fail(msg=None):
-        sys.stderr.write("Failed aklog check!\n")
-        if msg:
-            sys.stderr.write("%s\n" % (msg))
-        sys.stderr.write("Please set the aklog option in the [variables] section of the config.\n")
-        sys.stderr.write("Require aklog version %d.%d.x " % (required[0:2]))
-        sys.stderr.write("and at least version %d.%d.%d.\n" % required)
-        sys.exit(1)
-    def _find_version(filename):
-        with open(filename, "rb") as f:
-            mm = mmap.mmap(f.fileno(), 0, prot=mmap.PROT_READ)
-            i = mm.find("@(#)")
-            if i == -1:
-                raise RuntimeError("Unable to find version string.")
-            j = mm.find("\0", i)
-            if j == -1:
-                raise RuntimeError("Unable to find end of version string.")
-            version_string = mm[i:j]
-            mm.close()
-        m = re.match(r'^@\(#\)\s*OpenAFS (\d+)\.(\d+)\.(\d+)', version_string)
-        if m is None:
-            # We need a valid n.n.n version number (dirty is tolerated)
-            raise RuntimeError("Unrecognized version string '%s'." % (version_string))
-        return tuple([int(x) for x in m.groups()])
-    if config.optbool('kerberos', 'akimpersonate'):
-        aklog = config.optstr('variables', 'aklog')
-        if aklog is None:
-            _warn()
-            return
-        if not os.access(aklog, os.F_OK):
-            _fail("File '%s' not found." % (aklog))
-        if not os.access(aklog, os.X_OK):
-            _fail("File '%s' not executable." % (aklog))
-        try:
-            version = _find_version(aklog)
-        except RuntimeError as e:
-            _fail("Failed to get version number in file %s.\n%s" % (aklog, e))
-        if version[0:2] != required[0:2] or version[2] < required[2]:
-            msg = "Bad aklog version in file %s; " % (aklog)
-            msg += "found version %d.%d.%d in file." % (version)
-            _fail(msg)
-
+    cf = os.path.join(os.getenv('HOME'), '.afsrobotestrc', 'afs-robotest.conf')
+    c = afsrobot.config.Config()
+    c.load_from_file(cf)
+    r = Runner(config=c)
+    fn = getattr(r, sys.argv[1])
+    fn()
