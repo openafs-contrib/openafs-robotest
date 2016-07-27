@@ -143,27 +143,35 @@ class Installer(object):
         """This sould be implemented by the children."""
         raise AssertionError("Not implemented.")
 
-    def _detect_cellhosts(self, hostnames):
+    def _lookup_cellhosts(self, hostnames):
         """Create a list of (address,hostname) tuples from a list of hostnames.
         If hostnames is None, then detect the (address,hostname) for the local
         system by checking the network interfaces on this system."""
         cellhosts = []
-        if hostnames:
-            # Use the addresses from the DNS lookup of the given hostnames.
-            # We do not want loopback addresses in the CellServDB file.
-            logger.info("Looking up ip address(es) for given hostname(s): %s", ", ".join(hostnames))
-            for name in hostnames: # hosts is a list of names or quad-dot-address strings.
-                addr = socket.gethostbyname(name)
-                if addr.startswith('127.'):
-                    raise AssertionError("Loopback address %s given for hostname %s."
-                                         " Please check your /etc/hosts file." % (addr,name))
-                cellhosts.append((addr, name))
-        else:
-            # Detect a non-loopack address from the system's network interfaces.
-            # If this host has multiple interfaces, there's no good way to
-            # detect which ones are internal only.
+        # Use the addresses from the DNS lookup of the given hostnames.
+        # We do not want loopback addresses in the CellServDB file.
+        for name in hostnames: # hosts is a list of names or quad-dot-address strings.
+            logger.info("Looking up ip address of hostname %s." % (name))
+            addr = socket.gethostbyname(name)
+            if addr.startswith('127.'):
+                raise AssertionError("Loopback address %s given for hostname %s."
+                                     " Please check your /etc/hosts file." % (addr,name))
+            cellhosts.append((addr, name))
+        return cellhosts
+
+    def _detect_cellhosts(self):
+        # No hosts given; Assume we are using this host. First try to get a
+        # non-loopback IP address from the DNS lookup; Fall back to getting
+        # an addess from the network interface.  If this host has multiple
+        # interfaces, there's no good way to detect which ones are internal
+        # only, so at this point we have to give up.
+        cellhosts = []
+        name = os.uname()[1]
+        logger.info("Trying to detect cellhosts.")
+        logger.info("Looking up ip address of hostname %s." % (name))
+        addr = socket.gethostbyname(name)
+        if addr.startswith('127.'):
             logger.info("Looking up ip address from network interfaces.")
-            name = os.uname()[1]          # our hostname
             addrs = network_interfaces()  # should return non-loopback ip addresses.
             if len(addrs) == 0:
                 raise AssertionError("No network interfaces found.")
@@ -173,8 +181,7 @@ class Installer(object):
             addr = addrs[0]
             if addr.startswith('127.'):
                 raise AssertionError("Loopback address returned by network_interfaces.")
-            cellhosts.append((addr, name))
-        logger.info("Cell hosts are: %s", pprint.pformat(cellhosts))
+        cellhosts.append((addr, name))
         return cellhosts
 
     def _make_vice_dirs(self):
@@ -251,7 +258,11 @@ class Installer(object):
         # before we start installing to catch errors early.
         logger.debug("pre_install")
         if self.cellhosts is None:
-            self.cellhosts = self._detect_cellhosts(self.hostnames)
+            if self.hostnames:
+                self.cellhosts = self._lookup_cellhosts(self.hostnames)
+            else:
+                self.cellhosts = self._detect_cellhosts()
+            logger.info("Cell hosts are: %s", pprint.pformat(cellhosts))
         if self.do_server:
             self._make_vice_dirs()
         if self.do_client:
@@ -306,16 +317,20 @@ class Installer(object):
 class _Test(object):
     def test_detect_cellhosts(self):
         i = Installer()
-        cellhosts = i._detect_cellhosts(None)
+        cellhosts = i._detect_cellhosts()
         pprint.pprint(cellhosts)
-        cellhosts = i._detect_cellhosts(['mantis'])
+
+    def test_lookup_cellhosts(self):
+        i = Installer()
+        cellhosts = i._lookup_cellhosts(['mantis'])
         pprint.pprint(cellhosts)
-        cellhosts = i._detect_cellhosts(['mantis', 'wasp'])
+        cellhosts = i._lookup_cellhosts(['mantis', 'wasp'])
         pprint.pprint(cellhosts)
 
     def test(self):
         logging.basicConfig(level=logging.DEBUG)
         self.test_detect_cellhosts()
+        self.test_lookup_cellhosts()
 
 if __name__ == '__main__':
     t = _Test()
