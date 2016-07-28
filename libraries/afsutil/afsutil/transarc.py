@@ -173,10 +173,23 @@ class LinuxClientSetup(object):
         shutil.copy2(src, dst)
 
     def install_driver(self, dest, force=False):
-        pass # noop
+        # If available, install the openafs.ko to a path loadable by modprobe.
+        # Use the openafs configure option --with-linux-kernel-packaging to build
+        # openafs.ko instead of libafs-....ko
+        release = os.uname()[2]
+        src = os.path.join(dest, "root.client", "lib/modules/%s/extra/openafs/openafs.ko" % (release))
+        dst = "/lib/modules/%s/extra/openafs/openafs.ko" % (release)
+        if os.path.exists(src):
+            mkdirp(os.path.dirname(dst))
+            logger.info("Installing kernel module from '%s' to '%s'.", src, dst)
+            shutil.copy2(src, dst)
+            sh('/sbin/depmod', '-a')
 
     def remove_driver(self):
-        pass # noop
+        release = os.uname()[2]
+        src = "/lib/modules/%s/extra/openafs/openafs.ko" % (release)
+        if os.path.exists(src):
+            remove_file(src)
 
 class SolarisClientSetup(object):
     """Solaris specific setup functions."""

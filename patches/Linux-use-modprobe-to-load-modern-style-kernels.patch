@@ -1,0 +1,43 @@
+From dd05ec9ab53644e3ba14474b31e31c589947f3e2 Mon Sep 17 00:00:00 2001
+From: Michael Meffie <mmeffie@sinenomine.net>
+Date: Wed, 27 Jul 2016 20:23:37 -0400
+Subject: [PATCH] Linux: use modprobe to load modern style kernels
+
+Update the example Linux init script to use modprobe to load modern
+style openafs.ko kernel modules when present.  Fall back to legacy style
+libafs otherwise.
+---
+ src/afsd/afs.rc.linux |   10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/src/afsd/afs.rc.linux b/src/afsd/afs.rc.linux
+index 288baab..fedede1 100644
+--- a/src/afsd/afs.rc.linux
++++ b/src/afsd/afs.rc.linux
+@@ -198,6 +198,14 @@ set_prefix()
+ MODLOADDIR=${MODLOADDIR:-/usr/vice/etc/modload}
+ # load_client loads the AFS client module if it's not already loaded. 
+ load_client() {
++
++	# Load the packaging style kmod if present, otherwise fallback
++	# to the legacy style.
++	if [ -f /lib/modules/`uname -r`/extra/openafs/openafs.ko ] ; then
++		modprobe openafs
++		return
++	fi
++
+ 	# If LIBAFS is set, use it.
+ 	if [ -z "$LIBAFS" ] ; then
+ 		# Try to determine the right client.
+@@ -339,7 +347,7 @@ case "$1" in
+ 		killall -HUP bosserver
+ 	fi
+ 
+-	LIBAFS=`/sbin/lsmod | fgrep libafs`
++	LIBAFS=`/sbin/lsmod | egrep '(lib|open)afs'`
+ 	if [ -n "$LIBAFS" ] ; then
+ 		LIBAFS=`echo $LIBAFS | awk 'BEGIN { FS = " " } { print $1 }'`
+ 		/sbin/rmmod $LIBAFS
+-- 
+1.7.10.4
+
