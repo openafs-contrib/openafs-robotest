@@ -262,7 +262,7 @@ class Installer(object):
                 self.cellhosts = self._lookup_cellhosts(self.hostnames)
             else:
                 self.cellhosts = self._detect_cellhosts()
-            logger.info("Cell hosts are: %s", pprint.pformat(cellhosts))
+            logger.info("Cell hosts are: %s", pprint.pformat(self.cellhosts))
         if self.do_server:
             self._make_vice_dirs()
         if self.do_client:
