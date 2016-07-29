@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2015 Sine Nomine Associates
+# Copyright (c) 2014-2016 Sine Nomine Associates
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -28,6 +28,7 @@ import shutil
 import sys
 import socket
 import glob
+import pkg_resources
 
 from afsutil.install import Installer, \
                             copy_files, remove_file, remove_files
@@ -71,81 +72,6 @@ TOKENS = "/usr/afsws/bin/tokens"
 UDEBUG = "/usr/afs/bin/udebug"
 UNLOG = "/usr/afsws/bin/unlog"
 VOS = "/usr/afs/bin/vos"
-
-# Basic init script to start and stop the servers
-# independently from the client.
-AFS_SERVER_RC = """#!/bin/bash
-# Basic init script to start/stop the OpenAFS servers.
-# chkconfig: 2345 49 51
-
-if [ -f /etc/rc.d/init.d/functions ] ; then
-    . /etc/rc.d/init.d/functions
-    afs_rh=1
-else
-    # special (RedHat) functions not available...
-    function echo_failure () { echo -n " - failed." ; }
-    function echo_success () { echo -n " - successful." ; }
-fi
-
-is_on() {
-    if  test "$1" = "on" ; then return 0
-    else return 1
-    fi
-}
-
-BOSSERVER_OPTIONS=""
-SYSCNF=${SYSCNF:-/etc/sysconfig/openafs-server}
-if [ -f $SYSCNF ] ; then
-    . $SYSCNF
-fi
-
-BOS=${BOS:-/usr/afs/bin/bos}
-BOSSERVER=${BOSSERVER:-/usr/afs/bin/bosserver}
-
-start() {
-    if [ ! "$afs_rh" -o ! -f /var/lock/subsys/openafs-server ]; then
-        if test -x $BOSSERVER ; then
-            echo "Starting AFS servers..... "
-            $BOSSERVER $BOSSERVER_OPTIONS
-            test "$afs_rh" && touch /var/lock/subsys/openafs-server
-            if is_on $WAIT_FOR_SALVAGE; then
-                sleep 10
-                while $BOS status localhost fs 2>&1 | grep 'Auxiliary.*salvaging'; do
-                    echo "Waiting for salvager to finish..... "
-                    sleep 10
-                done
-            fi
-        fi
-    fi
-}
-
-stop() {
-    if [ ! "$afs_rh" -o -f /var/lock/subsys/openafs-server ]; then
-        if  test -x $BOS ; then
-            echo "Stopping AFS servers..... "
-            $BOS shutdown localhost -localauth -wait
-            pkill -HUP bosserver
-        fi
-        rm -f /var/lock/subsys/openafs-server
-    fi
-}
-
-case "$1" in
-  start)
-      start
-      ;;
-  stop)
-      stop
-      ;;
-  restart)
-      $0 stop
-      $0 start
-      ;;
-  *)
-      echo $"Usage: $0 {start|stop|restart}"
-      exit 1
-esac
-"""
 
 class LinuxClientSetup(object):
     """Linux specific setup functions."""
@@ -312,13 +238,13 @@ class TransarcInstaller(Installer):
         Does not configure the system to run the init script automatically on
         reboot.
         """
-        mkdirp("/var/lock/subsys/")
+        src = pkg_resources.resource_filename('afsutil', 'data/openafs-server.init')
         dst = "/etc/init.d/openafs-server"
         if os.path.exists(dst) and not self.force:
             raise AssertionError("Refusing to overwrite '%s'.", dst)
-        with open(dst, 'w') as f:
-            f.write(AFS_SERVER_RC)
+        shutil.copy2(src, dst)
         os.chmod(dst, 0755)
+        mkdirp("/var/lock/subsys/")  # needed by the init script
 
     def _install_workstation_binaries(self):
         """Install workstation binaries from a Transarc-style distribution."""
