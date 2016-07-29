@@ -109,17 +109,6 @@ else
 fi
 
 #
-# Start the AFS server processes if a bosserver exists
-#
-
-if [ -x /usr/afs/bin/bosserver ]; then
-      echo "Starting AFS Server processes"
-      /usr/afs/bin/bosserver &
-      OPTIONS="$OPTIONS -nosettime"
-      sleep 30
-fi
-
-#
 # Check that all of the client configuration files exist
 #
 
@@ -183,7 +172,7 @@ echo ;;
 'stop')
 
 #
-# Stop the AFS inetd and server processes
+# Stop the AFS inetd
 # We do not kill the afsd process here. It should be possible to do now, but we
 # don't do it yet. Note that you need to parse 'modinfo | grep afs' output and
 # give the id to modunload, in order to unload the kernel module.
@@ -191,14 +180,6 @@ echo ;;
 
 echo "Killing inetd.afs"
 killproc inetd.afs
-
-bosrunning=`ps -ef | awk '/bosserver/ && ! /awk/'`
-if [ "${bosrunning}" != "" ]; then
-      echo "Shutting down AFS server processes"
-      /usr/afs/bin/bos shutdown localhost -localauth -wait
-      echo "Killing AFS bosserver"
-      killproc bosserver
-fi
 
 echo ;;
 

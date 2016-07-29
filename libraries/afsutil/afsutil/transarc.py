@@ -158,14 +158,15 @@ class LinuxClientSetup(object):
         """
         # Install the init script.
         mkdirp("/var/lock/subsys/")
-        kdir = AFS_KERNEL_DIR.lstrip('/')
-        src = os.path.join(dest, "root.client", kdir, "afs.rc")
+        src = pkg_resources.resource_filename('afsutil', 'data/openafs-client-linux.init')
         dst = "/etc/init.d/openafs-client"
         if os.path.exists(dst) and not force:
             raise AssertionError("Refusing to overwrite '%s'.", dst)
         logger.info("Installing client init script from '%s' to '%s'.", src, dst)
         shutil.copy2(src, dst)
+        os.chmod(dst, 0755)
         # Install the default startup configuration.
+        kdir = AFS_KERNEL_DIR.lstrip('/')
         src = os.path.join(dest, "root.client", kdir, "afs.conf")
         dst = os.path.join(SYSCONFIG, "afs")
         logger.info("Writing client startup options to file '%s'.", dst)
@@ -224,24 +225,12 @@ class SolarisClientSetup(object):
         Does not configure the system to run the init script automatically on
         reboot.  Changes the init script to avoid starting the bosserver
         by default."""
-        kdir = AFS_KERNEL_DIR.lstrip('/')
-        src = os.path.join(dest, "root.client", kdir, "modload", "afs.rc")
+        src = pkg_resources.resource_filename('afsutil', 'data/openafs-client-solaris.init')
         dst = "/etc/init.d/openafs-client"
         if os.path.exists(dst) and not force:
             raise AssertionError("Refusing to overwrite '%s'.", dst)
         logger.info("Installing client init script from '%s' to '%s'.", src,dst)
-        with open(src, 'r') as f:
-            script = f.read()
-        with open(dst, 'w') as f:
-            for line in script.splitlines():
-                line = line.replace(
-                    'if [ -x /usr/afs/bin/bosserver ]; then',
-                    'if [ "${AFS_SERVER}" = "on" -a -x /usr/afs/bin/bosserver ]; then')
-                line = line.replace(
-                    'if [ "${bosrunning}" != "" ]; then',
-                    'if [ "${AFS_SERVER}" = "on" -a "${bosrunning}" != "" ]; then')
-                f.write(line)
-                f.write("\n")
+        shutil.copy2(src, dst)
         os.chmod(dst, 0755)
         # Setup afsd options.
         CONFIG = "/usr/vice/etc/config"
