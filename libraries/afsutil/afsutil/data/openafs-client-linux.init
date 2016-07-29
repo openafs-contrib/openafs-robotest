@@ -1,14 +1,14 @@
 #! /bin/bash
 # Copyright 2000, International Business Machines Corporation and others.
 # All Rights Reserved.
-# 
+#
 # This software has been released under the terms of the IBM Public
 # License.  For details, see the LICENSE file in the top-level source
 # directory or online at http://www.openafs.org/dl/license10.html
 
 # AFS	Start and stop AFS components
-# 
-# 
+#
+#
 # chkconfig: 35 60 20
 # description:  AFS is a distributed file system which provides location
 #		transparency, caching and secure authentication.
@@ -116,7 +116,7 @@ choose_client() {
 	*)   MP= ;;	# SP system
 	esac
 
-	# For now, just use uname -r to get the module version. 
+	# For now, just use uname -r to get the module version.
 	case $KERNEL_VERSION in
 	  [1-2].[0-5].*)
 		LIBAFS=libafs-$KERNEL_VERSION$MP.o
@@ -154,7 +154,7 @@ set_prefix()
 	prefix_set=0
 
 	set X `egrep "\<$SEARCH_STR" $KSYMS_FILE 2> /dev/null`; shift
-	
+
 	case $KERNEL_VERSION in
 	  [1-2].[0-5].*)
 		str=$2
@@ -196,14 +196,14 @@ set_prefix()
 }
 
 MODLOADDIR=${MODLOADDIR:-/usr/vice/etc/modload}
-# load_client loads the AFS client module if it's not already loaded. 
+# load_client loads the AFS client module if it's not already loaded.
 load_client() {
 	# If LIBAFS is set, use it.
 	if [ -z "$LIBAFS" ] ; then
 		# Try to determine the right client.
 		choose_client
 	fi
-    
+
 	if [ ! -f "$MODLOADDIR/$LIBAFS" ] ; then
 		echo AFS module $MODLOADDIR/$LIBAFS does not exist. Not starting AFS.
 		exit 1
@@ -281,7 +281,7 @@ choose_afsdoptions() {
 	fi
 }
 
-case "$1" in 
+case "$1" in
   start)
     if [ ! "$afs_rh" -o ! -f /var/lock/subsys/afs ]; then
         if [ `echo "$OPTIONS" | grep -c dynroot` = 0 ]; then
@@ -297,7 +297,7 @@ case "$1" in
 	echo "Starting AFS services..... "
 	# Start bosserver, it if exists
 	if  is_on $AFS_SERVER && test -x $BOSSERVER  ; then
-		$BOSSERVER 
+		$BOSSERVER
 		test "$afs_rh" && touch /var/lock/subsys/afs
 		if is_on $WAIT_FOR_SALVAGE; then
 			# wait for fileserver to finish salvaging
