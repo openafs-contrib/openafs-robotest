@@ -10,5 +10,7 @@ setup(name='afsutil',
       license='BSD',
       packages=['afsutil'],
       scripts=['scripts/afsutil'],
+      package_data={'afsutil':['data/*.init']},
+      include_package_data=True,
       zip_safe=False)
 
