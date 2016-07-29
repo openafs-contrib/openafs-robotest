@@ -198,6 +198,14 @@ set_prefix()
 MODLOADDIR=${MODLOADDIR:-/usr/vice/etc/modload}
 # load_client loads the AFS client module if it's not already loaded.
 load_client() {
+
+	# Load the packaging style kmod if present, otherwise fallback
+	# to the legacy style.
+	if [ -f /lib/modules/`uname -r`/extra/openafs/openafs.ko ] ; then
+		modprobe openafs
+		return
+	fi
+
 	# If LIBAFS is set, use it.
 	if [ -z "$LIBAFS" ] ; then
 		# Try to determine the right client.
@@ -339,10 +347,16 @@ case "$1" in
 		killall -HUP bosserver
 	fi
 
-	LIBAFS=`/sbin/lsmod | fgrep libafs`
-	if [ -n "$LIBAFS" ] ; then
-		LIBAFS=`echo $LIBAFS | awk 'BEGIN { FS = " " } { print $1 }'`
-		/sbin/rmmod $LIBAFS
+	# Unload the packaging style kmod if present, otherwise fallback
+	# to the legacy style.
+	if [ -f /lib/modules/`uname -r`/extra/openafs/openafs.ko ] ; then
+		modprobe -r openafs
+	else
+		LIBAFS=`/sbin/lsmod | fgrep 'libafs'`
+		if [ -n "$LIBAFS" ] ; then
+			LIBAFS=`echo $LIBAFS | awk 'BEGIN { FS = " " } { print $1 }'`
+			/sbin/rmmod $LIBAFS
+		fi
 	fi
 
 	rm -f /var/lock/subsys/afs
