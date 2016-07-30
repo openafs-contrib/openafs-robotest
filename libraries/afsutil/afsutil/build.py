@@ -66,18 +66,18 @@ def _clean():
         if os.path.isfile('./Makefile'):
             sh('make', 'clean')
 
-def _make_srpm():
+def _make_srpm(jobs=1):
     # Get the filename of the generated source rpm from the output of the
     # script. The source rpm filename is needed to build the rpms.
-    nproc = sh('nproc', output=True)[0]
-    output = sh('make', '-j', nproc, 'srpm', output=True)
+    output = sh('make', '-j', jobs, 'srpm', output=True)
     for line in output:
         if line.startswith('SRPM is '):
             return line.split()[2]
-    raise CommandFailed(['make', '-j', nproc, 'srpm'], 1, '', 'Failed to get the srpm filename.')
+    raise CommandFailed(['make', '-j', jobs, 'srpm'], 1, '', 'Failed to get the srpm filename.')
 
 def _make_rpm(srpm):
     # These commands should probably be moved to the OpenAFS Makefile.
+    # Note: The spec file does not support parallel builds (make -j) yet.
     cwd = os.getcwd()
     arch = os.uname()[4]
     # Build kmod packages.
@@ -106,12 +106,18 @@ def _make_rpm(srpm):
         'packages/%s' % (srpm))
     logger.info("Packages written to %s/packages/rpmbuild/RPMS/%s" % (cwd, arch))
 
-def build(cf=None, target='all', clean=True, transarc=True, **kwargs):
+def build(**kwargs):
     """Build the OpenAFS binaries.
 
     Build the transarc-path compatible bins by default, which are
     deprecated, but old habits die hard.
     """
+    cf = kwargs.get('cf', None)
+    target = kwargs.get('target', 'all')
+    clean = kwargs.get('clean', True)
+    transarc = kwargs.get('transarc', True)
+    jobs = kwargs.get('jobs', 1)
+
     if cf is not None:
         cf = shlex.split(cf)  # Note: shlex handles quoting properly.
     else:
@@ -131,8 +137,7 @@ def build(cf=None, target='all', clean=True, transarc=True, **kwargs):
         _clean()
     sh('./regen.sh')
     sh('./configure', *cf)
-    nproc = sh('nproc', output=True)[0]
-    sh('make', '-j', nproc, target)
+    sh('make', '-j', jobs, target)
 
 def _kmod():
     uname = os.uname()[0]
@@ -176,17 +181,19 @@ def modreload(**kwargs):
     logger.info("Starting the cache manager.")
     sh(afsd, '-dynroot', '-fakestat', '-afsdb')  # xxx: how to set these?
 
-def package(clean=True, package=None, **kwargs):
+def package(**kwargs):
     """Build the OpenAFS rpm packages."""
     # The rpm spec file contains the configure options for the actual build.
     # We run configure here just to bootstrap the process.
+    clean = kwargs.get('clean', True)
+    package = kwargs.get('package', None)
+    jobs = kwargs.get('jobs', 1)
     if clean:
         _clean()
     sh('./regen.sh', '-q')
     sh('./configure')
-    nproc = sh('nproc', output=True)[0]
-    sh('make', '-j', nproc, 'dist')
-    srpm = _make_srpm()
+    sh('make', '-j', jobs, 'dist')
+    srpm = _make_srpm(jobs)
     _make_rpm(srpm)
 
 

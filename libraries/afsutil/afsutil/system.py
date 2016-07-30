@@ -76,13 +76,16 @@ def run(cmd, args=None, quiet=False, retry=0, wait=1, cleanup=None):
 
 def sh(*args, **kwargs):
     """Run the command line and write the output to the logger."""
+    # sh() is an alternative to run(); calls to run() should be replaced with sh()
+    args = [arg.__str__() for arg in args]  # subprocess expects string args.
+    cmdline = subprocess.list2cmdline(args)
     output = []
     capture_output = kwargs.get('output', False)
     quiet = kwargs.get('quiet', False)
     if quiet:
-        logger.debug("Running %s", subprocess.list2cmdline(args))
+        logger.debug("Running %s", cmdline)
     else:
-        logger.info("Running %s", subprocess.list2cmdline(args))
+        logger.info("Running %s", cmdline)
     # Redirect stderr to the same pipe to capture errors too.
     p = subprocess.Popen(args, bufsize=1, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     with p.stdout:
@@ -190,6 +193,13 @@ def afs_umount():
     afs = afs_mountpoint()
     if afs:
         run('umount', args=[afs])
+
+def nproc():
+    """Return the number of processing units."""
+    nproc = which('nproc')
+    if nproc is None:
+        return 1  # default
+    return int(sh('nproc', output=True)[0])
 
 def _linux_network_interfaces():
     """Return list of non-loopback network interfaces."""
