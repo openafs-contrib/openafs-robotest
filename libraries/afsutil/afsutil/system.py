@@ -147,6 +147,11 @@ def directory_should_not_exist(path, description=None):
         raise AssertionError(description)
     return True
 
+def path_join(a, *p):
+    # os.path.join() is brain dead.
+    p = [x.lstrip('/') for x in p]
+    return os.path.join(a, *p)
+
 def get_running():
     """Get a set of running processes."""
     ps = which("ps")

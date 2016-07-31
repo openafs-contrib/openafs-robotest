@@ -35,7 +35,7 @@ from afsutil.install import Installer, \
 
 from afsutil.system import sh, directory_should_exist, \
                            configure_dynamic_linker, \
-                           is_loaded, is_running, mkdirp \
+                           is_loaded, is_running, mkdirp, path_join \
 
 logger = logging.getLogger(__name__)
 
@@ -92,9 +92,8 @@ class LinuxClientSetup(object):
         shutil.copy2(src, dst)
         os.chmod(dst, 0755)
         # Install the default startup configuration.
-        kdir = AFS_KERNEL_DIR.lstrip('/')
-        src = os.path.join(dest, "root.client", kdir, "afs.conf")
-        dst = os.path.join(SYSCONFIG, "afs")
+        src = path_join(dest, "root.client", AFS_KERNEL_DIR, "afs.conf")
+        dst = path_join(SYSCONFIG, "afs")
         logger.info("Writing client startup options to file '%s'.", dst)
         mkdirp(SYSCONFIG)
         shutil.copy2(src, dst)
@@ -104,8 +103,8 @@ class LinuxClientSetup(object):
         # Use the openafs configure option --with-linux-kernel-packaging to build
         # openafs.ko instead of libafs-....ko
         release = os.uname()[2]
-        src = os.path.join(dest, "root.client", "lib/modules/%s/extra/openafs/openafs.ko" % (release))
-        dst = "/lib/modules/%s/extra/openafs/openafs.ko" % (release)
+        src = path_join(dest, "root.client", "lib/modules", release, "extra/openafs/openafs.ko")
+        dst = path_join("/lib/modules", release, "extra/openafs/openafs.ko")
         if os.path.exists(src):
             mkdirp(os.path.dirname(dst))
             logger.info("Installing kernel module from '%s' to '%s'.", src, dst)
@@ -114,7 +113,7 @@ class LinuxClientSetup(object):
 
     def remove_driver(self):
         release = os.uname()[2]
-        src = "/lib/modules/%s/extra/openafs/openafs.ko" % (release)
+        src = path_join("/lib/modules", release, "extra/openafs/openafs.ko")
         if os.path.exists(src):
             remove_file(src)
 
@@ -133,9 +132,8 @@ class SolarisClientSetup(object):
         return driver
 
     def install_driver(self, dest, force=False):
-        kdir = AFS_KERNEL_DIR.lstrip('/')
         afs = "libafs64.o"
-        src = os.path.join(dest, "root.client", kdir, "modload", afs)
+        src = path_join(dest, "root.client", AFS_KERNEL_DIR, "modload", afs)
         dst = self._afs_driver()
         if os.path.exists(dst) and not force:
             raise AssertionError("Refusing to overwrite '%s'.", dst)
@@ -160,7 +158,7 @@ class SolarisClientSetup(object):
         os.chmod(dst, 0755)
         # Setup afsd options.
         CONFIG = "/usr/vice/etc/config"
-        AFSDOPT = os.path.join(CONFIG, "afsd.options")
+        AFSDOPT = path_join(CONFIG, "afsd.options")
         mkdirp(CONFIG)
         with open(AFSDOPT, 'w') as f:
             f.write("-dynroot -fakestat")
@@ -214,9 +212,9 @@ class TransarcInstaller(Installer):
     def _check_dest(self, dest):
         """Verify the dest directory looks sane."""
         directory_should_exist(dest)
-        directory_should_exist(os.path.join(dest, 'root.server'))
-        directory_should_exist(os.path.join(dest, 'root.client'))
-        directory_should_exist(os.path.join(dest, 'lib'))
+        directory_should_exist(path_join(dest, 'root.server'))
+        directory_should_exist(path_join(dest, 'root.client'))
+        directory_should_exist(path_join(dest, 'lib'))
 
     def _install_shared_libs(self, src, dst):
         """Install the shared libraries."""
@@ -252,20 +250,20 @@ class TransarcInstaller(Installer):
             logger.debug("Skipping workstation files install; already done.")
         else:
             for d in ('bin', 'etc', 'include', 'man'):
-                src = os.path.join(self.dest, d)
-                dst = os.path.join(AFS_WS_DIR, d)
+                src = path_join(self.dest, d)
+                dst = path_join(AFS_WS_DIR, d)
                 copy_files(src, dst, force=self.force)
             self.installed['ws'] = True
-        src = os.path.join(self.dest, 'lib')
-        dst = os.path.join(AFS_WS_DIR, 'lib')
+        src = path_join(self.dest, 'lib')
+        dst = path_join(AFS_WS_DIR, 'lib')
         self._install_shared_libs(src, dst)
 
     def _install_server(self):
         """Install server binaries."""
         logger.info("Installing server binaries")
-        src = os.path.join(self.dest, "root.server", AFS_SRV_BIN_DIR.lstrip('/'))
+        src = path_join(self.dest, "root.server", AFS_SRV_BIN_DIR)
         copy_files(src, AFS_SRV_BIN_DIR, force=self.force)
-        self._install_shared_libs(os.path.join(self.dest, 'lib'), AFS_SRV_LIB_DIR)
+        self._install_shared_libs(path_join(self.dest, 'lib'), AFS_SRV_LIB_DIR)
         self._install_workstation_binaries() # rxdebug is in the ws directory.
         self._install_server_rc()
         self.installed['server'] = True
@@ -274,8 +272,7 @@ class TransarcInstaller(Installer):
     def _install_client(self):
         """Install client binaries."""
         logger.info("Installing client binaries")
-        kdir = AFS_KERNEL_DIR.lstrip('/')
-        src = os.path.join(self.dest, "root.client", kdir)
+        src = path_join(self.dest, "root.client", AFS_KERNEL_DIR)
         copy_files(src, AFS_KERNEL_DIR, force=self.force)
         self._install_workstation_binaries() # including libs, unless already installed
         self.client_setup.install_driver(self.dest, force=self.force)
