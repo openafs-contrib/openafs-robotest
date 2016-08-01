@@ -23,7 +23,7 @@
 import os
 import logging
 
-from afsutil.system import run, is_afs_mounted, afs_umount, unload_module, get_running, is_running
+from afsutil.system import sh, is_afs_mounted, afs_umount, unload_module, get_running, is_running
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ def _rc(component, action):
     rc = "/etc/init.d/openafs-%s" % (component)
     if not os.path.isfile(rc):
         raise AssertionError("Init script is missing! %s" % (rc))
-    run(rc, args=[action])
+    sh(rc, action)
 
 def start(**kwargs):
     components = check_component_names(kwargs['components'])
@@ -57,14 +57,19 @@ def start(**kwargs):
     if 'client' in components:
         if not is_afs_mounted():
             _rc('client', 'start')
+        if not is_afs_mounted():
+            raise AssertionError("Failed to start.")
 
 def stop(**kwargs):
     components = check_component_names(kwargs['components'])
     if 'client' in components:
         if is_afs_mounted():
             _rc('client', 'stop')
-        afs_umount() # Be sure afs is unmounted before trying to unload.
-        unload_module()
+        if is_afs_mounted():
+            afs_umount() # Be sure afs is unmounted before trying to unload.
+            unload_module()
+        if is_afs_mounted():
+            raise AssertionError("Failed to stop.")
     if 'server' in components:
         if is_running('bosserver'):
             _rc('server', 'stop')

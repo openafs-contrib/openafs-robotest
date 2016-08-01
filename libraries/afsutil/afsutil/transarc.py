@@ -73,7 +73,19 @@ UDEBUG = "/usr/afs/bin/udebug"
 UNLOG = "/usr/afsws/bin/unlog"
 VOS = "/usr/afs/bin/vos"
 
-class LinuxClientSetup(object):
+class TransarcClientSetup(object):
+    """Transarc client specific setup functions."""
+    def install_afsd(self, afsd):
+        """Install the afsd file."""
+        # Common for linux an solaris.
+        src = afsd
+        dst = AFS_KERNEL_DIR
+        logger.info("Installing afsd from '%s' to '%s'.", src, dst)
+        mkdirp(dst)
+        shutil.copy2(src, dst)
+        os.chmod(dst, 0755)
+
+class LinuxClientSetup(TransarcClientSetup):
     """Linux specific setup functions."""
 
     def install_init_script(self, dest, force=False):
@@ -98,18 +110,29 @@ class LinuxClientSetup(object):
         mkdirp(SYSCONFIG)
         shutil.copy2(src, dst)
 
+    def _install_openafs_ko(self, kmod):
+        """Install the openafs.ko file and run depmod."""
+        release = os.uname()[2]
+        src = kmod
+        dst = path_join("/lib/modules", release, "extra/openafs/openafs.ko")
+        logger.info("Installing kernel module from '%s' to '%s'.", src, dst)
+        mkdirp(os.path.dirname(dst))
+        shutil.copy2(src, dst)
+        sh('/sbin/depmod', '-a')
+
     def install_driver(self, dest, force=False):
+        #
         # If available, install the openafs.ko to a path loadable by modprobe.
         # Use the openafs configure option --with-linux-kernel-packaging to build
-        # openafs.ko instead of libafs-....ko
+        # openafs.ko instead of libafs${version}.ko
+        #
+        # Note: libafs${version}.ko was already installed by copying all the files from
+        #       dest/root.client/usr/vice/etc to /usr/vice/etc.
+        #
         release = os.uname()[2]
-        src = path_join(dest, "root.client", "lib/modules", release, "extra/openafs/openafs.ko")
-        dst = path_join("/lib/modules", release, "extra/openafs/openafs.ko")
-        if os.path.exists(src):
-            mkdirp(os.path.dirname(dst))
-            logger.info("Installing kernel module from '%s' to '%s'.", src, dst)
-            shutil.copy2(src, dst)
-            sh('/sbin/depmod', '-a')
+        kmod = path_join(dest, "root.client", "lib/modules", release, "extra/openafs/openafs.ko")
+        if os.path.exists(kmod):
+            self._install_openafs_ko(kmod)
 
     def remove_driver(self):
         release = os.uname()[2]
@@ -117,8 +140,38 @@ class LinuxClientSetup(object):
         if os.path.exists(src):
             remove_file(src)
 
-class SolarisClientSetup(object):
+    def install_kmod(self, kmod):
+        """Install the kernel module by filename."""
+        if os.path.basename(kmod) == 'openafs.ko':
+            self._install_openafs_ko(kmod)
+        elif os.path.basename(kmod).startswith('libafs'):
+            src = kmod
+            dst = path_join(AFS_KERNEL_DIR, 'modload')
+            logger.info("Installing kernel module from '%s' to '%s'.", src, dst)
+            shutil.copy2(src, dst)
+        else:
+            raise ValueError("Unknown kernel module name: %s" % (kmod))
+
+class SolarisClientSetup(TransarcClientSetup):
     """Solaris specific setup functions."""
+
+    def install_init_script(self, dest):
+        """Install a client init script on solaris.
+
+        Does not configure the system to run the init script automatically on
+        reboot.  Changes the init script to avoid starting the bosserver
+        by default."""
+        src = pkg_resources.resource_filename('afsutil', 'data/openafs-client-solaris.init')
+        dst = "/etc/init.d/openafs-client"
+        logger.info("Installing client init script from '%s' to '%s'.", src,dst)
+        shutil.copy2(src, dst)
+        os.chmod(dst, 0755)
+        # Setup afsd options.
+        CONFIG = "/usr/vice/etc/config"
+        AFSDOPT = path_join(CONFIG, "afsd.options")
+        mkdirp(CONFIG)
+        with open(AFSDOPT, 'w') as f:
+            f.write("-dynroot -fakestat")
 
     def _afs_driver(self):
         """Return the name of the afs driver for the current platform."""
@@ -131,37 +184,20 @@ class SolarisClientSetup(object):
             driver = '/kernel/drv/afs'
         return driver
 
-    def install_driver(self, dest, force=False):
+    def install_driver(self, dest):
         afs = "libafs64.o"
-        src = path_join(dest, "root.client", AFS_KERNEL_DIR, "modload", afs)
-        dst = self._afs_driver()
-        if os.path.exists(dst) and not force:
-            raise AssertionError("Refusing to overwrite '%s'.", dst)
-        logger.info("Installing kernel driver from '%s' to '%s'.", src, dst)
-        shutil.copy2(src, dst)
+        kmod = path_join(dest, "root.client", AFS_KERNEL_DIR, "modload", afs)
+        self._install_kmod(kmod)
 
     def remove_driver(self):
         remove_file(self._afs_driver())
 
-    def install_init_script(self, dest, force=False):
-        """Install a client init script on solaris.
-
-        Does not configure the system to run the init script automatically on
-        reboot.  Changes the init script to avoid starting the bosserver
-        by default."""
-        src = pkg_resources.resource_filename('afsutil', 'data/openafs-client-solaris.init')
-        dst = "/etc/init.d/openafs-client"
-        if os.path.exists(dst) and not force:
-            raise AssertionError("Refusing to overwrite '%s'.", dst)
-        logger.info("Installing client init script from '%s' to '%s'.", src,dst)
+    def install_kmod(self, kmod):
+        """Install the kernel module by filename."""
+        src = kmod
+        dst = self._afs_driver()
+        logger.info("Installing kernel driver from '%s' to '%s'.", src, dst)
         shutil.copy2(src, dst)
-        os.chmod(dst, 0755)
-        # Setup afsd options.
-        CONFIG = "/usr/vice/etc/config"
-        AFSDOPT = path_join(CONFIG, "afsd.options")
-        mkdirp(CONFIG)
-        with open(AFSDOPT, 'w') as f:
-            f.write("-dynroot -fakestat")
 
 class TransarcInstaller(Installer):
     """Install a Transarc-style distribution of OpenAFS on linux or solaris."""
@@ -273,10 +309,10 @@ class TransarcInstaller(Installer):
         """Install client binaries."""
         logger.info("Installing client binaries")
         src = path_join(self.dest, "root.client", AFS_KERNEL_DIR)
-        copy_files(src, AFS_KERNEL_DIR, force=self.force)
+        copy_files(src, AFS_KERNEL_DIR, force=self.force) # also installs libafs.ko
         self._install_workstation_binaries() # including libs, unless already installed
-        self.client_setup.install_driver(self.dest, force=self.force)
-        self.client_setup.install_init_script(self.dest, force=self.force)
+        self.client_setup.install_driver(self.dest)
+        self.client_setup.install_init_script(self.dest)
         mkdirp(AFS_MOUNT_DIR)
         mkdirp(AFS_CACHE_DIR)
         self.installed['client'] = True
