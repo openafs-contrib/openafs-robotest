@@ -88,7 +88,7 @@ class TransarcClientSetup(object):
 class LinuxClientSetup(TransarcClientSetup):
     """Linux specific setup functions."""
 
-    def install_init_script(self, dest, force=False):
+    def install_init_script(self, dest):
         """Install a client init script on linux.
 
         Does not configure the system to run the init script automatically on
@@ -98,8 +98,6 @@ class LinuxClientSetup(TransarcClientSetup):
         mkdirp("/var/lock/subsys/")
         src = pkg_resources.resource_filename('afsutil', 'data/openafs-client-linux.init')
         dst = "/etc/init.d/openafs-client"
-        if os.path.exists(dst) and not force:
-            raise AssertionError("Refusing to overwrite '%s'.", dst)
         logger.info("Installing client init script from '%s' to '%s'.", src, dst)
         shutil.copy2(src, dst)
         os.chmod(dst, 0755)
