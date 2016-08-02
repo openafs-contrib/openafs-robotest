@@ -125,6 +125,7 @@ def setkey(**kwargs):
     k.set_service_key(**kwargs)
 
 def newcell(**kwargs):
+    akimpersonate = kwargs.get('akimpersonate', False)
     aklog = kwargs.get('aklog', None)
     if aklog:
         afsutil.cli.AKLOG = aklog
@@ -148,7 +149,10 @@ def newcell(**kwargs):
         logger.warning("afs is not running! trying to start it.")
         start(components=['client'])
     k = Keytab.load(kwargs['keytab'])
-    k.akimpersonate(**kwargs)
+    if akimpersonate:
+        k.akimpersonate(**kwargs)
+    else:
+        _kinit_aklog(**kwargs)
     cell.mount_root_volumes()
     cell.create_top_volumes(kwargs['top'])
 
@@ -292,8 +296,10 @@ def main():
 
     p = subparsers.add_parser('newcell', help='setup a new cell')
     _common_opts(p)
+    p.add_argument('--akimpersonate', help="print a ticket for admin user", action='store_true')
     p.add_argument('--keytab', help="keytab file (default: /tmp/afs.keytab)", default="/tmp/afs.keytab")
     p.add_argument('--cell', help="cell name (default: localcell)", default='localcell')
+    p.add_argument('--realm', help="realm name (default: detect)", default=None)
     p.add_argument('--admin', help="admin username (default: 'admin')", default='admin')
     p.add_argument('--db', nargs='+', help="cell database hosts (default: local hostname)", default=None)
     p.add_argument('--fs', nargs='+', help="cell fileserver hosts (default: local hostname)", default=None)

@@ -50,9 +50,11 @@ user = robotest
 admin = robotest.admin
 
 [kerberos]
-realm = ROBOTEST
-keytab = /tmp/afs.keytab
 akimpersonate = yes
+realm = ROBOTEST
+fake_keytab = /tmp/fake.keytab
+afs_keytab = /tmp/afs.keytab
+user_keytab = /tmp/user.keytab
 
 [web]
 port = 8000
@@ -167,6 +169,12 @@ class Config(ConfigParser.SafeConfigParser):
                 raise ValueError("Required config option is missing; section=%s, option=%s." % (section, option))
         return value
 
+    def optkeytab(self, name):
+        """Return the named keytab file. Fall back to keytab for old config files."""
+        oldname = self.optstr('kerberos', 'keytab', default='/tmp/afs.keytab')
+        value = self.optstr('kerberos', '%s_keytab' % (name), default=oldname)
+        return value
+
     def opthostnames(self, filter=None, lookupname=False):
         """Return a list of host sections."""
         hostnames = []
@@ -186,8 +194,10 @@ class Config(ConfigParser.SafeConfigParser):
 
     def optfakekey(self):
         """Command line options for afsutil fakekey."""
+        if not self.optbool('kerberos', 'akimpersonate'):
+            raise AssertionError('Trying to get fakekey options without akimpersonate.')
         cell = self.optstr('cell', 'name')
-        keytab = self.optstr('kerberos', 'keytab')
+        keytab = self.optkeytab('fake')
         realm = self.optstr('kerberos', 'realm')
         enctype = self.optstr('kerberos', 'enctype')
         secret = self.optstr('kerberos', 'secret')
@@ -231,12 +241,12 @@ class Config(ConfigParser.SafeConfigParser):
             args.append(aklog)
         if self.optbool('kerberos', 'akimpersonate'):
             args.append('--akimpersonate')
-            keytab = self.optstr('kerberos', 'keytab')
+            keytab = self.optkeytab('fake')
             if keytab:
                 args.append('--keytab')
                 args.append(keytab)
         else:
-            keytab = self.optstr('kerberos', 'user_keytab')
+            keytab = self.optkeytab('user')
             if keytab:
                 args.append('--keytab')
                 args.append(keytab)
@@ -303,7 +313,11 @@ class Config(ConfigParser.SafeConfigParser):
         if realm:
             args.append('--realm')
             args.append(realm)
-        keytab = self.optstr('kerberos', 'keytab')
+        if self.optbool('kerberos', 'akimpersonate'):
+            name = 'fake'
+        else:
+            name = 'afs'
+        keytab = self.optkeytab(name)
         if keytab:
             args.append('--keytab')
             args.append(keytab)
@@ -311,15 +325,29 @@ class Config(ConfigParser.SafeConfigParser):
 
     def optnewcell(self):
         """Command line options for afsutil newcell."""
+        realm = self.optstr('kerberos', 'realm')
         fs = self.opthostnames(filter='isfileserver', lookupname=True)
         db = self.opthostnames(filter='isdbserver', lookupname=True)
         aklog = self.optstr('variables', 'aklog')
         args = [
             '--cell', self.optstr('cell', 'name', 'localcell'),
             '--admin', self.optstr('cell', 'admin', 'admin'),
-            '--keytab', self.optstr('kerberos', 'keytab', '/tmp/afs.keytab'),
             '--top', 'test',
         ]
+        if self.optbool('kerberos', 'akimpersonate'):
+            args.append('--akimpersonate')
+            keytab = self.optkeytab('fake')
+            if keytab:
+                args.append('--keytab')
+                args.append(keytab)
+        else:
+            keytab = self.optkeytab('user')
+            if keytab:
+                args.append('--keytab')
+                args.append(keytab)
+        if realm:
+            args.append('--realm')
+            args.append(realm)
         if fs:
             args.append('--fs')
             args += fs

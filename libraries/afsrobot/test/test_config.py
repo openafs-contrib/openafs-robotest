@@ -129,6 +129,14 @@ class ConfigTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             c.optbool('y', 'c', required=True)
 
+    def test_optkeytab(self):
+        c = afsrobot.config.Config()
+        c.load_from_string(string="[kerberos]\nafs_keytab = a\nuser_keytab = b\nfake_keytab = c\nkeytab = d")
+        self.assertEquals(c.optkeytab('afs'), 'a')
+        self.assertEquals(c.optkeytab('user'), 'b')
+        self.assertEquals(c.optkeytab('fake'), 'c')
+        self.assertEquals(c.optkeytab('other'), 'd')
+
     def test_opthostnames__empty(self):
         c = afsrobot.config.Config()
         hostnames = c.opthostnames()
@@ -143,7 +151,7 @@ class ConfigTest(unittest.TestCase):
         self.assertTrue(len(hostnames) == 3)
 
     def test_optfakekey(self):
-        expect = '--cell robotest --keytab /tmp/afs.keytab --realm ROBOTEST'
+        expect = '--cell robotest --keytab /tmp/fake.keytab --realm ROBOTEST'
         c = afsrobot.config.Config()
         c.load_defaults()
         args = c.optfakekey()
@@ -151,7 +159,7 @@ class ConfigTest(unittest.TestCase):
 
     def test_optlogin(self):
         expect = '--user robotest.admin --cell robotest --realm ROBOTEST ' \
-                 '--akimpersonate --keytab /tmp/afs.keytab'
+                 '--akimpersonate --keytab /tmp/fake.keytab'
         c = afsrobot.config.Config()
         c.load_defaults()
         args = c.optlogin()
@@ -174,19 +182,40 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(expect, " ".join(args))
 
     def test_optsetkey(self):
-        expect = '--cell robotest --realm ROBOTEST --keytab /tmp/afs.keytab'
+        expect = '--cell robotest --realm ROBOTEST --keytab /tmp/fake.keytab'
         c = afsrobot.config.Config()
         c.load_defaults()
         args = c.optsetkey('localhost')
         self.assertEqual(expect, " ".join(args))
 
+    def test_optsetkey_noakimp(self):
+        expect = '--cell robotest --realm ROBOTEST --keytab /tmp/afs.keytab'
+        c = afsrobot.config.Config()
+        c.load_defaults()
+        c.set_value('kerberos', 'akimpersonate', 'no')
+        args = c.optsetkey('localhost')
+        self.assertEqual(expect, " ".join(args))
+
     def test_optnewcell(self):
         hostname = os.uname()[1]
-        expect = '--cell robotest --admin robotest.admin --keytab /tmp/afs.keytab ' \
-                 '--top test --fs %s --db %s -o dafileserver=-d 1 -L -o davolserver=-d 1' % \
+        expect = '--cell robotest --admin robotest.admin ' \
+                 '--top test --akimpersonate --keytab /tmp/fake.keytab --realm ROBOTEST ' \
+                 '--fs %s --db %s -o dafileserver=-d 1 -L -o davolserver=-d 1' % \
                  (hostname, hostname)
         c = afsrobot.config.Config()
         c.load_defaults()
+        args = c.optnewcell()
+        self.assertEqual(expect, " ".join(args))
+
+    def test_optnewcell_noakimp(self):
+        hostname = os.uname()[1]
+        expect = '--cell robotest --admin robotest.admin ' \
+                 '--top test --keytab /tmp/user.keytab --realm ROBOTEST ' \
+                 '--fs %s --db %s -o dafileserver=-d 1 -L -o davolserver=-d 1' % \
+                 (hostname, hostname)
+        c = afsrobot.config.Config()
+        c.load_defaults()
+        c.set_value('kerberos', 'akimpersonate', 'no')
         args = c.optnewcell()
         self.assertEqual(expect, " ".join(args))
 
