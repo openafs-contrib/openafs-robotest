@@ -91,8 +91,13 @@ Create a Cross-Volume Hard Link
     TODO
 
 Touch a file
-    [Tags]  todo  arla  #(touch1)
-    TODO
+    [Tags]  arla  #(touch1)
+    ${file}=  Set Variable  ${TESTPATH}/file
+    Should Not Exist        ${file}
+    Command Should Succeed  touch ${file}
+    Should Exist            ${file}
+    Remove File             ${file}
+    Should Not Exist        ${file}
 
 Write to a File
     [Tags]  arla  #(write1)
