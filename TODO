@@ -2,8 +2,6 @@
 Goals for v0.5
 --------------
 
-* tests:
-  - implement or remove tests tagged as TODO
 * setup: [host:localhost] is confusing and inconsistent.
   - use [host:<hostname>] for all host sections?
   - this means the same file can be used on each host
@@ -11,19 +9,25 @@ Goals for v0.5
   - afsd
   - bosserver
 * config: dafs vs fs
+* install:
+  - cope with /etc/hosts with loopback addresses for the hostname
+  - helper for sudo -n setup (at least for debian?)
 
 
 Post v0.5
 ---------
 
+* tests:
+  - implement or remove tests tagged as TODO
+* install:
+  - user vs global installs
 * more packaging formats
   - debs
+* client only test suite
+  - assume servers already running on separate host(s)
 * OpenAFSLibrary
   - new keywords
   - more complete unit tests
-* refactor afs-robotest script
-  - move python classes/functions to a package
-  - script should just handle cmd line args
 * Server setup and cell creation sans libafs.ko.
   Some options are:
   a. Ideally, a new util based on libafscp (afsutil?)
