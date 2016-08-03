@@ -75,6 +75,7 @@ VOS = "/usr/afs/bin/vos"
 
 class TransarcClientSetup(object):
     """Transarc client specific setup functions."""
+
     def install_afsd(self, afsd):
         """Install the afsd file."""
         # Common for linux an solaris.
@@ -88,7 +89,7 @@ class TransarcClientSetup(object):
 class LinuxClientSetup(TransarcClientSetup):
     """Linux specific setup functions."""
 
-    def install_init_script(self, dest):
+    def install_init_script(self, dest, afsd_options):
         """Install a client init script on linux.
 
         Does not configure the system to run the init script automatically on
@@ -101,12 +102,12 @@ class LinuxClientSetup(TransarcClientSetup):
         logger.info("Installing client init script from '%s' to '%s'.", src, dst)
         shutil.copy2(src, dst)
         os.chmod(dst, 0755)
-        # Install the default startup configuration.
-        src = path_join(dest, "root.client", AFS_KERNEL_DIR, "afs.conf")
-        dst = path_join(SYSCONFIG, "afs")
-        logger.info("Writing client startup options to file '%s'.", dst)
-        mkdirp(SYSCONFIG)
-        shutil.copy2(src, dst)
+        # Set afsd options.
+        dst = path_join(SYSCONFIG, "openafs-client")
+        logger.info("Writing afsd startup options to file '%s'." % (dst))
+        mkdirp(os.path.dirname(dst))
+        with open(dst, 'w') as f:
+            f.write('AFSD_OPTIONS="%s"\n' % (afsd_options))
 
     def _install_openafs_ko(self, kmod):
         """Install the openafs.ko file and run depmod."""
@@ -153,7 +154,7 @@ class LinuxClientSetup(TransarcClientSetup):
 class SolarisClientSetup(TransarcClientSetup):
     """Solaris specific setup functions."""
 
-    def install_init_script(self, dest):
+    def install_init_script(self, dest, afsd_options):
         """Install a client init script on solaris.
 
         Does not configure the system to run the init script automatically on
@@ -164,12 +165,13 @@ class SolarisClientSetup(TransarcClientSetup):
         logger.info("Installing client init script from '%s' to '%s'.", src,dst)
         shutil.copy2(src, dst)
         os.chmod(dst, 0755)
-        # Setup afsd options.
-        CONFIG = "/usr/vice/etc/config"
-        AFSDOPT = path_join(CONFIG, "afsd.options")
-        mkdirp(CONFIG)
-        with open(AFSDOPT, 'w') as f:
-            f.write("-dynroot -fakestat")
+        # Set afsd options.
+        config = '/usr/vice/etc/config'
+        dst = path_join(config, 'afsd.options')
+        logger.info("Writing afsd startup options to file '%s'." % (dst))
+        mkdirp(os.path.dirname(dst))
+        with open(dst, 'w') as f:
+            f.write(afsd_options) # Not sourced.
 
     def _afs_driver(self):
         """Return the name of the afs driver for the current platform."""
@@ -203,9 +205,9 @@ class TransarcInstaller(Installer):
     def __init__(self, dir=None, **kwargs):
         """Initialize the Transarc-style installer.
 
-        dest: path to the 'dest' directory created by previous make dest
-              If None, try to detect the sysname and find the dest directory
-              in the current working directory.
+        dir: path to the 'dest' directory created by previous make dest
+             If None, try to detect the sysname and find the dest directory
+             in the current working directory.
         """
         Installer.__init__(self, **kwargs)
         self.dest = dir # defer detection/checks until install().
@@ -277,6 +279,12 @@ class TransarcInstaller(Installer):
         shutil.copy2(src, dst)
         os.chmod(dst, 0755)
         mkdirp("/var/lock/subsys/")  # needed by the init script
+        # Set the bosserver command line options.
+        dst = path_join(SYSCONFIG, "openafs-server")
+        logger.info("Writing bosserver startup options to file '%s'." % (dst))
+        mkdirp(os.path.dirname(dst))
+        with open(dst, 'w') as f:
+            f.write('BOSSERVER_OPTIONS="%s"\n' % (self.options.get('bosserver', '')))
 
     def _install_workstation_binaries(self):
         """Install workstation binaries from a Transarc-style distribution."""
@@ -310,7 +318,7 @@ class TransarcInstaller(Installer):
         copy_files(src, AFS_KERNEL_DIR, force=self.force) # also installs libafs.ko
         self._install_workstation_binaries() # including libs, unless already installed
         self.client_setup.install_driver(self.dest)
-        self.client_setup.install_init_script(self.dest)
+        self.client_setup.install_init_script(self.dest, self.options.get('afsd', ''))
         mkdirp(AFS_MOUNT_DIR)
         mkdirp(AFS_CACHE_DIR)
         self.installed['client'] = True

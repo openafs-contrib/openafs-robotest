@@ -251,6 +251,7 @@ def main():
     p.add_argument('--realm', help='realm name (default: LOCALCELL)', default=None)
     p.add_argument('--csdb', help='path to CellServDB.dist file for client (default: none)', default=None)
     p.add_argument('--force', action='store_true', help='overwrite existing files')
+    p.add_argument('-o', '--options', nargs='+', help="command line args: <name>=<value>", action='append')
     p.set_defaults(fn=install, must_be_root=True)
 
     p = subparsers.add_parser('remove', help="remove binaries")
@@ -306,14 +307,14 @@ def main():
     p.add_argument('--top', nargs='+', help="top level volumes (default: none)", default=[])
     p.add_argument('--no-client', dest='noclient', help='do not mount root and top level volumes', action='store_true')
     p.add_argument('--aklog', help="path to aklog program (default: detect)", default=None)
-    p.add_argument('-o', '--options', nargs='+', help="server or client options; <option>=<value>", action='append')
+    p.add_argument('-o', '--options', nargs='+', help="command line args: <name>=<value>", action='append')
     p.set_defaults(fn=newcell, must_be_root=True)
 
     p = subparsers.add_parser('addfs', help='add a new fileserver to the cell')
     _common_opts(p)
     p.add_argument('hostname', help="fileserver hostname")
     p.add_argument('--keytab', help="keytab file (default: /tmp/afs.keytab)", default="/tmp/afs.keytab")
-    p.add_argument('-o', '--options', nargs='+', help="server options; <option>=<value>", action='append')
+    p.add_argument('-o', '--options', nargs='+', help="command line args; <name>=<value>", action='append')
     p.set_defaults(fn=addfs, must_be_root=True)
 
     p = subparsers.add_parser('login', help='obtain token with a keytab')

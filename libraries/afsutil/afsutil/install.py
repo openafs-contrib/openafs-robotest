@@ -86,6 +86,18 @@ def remove_files(path, quiet=False):
         logger.info("Removing %s", path)
     shutil.rmtree(path)
 
+# Covert the option list of lists to a dict.
+def _optlists2dict(options):
+    print "_optlists2dict"
+    pprint.pprint(options)
+    names = {}
+    if not options:
+        return names
+    for optlist in options:
+        for o in optlist:
+            name,value = o.split('=')
+            names[name.strip()] = value.strip()
+    return names
 
 class Installer(object):
     """Base class for OpenAFS installers."""
@@ -100,6 +112,7 @@ class Installer(object):
                  force=False,
                  purge=False,
                  verbose=False,
+                 options=None,
                  **kwargs):
         """
         dirs: directories for pre/post installation/removal
@@ -134,6 +147,7 @@ class Installer(object):
         self.verbose = verbose
         self.hostnames = hosts
         self.cellhosts = None # Defer to pre-install.
+        self.options = _optlists2dict(options)
 
     def install(self):
         """This sould be implemented by the children."""

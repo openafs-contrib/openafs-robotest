@@ -58,28 +58,20 @@ runcmd() {
    echo
 }
 
-SYSCNF=${SYSCNF:-/etc/sysconfig/afs}
 KERNEL_VERSION=`uname -r`
 
 # Gather up options and post startup script name, if present
+SYSCNF=/etc/sysconfig/openafs-client
+CACHESIZE="AUTOMATIC"
+AFSD_OPTIONS=""
+CACHEINFO=/usr/vice/etc/cacheinfo
+CACHE=/usr/vice/cache
+AFS=/afs
+AFSD=/usr/vice/etc/afsd
+KILLAFS=/usr/vice/etc/killafs
 if [ -f $SYSCNF ] ; then
 	. $SYSCNF
 fi
-
-CACHEINFO=${CACHEINFO:-/usr/vice/etc/cacheinfo}
-CACHE=${CACHEDIR:-/usr/vice/cache}
-AFS=${AFSDIR:-/afs}
-AFSD=${AFSD:-/usr/vice/etc/afsd}
-BOSSERVER=${BOSSERVER:-/usr/afs/bin/bosserver}
-BOS=${BOS:-/usr/bin/bos}
-KILLAFS=${KILLAFS:-/usr/vice/etc/killafs}
-
-# is_on returns 1 if value of arg is "on"
-is_on() {
-	if  test "$1" = "on" ; then return 0
-	else return 1
-        fi
-}
 
 on_network() {
     if hash ip 2>/dev/null >/dev/null; then
@@ -266,33 +258,10 @@ generate_cacheinfo() {
     fi
 }
 
-choose_afsdoptions() {
-	if [ -z "$OPTIONS" -o "$OPTIONS" = "AUTOMATIC" ]; then
-		if [ $CACHESIZE -lt 131072 ]; then
-			OPTIONS=$SMALL
-		elif [ $CACHESIZE -lt 524288 ]; then
-			OPTIONS=$MEDIUM
-		elif [ $CACHESIZE -lt 1048576 ]; then
-			OPTIONS=$LARGE
-		elif [ $CACHESIZE -lt 2097152 ]; then
-			OPTIONS=$XLARGE
-		else
-			OPTIONS=$XXLARGE
-		fi
-	fi
-	AFSD_OPTIONS="$OPTIONS $VERBOSE"
-	if is_on $ENABLE_AFSDB; then
-		AFSD_OPTIONS="$AFSD_OPTIONS -afsdb"
-	fi
-	if is_on $ENABLE_DYNROOT; then
-		AFSD_OPTIONS="$AFSD_OPTIONS -dynroot"
-	fi
-}
-
 case "$1" in
   start)
     if [ ! "$afs_rh" -o ! -f /var/lock/subsys/afs ]; then
-        if [ `echo "$OPTIONS" | grep -c dynroot` = 0 ]; then
+        if [ `echo "$AFSD_OPTIONS" | grep -c dynroot` = 0 ]; then
             on_network || exit 1
         fi
 	# Load kernel extensions
@@ -303,28 +272,10 @@ case "$1" in
 	fi
 
 	echo "Starting AFS services..... "
-	# Start bosserver, it if exists
-	if  is_on $AFS_SERVER && test -x $BOSSERVER  ; then
-		$BOSSERVER
-		test "$afs_rh" && touch /var/lock/subsys/afs
-		if is_on $WAIT_FOR_SALVAGE; then
-			# wait for fileserver to finish salvaging
-			sleep 10
-			while $BOS status localhost fs 2>&1 | grep 'Auxiliary.*salvaging'; do
-				echo "Waiting for salvager to finish..... "
-				sleep 10
-			done
-		fi
-	fi
-
-	# Start AFS client
-	if  is_on $AFS_CLIENT && test -x $AFSD  ; then
-		generate_cacheinfo
-		choose_afsdoptions
-		$AFSD ${AFSD_OPTIONS}
-		test "$afs_rh" && touch /var/lock/subsys/afs
-		$AFS_POST_INIT
-	fi
+	generate_cacheinfo
+	${AFSD} ${AFSD_OPTIONS}
+	test "$afs_rh" && touch /var/lock/subsys/afs
+	$AFS_POST_INIT
     fi
 	;;
 
@@ -333,19 +284,11 @@ case "$1" in
 	# Stop AFS
 	echo "Stopping AFS services..... "
 
-	if  is_on $AFS_CLIENT  ; then
-		if [ -x $KILLAFS ] ; then
-			runcmd "Sending all processes using /afs the TERM signal ..." $KILLAFS TERM
-			runcmd "Sending all processes using /afs the KILL signal ..." $KILLAFS KILL
-		fi
-		umount /afs
+	if [ -x $KILLAFS ] ; then
+		runcmd "Sending all processes using /afs the TERM signal ..." $KILLAFS TERM
+		runcmd "Sending all processes using /afs the KILL signal ..." $KILLAFS KILL
 	fi
-
-	if  is_on $AFS_SERVER && test -x $BOS ; then
-		echo "Stopping AFS bosserver"
-		$BOS shutdown localhost -localauth -wait
-		killall -HUP bosserver
-	fi
+	umount /afs
 
 	# Unload the packaging style kmod if present, otherwise fallback
 	# to the legacy style.
