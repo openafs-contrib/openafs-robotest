@@ -111,8 +111,17 @@ Write to a File
     Should Not Exist    ${file}
 
 Rewrite a file
-    [Tags]  todo  arla  #(write3)
-    TODO
+    [Tags]  arla  #(write3)
+    ${file}=  Set Variable  ${TESTPATH}/file
+    Should Not Exist        ${file}
+    Create File             ${file}  Hello world!\n
+    Should Exist            ${file}
+    ${text}=  Get File      ${file}
+    Command Should Succeed  echo "Hey Cleveland\n" > ${file}
+    ${text2}=  Get File     ${file}
+    Should Not Be Equal     ${text}  ${text2}
+    Remove File             ${file}
+    Should Not Exist        ${file}  
 
 Rename a File
     [Tags]  arla  #(rename1)
