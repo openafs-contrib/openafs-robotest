@@ -185,7 +185,7 @@ class SolarisClientSetup(TransarcClientSetup):
     def install_driver(self, dest):
         afs = "libafs64.o"
         kmod = path_join(dest, "root.client", AFS_KERNEL_DIR, "modload", afs)
-        self._install_kmod(kmod)
+        self.install_kmod(kmod)
 
     def remove_driver(self):
         remove_file(self._afs_driver())
