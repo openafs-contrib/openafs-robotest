@@ -88,8 +88,6 @@ def remove_files(path, quiet=False):
 
 # Covert the option list of lists to a dict.
 def _optlists2dict(options):
-    print "_optlists2dict"
-    pprint.pprint(options)
     names = {}
     if not options:
         return names

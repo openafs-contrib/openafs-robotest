@@ -69,6 +69,17 @@ def _log_options(args):
         options['filename'] = log
     return options
 
+def _optlists2dict(options):
+    """Covert the option list of lists to a dict."""
+    names = {}
+    if not options:
+        return names
+    for optlist in options:
+        for o in optlist:
+            name,value = o.split('=')
+            names[name.strip()] = value.strip()
+    return names
+
 def build(**kwargs):
     afsutil.build.build(**kwargs)
 
@@ -153,7 +164,10 @@ def newcell(**kwargs):
         k.akimpersonate(**kwargs)
     else:
         _kinit_aklog(**kwargs)
-    cell.mount_root_volumes()
+    options = _optlists2dict(kwargs['options'])
+    afsd_options = options.get('afsd', '')
+    dynroot = '-dynroot' in afsd_options
+    cell.mount_root_volumes(dynroot)
     cell.create_top_volumes(kwargs['top'])
 
 def addfs(**kwargs):

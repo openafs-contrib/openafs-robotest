@@ -546,7 +546,7 @@ class Cell(object):
         bnode = _optfsbnode(self.options)
         host.create_fileserver(bnode, self.options)
 
-    def mount_root_volumes(self):
+    def mount_root_volumes(self, dynroot):
         """Mount and replicate the cell root volumes.
 
         Should be called after running newcell(), and then starting
@@ -555,7 +555,6 @@ class Cell(object):
         afs = afs_mountpoint()
         if afs is None:
             raise AssertionError("Unable to mount volumes; afs is not mounted!")
-        dynmount = os.path.join(afs, '.:mount')
         cell = self._wscell()
         if cell != self.cell:
             raise AssertionError("Client side ThisCell file does not match the cell name!")
@@ -565,8 +564,8 @@ class Cell(object):
         # which is needed for clients not running in dynroot mode. Use the
         # special path by volume name feature to access the root.afs root
         # directory if this cache manager is running in dynroot mode.
-        if os.path.exists(dynmount):
-            root_afs = os.path.join(dynmount, '%s:root.afs' % (cell))
+        if dynroot:
+            root_afs = os.path.join(afs, '.:mount', '%s:root.afs' % (cell))
         else:
             root_afs = afs
         self._mount(root_afs, cell, 'root.cell')

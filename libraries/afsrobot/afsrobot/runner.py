@@ -132,7 +132,7 @@ class Runner(object):
                     with ProgressMessage("Starting servers on %s" % (hostname)):
                         self._afsutil(hostname, 'start', ['server'])
                 if self.config.optbool(section, "isclient") and \
-                   self.config.optbool(section, 'afsdb_dynroot', default=True):
+                   self.config.optdynroot():
                     with ProgressMessage("Starting client on %s" % (hostname)):
                         self._afsutil(hostname, 'start', ['client'])
             else:
@@ -144,7 +144,7 @@ class Runner(object):
         for hostname in self.config.opthostnames():
             section = "host:%s" % (hostname)
             if self.config.optbool(section, "isclient") and \
-               not self.config.optbool(section, 'afsdb_dynroot', default=True):
+               not self.config.optdynroot():
                 with ProgressMessage("Starting non-dynroot client on %s" % (hostname)):
                     self._afsutil(hostname, 'start', ['client'])
 
