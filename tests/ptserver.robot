@@ -8,63 +8,65 @@ Resource          openafs.robot
 
 *** Test Cases ***
 Create a User
-    [Tags]  todo  arla  #(ptscreateuser)
-    TODO
+    [Tags]  arla  #(ptscreateuser)
+    Login  ${AFS_ADMIN}
+    Command Should Succeed  ${PTS} createuser userA
 
 Create a Group
-    [Tags]  todo  arla  #(ptscreategroup)
-    TODO
+    [Tags]  arla  #(ptscreategroup)
+    Command Should Succeed  ${PTS} creategroup groupA -owner ${AFS_ADMIN}
 
 Add a User to a Group
-    [Tags]  todo  arla  #(ptsadduser)
-    TODO
+    [Tags]  arla  #(ptsadduser)
+    Command Should Succeed  ${PTS} adduser userA groupA
 
 Chown a Group
     [Tags]  todo  arla  #(ptschown)
     TODO
 
 Get User Membership
-    [Tags]  todo  arla  #(ptsmembersuser)
-    TODO
+    [Tags]  arla  #(ptsmembersuser)
+    Command Should Succeed  ${PTS} membership userA
 
 Get Group Membership
-    [Tags]  todo  arla  #(ptsmembersgroup)
-    TODO
+    [Tags]  arla  #(ptsmembersgroup)
+    Command Should Succeed  ${PTS} membership groupA
 
 Examine a User
-    [Tags]  todo  arla  #(ptsexamineuser)
-    TODO
+    [Tags]  arla  #(ptsexamineuser)
+    Command Should Succeed  ${PTS} examine userA
 
 Examine a Group
-    [Tags]  todo  arla  #(ptsexaminegroup)
-    TODO
+    [Tags]  arla  #(ptsexaminegroup)
+    Command Should Succeed  ${PTS} examine groupA
 
 Remove a User from a Group
-    [Tags]  todo  arla  #(ptsremove)
-    TODO
+    [Tags]  arla  #(ptsremove)
+    Command Should Succeed  ${PTS} removeuser userA groupA
 
 List Groups a User Owns
-    [Tags]  todo  arla  #(ptslistown)
-    TODO
+    [Tags]  arla  #(ptslistown)
+    Command Should Succeed  ${PTS} listowned userA
 
 Set Maxuser
-    [Tags]  todo  arla  #(ptssetmax)
-    TODO
+    [Tags]  arla  #(ptssetmax)
+    Command Should Succeed  ${PTS} setmax -user 1000
 
 List Maxuser
-    [Tags]  todo  arla  #(ptslistmax)
-    TODO
+    [Tags]  arla  #(ptslistmax)
+    Command Should Succeed  ${PTS} listmax 
 
 Set Fields on a User
     [Tags]  todo  arla  #(ptssetf)
     TODO
 
 Delete a Group
-    [Tags]  todo  arla  #(ptsdeletegroup)
-    TODO
+    [Tags]  arla  #(ptsdeletegroup)
+    Command Should Succeed  ${PTS} delete groupA
 
 Delete a User
-    [Tags]  todo  arla  #(ptsdeleteuser)
-    TODO
+    [Tags]  arla  #(ptsdeleteuser)
+    Command Should Succeed  ${PTS} delete userA
+    Logout
 
 
