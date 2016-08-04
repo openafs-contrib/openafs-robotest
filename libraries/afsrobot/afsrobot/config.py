@@ -60,7 +60,9 @@ port = 8000
 foreground = no
 pidfile = /tmp/afs-robotest-web.pid
 
-[servers]
+[options]
+afsd = -dynroot -fakestat -afsdb
+bosserver = -pidfiles
 dafileserver = -d 1 -L
 davolserver = -d 1
 
@@ -299,6 +301,11 @@ class Config(ConfigParser.SafeConfigParser):
             args.append('--csdb')
             args.append(csdb)
         args.append('--force')
+        if self.has_section('options'):
+            for k,v in self.items('options'):
+                if k == 'afsd' or k == 'bosserver':
+                    args.append('-o')
+                    args.append("%s=%s" % (k,v))
         return args
 
     def optsetkey(self, hostname):
@@ -357,8 +364,8 @@ class Config(ConfigParser.SafeConfigParser):
             args.append('--aklog')
             args.append(aklog)
         # Server command line options.
-        if self.has_section('servers'):
-            for k,v in self.items('servers'):
+        if self.has_section('options'):
+            for k,v in self.items('options'):
                 args.append('-o')
                 args.append("%s=%s" % (k,v))
         return args

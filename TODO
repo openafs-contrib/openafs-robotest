@@ -5,9 +5,6 @@ Goals for v0.5
 * setup: [host:localhost] is confusing and inconsistent.
   - use [host:<hostname>] for all host sections?
   - this means the same file can be used on each host
-* config: more startup options in config file, per host section
-  - afsd
-  - bosserver
 * config: dafs vs fs
 * install:
   - cope with /etc/hosts with loopback addresses for the hostname
@@ -34,4 +31,5 @@ Post v0.5
      to mount dirs and set acls (etc)
   b. Generate root vols, with cmu-dumpscan or refactor
      the volume dump stream code from OpenAFSLibrary
+* config: per host command line args (options)
 
