@@ -83,8 +83,19 @@ Create a Hard Link within a Volume
     TODO  Should fail with EXDEV
 
 Create a Hard Link to a Directory
-    [Tags]  todo  arla  #(hardlink2)
-    TODO
+    [Tags]  arla  #(hardlink2)
+    ${dir}=  Set Variable   ${TESTPATH}/dir
+    ${link}=  Set Variable  ${TESTPATH}/link
+    Should Not Exist        ${dir}
+    Should Not Exist        ${link}
+    Create Directory        ${dir}
+    Should Exist            ${dir}
+    Should Be Dir           ${dir}
+    Command Should Fail     ln ${dir} ${link}
+    Remove File             ${link}
+    Remove Directory        ${dir}
+    Should Not Exist        ${dir}
+    Should Not Exist        ${link}
 
 Create a Cross-Volume Hard Link
     [Tags]  todo  arla  #(hardlink5)
