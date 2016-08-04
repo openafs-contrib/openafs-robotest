@@ -66,7 +66,7 @@ def cmd_config_init(c):
         os.makedirs(dirname)
     config = afsrobot.config.Config()
     config.load_defaults()
-    config.set_value('paths', 'root', args.root)
+    config.set_value('paths', 'root', c.args.root)
     c.say("Creating config file %s.\n" % (filename))
     config.save_as(filename)
 
@@ -156,6 +156,8 @@ class SubCommandContext(object):
         self.args = args
         # Avoid 'file not found' error when running 'config init'.
         self._defer_config = getattr(args, '_defer_config', False)
+        self.config = None
+        self._log = None
 
     def _read_config(self, filename):
         if not os.path.exists(filename):
@@ -175,13 +177,14 @@ class SubCommandContext(object):
     def __enter__(self):
         if not self._defer_config:
             self._read_config(self.args.config)
-        self._openlog('afs-robotest.log')
+            self._openlog('afs-robotest.log')
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        if exc_type is not None:
-            sys.stdout.write("See log file %s.\n" % (self._logfile))
-        self._log.close()
+        if self._log:
+            if exc_type is not None:
+                sys.stdout.write("See log file %s.\n" % (self._logfile))
+            self._log.close()
         return False
 
     def say(self, msg):
