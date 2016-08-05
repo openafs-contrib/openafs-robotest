@@ -61,6 +61,7 @@ foreground = no
 pidfile = /tmp/afs-robotest-web.pid
 
 [options]
+dafs = yes
 afsd = -dynroot -fakestat -afsdb
 bosserver = -pidfiles
 dafileserver = -d 1 -L
