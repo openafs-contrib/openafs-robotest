@@ -2,10 +2,6 @@
 Goals for v0.5
 --------------
 
-* setup: [host:localhost] is confusing and inconsistent.
-  - use [host:<hostname>] for all host sections?
-  - this means the same file can be used on each host
-* config: dafs vs fs
 * install:
   - cope with /etc/hosts with loopback addresses for the hostname
   - helper for sudo -n setup (at least for debian?)
