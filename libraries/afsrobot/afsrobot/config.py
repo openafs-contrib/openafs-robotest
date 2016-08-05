@@ -75,6 +75,16 @@ isclient = yes
 
 """
 
+def islocal(hostname):
+    """Return true if hostname is for the local system."""
+    if hostname == 'localhost':
+        return True
+    if hostname == socket.gethostname():
+        return True
+    if hostname == socket.getfqdn():
+        return True
+    return False
+
 class Config(ConfigParser.SafeConfigParser):
     """Config parser wrapper."""
 
@@ -89,7 +99,9 @@ class Config(ConfigParser.SafeConfigParser):
         self.readfp(fp)
 
     def load_defaults(self):
-        self.load_from_string(DEFAULT_CONFIG_DATA)
+        text = DEFAULT_CONFIG_DATA
+        text = text.replace('[host:localhost]', '[host:%s]' % socket.gethostname())
+        self.load_from_string(text)
 
     def load_from_file(self, filename):
         """Load values from a file."""
@@ -189,7 +201,7 @@ class Config(ConfigParser.SafeConfigParser):
                 sys.exit(1)
             if filter is not None and not self.optbool(s, filter):
                 continue
-            if hostname == 'localhost' and lookupname:
+            if lookupname and islocal(hostname):
                 hostname = socket.gethostname()
             hostnames.append(hostname)
         return hostnames

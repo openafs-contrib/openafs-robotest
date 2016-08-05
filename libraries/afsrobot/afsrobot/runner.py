@@ -20,8 +20,10 @@
 
 import os
 import sys
+import socket
 import subprocess
 import afsrobot.config
+from afsrobot.config import islocal
 
 # Install robotframework with `sudo pip install robotframework`
 import robot.run
@@ -61,6 +63,7 @@ class Runner(object):
             log = sys.stdout
         self.config = config
         self.log = log
+        self.hostname = socket.gethostname()
 
     def _aklog_workaround_check(self):
         # Sadly, akimpersonate is broken on the master branch at this time. To
@@ -78,14 +81,14 @@ class Runner(object):
         self.log.writelines([hostname, " ", sev.upper(), " ", msg, "\n"])
 
     def _info(self, msg):
-        self._logmsg('localhost', 'info', msg)
+        self._logmsg(self.hostname, 'info', msg)
 
     def _run(self, hostname, args, sudo=False):
         """Run commands locally or remotely, with or without sudo."""
         if sudo:
             args.insert(0, 'sudo')
             args.insert(1, '-n')
-        if hostname != 'localhost':
+        if not islocal(hostname):
             command = subprocess.list2cmdline(args)
             args = [
                 'ssh', '-q', '-t', '-o', 'PasswordAuthentication no'
@@ -139,7 +142,7 @@ class Runner(object):
                 raise ValueError("Invalid installer option for hostname %s!; installer='%s'." % (hostname, installer))
         # Setup new cell.
         with ProgressMessage("Setting up new cell"):
-            self._afsutil('localhost', 'newcell', self.config.optnewcell())
+            self._afsutil(self.hostname, 'newcell', self.config.optnewcell())
         # Now that the root volumes are ready, start any non-dynroot clients.
         for hostname in self.config.opthostnames():
             section = "host:%s" % (hostname)
@@ -160,7 +163,7 @@ class Runner(object):
             user = self.config.optstr('cell', 'admin', 'admin')
         args = self.config.optlogin(user=user)
         with ProgressMessage("Obtaining token for %s" % (user)):
-            self._afsutil('localhost', 'login', args, sudo=False)
+            self._afsutil(self.hostname, 'login', args, sudo=False)
 
     def test(self, **kwargs):
         """Run the Robotframework test suites."""

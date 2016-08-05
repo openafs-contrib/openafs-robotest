@@ -21,6 +21,7 @@
 import os
 import sys
 import subprocess
+from afsrobot.config import islocal
 
 def ssh(hostname, args, keyfile=None, sudo=False):
     """Helper to run command on remote hosts using ssh."""
@@ -59,7 +60,7 @@ def distribute_key(keyfile, hostnames):
         sys.stderr.write("Cannot access keyfile %s.\n" % (keyfile))
         return 1
     for hostname in hostnames:
-        if hostname == 'localhost':
+        if islocal(hostname):
             continue
         # Unfortunately ssh-copy-id will create a duplicate key in the authorized_keys
         # file if the key is already present. To keep this simple, for now, just
@@ -80,7 +81,7 @@ def check_access(keyfile, hostnames, check_sudo=True):
     sys.stdout.write("Checking ssh access...\n")
     failed = False
     for hostname in hostnames:
-        if hostname == 'localhost':
+        if islocal(hostname):
             continue
         sys.stdout.write("Checking access to host %s...\n" % (hostname))
         code = ssh(hostname, ['uname', '-a'], keyfile=keyfile, sudo=False)
@@ -114,7 +115,7 @@ def execute(keyfile, hostnames, command, exclude='', quiet=False, sudo=False):
         return 1
     code = 0
     for hostname in opthostnames:
-        if hostname == 'localhost':
+        if islocal(hostname):
             continue
         if hostname in exclude:
             continue
