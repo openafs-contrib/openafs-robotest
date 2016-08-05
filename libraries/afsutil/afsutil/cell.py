@@ -318,13 +318,13 @@ class Cell(object):
         self.options = optlists2dict(options)
 
         # Defaults.
-        localhost = socket.gethostname()
+        hostname = socket.gethostname()
         if admins is None: admins = ['admin']
-        if db is None: db = [localhost]
-        if fs is None: fs = [localhost]
+        if db is None: db = [hostname]
+        if fs is None: fs = [hostname]
         # In case 'localhost' is given as a hostname, convert to the real name.
-        db = [localhost if x=='localhost' else x for x in db]
-        fs = [localhost if x=='localhost' else x for x in fs]
+        db = [hostname if x=='localhost' else x for x in db]
+        fs = [hostname if x=='localhost' else x for x in fs]
 
         # Cell name.
         self.cell = cell
