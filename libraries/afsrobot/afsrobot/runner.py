@@ -179,9 +179,13 @@ class Runner(object):
         if not os.path.isdir(output):
             os.makedirs(output)
 
-        # Verify we have a keytab.
-        if not os.path.isfile(config.get('kerberos', 'keytab')):
-            raise ValueError("Cannot find keytab file '%s'!\n" % (config.get('kerberos', 'keytab')))
+        # Verify we have a afs service keytab.
+        if config.optbool('kerberos', 'akimpersonate'):
+            keytab = config.optkeytab('fake')
+        else:
+            keytab = config.optkeytab('afs')
+        if not os.path.isfile(keytab):
+            raise ValueError("Cannot find keytab file '%s'!\n" % keytab)
 
         # Setup the rf options.
         tests = config.get('paths', 'tests') # path to our tests
@@ -192,7 +196,7 @@ class Runner(object):
                 'AFS_ADMIN:%s' % config.get('cell', 'admin'),
                 'AFS_AKIMPERSONATE:%s' % config.getboolean('kerberos', 'akimpersonate'),
                 'KRB_REALM:%s' % config.get('kerberos', 'realm'),
-                'KRB_AFS_KEYTAB:%s' % config.get('kerberos', 'keytab'),
+                'KRB_AFS_KEYTAB:%s' % keytab,
             ],
             'report': 'index.html',
             'outputdir': output,
