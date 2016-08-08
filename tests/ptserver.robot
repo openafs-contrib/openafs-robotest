@@ -151,8 +151,18 @@ List Maxuser
     Should Be Equal         ${output}  Max user id is 1200 and max group id is -520.
 
 Set Fields on a User
-    [Tags]  todo  arla  #(ptssetf)
-    TODO
+    [Tags]  arla  #(ptssetf)
+    ${output}=  Run         ${PTS} listentries
+    Should Not Contain      ${output}  user12
+    Command Should Succeed  ${PTS} createuser user12
+    ${output}=  Run         ${PTS} listentries
+    Should Contain          ${output}  user12
+    Command Should Succeed  ${PTS} setfields user12 -groupquota 56
+    ${output}=  Run         ${PTS} examine user12
+    Should Contain          ${output}  group quota: 56
+    Command Should Succeed  ${PTS} delete user12
+    ${output}=  Run         ${PTS} listentries
+    Should Not Contain      ${output}  user12
 
 Delete a Group
     [Tags]  arla  #(ptsdeletegroup)
