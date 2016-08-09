@@ -58,8 +58,23 @@ Add a User to a Group
     Should Not Contain      ${output}  group12
 
 Chown a Group
-    [Tags]  todo  arla  #(ptschown)
-    TODO
+    [Tags]  arla  #(ptschown)
+    ${output}=  Run         ${PTS} listentries -users -groups
+    Should Not Contain      ${output}  user12
+    Should Not Contain      ${output}  group12
+    Command Should Succeed  ${PTS} createuser user12
+    Command Should Succeed  ${PTS} creategroup group12 -owner ${AFS_ADMIN}
+    ${output}=  Run         ${PTS} listentries -users -groups
+    Should Contain          ${output}  user12
+    Should Contain          ${output}  group12
+    Command Should Succeed  ${PTS} chown group12 user12
+    ${output}=  Run         ${PTS} examine group12
+    Should Contain          ${output}  owner: user12
+    Command Should Succeed  ${PTS} delete group12
+    Command Should Succeed  ${PTS} delete user12
+    ${output}=  Run         ${PTS} listentries -users -groups
+    Should Not Contain      ${output}  user12
+    Should Not Contain      ${output}  group12
 
 Get User Membership
     [Tags]  arla  #(ptsmembersuser)
