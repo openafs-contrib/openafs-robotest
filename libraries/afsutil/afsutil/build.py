@@ -113,19 +113,24 @@ def build(**kwargs):
     Build the transarc-path compatible bins by default, which are
     deprecated, but old habits die hard.
     """
+    sysname = os.uname()[0]
     cf = kwargs.get('cf', None)
     target = kwargs.get('target', 'all')
     clean = kwargs.get('clean', True)
-    transarc = kwargs.get('transarc', True)
+    transarc_paths = kwargs.get('transarc_paths', True)
+    modern_kmod_name = kwargs.get('modern_kmod_name', True)
     jobs = kwargs.get('jobs', 1)
 
     if cf is not None:
         cf = shlex.split(cf)  # Note: shlex handles quoting properly.
     else:
         cf = DEFAULT_CF
-        if os.uname()[0] == "Linux" and not '--disable-checking' in cf:
-            cf.append('--enable-checking')
-        if transarc and not '--enable-transarc-paths' in cf:
+        if sysname == "Linux":
+            if not '--disable-checking' in cf:
+                cf.append('--enable-checking')
+            if modern_kmod_name:
+                cf.append('--enable-linux-kernel-packaging')
+        if transarc_paths and not '--enable-transarc-paths' in cf:
             cf.append('--enable-transarc-paths')
 
     # Sadly, the top-level target depends on the mode we are
