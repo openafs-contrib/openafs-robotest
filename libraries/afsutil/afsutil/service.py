@@ -44,10 +44,17 @@ def check_component_names(components):
     return list(c)
 
 def _rc(component, action):
-    rc = "/etc/init.d/openafs-%s" % (component)
-    if not os.path.isfile(rc):
-        raise AssertionError("Init script is missing! %s" % (rc))
-    sh(rc, action)
+    # Try systemd if a unit file is present, otherwise fallback
+    # to our init script.
+    name = 'openafs-%s' % (component)
+    unit_file = '/usr/lib/systemd/system/%s.service' % (name)
+    init_script = "/etc/init.d/%s" % (name)
+    if os.path.isfile(unit_file):
+        sh('systemctl', action, name)
+    elif os.path.isfile(init_script):
+        sh(init_script, action)
+    else:
+        raise AssertionError("Init script is missing for %s!" % (name))
 
 def start(**kwargs):
     components = check_component_names(kwargs['components'])
