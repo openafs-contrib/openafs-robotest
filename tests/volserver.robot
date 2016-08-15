@@ -60,3 +60,28 @@ Remove a Replicated Volume
     Volume Should Not Exist   xyzzy.readonly
     Volume Should Not Exist   xyzzy
 
+Create a Backup Volume
+    ${output}=  Run           ${VOS} create ${SERVER} a xyzzy
+    Should Contain            ${output}  created
+    ${output}=  Run           ${VOS} backup xyzzy
+    Should Contain            ${output}  xyzzy
+    Command Should Succeed    ${VOS} remove ${SERVER} a xyzzy.backup
+    Command Should Succeed    ${VOS} remove ${SERVER} a xyzzy
+
+Display Volume Header Information
+    [Setup]     Create Volume   xyzzy
+    [Teardown]  Remove Volume   xyzzy
+    ${output}=  Run           ${VOS} listvol ${SERVER} a
+    Should Contain            ${output}  xyzzy
+
+Display VLDB Information
+    [Setup]     Create Volume   xyzzy
+    [Teardown]  Remove Volume   xyzzy
+    ${output}=  Run             ${VOS} listvldb -server ${SERVER}
+    Should Contain              ${output}  xyzzy
+
+Display Header and VLDB Information
+    [Setup]     Create Volume   xyzzy
+    [Teardown]  Remove Volume   xyzzy
+    ${output}=  Run             ${VOS} examine xyzzy
+    Should Contain              ${output}  xyzzy

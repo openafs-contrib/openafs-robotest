@@ -92,3 +92,16 @@ Copy an ACL
     ...  group1 rl
     Remove Directory                 ${PATH2}
 
+Remove Obsolete ACL Entries
+    Create Directory                 ${PATH2}
+    Command Should Succeed           ${FS} setacl ${PATH2} user1 rlidw
+    ${output}=  Run                  ${FS} cleanacl -path ${PATH2}
+    Should Contain                   ${output}  fine
+    Remove Directory                 ${PATH2}
+
+Show User's Directory Access
+    Create Directory                 ${PATH2}
+    Command Should Succeed           ${FS} setacl ${PATH2} user1 rlidw
+    ${output}=  Run                  ${FS} gca ${PATH2}
+    Should Contain                   ${output}  rlidw
+    Remove Directory                 ${PATH2}
