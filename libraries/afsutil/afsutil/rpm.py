@@ -77,6 +77,9 @@ class RpmInstaller(Installer):
         self.packages = []
         files = glob.glob(os.path.join(self.pkgdir, '*.rpm'))
         for file in files:
+            # Skip the source rpm, if present.
+            if file.endswith('.src.rpm'):
+                continue
             output = rpm('--query', '--package', file,
                          '--queryformat', '%{NAME} %{VERSION} %{RELEASE} %{ARCH}\\n')
             name,version,release,arch = output[0].split()
