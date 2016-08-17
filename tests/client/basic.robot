@@ -79,8 +79,12 @@ Create a Hard Link within a Directory
     Should Not Exist        ${file}
 
 Create a Hard Link within a Volume
-    [Tags]  todo  #(hardlink4)
-    TODO  Should fail with EXDEV
+    [Tags]  #(hardlink4)
+    ${link}=  Set Variable  ${TESTPATH}/link
+    Should Not Exist        ${link}    
+    Command Should Fail     ln ${TESTPATH} ${link}
+    Remove File             ${link}
+    Should Not Exist        ${link}
 
 Create a Hard Link to a Directory
     [Tags]  #(hardlink2)
@@ -98,8 +102,14 @@ Create a Hard Link to a Directory
     Should Not Exist        ${link}
 
 Create a Cross-Volume Hard Link
-    [Tags]  todo  #(hardlink5)
-    TODO
+    [Tags]  #(hardlink5)
+    ${nvolume}=  Set Variable  ${TESTPATH}/xyzzy
+    Should Not Exist           ${nvolume}
+    Create Volume  xyzzy  server=${SERVER}  part=${PARTITION}  path=${nvolume}  acl=system:anyuser,read
+    Command Should Fail        ln ${TESTPATH} ${nvolume}
+    Remove Volume  xyzzy  path=${nvolume}
+    Remove File                ${nvolume}
+    Should Not Exist           ${nvolume}
 
 Touch a file
     [Tags]  #(touch1)
