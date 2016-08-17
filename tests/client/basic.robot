@@ -80,11 +80,26 @@ Create a Hard Link within a Directory
 
 Create a Hard Link within a Volume
     [Tags]  #(hardlink4)
-    ${link}=  Set Variable  ${TESTPATH}/link
-    Should Not Exist        ${link}    
-    Command Should Fail     ln ${TESTPATH} ${link}
-    Remove File             ${link}
-    Should Not Exist        ${link}
+    ${dir}=    Set Variable  ${TESTPATH}/dir
+    ${dir2}=   Set Variable  ${TESTPATH}/dir2
+    ${file}=   Set Variable  ${dir}/file
+    ${link}=   Set Variable  ${dir2}/link
+    Should Not Exist         ${dir}
+    Should Not Exist         ${dir2}
+    Should Not Exist         ${link}
+    Should Not Exist         ${file}
+    Create Directory         ${dir}
+    Create Directory         ${dir2}
+    Create File              ${file}
+    Command Should Fail      ln ${file} ${link}
+    Remove File              ${file}
+    Remove File              ${link}
+    Remove Directory         ${dir}
+    Remove Directory         ${dir2}
+    Should Not Exist         ${dir}
+    Should Not Exist         ${dir2}
+    Should Not Exist         ${link}
+    Should Not Exist         ${file}
 
 Create a Hard Link to a Directory
     [Tags]  #(hardlink2)
