@@ -93,9 +93,10 @@ class Runner(object):
             args = [
                 'ssh', '-q', '-t', '-o', 'PasswordAuthentication no'
             ]
-            if self.keyfile:
+            keyfile = self.config.optstr('ssh', 'keyfile')
+            if keyfile:
                  args.append('-i')
-                 args.append(self.keyfile)
+                 args.append(keyfile)
             args.append(hostname)
             args.append(command)
         cmdline = subprocess.list2cmdline(args)

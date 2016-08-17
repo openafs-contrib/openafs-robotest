@@ -114,8 +114,8 @@ def cmd_web_status(c):
 def cmd_ssh_create(c):
     rc = afsrobot.ssh.generate_key(c.args.keyfile)
     if rc == 0:
-        config.set_value('ssh', 'keyfile', c.args.keyfile)
-        config.save()
+        c.config.set_value('ssh', 'keyfile', c.args.keyfile)
+        c.config.save()
     return rc
 
 def cmd_ssh_dist(c):
