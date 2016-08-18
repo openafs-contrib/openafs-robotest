@@ -19,6 +19,7 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 import os
+import base64
 import sys
 import socket
 import subprocess
@@ -118,6 +119,14 @@ class Runner(object):
     def setup(self, **kwargs):
         """Setup OpenAFS client and servers and create a test cell."""
         self._aklog_workaround_check()
+
+        # Be sure to use the same secret value on each host.
+        if self.config.optbool('kerberos', 'akimpersonate'):
+            secret = self.config.optstr('kerberos', 'secret')
+            if secret is None:
+                random = base64.b64encode(os.urandom(32))
+                self.config.set_value('kerberos', 'secret', random)
+
         # Installation.
         for hostname in self.config.opthostnames():
             section = "host:%s" % (hostname)
