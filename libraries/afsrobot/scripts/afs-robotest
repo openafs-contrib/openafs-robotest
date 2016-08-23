@@ -183,7 +183,7 @@ class SubCommandContext(object):
     def __exit__(self, exc_type, exc_value, traceback):
         if self._log:
             if exc_type is not None:
-                sys.stdout.write("See log file %s.\n" % (self._logfile))
+                sys.stdout.write("See log file %s\n" % (self._logfile))
             self._log.close()
         return False
 
