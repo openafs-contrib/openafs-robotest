@@ -34,10 +34,17 @@ Create a Larger Than 2gb File
     Should Not Exist               ${file}
 
 Write a File Larger than the Cache
-    [Tags]  todo  #(fcachesize-write-file)
-    TODO
+    [Tags]  #(fcachesize-write-file)
+    ${output}=  Run                ${FS} getcacheparms
+    ${file}=  Set Variable         ${TESTPATH}/file
+    Should Not Exist               ${file}
+    Create File                    ${file}
+    Should Exist                   ${file}
+    ${output}=  Run                dd if=/dev/zero of=${file} bs=1024 count=2M
+    ${output}=  Run                ${FS} getcacheparms
+    Remove File                    ${file}
+    Should Not Exist               ${file}
 
 Read a File Larger than the Cache
     [Tags]  todo  #(fcachesize-read-file)
     TODO
-
