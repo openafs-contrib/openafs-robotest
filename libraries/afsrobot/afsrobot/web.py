@@ -80,7 +80,8 @@ class TinyWebServer(object):
         if pid:
             sys.stderr.write("Already running (pid %d).\n" % (pid))
             return
-        mkdirp(self.docroot)
+        if not os.path.isdir(self.docroot):
+            os.makedirs(self.docroot)
         os.chdir(self.docroot)
         sys.stdout.write("Listening at http://%s:%d\n" % (os.uname()[1], self.port))
         if not self.foreground:
