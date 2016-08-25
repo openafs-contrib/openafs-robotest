@@ -427,6 +427,7 @@ class Keytab(object):
             raise AssertionError("Cannot use DES key for rxkad-k5!")
         if not os.path.isdir(confdir):
             raise ValueError("Cannot find server config directory '%s'." % (confdir))
+        confdir = os.path.abspath(confdir)
         src = self.filename
         dst = os.path.join(confdir, 'rxkad.keytab')
         if os.path.exists(dst):
@@ -434,6 +435,7 @@ class Keytab(object):
             os.remove(dst)
         logger.info("Copying rxkad-k5 keytab %s to %s.", src, dst)
         shutil.copyfile(src, dst)
+        os.chmod(dst, 0600)
 
     def _set_service_key_extended(self, principal):
         """Set the non-DES service key."""
