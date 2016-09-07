@@ -187,5 +187,3 @@ complete the setup of the new AFS cell.
 
     $ afs-robotest setup
 
-Check the `setup.log` to diagnose errors.
-
