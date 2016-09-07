@@ -21,6 +21,7 @@
 import os
 import sys
 import subprocess
+import shlex
 from afsrobot.config import islocal
 
 def ssh(hostname, args, keyfile=None, sudo=False):
@@ -114,7 +115,7 @@ def execute(keyfile, hostnames, command, exclude='', quiet=False, sudo=False):
         sys.stderr.write("Cannot access keyfile %s.\n" % (keyfile))
         return 1
     code = 0
-    for hostname in opthostnames:
+    for hostname in hostnames:
         if islocal(hostname):
             continue
         if hostname in exclude:
