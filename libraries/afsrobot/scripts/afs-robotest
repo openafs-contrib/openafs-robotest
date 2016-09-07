@@ -57,17 +57,20 @@ AFS_ROBOTEST_CONF = os.getenv('AFS_ROBOTEST_CONF',
 #
 def cmd_config_init(c):
     filename = c.args.config
-    if os.path.exists(filename):
-        c.say("Skipping config init; file %s already exists." % (filename))
-        return 0
-    dirname = os.path.dirname(filename)
-    if not os.path.exists(dirname):
-        c.say("Making directory %s." % (dirname))
-        os.makedirs(dirname)
+    root = c.args.root
     config = afsrobot.config.Config()
     config.load_defaults()
-    config.set_value('paths', 'root', c.args.root)
-    c.say("Creating config file %s.\n" % (filename))
+    if os.path.exists(filename):
+        msg = "Updating"
+        config.load_from_file(filename)
+    else:
+        msg = "Creating"
+        config.set_value('paths', 'root', root)
+    dirname = os.path.dirname(filename)
+    if not os.path.exists(dirname):
+        c.say("Making directory %s" % (dirname))
+        os.makedirs(dirname)
+    c.say("%s config file %s" % (msg, filename))
     config.save_as(filename)
 
 def cmd_config_copy(c):
