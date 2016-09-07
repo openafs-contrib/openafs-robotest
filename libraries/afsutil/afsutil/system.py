@@ -76,12 +76,11 @@ def run(cmd, args=None, quiet=False, retry=0, wait=1, cleanup=None):
 
 def sh(*args, **kwargs):
     """Run the command line and write the output to the logger."""
-    # sh() is an alternative to run(); calls to run() should be replaced with sh()
     args = [arg.__str__() for arg in args]  # subprocess expects string args.
     cmdline = subprocess.list2cmdline(args)
-    output = []
-    capture_output = kwargs.get('output', False)
+    output = kwargs.get('output', False)
     quiet = kwargs.get('quiet', False)
+    output_lines = []
     if quiet:
         logger.debug("Running %s", cmdline)
     else:
@@ -93,12 +92,12 @@ def sh(*args, **kwargs):
             line = line.rstrip()
             if not quiet:
                 logger.info(line)
-            if capture_output:
-                output.append(line)
+            if output:
+                output_lines.append(line)
     code = p.wait()
     if code != 0:
-        raise CommandFailed(args, code, "", "/n".join(output))
-    return output
+        raise CommandFailed(args, code, "", "/n".join(output_lines))
+    return output_lines
 
 def which(program, extra_paths=None, raise_errors=False):
     """Find a program in the PATH."""
