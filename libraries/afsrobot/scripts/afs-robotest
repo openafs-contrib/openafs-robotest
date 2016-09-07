@@ -104,7 +104,7 @@ def cmd_config_unset(c):
 def cmd_web_start(c):
     afsrobot.web.TinyWebServer(c.config).start()
 
-def cmd_web_stop():
+def cmd_web_stop(c):
     afsrobot.web.TinyWebServer(c.config).stop()
 
 def cmd_web_status(c):
