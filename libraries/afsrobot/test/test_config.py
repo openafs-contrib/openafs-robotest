@@ -23,6 +23,7 @@ import os
 import unittest
 import StringIO
 import tempfile
+import socket
 
 sys.path.insert(0, "..")
 sys.path.insert(0, ".")
@@ -166,53 +167,67 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(expect, " ".join(args))
 
     def test_optcomponents(self):
+        hostname = socket.gethostname()
         expect = 'server client'
         c = afsrobot.config.Config()
         c.load_defaults()
-        args = c.optcomponents('localhost')
+        args = c.optcomponents(hostname)
         self.assertEqual(expect, " ".join(args))
 
     def test_optinstall(self):
-        hostname = os.uname()[1]
+        hostname = socket.gethostname()
         expect = '--dist none --components server client --cell robotest --hosts %s ' \
-                 '--realm ROBOTEST --force' % (hostname)
+                 '--realm ROBOTEST --force -o afsd=-dynroot -fakestat -afsdb -o bosserver=-pidfiles' \
+                 % (hostname,)
         c = afsrobot.config.Config()
         c.load_defaults()
-        args = c.optinstall('localhost')
+        args = c.optinstall(hostname)
         self.assertEqual(expect, " ".join(args))
 
     def test_optsetkey(self):
+        hostname = socket.gethostname()
         expect = '--cell robotest --realm ROBOTEST --keytab /tmp/fake.keytab'
         c = afsrobot.config.Config()
         c.load_defaults()
-        args = c.optsetkey('localhost')
+        args = c.optsetkey(hostname)
         self.assertEqual(expect, " ".join(args))
 
     def test_optsetkey_noakimp(self):
+        hostname = socket.gethostname()
         expect = '--cell robotest --realm ROBOTEST --keytab /tmp/afs.keytab'
         c = afsrobot.config.Config()
         c.load_defaults()
         c.set_value('kerberos', 'akimpersonate', 'no')
-        args = c.optsetkey('localhost')
+        args = c.optsetkey(hostname)
         self.assertEqual(expect, " ".join(args))
 
     def test_optnewcell(self):
-        hostname = os.uname()[1]
+        hostname = socket.gethostname()
         expect = '--cell robotest --admin robotest.admin ' \
                  '--top test --akimpersonate --keytab /tmp/fake.keytab --realm ROBOTEST ' \
-                 '--fs %s --db %s -o dafileserver=-d 1 -L -o davolserver=-d 1' % \
-                 (hostname, hostname)
+                 '--fs %s --db %s ' \
+                 '-o dafs=yes ' \
+                 '-o afsd=-dynroot -fakestat -afsdb ' \
+                 '-o bosserver=-pidfiles ' \
+                 '-o dafileserver=-d 1 -L ' \
+                 '-o davolserver=-d 1' \
+                 % (hostname, hostname)
         c = afsrobot.config.Config()
         c.load_defaults()
         args = c.optnewcell()
         self.assertEqual(expect, " ".join(args))
 
     def test_optnewcell_noakimp(self):
-        hostname = os.uname()[1]
+        hostname = socket.gethostname()
         expect = '--cell robotest --admin robotest.admin ' \
                  '--top test --keytab /tmp/user.keytab --realm ROBOTEST ' \
-                 '--fs %s --db %s -o dafileserver=-d 1 -L -o davolserver=-d 1' % \
-                 (hostname, hostname)
+                 '--fs %s --db %s ' \
+                 '-o dafs=yes ' \
+                 '-o afsd=-dynroot -fakestat -afsdb ' \
+                 '-o bosserver=-pidfiles ' \
+                 '-o dafileserver=-d 1 -L ' \
+                 '-o davolserver=-d 1' \
+                 % (hostname, hostname)
         c = afsrobot.config.Config()
         c.load_defaults()
         c.set_value('kerberos', 'akimpersonate', 'no')
