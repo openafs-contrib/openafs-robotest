@@ -71,6 +71,7 @@ davolserver = -d 1
 keyfile =
 
 [host:localhost]
+use = yes
 installer = none
 isfileserver = yes
 isdbserver = yes
@@ -205,6 +206,8 @@ class Config(ConfigParser.SafeConfigParser):
             if hostname == '':
                 sys.stderr.write("Invalid config section name: %s\n" % (s))
                 sys.exit(1)
+            if not self.optbool(s, 'use', default='yes'):
+                continue
             if filter is not None and not self.optbool(s, filter):
                 continue
             if lookupname and islocal(hostname):
