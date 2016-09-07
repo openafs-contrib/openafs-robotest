@@ -24,8 +24,9 @@ configured on the test machine. The NOPASSWD sudo option must be set to allow
 the command `afsutil` to be run with sudo without a password.
 
 Python 2.6 or 2.7 must be present. Install the `python-pip`
-packages using your system's package manager. On Debian based systems, this
-is done with the command:
+packages using your system's package manager.
+
+On Debian based systems, this is done with the command:
 
     $ sudo apt-get install python-pip
 
@@ -33,6 +34,9 @@ On Centos, `pip` may be installed from the `python-pip` package in the EPEL
 repo:
 
     $ sudo yum install python-pip
+
+On Solaris 10 and 11, use the opencsw repository to install the `py_pip`
+package.
 
 Install the `Robotframework` and `argparse` Python packages using the `pip'
 command:
@@ -61,13 +65,15 @@ To show the current configuration:
 
 To install Transarc-style binaries:
 
-    $ afs-robotest config set host:localhost installer transarc
-    $ afs-robotest config set host:localhost dest <path-to-dest-directory>
+    $ afs-robotest config set host:$HOSTNAME installer transarc
+    $ afs-robotest config set host:$HOSTNAME dest <path-to-dest-directory>
 
 To install RPM packages:
 
-    $ afs-robotest config set host:localhost installer rpm
-    $ afs-robotest config set host:localhost rpms <path-to-packages>
+    $ afs-robotest config set host:$HOSTNAME installer rpm
+    $ afs-robotest config set host:$HOSTNAME rpms <path-to-packages>
+
+Where `$HOSTNAME` is your system's hostname.
 
 ## akimpersonate notes
 
@@ -77,7 +83,7 @@ This is configured by setting `akimpersonate` to `yes` in the `kerberos`
 section of the configuration.
 
 Unfortunately, the `akimpersonate` feature may not be functional in
-developement releases of OpenAFS, a.k.a, the master branch.  For testing
+development releases of OpenAFS, a.k.a, the master branch.  For testing
 development releases, either use a Kerberos realm or provide a 1.6.10 (or
 better) version of `aklog`.  Build a recent version of 1.6.x, and copy the
 `aklog` binary to a local path, then set the `aklog` option in the `variables`
@@ -134,10 +140,11 @@ Install `openafs-robotest` on each server, as described above.  `sudo` must be
 configured with NOPASSWD for the test user account on each host.
 
 A configuration section must be added for each test server. The name of the
-test section is `[host:<hostname>]`, in addition to the `[host:localhost]` for
+test section is `[host:<hostname>]`, in addition to the `[host:myhost]` for
 the "primary" server.  For example:
 
-    [host:localhost]
+    [host:myhost]
+    use = yes
     installer = transarc
     isfileserver = yes
     isdbserver = yes
@@ -147,6 +154,7 @@ the "primary" server.  For example:
     setclock = no
 
     [host:mytesta]
+    use = yes
     installer = transarc
     isfileserver = yes
     isdbserver = no
@@ -156,6 +164,7 @@ the "primary" server.  For example:
     setclock = yes
 
     [host:mytestb]
+    use = yes
     installer = transarc
     isfileserver = yes
     isdbserver = no
@@ -169,11 +178,11 @@ The OpenAFS installation and setup is done using ssh with keyfiles. The
 the public keys to each test servers.  Run the following on the primary host to
 create and distribute the ssh keys.
 
-    $ afs-robotest sshkeys create
-    $ afs-robotest sshkeys dist
-    $ afs-robotest sshkeys check
+    $ afs-robotest ssh create
+    $ afs-robotest ssh dist
+    $ afs-robotest ssh check
 
-Perform the setup on the primary host. This will take serveral minutes to
+Perform the setup on the primary host. This will take several minutes to
 complete the setup of the new AFS cell.
 
     $ afs-robotest setup
