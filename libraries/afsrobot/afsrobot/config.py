@@ -99,6 +99,7 @@ class Config(ConfigParser.SafeConfigParser):
         self.readfp(fp)
 
     def load_defaults(self):
+        """Load default values."""
         text = DEFAULT_CONFIG_DATA
         text = text.replace('[host:localhost]', '[host:%s]' % socket.gethostname())
         self.load_from_string(text)
@@ -111,11 +112,13 @@ class Config(ConfigParser.SafeConfigParser):
         self.filename = filename
 
     def set_value(self, section, option, value):
+        """Set an option value."""
         if section not in self.sections():
             self.add_section(section)
         self.set(section, option, value)
 
     def unset_value(self, section, option):
+        """Remove an option value."""
         self.remove_option(section, option) # raise exception if not found.
         if len(self.items(section)) == 0:
             self.remove_section(section)
