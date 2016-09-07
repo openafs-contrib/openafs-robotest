@@ -51,6 +51,7 @@ def run(cmd, args=None, quiet=False, retry=0, wait=1, cleanup=None):
         args = []
     else:
         args = list(args)
+    cmd = which(cmd, raise_errors=True)
     args.insert(0, cmd)
     for attempt in xrange(0, (retry + 1)):
         if attempt > 0:
@@ -76,6 +77,8 @@ def run(cmd, args=None, quiet=False, retry=0, wait=1, cleanup=None):
 
 def sh(*args, **kwargs):
     """Run the command line and write the output to the logger."""
+    args = list(args)
+    args[0] = which(args[0], raise_errors=True)
     args = [arg.__str__() for arg in args]  # subprocess expects string args.
     cmdline = subprocess.list2cmdline(args)
     output = kwargs.get('output', False)
@@ -119,7 +122,7 @@ def which(program, extra_paths=None, raise_errors=False):
             if os.path.isfile(fpath) and os.access(fpath, os.X_OK):
                 return fpath
         if raise_errors:
-            raise AssertionError("Could not find '%s' in paths %s" % (program, ",".join(paths)))
+            raise AssertionError("Could not find '%s' in paths %s" % (program, ":".join(paths)))
     return None
 
 def file_should_exist(path, description=None):
