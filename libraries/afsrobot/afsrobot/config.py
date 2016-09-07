@@ -67,6 +67,9 @@ bosserver = -pidfiles
 dafileserver = -d 1 -L
 davolserver = -d 1
 
+[ssh]
+keyfile =
+
 [host:localhost]
 installer = none
 isfileserver = yes
