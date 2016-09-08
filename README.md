@@ -56,8 +56,13 @@ Install the custom python packages and scripts provided by openafs-robotest:
 ## Setup
 
 Run the `afs-robotest` command to view and set the configuration for your
-system.  (By default, the configuration is stored in the file
-`~/.afsrobotrc/afs-robotest.conf`.)
+system.
+
+By default, the configuration is stored in the file
+`~/.afsrobotestrc/afs-robotest.conf`. This can be customized by setting the
+`AFS_ROBOTEST_CONF` environment variable, or specifying the fully qualified
+path with the `--config` command line option.  This can be useful when testing
+various configurations.
 
 To show the current configuration:
 
