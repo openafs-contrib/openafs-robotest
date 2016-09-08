@@ -20,6 +20,14 @@ OUTPUT=$ROOT/html/output
 DIST=$ROOT/html/dist
 
 #
+# Create/upgrade the configuration file.
+#
+config_init() {
+    echo "Creating/updating afs-robotest config file."
+    afs-robotest config init || exit 1
+}
+
+#
 # Make our directories.
 #
 make_dirs() {
@@ -147,6 +155,7 @@ case "$1" in
         make_sdists
         update_repo
         install_packages
+        config_init
         ;;
     *)
         usage
