@@ -50,3 +50,19 @@ Notable changes.
 * New `afsutil reload` command to reload the kernel module after rebuilding it.
 * `afsutil login`: Add the `--user` option to specify the username.
 * `afsutil build --jobs` option for parallel builds. `nproc` determines the default number.
+
+## [v0.4.0] 2016-02-23
+
+* Support multi-server AFS Cell setup.
+
+## [v0.3.0] 2016-01-08
+
+* New `afsutil` package: New python package and script to install and setup OpenAFS before running tests. This package is independent of Robotframework.
+
+## [v0.2.0] 2015-04-13
+
+* New `OpenAFSLibary` Robotframework keyword library for writing tests.
+
+## [v0.1.0] 2013-05-23
+
+* Initial
