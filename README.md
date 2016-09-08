@@ -55,9 +55,9 @@ Install the custom python packages and scripts provided by openafs-robotest:
 
 ## Setup
 
-Run the `afs-robotest` tool to set the configuration before running the setup
-and tests.  The default configuration filename is
-`~/.afsrobotestrc/afs-robotest.conf`. This file is the `./install.sh` command.
+Run the `afs-robotest` command to view and set the configuration for your
+system.  (By default, the configuration is stored in the file
+`~/.afsrobotrc/afs-robotest.conf`.)
 
 To show the current configuration:
 
