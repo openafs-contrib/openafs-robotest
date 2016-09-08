@@ -57,7 +57,7 @@ Install the custom python packages and scripts provided by openafs-robotest:
 
 Run the `afs-robotest` tool to set the configuration before running the setup
 and tests.  The default configuration filename is
-`~/.afsrobotestrc/afs-robotest.conf`.
+`~/.afsrobotestrc/afs-robotest.conf`. This file is the `./install.sh` command.
 
 To show the current configuration:
 
@@ -174,9 +174,9 @@ the "primary" server.  For example:
     setclock = no
 
 The OpenAFS installation and setup is done using ssh with keyfiles. The
-`sshkeys` helper command is provided to create an ssh key pair and distribute
-the public keys to each test servers.  Run the following on the primary host to
-create and distribute the ssh keys.
+`ssh` subcommand is provided to create an ssh key pair and distribute
+the public keys to each test server.  Run the following on the primary host to
+create and distribute the ssh key.
 
     $ afs-robotest ssh create
     $ afs-robotest ssh dist
