@@ -27,7 +27,8 @@ Notable changes.
 * Removed the per host configuration options: `build`,`builddir`,`setclock`,`nuke`,`auto_*`.
 * Use the actual hostname in the configuration section name instead of the hard-coded `[host:localhost]`.
 * Renamed `afs-robotest sshkeys` subcommand to `afs-robotest ssh`.
-* Added the `afs-robotest ssh exec` subcommand to run remote commands hosts listed in the configuration file.
+* Add the `afs-robotest ssh exec` subcommand to run remote commands hosts listed in the configuration file.
+* Add the `afs-robotest version` subcommand to print version information.
 
 ### Tests
 
