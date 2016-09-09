@@ -53,6 +53,12 @@ AFS_ROBOTEST_CONF = os.getenv('AFS_ROBOTEST_CONF',
                         os.environ['HOME'], '.afsrobotestrc', 'afs-robotest.conf'))
 
 #
+# version sub-command
+#
+def cmd_version(c):
+    sys.stdout.write("Version %s\n" % (afsrobot.__version__))
+
+#
 # config sub-commands
 #
 def cmd_config_init(c):
@@ -232,6 +238,13 @@ def main():
     # Parse command line options.
     parser = CommandLineParser()
     subparsers = parser.add_subparsers(title="commands", metavar="<command>")
+
+    #
+    # afs-robotest version
+    #
+    p = subparsers.add_parser('version', help="print version information")
+    common_options(p)
+    p.set_defaults(_cmd=cmd_version, _defer_config=True)
 
     #
     # afs-robotest config
