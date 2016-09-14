@@ -80,6 +80,9 @@ def _optlists2dict(options):
             names[name.strip()] = value.strip()
     return names
 
+def version(**kwargs):
+    sys.stdout.write("Version %s\n" % (afsutil.__version__))
+
 def build(**kwargs):
     afsutil.build.build(**kwargs)
 
@@ -231,6 +234,9 @@ def main():
         p.add_argument('-v', '--verbose', action='store_true', help='print debug messages')
         p.add_argument('-q', '--quiet', action='store_true', help='do not print info messages')
         p.add_argument('-l', '--log', help='log file location (default: stderr)', default=None)
+
+    p = subparsers.add_parser('version', help='print version information')
+    p.set_defaults(fn=version, must_be_root=False)
 
     p = subparsers.add_parser('build', help='build binaries')
     _common_opts(p)
