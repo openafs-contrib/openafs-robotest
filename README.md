@@ -80,7 +80,7 @@ To install RPM packages:
 
 Where `$HOSTNAME` is your system's hostname.
 
-## akimpersonate notes
+### akimpersonate notes
 
 The `akimpersonate` feature of `aklog` is used to create AFS tokens by
 accessing the service keytab directly, without the need for a Kerberos realm.
@@ -191,4 +191,33 @@ Perform the setup on the primary host. This will take several minutes to
 complete the setup of the new AFS cell.
 
     $ afs-robotest setup
+
+## afsutil
+
+This project includes a python package called `afsutil`, which is a collection
+of helpers to build and setup OpenAFS.  The `afs-robotest` setup and teardown
+commands are implemented with the `afsutil` package.
+
+The `afsutil` package includes commands to build OpenAFS binaries on Linux and
+Solaris.
+
+To build a legacy "Transarc style" distribution:
+
+    git clone git://git.openafs.org/openafs.git
+    cd openafs
+    afsutil build
+
+See `afsutil build -help` for options, including options to give to configure.
+
+To build RPM packages on RHEL/Centos:
+
+    git clone git://git.openafs.org/openafs.git
+    cd openafs
+    afsutil package
+
+To reload the OpenAFS kernel module after rebuilding it (it should already be
+running from a previous `afs-robotest setup` or `afsutil install`):
+
+    afsutil build
+    sudo afsutil reload
 
