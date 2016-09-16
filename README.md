@@ -72,11 +72,13 @@ To install Transarc-style binaries:
 
     $ afs-robotest config set host:$HOSTNAME installer transarc
     $ afs-robotest config set host:$HOSTNAME dest <path-to-dest-directory>
+    $ afs-robotest config set variables afs_dist transarc
 
 To install RPM packages:
 
     $ afs-robotest config set host:$HOSTNAME installer rpm
     $ afs-robotest config set host:$HOSTNAME rpms <path-to-packages>
+    $ afs-robotest config set variables afs_dist rhel6
 
 Where `$HOSTNAME` is your system's hostname.
 
