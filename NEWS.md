@@ -29,12 +29,14 @@ Notable changes.
 * Renamed `afs-robotest sshkeys` subcommand to `afs-robotest ssh`.
 * Add the `afs-robotest ssh exec` subcommand to run remote commands hosts listed in the configuration file.
 * Add the `afs-robotest version` subcommand to print version information.
+* Cleanup the akimpersonate fake keytab file.
 
 ### Tests
 
 * `afs-robotest run`: Add `--include` option to allow tests to be included by tag.
 * Add `afs-robotest run` as an alias for `afs-robotest test`
 * `echo -n` is not portable; avoid it in the tests.
+* Fix false failure in write-to-read-only volume test.
 
 ### Keyword Library
 
@@ -50,7 +52,7 @@ Notable changes.
 * Add `--cf` option for transarc-style builds. Do not add extra configure options when `--cf` is given.
 * New `afsutil reload` command to reload the kernel module after rebuilding it.
 * `afsutil login`: Add the `--user` option to specify the username.
-* `afsutil build --jobs` option for parallel builds. `nproc` determines the default number.
+* `afsutil build --jobs` option for parallel builds on Linux. (`nproc` determines the default number of jobs.)
 
 ## [v0.4.0] 2016-02-23
 

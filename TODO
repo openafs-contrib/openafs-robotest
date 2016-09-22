@@ -1,23 +1,18 @@
+v0.6
+----
 
-Goals for v0.5
---------------
-
-* install:
+* install
+  - per user vs global installs
   - cope with /etc/hosts with loopback addresses for the hostname
   - helper for sudo -n setup (at least for debian?)
-
-
-Post v0.5
----------
-
-* tests:
+* tests
   - implement or remove tests tagged as TODO
-* install:
-  - user vs global installs
 * more packaging formats
   - debs
 * client only test suite
   - assume servers already running on separate host(s)
+  - cm only tests
+  - utils tests
 * OpenAFSLibrary
   - new keywords
   - more complete unit tests
