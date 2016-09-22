@@ -245,6 +245,10 @@ class Runner(object):
                 with ProgressMessage("Removing clients and servers on %s" % (hostname)):
                     self._afsutil(hostname, 'stop', self.config.optcomponents(hostname))
                     self._afsutil(hostname, 'remove', ['--purge'])
+                    if self.config.optbool('kerberos', 'akimpersonate'):
+                        keytab = self.config.optkeytab('fake')
+                        if keytab and os.path.exists(keytab):
+                            self._run(hostname, ['rm', keytab], sudo=True)
             else:
                 self._info("Invalid installer option for hostname %s!; installer='%s'.\n" % (hostname, installer))
 
