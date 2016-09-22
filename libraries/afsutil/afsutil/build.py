@@ -143,7 +143,7 @@ def build(**kwargs):
         _clean()
     sh('./regen.sh')
     sh('./configure', *cf)
-    sh('make', '-j', jobs, target)
+    _make(jobs, target)
 
 def _linux_kernel_packaging():
     """Returns true if built with --with-linux-kernel-packaging."""
@@ -199,6 +199,15 @@ def _client_setup():
     else:
         raise AssertionError("Unsupported operating system: %s" % (uname))
     return cs
+
+def _make(jobs, target):
+    uname = os.uname()[0]
+    if uname == "Linux":
+        sh('make', '-j', jobs, target)
+    elif uname == "SunOS":
+        sh('make', target)
+    else:
+        raise AssertionError("Unsupported operating system: %s" % (uname))
 
 def modreload(**kwargs):
     """Reload the kernel module and restart the cache manager after a build.
