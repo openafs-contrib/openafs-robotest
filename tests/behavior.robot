@@ -28,7 +28,7 @@ Teardown Test Suite
 Write a File in a Read-only Volume
     [Tags]  arla  #(write-ro)
     Run Keyword And Expect Error
-    ...  IOError: [Errno 30] Read-only file system:*
+    ...  *Read-only file system*
     ...  Create File  ${ROPATH}/should-be-read-only
 
 Create a Large Number of Entries in a Directory
