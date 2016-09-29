@@ -22,12 +22,15 @@ import os
 import base64
 import sys
 import socket
+import logging
 import subprocess
 import afsrobot.config
 from afsrobot.config import islocal
 
 # Install robotframework with `sudo pip install robotframework`
 import robot.run
+
+logger = logging.getLogger(__name__)
 
 class ProgressMessage(object):
     """Display a progress message followed by ok or fail."""
@@ -56,14 +59,11 @@ class CommandError(RuntimeError):
 
 class Runner(object):
 
-    def __init__(self, config=None, log=None):
+    def __init__(self, config=None):
         if config is None:
             config = afsrobot.config.Config()
             config.load_defaults()
-        if log is None:
-            log = sys.stdout
         self.config = config
-        self.log = log
         self.hostname = socket.gethostname()
 
     def _aklog_workaround_check(self):
@@ -77,12 +77,6 @@ class Runner(object):
                 sys.stderr.write("Warning: The akimpersonate feature is enabled but the aklog option\n")
                 sys.stderr.write("         is not set. See the README.md for more information about\n")
                 sys.stderr.write("         testing without Kerberos.\n")
-
-    def _logmsg(self, hostname, sev, msg):
-        self.log.writelines([hostname, " ", sev.upper(), " ", msg, "\n"])
-
-    def _info(self, msg):
-        self._logmsg(self.hostname, 'info', msg)
 
     def _run(self, hostname, args, sudo=False):
         """Run commands locally or remotely, with or without sudo."""
@@ -101,12 +95,12 @@ class Runner(object):
             args.append(hostname)
             args.append(command)
         cmdline = subprocess.list2cmdline(args)
-        self._info("running: %s" % (cmdline))
+        logger.info("running: %s" % (cmdline))
         p = subprocess.Popen(args, bufsize=1, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         with p.stdout:
             for line in iter(p.stdout.readline, ''):
                 line = line.rstrip()
-                self.log.writelines([hostname, " ", line, "\n"])
+                logger.info("%s %s" % (hostname, line))
         code = p.wait()
         if code != 0:
             raise CommandError(cmdline, code)
@@ -132,7 +126,7 @@ class Runner(object):
             section = "host:%s" % (hostname)
             installer = self.config.optstr(section, 'installer', default='none')
             if installer == 'none':
-                self._info("Skipping install on hostname %s; installer is 'none'." % (hostname))
+                logger.info("Skipping install on hostname %s; installer is 'none'." % (hostname))
             elif installer == 'transarc' or installer == 'rpm':
                 with ProgressMessage("Installing on %s" % (hostname)):
                     if self.config.optbool('kerberos', 'akimpersonate'):
@@ -240,7 +234,7 @@ class Runner(object):
             section = "host:%s" % (hostname)
             installer = self.config.optstr(section, 'installer', default='none')
             if installer == 'none':
-                self._info("Skipping remove on hostname %s; installer is 'none'." % (hostname))
+                logger.info("Skipping remove on hostname %s; installer is 'none'." % (hostname))
             elif installer == 'transarc' or installer == 'rpm':
                 with ProgressMessage("Removing clients and servers on %s" % (hostname)):
                     self._afsutil(hostname, 'stop', self.config.optcomponents(hostname))
@@ -250,11 +244,12 @@ class Runner(object):
                         if keytab and os.path.exists(keytab):
                             self._run(hostname, ['rm', keytab], sudo=True)
             else:
-                self._info("Invalid installer option for hostname %s!; installer='%s'.\n" % (hostname, installer))
+                logger.info("Invalid installer option for hostname %s!; installer='%s'.\n" % (hostname, installer))
 
 
 # Test driver.
 if __name__ == '__main__':
+    logging.basicConfig()
     if len(sys.argv) < 2:
         sys.stderr.write("usage: python runner.py [command]\n")
         sys.exit(1)

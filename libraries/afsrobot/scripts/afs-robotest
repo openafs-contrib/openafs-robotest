@@ -22,7 +22,7 @@
 import gettext
 import os
 import sys
-import pprint
+import logging
 
 import afsrobot.config
 import afsrobot.ssh
@@ -35,6 +35,8 @@ except ImportError:
     sys.stderr.write("Cannot import argparse package.\n")
     sys.stderr.write("Install argparse with `sudo pip install argparse`.\n")
     sys.exit(1)
+
+logger = logging.getLogger('afsrobot')
 
 #
 # Environment Variables
@@ -143,19 +145,19 @@ def cmd_ssh_exec(c):
     return afsrobot.ssh.execute(keyfile, hostnames, c.args.command)
 
 def cmd_setup(c):
-    r = afsrobot.runner.Runner(c.config, c._log)
+    r = afsrobot.runner.Runner(c.config)
     r.setup(**vars(c.args))
 
 def cmd_login(c):
-    r = afsrobot.runner.Runner(c.config, c._log)
+    r = afsrobot.runner.Runner(c.config)
     r.login(**vars(c.args))
 
 def cmd_test(c):
-    r = afsrobot.runner.Runner(c.config, c._log)
+    r = afsrobot.runner.Runner(c.config)
     r.test(**vars(c.args))
 
 def cmd_teardown(c):
-    r = afsrobot.runner.Runner(c.config, c._log)
+    r = afsrobot.runner.Runner(c.config)
     r.teardown(**vars(c.args))
 
 
@@ -167,7 +169,6 @@ class SubCommandContext(object):
         self._defer_config = getattr(args, '_defer_config', False)
         self._logname = getattr(args, '_logname', None)
         self.config = None
-        self._log = None
 
     def _read_config(self, filename):
         if not os.path.exists(filename):
@@ -176,41 +177,36 @@ class SubCommandContext(object):
         self.config = afsrobot.config.Config()
         self.config.load_from_file(filename)
 
-    def _openlog(self, logname):
-        if self.config:
-            logdir = os.path.abspath(self.config.optstr('paths', 'log', '.'))
+    def _setup_log(self, config, logname):
+        if logname:
+            if config:
+                logdir = os.path.abspath(self.config.optstr('paths', 'log', '.'))
+            else:
+                logdir = os.getcwd()
+            if not os.path.isdir(logdir):
+                os.makedirs(logdir)
+            self._logfile = os.path.join(logdir, logname)
+            sys.stdout.write("Writing to log file %s\n" % (self._logfile))
+            fmt = '%(asctime)s %(levelname)s %(message)s'
+            logging.basicConfig(level=logging.INFO, filename=self._logfile, format=fmt)
         else:
-            logdir = os.getcwd()
-        if not os.path.isdir(logdir):
-            os.makedirs(logdir)
-        self._logfile = os.path.join(logdir, logname)
-        sys.stdout.write("Writing to log file %s\n" % (self._logfile))
-        self._log = open(self._logfile, 'w')
+            fmt = '%(message)s'
+            logging.basicConfig(level=logging.INFO, format=fmt)
 
     def __enter__(self):
         if not self._defer_config:
             self._read_config(self.args.config)
-        if self._logname:
-            self._openlog(self._logname)
+        self._setup_log(self.config, self._logname)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        if self._log:
-            if exc_type is not None:
-                sys.stdout.write("See log file %s\n" % (self._logfile))
-            self._log.close()
+        if exc_type is not None and self._logfile:
+            sys.stdout.write("See log file %s\n" % (self._logfile))
         return False
 
     def say(self, msg):
         if self.args.verbose:
             sys.stdout.write("%s\n" % (msg))
-
-    def log(self, sev, msg):
-        self._log.write("%s %s\n" % (sev.upper(), msg))
-
-    def info(self, msg):
-        self.log('INFO', msg)
-
 
 class CommandLineParser(argparse.ArgumentParser):
     """Subclass the argument parser to extend help messages."""
