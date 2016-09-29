@@ -28,6 +28,36 @@ import time
 
 logger = logging.getLogger(__name__)
 
+class RingBuffer:
+    """Circular array for appending."""
+    # Adapted from the python cookbook.
+    def __init__(self, size_max):
+        self.size_max = size_max
+        self.data = []
+
+    class __FullBuffer:
+        def append(self, x):
+            """Append an element overwriting the oldest one."""
+            self.data[self.cursor] = x
+            self.cursor = (self.cursor + 1) % self.size_max
+
+        def get(self):
+            """Return list of elements in correct order."""
+            return self.data[self.cursor:] + self.data[:self.cursor]
+
+    def append(self,x):
+        """Append an element at the end of the buffer."""
+        self.data.append(x)
+        if len(self.data) == self.size_max:
+            # We are full; switch to the circular functions.
+            self.cursor = 0
+            self.__class__ = self.__FullBuffer
+
+    def get(self):
+        """ Return a list of elements from the oldest to the newest. """
+        return self.data
+
+
 class CommandFailed(Exception):
     """Command exited with a non-zero exit code."""
     def __init__(self, args, code, out, err):
@@ -84,6 +114,7 @@ def sh(*args, **kwargs):
     output = kwargs.get('output', False)
     quiet = kwargs.get('quiet', False)
     output_lines = []
+    tail = RingBuffer(20)  # Save the last few lines for error reporting.
     if quiet:
         logger.debug("Running %s", cmdline)
     else:
@@ -92,14 +123,15 @@ def sh(*args, **kwargs):
     p = subprocess.Popen(args, bufsize=1, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     with p.stdout:
         for line in iter(p.stdout.readline, ''):
-            line = line.rstrip()
+            line = line.rstrip("\n")
+            tail.append(line)
             if not quiet:
                 logger.info(line)
             if output:
                 output_lines.append(line)
     code = p.wait()
     if code != 0:
-        raise CommandFailed(args, code, "", "/n".join(output_lines))
+        raise CommandFailed(args, code, "", "\n".join(tail.get()))
     return output_lines
 
 def which(program, extra_paths=None, raise_errors=False):
