@@ -63,10 +63,17 @@ def _get_log_level(args):
 def _log_options(args):
     options = {}
     options['level'] = _get_log_level(args)
-    options['format'] = '%(asctime)s %(levelname)s %(message)s'
     log = getattr(args, 'log', None)
     if log:
         options['filename'] = log
+    fmt = getattr(args, 'log_format', None)
+    if fmt is None:
+        # Timestamp log records when writing to file, by default.
+        if log:
+           fmt = '%(asctime)s %(levelname)s %(message)s'
+        else:
+           fmt = '%(message)s'
+    options['format'] = fmt
     return options
 
 def _optlists2dict(options):
@@ -234,6 +241,7 @@ def main():
         p.add_argument('-v', '--verbose', action='store_true', help='print debug messages')
         p.add_argument('-q', '--quiet', action='store_true', help='do not print info messages')
         p.add_argument('-l', '--log', help='log file location (default: stderr)', default=None)
+        p.add_argument('--log-format', help='logging format: see pydoc logging.Formatter', default=None)
 
     p = subparsers.add_parser('version', help='print version information')
     p.set_defaults(fn=version, must_be_root=False)
