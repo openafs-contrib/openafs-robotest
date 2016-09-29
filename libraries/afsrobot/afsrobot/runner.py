@@ -24,6 +24,7 @@ import sys
 import socket
 import logging
 import subprocess
+import afsutil.system
 import afsrobot.config
 from afsrobot.config import islocal
 
@@ -48,14 +49,6 @@ class ProgressMessage(object):
         else:
             sys.stdout.write(" fail\n")
         return False
-
-class CommandError(RuntimeError):
-    """Command failure."""
-    def __init__(self, cmdline, code):
-        self.cmdline = cmdline
-        self.code = code
-    def __str__(self):
-        return "Command failed: %s; code=%d" % (self.cmdline, self.code)
 
 class Runner(object):
 
@@ -94,16 +87,7 @@ class Runner(object):
                  args.append(keyfile)
             args.append(hostname)
             args.append(command)
-        cmdline = subprocess.list2cmdline(args)
-        logger.info("running: %s" % (cmdline))
-        p = subprocess.Popen(args, bufsize=1, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        with p.stdout:
-            for line in iter(p.stdout.readline, ''):
-                line = line.rstrip()
-                logger.info("%s %s" % (hostname, line))
-        code = p.wait()
-        if code != 0:
-            raise CommandError(cmdline, code)
+        afsutil.system.sh(*args, quiet=False, output=False)
 
     def _afsutil(self, hostname, command, args, sudo=True):
         args.insert(0, 'afsutil')

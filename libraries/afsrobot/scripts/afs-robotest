@@ -19,15 +19,19 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
+import logging
 import gettext
 import os
 import sys
 import logging
+import traceback
 
 import afsrobot.config
 import afsrobot.ssh
 import afsrobot.web
 import afsrobot.runner
+
+import afsutil.system
 
 try:
     import argparse
@@ -199,9 +203,18 @@ class SubCommandContext(object):
         self._setup_log(self.config, self._logname)
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_value, tb):
         if exc_type is not None and self._logfile:
             sys.stdout.write("See log file %s\n" % (self._logfile))
+            if exc_type is afsutil.system.CommandFailed:
+                logger.error("Command failed: %s, code %d\n" % (exc_value.cmd, exc_value.code))
+                logger.error("output:\n")
+                logger.error("%s\n" % (exc_value.out))
+                logger.error("error:\n")
+                logger.error("%s\n" % (exc_value.err))
+            else:
+                for line in traceback.format_exception(exc_type, exc_value, tb):
+                    logger.error(line.rstrip('\n'))
         return False
 
     def say(self, msg):
@@ -360,9 +373,25 @@ def main():
     common_options(p)
     p.set_defaults(_cmd=cmd_teardown, _logname='teardown.log')
 
+    rc = 0
     args = parser.parse_args()
-    with SubCommandContext(args) as c:
-        rc = args._cmd(c)
+    try:
+        with SubCommandContext(args) as c:
+            rc = args._cmd(c)
+    except afsutil.system.CommandFailed as e:
+        sys.stderr.write("Command failed: %s, code %d\n" % (e.cmd, e.code))
+        sys.stderr.write("output:\n")
+        sys.stderr.write("%s\n" % (e.out))
+        sys.stderr.write("error:\n")
+        sys.stderr.write("%s\n" % (e.err))
+        if rc == 0:
+            rc = 1
+    except Exception as e:
+        sys.stderr.write("%s\n" % (e))
+        if rc == 0:
+            rc = 1
+    finally:
+        pass
     return rc
 
 if __name__ == "__main__":
