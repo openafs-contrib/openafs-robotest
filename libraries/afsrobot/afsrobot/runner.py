@@ -96,6 +96,7 @@ class Runner(object):
 
     def setup(self, **kwargs):
         """Setup OpenAFS client and servers and create a test cell."""
+        logger.info("setup starting")
         self._aklog_workaround_check()
 
         # Be sure to use the same secret value on each host.
@@ -138,6 +139,7 @@ class Runner(object):
                not self.config.optdynroot():
                 with ProgressMessage("Starting non-dynroot client on %s" % (hostname)):
                     self._afsutil(hostname, 'start', ['client'])
+        logger.info("setup done")
 
     def login(self, **kwargs):
         """Obtain a token for manual usage.
@@ -214,6 +216,7 @@ class Runner(object):
 
     def teardown(self, **kwargs):
         """Uninstall and purge files."""
+        logger.info("teardown starting")
         for hostname in self.config.opthostnames():
             section = "host:%s" % (hostname)
             installer = self.config.optstr(section, 'installer', default='none')
@@ -229,6 +232,7 @@ class Runner(object):
                             self._run(hostname, ['rm', keytab], sudo=True)
             else:
                 logger.info("Invalid installer option for hostname %s!; installer='%s'.\n" % (hostname, installer))
+        logger.info("teardown done")
 
 
 # Test driver.
