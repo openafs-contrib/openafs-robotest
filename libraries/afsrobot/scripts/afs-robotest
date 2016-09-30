@@ -370,7 +370,7 @@ def main():
     p = subparsers.add_parser('login', help="obtain a token")
     common_options(p)
     p.add_argument('-u', '--user', help="user name (default: admin)", default=None)
-    p.set_defaults(_cmd=cmd_login)
+    p.set_defaults(_cmd=cmd_login, _logname='login.log')
 
     #
     # afs-robotest teardown
