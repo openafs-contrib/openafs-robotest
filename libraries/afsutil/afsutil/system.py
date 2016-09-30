@@ -100,7 +100,15 @@ def run(cmd, args=None, quiet=False, retry=0, wait=1, cleanup=None):
                    stderr=subprocess.PIPE)
         output,error = proc.communicate()
         rc = proc.returncode
-        logger.debug("Result of %s; rc=%d, output=%s, error=%s", cmd, rc, output, error)
+        logger.debug("result of %s; rc=%d", cmd, rc)
+        if output:
+            logger.debug("<stdout>")
+            logger.debug(output)
+            logger.debug("</stdout>")
+        if error:
+            logger.debug("<stderr>")
+            logger.debug(error)
+            logger.debug("</stderr>")
         if rc == 0:
             return output
     raise CommandFailed(args, rc, output, error);

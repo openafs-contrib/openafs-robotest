@@ -108,6 +108,8 @@ class Runner(object):
     def _afsutil(self, hostname, command, args, sudo=True):
         args.insert(0, 'afsutil')
         args.insert(1, command)
+        if logger.getEffectiveLevel() == logging.DEBUG:
+            args.append('--verbose')
         self._run(hostname, args, sudo=sudo)
 
     def setup(self, **kwargs):

@@ -52,7 +52,10 @@ def _rc(component, action):
     if os.path.isfile(unit_file):
         sh('systemctl', action, name)
     elif os.path.isfile(init_script):
-        sh(init_script, action)
+        if logger.getEffectiveLevel() == logging.DEBUG:
+            sh('/bin/bash', '-x', init_script, action)
+        else:
+            sh(init_script, action)
     else:
         raise AssertionError("Init script is missing for %s!" % (name))
 
@@ -61,9 +64,13 @@ def start(**kwargs):
     if 'server' in components:
         if not is_running('bosserver'):
             _rc('server', 'start')
+        else:
+            logger.info("bosserver already running")
     if 'client' in components:
         if not is_afs_mounted():
             _rc('client', 'start')
+        else:
+            logger.info("afs already mounted")
         if not is_afs_mounted():
             raise AssertionError("Failed to start.")
 
@@ -72,6 +79,8 @@ def stop(**kwargs):
     if 'client' in components:
         if is_afs_mounted():
             _rc('client', 'stop')
+        else:
+            logger.info("afs already unmounted")
         if is_afs_mounted():
             afs_umount() # Be sure afs is unmounted before trying to unload.
             unload_module()

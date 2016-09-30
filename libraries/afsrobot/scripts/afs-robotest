@@ -182,6 +182,10 @@ class SubCommandContext(object):
         self.config.load_from_file(filename)
 
     def _setup_log(self, config, logname):
+        if self.args.debug:
+           loglevel = logging.DEBUG
+        else:
+           loglevel = logging.INFO
         if logname:
             if config:
                 logdir = os.path.abspath(self.config.optstr('paths', 'log', '.'))
@@ -192,13 +196,13 @@ class SubCommandContext(object):
             self._logfile = os.path.join(logdir, logname)
             sys.stdout.write("Writing to log file %s\n" % (self._logfile))
             fmt = '%(asctime)s %(levelname)s %(message)s'
-            logging.basicConfig(level=logging.INFO, filename=self._logfile, format=fmt)
+            logging.basicConfig(level=loglevel, filename=self._logfile, format=fmt)
         else:
             fmt = '%(message)s'
-            logging.basicConfig(level=logging.INFO, format=fmt)
+            logging.basicConfig(level=loglevel, format=fmt)
         if self.args.verbose:
            console = logging.StreamHandler()
-           console.setLevel(logging.INFO)
+           console.setLevel(loglevel)
            formatter = logging.Formatter('%(message)s')
            console.setFormatter(formatter)
            logging.getLogger('').addHandler(console) # add to the root logger
@@ -243,7 +247,8 @@ def main():
         p.add_argument('-c', '--config', metavar='<filename>',
                        help="config file (default: %s)" % AFS_ROBOTEST_CONF,
                        default=AFS_ROBOTEST_CONF)
-        p.add_argument('-v', '--verbose', help="run verbosely", default=False, action='store_true')
+        p.add_argument('-v', '--verbose', help="show log messages", default=False, action='store_true')
+        p.add_argument('--debug', help="debug log level", default=False, action='store_true')
 
     # This should be run as a normal user; sudo is called for installation as needed.
     if os.geteuid() == 0:
