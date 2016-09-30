@@ -87,7 +87,7 @@ class Runner(object):
                  args.append(keyfile)
             args.append(hostname)
             args.append(command)
-        afsutil.system.sh(*args, quiet=False, output=False)
+        afsutil.system.sh(*args, quiet=False, output=False, prefix=hostname)
 
     def _afsutil(self, hostname, command, args, sudo=True):
         args.insert(0, 'afsutil')
