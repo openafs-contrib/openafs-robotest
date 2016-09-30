@@ -260,7 +260,7 @@ generate_cacheinfo() {
 
 case "$1" in
   start)
-    if [ ! "$afs_rh" -o ! -f /var/lock/subsys/afs ]; then
+    if [ ! "$afs_rh" -o ! -f /var/lock/subsys/openafs-client ]; then
         if [ `echo "$AFSD_OPTIONS" | grep -c dynroot` = 0 ]; then
             on_network || exit 1
         fi
@@ -274,13 +274,13 @@ case "$1" in
 	echo "Starting AFS services..... "
 	generate_cacheinfo
 	${AFSD} ${AFSD_OPTIONS}
-	test "$afs_rh" && touch /var/lock/subsys/afs
+	test "$afs_rh" && touch /var/lock/subsys/openafs-client
 	$AFS_POST_INIT
     fi
 	;;
 
   stop)
-    if [ ! "$afs_rh" -o -f /var/lock/subsys/afs ]; then
+    if [ ! "$afs_rh" -o -f /var/lock/subsys/openafs-client ]; then
 	# Stop AFS
 	echo "Stopping AFS services..... "
 
@@ -302,7 +302,7 @@ case "$1" in
 		fi
 	fi
 
-	rm -f /var/lock/subsys/afs
+	rm -f /var/lock/subsys/openafs-client
     fi
 	;;
 
