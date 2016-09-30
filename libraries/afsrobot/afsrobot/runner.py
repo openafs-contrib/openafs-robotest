@@ -33,6 +33,21 @@ import robot.run
 
 logger = logging.getLogger(__name__)
 
+class SimpleMessage(object):
+    def __init__(self, msg):
+        self.msg = msg
+
+    def __enter__(self):
+        sys.stdout.write(self.msg)
+        sys.stdout.write("\n")
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if exc_type is None:
+            sys.stdout.write("ok: %s\n" % (self.msg))
+        else:
+            sys.stdout.write("fail: %s\n" % (self.msg))
+        return False
+
 class ProgressMessage(object):
     """Display a progress message followed by ok or fail."""
     def __init__(self, msg):
@@ -58,6 +73,7 @@ class Runner(object):
             config.load_defaults()
         self.config = config
         self.hostname = socket.gethostname()
+        self.verbose = False
 
     def _aklog_workaround_check(self):
         # Sadly, akimpersonate is broken on the master branch at this time. To
@@ -97,6 +113,9 @@ class Runner(object):
     def setup(self, **kwargs):
         """Setup OpenAFS client and servers and create a test cell."""
         logger.info("setup starting")
+
+        verbose = kwargs.get('verbose', False)
+        progress = SimpleMessage if verbose else ProgressMessage
         self._aklog_workaround_check()
 
         # Be sure to use the same secret value on each host.
@@ -113,31 +132,31 @@ class Runner(object):
             if installer == 'none':
                 logger.info("Skipping install on hostname %s; installer is 'none'." % (hostname))
             elif installer == 'transarc' or installer == 'rpm':
-                with ProgressMessage("Installing on %s" % (hostname)):
+                with progress("Installing on %s" % (hostname)):
                     if self.config.optbool('kerberos', 'akimpersonate'):
                         self._afsutil(hostname, 'fakekey', self.config.optfakekey())
                     self._afsutil(hostname, 'install', self.config.optinstall(hostname))
-                with ProgressMessage("Setting key on %s" % (hostname)):
+                with progress("Setting key on %s" % (hostname)):
                     self._afsutil(hostname, 'setkey', self.config.optsetkey(hostname))
                 if self.config.optbool(section, "isfileserver") or \
                    self.config.optbool(section, "isdbserver"):
-                    with ProgressMessage("Starting servers on %s" % (hostname)):
+                    with progress("Starting servers on %s" % (hostname)):
                         self._afsutil(hostname, 'start', ['server'])
                 if self.config.optbool(section, "isclient") and \
                    self.config.optdynroot():
-                    with ProgressMessage("Starting client on %s" % (hostname)):
+                    with progress("Starting client on %s" % (hostname)):
                         self._afsutil(hostname, 'start', ['client'])
             else:
                 raise ValueError("Invalid installer option for hostname %s!; installer='%s'." % (hostname, installer))
         # Setup new cell.
-        with ProgressMessage("Setting up new cell"):
+        with progress("Setting up new cell"):
             self._afsutil(self.hostname, 'newcell', self.config.optnewcell())
         # Now that the root volumes are ready, start any non-dynroot clients.
         for hostname in self.config.opthostnames():
             section = "host:%s" % (hostname)
             if self.config.optbool(section, "isclient") and \
                not self.config.optdynroot():
-                with ProgressMessage("Starting non-dynroot client on %s" % (hostname)):
+                with progress("Starting non-dynroot client on %s" % (hostname)):
                     self._afsutil(hostname, 'start', ['client'])
         logger.info("setup done")
 
@@ -148,11 +167,13 @@ class Runner(object):
         tests, but this sub-command is a useful short cut to get a token for
         the configured admin user.
         """
+        verbose = kwargs.get('verbose', False)
+        progress = SimpleMessage if verbose else ProgressMessage
         user = kwargs.get('user')
         if user is None:
             user = self.config.optstr('cell', 'admin', 'admin')
         args = self.config.optlogin(user=user)
-        with ProgressMessage("Obtaining token for %s" % (user)):
+        with progress("Obtaining token for %s" % (user)):
             self._afsutil(self.hostname, 'login', args, sudo=False)
 
     def test(self, **kwargs):
@@ -217,13 +238,16 @@ class Runner(object):
     def teardown(self, **kwargs):
         """Uninstall and purge files."""
         logger.info("teardown starting")
+
+        verbose = kwargs.get('verbose', False)
+        progress = SimpleMessage if verbose else ProgressMessage
         for hostname in self.config.opthostnames():
             section = "host:%s" % (hostname)
             installer = self.config.optstr(section, 'installer', default='none')
             if installer == 'none':
                 logger.info("Skipping remove on hostname %s; installer is 'none'." % (hostname))
             elif installer == 'transarc' or installer == 'rpm':
-                with ProgressMessage("Removing clients and servers on %s" % (hostname)):
+                with progress("Removing clients and servers on %s" % (hostname)):
                     self._afsutil(hostname, 'stop', self.config.optcomponents(hostname))
                     self._afsutil(hostname, 'remove', ['--purge'])
                     if self.config.optbool('kerberos', 'akimpersonate'):

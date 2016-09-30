@@ -196,6 +196,12 @@ class SubCommandContext(object):
         else:
             fmt = '%(message)s'
             logging.basicConfig(level=logging.INFO, format=fmt)
+        if self.args.verbose:
+           console = logging.StreamHandler()
+           console.setLevel(logging.INFO)
+           formatter = logging.Formatter('%(message)s')
+           console.setFormatter(formatter)
+           logging.getLogger('').addHandler(console) # add to the root logger
 
     def __enter__(self):
         if not self._defer_config:
