@@ -354,7 +354,6 @@ def main():
     #
     p = subparsers.add_parser('setup', help='install and setup OpenAFS')
     common_options(p)
-    p.add_argument('--force', action='store_true', help='overwrite existing files', default=None)
     p.set_defaults(_cmd=cmd_setup, _logname='setup.log')
 
     #
