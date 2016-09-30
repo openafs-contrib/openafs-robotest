@@ -159,7 +159,7 @@ class Installer(object):
         """Create a list of (address,hostname) tuples from a list of hostnames.
         If hostnames is None, then detect the (address,hostname) for the local
         system by checking the network interfaces on this system."""
-        cellhosts = []
+        cellhosts = set()
         # Use the addresses from the DNS lookup of the given hostnames.
         # We do not want loopback addresses in the CellServDB file.
         for name in hostnames: # hosts is a list of names or quad-dot-address strings.
@@ -168,8 +168,8 @@ class Installer(object):
             if addr.startswith('127.'):
                 raise AssertionError("Loopback address %s given for hostname %s."
                                      " Please check your /etc/hosts file." % (addr,name))
-            cellhosts.append((addr, name))
-        return cellhosts
+            cellhosts.add((addr, name))
+        return list(cellhosts)
 
     def _detect_cellhosts(self):
         # No hosts given; Assume we are using this host. First try to get a
@@ -177,7 +177,7 @@ class Installer(object):
         # an addess from the network interface.  If this host has multiple
         # interfaces, there's no good way to detect which ones are internal
         # only, so at this point we have to give up.
-        cellhosts = []
+        cellhosts = set()
         name = os.uname()[1]
         logger.info("Trying to detect cellhosts.")
         logger.info("Looking up ip address of hostname %s." % (name))
@@ -193,8 +193,8 @@ class Installer(object):
             addr = addrs[0]
             if addr.startswith('127.'):
                 raise AssertionError("Loopback address returned by network_interfaces.")
-        cellhosts.append((addr, name))
-        return cellhosts
+        cellhosts.add((addr, name))
+        return list(cellhosts)
 
     def _make_vice_dirs(self):
         """Create test vice directories."""
@@ -334,6 +334,8 @@ class _Test(object):
 
     def test_lookup_cellhosts(self):
         i = Installer()
+        #cellhosts = i._lookup_cellhosts(['localhost'])
+        #pprint.pprint(cellhosts)
         cellhosts = i._lookup_cellhosts(['mantis'])
         pprint.pprint(cellhosts)
         cellhosts = i._lookup_cellhosts(['mantis', 'wasp'])
