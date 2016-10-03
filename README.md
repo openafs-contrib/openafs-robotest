@@ -11,58 +11,30 @@ setup a Kerberos realm and create keytabs.
 ## System Requirements
 
 * Linux or Solaris
-* Python 2.6, 2.7
-* Robot Framework 2.7+
+* Python 2.6 or 2.7
+* Python argparse
+* Robotframework 2.7+
 * OpenAFS installation packages or binaries built from source
 
 ## Installation
 
-This test suite should be run on a dedicated test system.  Typically, you will
-want to setup one or more virtual machines to install OpenAFS and the test
-suite.  If `afs-robotest` is used to install OpenAFS then sudo should be
-configured on the test machine. The NOPASSWD sudo option must be set to allow
-the command `afsutil` to be run with sudo without a password.
+This test suite should be run on a dedicated test system.  Typically you will
+want to setup several virtual machines.  The  `sudo` command must be available
+and configured with the `NOPASSWD` option for the user running the tests.
 
-Python 2.6 or 2.7 must be present. Install the `python-pip`
-packages using your system's package manager.
+Clone the OpenAFS Robotest git repository to a directory of your choice.
+Install OpenAFS Robotest (and dependencies) with the provided install shell
+script.
 
-On Debian based systems, this is done with the command:
-
-    $ sudo apt-get install python-pip
-
-On Centos, `pip` may be installed from the `python-pip` package in the EPEL
-repo:
-
-    $ sudo yum install python-pip
-
-On Solaris 10 and 11, use the opencsw repository to install the `py_pip`
-package.
-
-Install the `Robotframework` and `argparse` Python packages using the `pip'
-command:
-
-    $ sudo pip install robotframework argparse
-
-Clone the OpenAFS Robotest project to a directory of your choice:
-
-    $ cd ${projects}
+    $ cd ~
     $ git clone https://github.com/openafs-contrib/openafs-robotest.git
     $ cd openafs-robotest
-
-Install the custom python packages and scripts provided by openafs-robotest:
-
     $ ./install.sh
 
 ## Setup
 
-Run the `afs-robotest` command to view and set the configuration for your
-system.
-
-By default, the configuration is stored in the file
-`~/.afsrobotestrc/afs-robotest.conf`. This can be customized by setting the
-`AFS_ROBOTEST_CONF` environment variable, or specifying the fully qualified
-path with the `--config` command line option.  This can be useful when testing
-various configurations.
+Run the `afs-robotest config` command to view and set the configuration for
+your system.
 
 To show the current configuration:
 
@@ -81,6 +53,12 @@ To install RPM packages:
     $ afs-robotest config set variables afs_dist rhel6
 
 Where `$HOSTNAME` is your system's hostname.
+
+By default, the configuration is stored in the file
+`~/.afsrobotestrc/afs-robotest.conf`. This can be customized by setting the
+`AFS_ROBOTEST_CONF` environment variable or specifying the fully qualified path
+with the `--config` command line option, which can be useful when testing
+various configurations.
 
 ### akimpersonate notes
 
