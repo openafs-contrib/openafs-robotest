@@ -183,6 +183,8 @@ Solaris.
 
 To build a legacy "Transarc style" distribution:
 
+    sudo afsutil getdeps
+    cd ~
     git clone git://git.openafs.org/openafs.git
     cd openafs
     afsutil build
@@ -191,6 +193,8 @@ See `afsutil build -help` for options, including options to give to configure.
 
 To build RPM packages on RHEL/Centos:
 
+    sudo afsutil getdeps
+    cd ~
     git clone git://git.openafs.org/openafs.git
     cd openafs
     afsutil package
