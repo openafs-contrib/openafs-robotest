@@ -25,6 +25,7 @@ import os
 import sys
 import re
 import shlex
+import platform
 
 from afsutil.system import sh, CommandFailed, file_should_exist
 import afsutil.service
@@ -106,6 +107,48 @@ def _make_rpm(srpm):
         '--define', 'build_modules 0',
         'packages/%s' % (srpm))
     logger.info("Packages written to %s/packages/rpmbuild/RPMS/%s" % (cwd, arch))
+
+def _debian_getdeps():
+    sh('sudo', '-n', 'apt-get', '-y', 'build-dep', 'openafs')
+    sh('sudo', '-n', 'apt-get', '-y', 'install', 'linux-headers-%s' % platform.release())
+
+def _centos_getdeps():
+    sh('sudo', '-n', 'yum', 'install', '-y',
+       'gcc',
+       'autoconf',
+       'automake',
+       'libtool',
+       'make',
+       'flex',
+       'bison',
+       'glibc-devel',
+       'krb5-devel',
+       'perl-devel',
+       'ncurses-devel',
+       'pam-devel',
+       'fuse-devel',
+       'kernel-devel-%s' % platform.release(),
+       'perl-devel',
+       'perl-ExtUtils-Embed',
+       'wget',
+       'rpm-build',
+       'redhat-rpm-config')
+
+def getdeps(**kwargs):
+    """Install build dependencies for this platform."""
+    system = platform.system()
+    if system == 'Linux':
+        dist = platform.dist()[0]
+        if dist == 'debian':
+            _debian_getdeps()
+        elif dist == 'centos':
+            _centos_getdeps()
+        else:
+            raise AssertionError("Unsupported dist: %s" % (dist))
+    elif system == 'SunOS':
+        raise NotImplementedError()
+    else:
+        raise AssertionError("Unsupported operating system: %s" % (system))
 
 def build(**kwargs):
     """Build the OpenAFS binaries.
