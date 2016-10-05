@@ -134,6 +134,33 @@ def _centos_getdeps():
        'rpm-build',
        'redhat-rpm-config')
 
+def _fedora_getdeps():
+    rel = platform.dist()[1]
+    if rel >= 22:
+        package_manager = 'dnf'
+    else:
+        package_manager = 'yum'
+    sh('sudo', '-n', package_manager, 'install', '-y',
+       'gcc',
+       'autoconf',
+       'automake',
+       'libtool',
+       'make',
+       'flex',
+       'bison',
+       'glibc-devel',
+       'krb5-devel',
+       'perl-devel',
+       'ncurses-devel',
+       'pam-devel',
+       'fuse-devel',
+       'kernel-devel-%s' % platform.release(),
+       'perl-devel',
+       'perl-ExtUtils-Embed',
+       'wget',
+       'rpm-build',
+       'redhat-rpm-config')
+
 def getdeps(**kwargs):
     """Install build dependencies for this platform."""
     system = platform.system()
@@ -143,6 +170,8 @@ def getdeps(**kwargs):
             _debian_getdeps()
         elif dist == 'centos':
             _centos_getdeps()
+        elif dist == 'fedora':
+            _fedora_getdeps()
         else:
             raise AssertionError("Unsupported dist: %s" % (dist))
     elif system == 'SunOS':
