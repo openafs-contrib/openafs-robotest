@@ -376,6 +376,7 @@ def _solaris_configure_dynamic_linker(path):
         raise AssertionError("Failed to configure dynamic linker: path %s not found." % (path))
     _so_symlinks(path)
     run("/usr/bin/crle", args=["-u", "-l", path])
+    run("/usr/bin/crle", args=["-64", "-u", "-l", path])
 
 def _solaris_unload_module():
     module_id = _solaris_is_loaded('afs')
