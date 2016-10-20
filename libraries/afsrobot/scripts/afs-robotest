@@ -46,14 +46,14 @@ logger = logging.getLogger('afsrobot')
 # Environment Variables
 #
 # AFS_ROBOTEST_ROOT  Path to the test and output directories.
-#                    Defaults to the current working directory.
+#                    Defaults to /usr/local/afsrobotest.
 #                    Overridden by the path:root configuration value.
 #
 # AFS_ROBOTEST_CONF  Fully qualified filename of the configuration file.
 #                    Defaults to ~/.afsrobotestrc/afs-robotest.conf
 #                    Overridden by the --config (-c) command line option.
 #
-AFS_ROBOTEST_ROOT = os.getenv('AFS_ROBOTEST_ROOT', os.getcwd())
+AFS_ROBOTEST_ROOT = os.getenv('AFS_ROBOTEST_ROOT', '/usr/local/afsrobotest')
 AFS_ROBOTEST_CONF = os.getenv('AFS_ROBOTEST_CONF',
                       os.path.join(
                         os.environ['HOME'], '.afsrobotestrc', 'afs-robotest.conf'))
