@@ -45,18 +45,22 @@ logger = logging.getLogger('afsrobot')
 #
 # Environment Variables
 #
-# AFS_ROBOTEST_ROOT  Path to the test and output directories.
-#                    Defaults to /usr/local/afsrobotest.
-#                    Overridden by the path:root configuration value.
+# AFS_ROBOTEST_ROOT  Path to the shared docs, tests, and resources.
+#                    Defaults to /usr/local/afsrobotest
+#                    Overridden by the path.root configuration value.
+#
+# AFS_ROBOTEST_DATA  Path to the logs and output files.
+#                    Defaults to $HOME/.afsrobotestrc
+#                    Overridden by the path.data configuration value.
 #
 # AFS_ROBOTEST_CONF  Fully qualified filename of the configuration file.
-#                    Defaults to ~/.afsrobotestrc/afs-robotest.conf
+#                    Defaults to $AFS_ROBOTEST_DATA/afs-robotest.conf
 #                    Overridden by the --config (-c) command line option.
 #
-AFS_ROBOTEST_ROOT = os.getenv('AFS_ROBOTEST_ROOT', '/usr/local/afsrobotest')
-AFS_ROBOTEST_CONF = os.getenv('AFS_ROBOTEST_CONF',
-                      os.path.join(
-                        os.environ['HOME'], '.afsrobotestrc', 'afs-robotest.conf'))
+AFS_ROBOTEST_PREFIX = '/usr/local'  # Should be set at install time.
+AFS_ROBOTEST_ROOT = os.getenv('AFS_ROBOTEST_ROOT', os.path.join(AFS_ROBOTEST_PREFIX, 'afsrobotest'))
+AFS_ROBOTEST_DATA = os.getenv('AFS_ROBOTEST_DATA', os.path.join(os.environ['HOME'], '.afsrobotestrc'))
+AFS_ROBOTEST_CONF = os.getenv('AFS_ROBOTEST_CONF', os.path.join(AFS_ROBOTEST_DATA, 'afs-robotest.conf'))
 
 #
 # version sub-command
@@ -64,26 +68,35 @@ AFS_ROBOTEST_CONF = os.getenv('AFS_ROBOTEST_CONF',
 def cmd_version(c):
     sys.stdout.write("Version %s\n" % (afsrobot.__version__))
 
+def _update_config(filename):
+    config = afsrobot.config.Config()
+    config.load_defaults()
+    config.load_from_file(filename)
+    sys.stdout.write("Updating config file %s\n" % (filename))
+    config.save_as(filename)
+
+def _create_config(filename, root=AFS_ROBOTEST_ROOT, data=AFS_ROBOTEST_DATA):
+    config = afsrobot.config.Config()
+    config.load_defaults()
+    config.set_value('paths', 'root', root)
+    config.set_value('paths', 'data', data)
+    if not os.path.isdir(data):
+        sys.stdout.write("Making data directory %s\n" % (data))
+        os.makedirs(data)
+    if not os.path.isdir(os.path.dirname(filename)):
+        sys.stdout.write("Making config file directory %s\n" % (os.path.dirname(filename)))
+        os.makedirs(os.path.dirname(filename))
+    sys.stdout.write("Creating config file %s\n" % (filename))
+    config.save_as(filename)
+
 #
 # config sub-commands
 #
 def cmd_config_init(c):
-    filename = c.args.config
-    root = c.args.root
-    config = afsrobot.config.Config()
-    config.load_defaults()
-    if os.path.exists(filename):
-        msg = "Updating"
-        config.load_from_file(filename)
+    if os.path.exists(c.args.config):
+        _update_config(c.args.config)
     else:
-        msg = "Creating"
-        config.set_value('paths', 'root', root)
-    dirname = os.path.dirname(filename)
-    if not os.path.exists(dirname):
-        c.say("Making directory %s" % (dirname))
-        os.makedirs(dirname)
-    c.say("%s config file %s" % (msg, filename))
-    config.save_as(filename)
+        _create_config(c.args.config, root=c.args.root, data=c.args.data)
 
 def cmd_config_copy(c):
     c.say("Copying to file %s." % (args.dest))
@@ -172,11 +185,12 @@ class SubCommandContext(object):
         # Avoid 'file not found' error when running 'config init'.
         self._defer_config = getattr(args, '_defer_config', False)
         self._logname = getattr(args, '_logname', None)
+        self._logfile = None
         self.config = None
 
     def _read_config(self, filename):
         if not os.path.exists(filename):
-            raise ValueError("Config file '%s' not found." % (filename))
+            raise ValueError("Config file '%s' not found. Run 'afs-robotest config init'." % (filename))
         self.say("Loading config file %s." % (filename))
         self.config = afsrobot.config.Config()
         self.config.load_from_file(filename)
@@ -274,8 +288,8 @@ def main():
 
     p = ssp.add_parser('init', help="create a config file with default values")
     common_options(p)
-    p.add_argument('--root', help="afs-rototest root directory (default: %s)" % (AFS_ROBOTEST_ROOT),
-                   default=AFS_ROBOTEST_ROOT)
+    p.add_argument('--root', help="installation directory of tests and resources (default: %s)" % AFS_ROBOTEST_ROOT, default=AFS_ROBOTEST_ROOT)
+    p.add_argument('--data', help="directory for logs and results (default: %s)" % AFS_ROBOTEST_DATA, default=AFS_ROBOTEST_DATA)
     p.set_defaults(_cmd=cmd_config_init, _defer_config=True)
 
     p = ssp.add_parser('copy', help="copy configuration values to a new file")

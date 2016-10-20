@@ -27,14 +27,16 @@ import sys
 # Configuration defaults.
 DEFAULT_CONFIG_DATA = """
 [paths]
+root = /usr/local/afsrobotest
 tests = %(root)s/tests
 libraries = %(root)s/libraries
 resources = %(root)s/resources
-html = %(root)s/html
-doc = %(root)s/html/doc
-log = %(root)s/html/log
-output = %(root)s/html/output
-dist = %(root)s/html/dist
+doc = %(root)s/doc
+dist = %(root)s/dist
+data = <HOME>/.afsrobotestrc
+html = %(data)s
+log = %(data)s/log
+output = %(data)s/output
 
 [run]
 exclude_tags = todo,crash,slow
@@ -106,6 +108,7 @@ class Config(ConfigParser.SafeConfigParser):
         """Load default values."""
         text = DEFAULT_CONFIG_DATA
         text = text.replace('[host:localhost]', '[host:%s]' % socket.gethostname())
+        text = text.replace('<HOME>', os.environ['HOME'])
         self.load_from_string(text)
 
     def load_from_file(self, filename):
