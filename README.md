@@ -29,7 +29,8 @@ script.
     $ cd ~
     $ git clone https://github.com/openafs-contrib/openafs-robotest.git
     $ cd openafs-robotest
-    $ ./install.sh
+    $ sudo ./install.sh
+    $ afs-robotest config init
 
 ## Setup
 
