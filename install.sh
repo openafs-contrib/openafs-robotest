@@ -13,7 +13,7 @@ DIR_LOG="$DIR_HTML/log"
 DIR_OUTPUT="$DIR_HTML/output"
 
 usage() {
-    echo "usage: sudo $PROGNAME [--verbose] [<target>]"
+    echo "usage: sudo ./$PROGNAME [--verbose] [<target>]"
     echo ""
     echo "where <target> is one of:"
     echo "  all   - full install (default)"
