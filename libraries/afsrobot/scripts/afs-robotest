@@ -68,6 +68,12 @@ AFS_ROBOTEST_CONF = os.getenv('AFS_ROBOTEST_CONF', os.path.join(AFS_ROBOTEST_USE
 def cmd_version(c):
     sys.stdout.write("Version %s\n" % (afsrobot.__version__))
 
+def cmd_init(c):
+    if os.path.exists(c.args.config):
+        _update_config(c.args.config)
+    else:
+        _create_config(c.args.config, root=c.args.root, userdir=c.args.userdir)
+
 def _update_config(filename):
     config = afsrobot.config.Config()
     config.load_defaults()
@@ -93,10 +99,7 @@ def _create_config(filename, root=AFS_ROBOTEST_ROOT, userdir=AFS_ROBOTEST_USERDI
 # config sub-commands
 #
 def cmd_config_init(c):
-    if os.path.exists(c.args.config):
-        _update_config(c.args.config)
-    else:
-        _create_config(c.args.config, root=c.args.root, userdir=c.args.userdir)
+    cmd_init(c) # alias
 
 def cmd_config_copy(c):
     c.say("Copying to file %s." % (args.dest))
@@ -280,16 +283,22 @@ def main():
     common_options(p)
     p.set_defaults(_cmd=cmd_version, _defer_config=True)
 
+    p = subparsers.add_parser('init', help="initialize user directory")
+    common_options(p)
+    p.add_argument('--root', help="installation directory of tests and resources (default: %s)" % AFS_ROBOTEST_ROOT, default=AFS_ROBOTEST_ROOT)
+    p.add_argument('--userdir', help="directory for config, logs, and results (default: %s)" % AFS_ROBOTEST_USERDIR, default=AFS_ROBOTEST_USERDIR)
+    p.set_defaults(_cmd=cmd_init, _defer_config=True)
+
     #
     # afs-robotest config
     #
     p = subparsers.add_parser('config', help="get or set configuration")
     ssp = p.add_subparsers(title="actions", metavar="<action>")
 
-    p = ssp.add_parser('init', help="create a config file with default values")
+    p = ssp.add_parser('init', help="create a config file with default values") # alias for init
     common_options(p)
     p.add_argument('--root', help="installation directory of tests and resources (default: %s)" % AFS_ROBOTEST_ROOT, default=AFS_ROBOTEST_ROOT)
-    p.add_argument('--data', help="directory for logs and results (default: %s)" % AFS_ROBOTEST_DATA, default=AFS_ROBOTEST_DATA)
+    p.add_argument('--userdir', help="directory for config, logs, and results (default: %s)" % AFS_ROBOTEST_USERDIR, default=AFS_ROBOTEST_USERDIR)
     p.set_defaults(_cmd=cmd_config_init, _defer_config=True)
 
     p = ssp.add_parser('copy', help="copy configuration values to a new file")
