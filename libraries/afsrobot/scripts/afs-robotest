@@ -49,9 +49,9 @@ logger = logging.getLogger('afsrobot')
 #                    Defaults to /usr/local/afsrobotest
 #                    Overridden by the path.root configuration value.
 #
-# AFS_ROBOTEST_DATA  Path to the logs and output files.
-#                    Defaults to $HOME/.afsrobotestrc
-#                    Overridden by the path.data configuration value.
+# AFS_ROBOTEST_USERDIR  Path to the config, logs, and RF results.
+#                       Defaults to $HOME/.afsrobotestrc
+#                       Overridden by the path.userdir configuration value.
 #
 # AFS_ROBOTEST_CONF  Fully qualified filename of the configuration file.
 #                    Defaults to $AFS_ROBOTEST_DATA/afs-robotest.conf
@@ -59,8 +59,8 @@ logger = logging.getLogger('afsrobot')
 #
 AFS_ROBOTEST_PREFIX = '/usr/local'  # Should be set at install time.
 AFS_ROBOTEST_ROOT = os.getenv('AFS_ROBOTEST_ROOT', os.path.join(AFS_ROBOTEST_PREFIX, 'afsrobotest'))
-AFS_ROBOTEST_DATA = os.getenv('AFS_ROBOTEST_DATA', os.path.join(os.environ['HOME'], '.afsrobotestrc'))
-AFS_ROBOTEST_CONF = os.getenv('AFS_ROBOTEST_CONF', os.path.join(AFS_ROBOTEST_DATA, 'afs-robotest.conf'))
+AFS_ROBOTEST_USERDIR = os.getenv('AFS_ROBOTEST_USERDIR', os.path.join(os.environ['HOME'], '.afsrobotestrc'))
+AFS_ROBOTEST_CONF = os.getenv('AFS_ROBOTEST_CONF', os.path.join(AFS_ROBOTEST_USERDIR, 'afs-robotest.conf'))
 
 #
 # version sub-command
@@ -75,14 +75,14 @@ def _update_config(filename):
     sys.stdout.write("Updating config file %s\n" % (filename))
     config.save_as(filename)
 
-def _create_config(filename, root=AFS_ROBOTEST_ROOT, data=AFS_ROBOTEST_DATA):
+def _create_config(filename, root=AFS_ROBOTEST_ROOT, userdir=AFS_ROBOTEST_USERDIR):
     config = afsrobot.config.Config()
     config.load_defaults()
     config.set_value('paths', 'root', root)
-    config.set_value('paths', 'data', data)
-    if not os.path.isdir(data):
-        sys.stdout.write("Making data directory %s\n" % (data))
-        os.makedirs(data)
+    config.set_value('paths', 'userdir', userdir)
+    if not os.path.isdir(userdir):
+        sys.stdout.write("Making user directory %s\n" % (userdir))
+        os.makedirs(userdir)
     if not os.path.isdir(os.path.dirname(filename)):
         sys.stdout.write("Making config file directory %s\n" % (os.path.dirname(filename)))
         os.makedirs(os.path.dirname(filename))
@@ -96,7 +96,7 @@ def cmd_config_init(c):
     if os.path.exists(c.args.config):
         _update_config(c.args.config)
     else:
-        _create_config(c.args.config, root=c.args.root, data=c.args.data)
+        _create_config(c.args.config, root=c.args.root, userdir=c.args.userdir)
 
 def cmd_config_copy(c):
     c.say("Copying to file %s." % (args.dest))

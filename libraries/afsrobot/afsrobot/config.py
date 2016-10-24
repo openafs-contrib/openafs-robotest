@@ -33,10 +33,10 @@ libraries = %(root)s/libraries
 resources = %(root)s/resources
 doc = %(root)s/doc
 dist = %(root)s/dist
-data = <HOME>/.afsrobotestrc
-html = %(data)s
-log = %(data)s/log
-output = %(data)s/output
+userdir = <HOME>/.afsrobotestrc
+html = %(userdir)s
+log = %(userdir)s/log
+output = %(userdir)s/output
 
 [run]
 exclude_tags = todo,crash,slow
