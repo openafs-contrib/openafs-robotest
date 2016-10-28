@@ -53,9 +53,9 @@ admin = robotest.admin
 [kerberos]
 akimpersonate = yes
 realm = ROBOTEST
-fake_keytab = /tmp/fake.keytab
-afs_keytab = /tmp/afs.keytab
-user_keytab = /tmp/user.keytab
+fake_keytab = <HOME>/.afsrobotestrc/fake.keytab
+afs_keytab = <HOME>/.afsrobotestrc/afs.keytab
+user_keytab = <HOME>/.afsrobotestrc/user.keytab
 
 [web]
 port = 8000
@@ -72,7 +72,7 @@ davolserver = -d 1
 [ssh]
 keyfile =
 
-[host:localhost]
+[host:<HOSTNAME>]
 use = yes
 installer = none
 isfileserver = yes
@@ -107,8 +107,8 @@ class Config(ConfigParser.SafeConfigParser):
     def load_defaults(self):
         """Load default values."""
         text = DEFAULT_CONFIG_DATA
-        text = text.replace('[host:localhost]', '[host:%s]' % socket.gethostname())
         text = text.replace('<HOME>', os.environ['HOME'])
+        text = text.replace('<HOSTNAME>', socket.gethostname())
         self.load_from_string(text)
 
     def load_from_file(self, filename):
@@ -194,10 +194,8 @@ class Config(ConfigParser.SafeConfigParser):
         return value
 
     def optkeytab(self, name):
-        """Return the named keytab file. Fall back to keytab for old config files."""
-        oldname = self.optstr('kerberos', 'keytab', default='/tmp/afs.keytab')
-        value = self.optstr('kerberos', '%s_keytab' % (name), default=oldname)
-        return value
+        """Return the named keytab file."""
+        return self.optstr('kerberos', '%s_keytab' % (name))
 
     def opthostnames(self, filter=None, lookupname=False):
         """Return a list of host sections."""

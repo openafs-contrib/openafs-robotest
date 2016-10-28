@@ -132,11 +132,10 @@ class ConfigTest(unittest.TestCase):
 
     def test_optkeytab(self):
         c = afsrobot.config.Config()
-        c.load_from_string(string="[kerberos]\nafs_keytab = a\nuser_keytab = b\nfake_keytab = c\nkeytab = d")
+        c.load_from_string(string="[kerberos]\nafs_keytab = a\nuser_keytab = b\nfake_keytab = c")
         self.assertEquals(c.optkeytab('afs'), 'a')
         self.assertEquals(c.optkeytab('user'), 'b')
         self.assertEquals(c.optkeytab('fake'), 'c')
-        self.assertEquals(c.optkeytab('other'), 'd')
 
     def test_opthostnames__empty(self):
         c = afsrobot.config.Config()
@@ -152,15 +151,17 @@ class ConfigTest(unittest.TestCase):
         self.assertTrue(len(hostnames) == 3)
 
     def test_optfakekey(self):
-        expect = '--cell robotest --keytab /tmp/fake.keytab --realm ROBOTEST'
+        home = os.environ['HOME']
+        expect = '--cell robotest --keytab %s/.afsrobotestrc/fake.keytab --realm ROBOTEST' % (home)
         c = afsrobot.config.Config()
         c.load_defaults()
         args = c.optfakekey()
         self.assertEqual(expect, " ".join(args))
 
     def test_optlogin(self):
+        home = os.environ['HOME']
         expect = '--user robotest.admin --cell robotest --realm ROBOTEST ' \
-                 '--akimpersonate --keytab /tmp/fake.keytab'
+                 '--akimpersonate --keytab %s/.afsrobotestrc/fake.keytab' % (home)
         c = afsrobot.config.Config()
         c.load_defaults()
         args = c.optlogin()
@@ -186,7 +187,8 @@ class ConfigTest(unittest.TestCase):
 
     def test_optsetkey(self):
         hostname = socket.gethostname()
-        expect = '--cell robotest --realm ROBOTEST --keytab /tmp/fake.keytab'
+        home = os.environ['HOME']
+        expect = '--cell robotest --realm ROBOTEST --keytab %s/.afsrobotestrc/fake.keytab' % (home)
         c = afsrobot.config.Config()
         c.load_defaults()
         args = c.optsetkey(hostname)
@@ -194,7 +196,8 @@ class ConfigTest(unittest.TestCase):
 
     def test_optsetkey_noakimp(self):
         hostname = socket.gethostname()
-        expect = '--cell robotest --realm ROBOTEST --keytab /tmp/afs.keytab'
+        home = os.environ['HOME']
+        expect = '--cell robotest --realm ROBOTEST --keytab %s/.afsrobotestrc/afs.keytab' % (home)
         c = afsrobot.config.Config()
         c.load_defaults()
         c.set_value('kerberos', 'akimpersonate', 'no')
@@ -203,15 +206,16 @@ class ConfigTest(unittest.TestCase):
 
     def test_optnewcell(self):
         hostname = socket.gethostname()
+        home = os.environ['HOME']
         expect = '--cell robotest --admin robotest.admin ' \
-                 '--top test --akimpersonate --keytab /tmp/fake.keytab --realm ROBOTEST ' \
+                 '--top test --akimpersonate --keytab %s/.afsrobotestrc/fake.keytab --realm ROBOTEST ' \
                  '--fs %s --db %s ' \
                  '-o dafs=yes ' \
                  '-o afsd=-dynroot -fakestat -afsdb ' \
                  '-o bosserver=-pidfiles ' \
                  '-o dafileserver=-d 1 -L ' \
                  '-o davolserver=-d 1' \
-                 % (hostname, hostname)
+                 % (home, hostname, hostname)
         c = afsrobot.config.Config()
         c.load_defaults()
         args = c.optnewcell()
@@ -219,15 +223,16 @@ class ConfigTest(unittest.TestCase):
 
     def test_optnewcell_noakimp(self):
         hostname = socket.gethostname()
+        home = os.environ['HOME']
         expect = '--cell robotest --admin robotest.admin ' \
-                 '--top test --keytab /tmp/user.keytab --realm ROBOTEST ' \
+                 '--top test --keytab %s/.afsrobotestrc/user.keytab --realm ROBOTEST ' \
                  '--fs %s --db %s ' \
                  '-o dafs=yes ' \
                  '-o afsd=-dynroot -fakestat -afsdb ' \
                  '-o bosserver=-pidfiles ' \
                  '-o dafileserver=-d 1 -L ' \
                  '-o davolserver=-d 1' \
-                 % (hostname, hostname)
+                 % (home, hostname, hostname)
         c = afsrobot.config.Config()
         c.load_defaults()
         c.set_value('kerberos', 'akimpersonate', 'no')
