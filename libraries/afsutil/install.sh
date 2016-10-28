@@ -14,6 +14,7 @@
 PACKAGE="afsutil"
 USAGE="usage: sudo ./install [--user] [--verbose]"
 PIP_OPTS="--upgrade"
+UID=`python -c 'import os; print os.getuid()'` # for portability
 
 while [ "x$1" != "x" ]; do
     case "$1" in
@@ -37,7 +38,7 @@ while [ "x$1" != "x" ]; do
 done
 
 git clean -f -d -x dist/ ${PACKAGE}.egg-info/ || exit 1
-if [ `id -u` -eq 0 ]; then
+if [ $UID -eq 0 ]; then
     owner=`python -c 'import os; import pwd; print pwd.getpwuid(os.stat(".").st_uid).pw_name'`
     echo "Building source distribution as ${owner}."
     su $owner -c "python setup.py sdist --formats gztar --verbose" || exit 1
