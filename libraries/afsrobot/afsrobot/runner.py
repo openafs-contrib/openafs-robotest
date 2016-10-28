@@ -255,7 +255,7 @@ class Runner(object):
                     if self.config.optbool('kerberos', 'akimpersonate'):
                         keytab = self.config.optkeytab('fake')
                         if keytab and os.path.exists(keytab):
-                            self._run(hostname, ['rm', keytab], sudo=True)
+                            self._run(hostname, ['rm', '-f', keytab])
             else:
                 logger.info("Invalid installer option for hostname %s!; installer='%s'.\n" % (hostname, installer))
         logger.info("teardown done")
