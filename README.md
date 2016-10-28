@@ -176,8 +176,6 @@ the "primary" server.  For example:
     isdbserver = yes
     isclient = yes
     dest = /usr/local/src/openafs-test/amd64_linux26/dest
-    nuke = no
-    setclock = no
 
     [host:mytesta]
     use = yes
@@ -186,8 +184,6 @@ the "primary" server.  For example:
     isdbserver = no
     isclient = yes
     dest = /usr/local/src/openafs-test/amd64_linux26/dest
-    nuke = no
-    setclock = yes
 
     [host:mytestb]
     use = yes
@@ -195,9 +191,7 @@ the "primary" server.  For example:
     isfileserver = yes
     isdbserver = no
     isclient = no
-    dest = /home/mmeffie/src/openafs/amd64_linux26/dest
-    nuke = no
-    setclock = no
+    dest = /home/example/src/openafs/amd64_linux26/dest
 
 The OpenAFS installation and setup is done using ssh with keyfiles. The
 `ssh` subcommand is provided to create an ssh key pair and distribute
