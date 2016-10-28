@@ -1,10 +1,13 @@
 # AFS Robotest
 
-AFS Robotest is a [Robotframework][1] based test suite for OpenAFS. The test
-suite will install the OpenAFS binaries, setup a simple test cell, and then run
-a series of basic tests.  Optionally, a test feature of OpenAFS is used to
-emulate a Kerberos server, allowing the tests to be run without the need to
-setup a Kerberos realm and create keytabs.
+AFS Robotest is a [Robotframework][1] based test suite for OpenAFS. This test
+suite will install the OpenAFS binaries, setup a simple AFS cell, and run a
+series of basic tests, and finally remove the AFS cell.  The tests can be run
+with or without an external Kerberos realm.
+
+This test suite should be run on a non-production development or test system.
+Typically you will want to setup one or more virtual machines to install
+OpenAFS and run the tests.
 
 [1]: http://robotframework.org/
 
@@ -18,24 +21,48 @@ setup a Kerberos realm and create keytabs.
 
 ## Installation
 
-This test suite should be run on a dedicated test system.  Typically you will
-want to setup several virtual machines.  The  `sudo` command must be available
-and configured with the `NOPASSWD` option for the user running the tests.
+### Install
 
-Clone the OpenAFS Robotest git repository to a directory of your choice.
-Install OpenAFS Robotest (and dependencies) with the provided install shell
-script.
+Clone the git repository and install AFS Robotest and dependencies with the
+provided install shell script.
 
-    $ cd ~
+    $ cd
     $ git clone https://github.com/openafs-contrib/openafs-robotest.git
     $ cd openafs-robotest
     $ sudo ./install.sh
-    $ afs-robotest init
+
+### Setup sudo
+
+The `sudo` command must be available and configured to run `afsutil` without a
+password in order to install and configure OpenAFS. For example, add the
+following to your sudoers file with `visudo`:
+
+    %testers ALL=(root) NOPASSWD: /usr/local/bin/afsutil
+
+Then add users which will run `afs-robotest` to the `testers` group.
+
+    $ sudo usermod -a -G testers <username>
+
+Verify sudo can be used with the command:
+
+    $ sudo -n afsutil version
+
+### Check the host file
+
+Modern Linux distributions will add an entry to the `/etc/hosts` file to map a
+loopback address to the hostname.  While, this is not strictly wrong, it can
+confuse current versions of OpenAFS.
+
+Remove any entries from `/etc/hosts` which map loopback addresses to the
+current hostname.  The lookback address should be replaced with the primary
+non-loopback address.  Loopback addresses start with `127.`.
 
 ## Setup
 
-Run the `afs-robotest config` command to view and set the configuration for
-your system.
+As the regular test user, run the `init` subcommand to create the initial
+configuration file.
+
+    $ afs-robotest init
 
 To show the current configuration:
 
@@ -43,23 +70,13 @@ To show the current configuration:
 
 To install Transarc-style binaries:
 
-    $ afs-robotest config set host:$HOSTNAME installer transarc
-    $ afs-robotest config set host:$HOSTNAME dest <path-to-dest-directory>
     $ afs-robotest config set variables afs_dist transarc
+    $ afs-robotest config set host:$HOSTNAME installer transarc
 
 To install RPM packages:
 
-    $ afs-robotest config set host:$HOSTNAME installer rpm
-    $ afs-robotest config set host:$HOSTNAME rpms <path-to-packages>
     $ afs-robotest config set variables afs_dist rhel6
-
-Where `$HOSTNAME` is your system's hostname.
-
-By default, the configuration is stored in the file
-`~/.afsrobotestrc/afs-robotest.conf`. This can be customized by setting the
-`AFS_ROBOTEST_CONF` environment variable or specifying the fully qualified path
-with the `--config` command line option, which can be useful when testing
-various configurations.
+    $ afs-robotest config set host:$HOSTNAME installer rpm
 
 ### akimpersonate notes
 
@@ -78,6 +95,29 @@ used during the setup and tests. For example:
 
     $ afs-robotest config set variables aklog /usr/local/bin/aklog-1.6
 
+## Building OpenAFS
+
+This project includes a python package called `afsutil`, which is a collection
+of helpers to build and setup OpenAFS.  The `afsutil` package includes commands
+to build OpenAFS binaries on Linux and Solaris.
+
+To build a legacy "Transarc-style" distribution binaries:
+
+    $ cd
+    $ git clone git://git.openafs.org/openafs.git
+    $ cd openafs
+    $ sudo afsutil getdeps
+    $ afsutil build
+
+To build RPM packages on RHEL/Centos:
+
+    $ cd
+    $ git clone git://git.openafs.org/openafs.git
+    $ cd openafs
+    $ git checkout openafs-stable-<version>   # e.g. openafs-stable-1_6_18
+    $ sudo afsutil getdeps
+    $ afsutil package
+
 ## Running tests
 
 To install the OpenAFS binaries and create the test cell:
@@ -88,15 +128,15 @@ To run the tests:
 
     $ afs-robotest run
 
-After running the tests, the AFS cell can be removed with the teardown
-command:
+After running the tests, the AFS cell may be removed with:
 
     $ afs-robotest teardown
 
 ## Test results
 
-The setup logs and test results are saved in the `html` directory.  A minimal
-web server is provided as a convenience to view the test reports.
+The setup logs and test results are saved in `$HOME/.afsrobotestrc/` by
+default.  A minimal web server is provided as a convenience to view the test
+reports.
 
 To start the minimal web server:
 
@@ -172,37 +212,4 @@ Perform the setup on the primary host. This will take several minutes to
 complete the setup of the new AFS cell.
 
     $ afs-robotest setup
-
-## afsutil
-
-This project includes a python package called `afsutil`, which is a collection
-of helpers to build and setup OpenAFS.  The `afs-robotest` setup and teardown
-commands are implemented with the `afsutil` package.
-
-The `afsutil` package includes commands to build OpenAFS binaries on Linux and
-Solaris.
-
-To build a legacy "Transarc style" distribution:
-
-    sudo afsutil getdeps
-    cd ~
-    git clone git://git.openafs.org/openafs.git
-    cd openafs
-    afsutil build
-
-See `afsutil build -help` for options, including options to give to configure.
-
-To build RPM packages on RHEL/Centos:
-
-    sudo afsutil getdeps
-    cd ~
-    git clone git://git.openafs.org/openafs.git
-    cd openafs
-    afsutil package
-
-To reload the OpenAFS kernel module after rebuilding it (it should already be
-running from a previous `afs-robotest setup` or `afsutil install`):
-
-    afsutil build
-    sudo afsutil reload
 
