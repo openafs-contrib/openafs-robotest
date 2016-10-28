@@ -39,9 +39,11 @@ class TinyWebServer(object):
     reports and logs.  This only serves static content.
     """
     def __init__(self, config):
+        run = '/tmp'  # Should be /var/run/<dir>, with proper perms.
+        pidfile = "afs-robotest-web-%d.pid" % (os.getuid())
+        self.pidfile = os.path.join(run, pidfile)
         self.port = config.getint('web', 'port')
         self.docroot = config.get('paths', 'html')
-        self.pidfile = config.get('web', 'pidfile')
         self.foreground = config.getboolean('web', 'foreground')
 
     def _exit(self):

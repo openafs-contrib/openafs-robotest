@@ -60,7 +60,6 @@ user_keytab = <HOME>/.afsrobotestrc/user.keytab
 [web]
 port = 8000
 foreground = no
-pidfile = /tmp/afs-robotest-web.pid
 
 [options]
 dafs = yes
