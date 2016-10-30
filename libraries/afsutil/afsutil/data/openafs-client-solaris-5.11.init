@@ -137,49 +137,15 @@ done
 echo "Starting afsd"
 /usr/vice/etc/afsd $OPTIONS
 
-#
-# Run package to update the disk
-#
-if [ -f /usr/afsws/etc/package -a -f $PACKAGE ]; then
-      /usr/afsws/etc/package -v -o `cat $PACKAGE` > /dev/console 2>&1
-case $? in
-0)
-      (echo "Package completed successfully") > /dev/console 2>&1
-      date > /dev/console 2>&1
-      ;;
-4)
-      (echo "Rebooting to restart system") > /dev/console 2>&1
-      sync
-      /etc/reboot
-      ;;
-*)
-      (echo "Package update failed; continuing") > /dev/console 2>&1
-      ;;
-esac
-
-fi
-
-#
-# Start AFS inetd services
-# (See the AFS Command Ref. for notes on the proper configuration of inetd.afs)
-#
-if [ -f /usr/sbin/inetd.afs -a -f /etc/inetd.conf.afs ]; then
-      /usr/sbin/inetd.afs /etc/inetd.conf.afs
-fi
-
 echo ;;
 
 'stop')
 
 #
-# Stop the AFS inetd
 # We do not kill the afsd process here. It should be possible to do now, but we
 # don't do it yet. Note that you need to parse 'modinfo | grep afs' output and
 # give the id to modunload, in order to unload the kernel module.
 #
-
-echo "Killing inetd.afs"
-killproc inetd.afs
 
 echo ;;
 
