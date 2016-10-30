@@ -129,10 +129,18 @@ echo ;;
 
 'stop')
 
-# We do not kill the afsd process here. It should be possible to do now, but we
-# don't do it yet. Note that you need to parse 'modinfo | grep afs' output and
-# give the id to modunload, in order to unload the kernel module.
+afsroot=`awk -F: '{print $1}' /usr/vice/etc/cacheinfo` || exit 1
+if mount | grep -q "$afsroot"; then
+    echo "Unmounting $afsroot"
+    umount $afsroot || exit 1
 
+    echo "Stopping afsd"
+    /usr/vice/etc/afsd -shutdown || exit 1
+
+    afsid=`modinfo | awk '/afs filesystem/ {print $1}'` || exit 1
+    echo "Unloading module id $afsid"
+    modunload -i "$afsid"  || exit 1
+fi
 echo ;;
 
 *)    echo "Invalid option supplied to $0"
