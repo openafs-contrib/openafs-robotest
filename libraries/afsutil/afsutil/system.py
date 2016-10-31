@@ -198,12 +198,14 @@ def path_join(a, *p):
 
 def get_running():
     """Get a set of running processes."""
-    ps = which("ps")
-    out = run(ps, args=["ax"])
-    lines = out.splitlines()
-    # The first line of the `ps ax' output is a header line which is
+    if os.uname()[0] == 'SunOS':
+        ps = which('/usr/bin/ps') # avoid the old BSD variant
+    else:
+        ps = which('ps')
+    lines = sh(ps, '-e', '-f', output=True, quiet=True)
+    # The first line of the `ps' output is a header line which is
     # used to find the data field columns.
-    column = lines[0].index('COMMAND')
+    column = lines[0].index('CMD')
     procs = set()
     for line in lines[1:]:
         cmd_line = line[column:]
