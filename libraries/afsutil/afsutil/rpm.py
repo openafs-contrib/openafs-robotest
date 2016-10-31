@@ -41,8 +41,6 @@ class RpmInstaller(Installer):
 
     def __init__(self, dir=None, **kwargs):
         Installer.__init__(self, **kwargs)
-        if dir is None:
-            dir = os.getcwd()
         self.pkgdir = dir  # Defer checks until needed.
         self.packages = None
         self.installed = None
@@ -64,29 +62,44 @@ class RpmInstaller(Installer):
         return self.installed
 
     def find_packages(self):
-        """Find the OpenAFS rpm package files in the package directory."""
+        """Find the OpenAFS rpm package files.
+
+        Search for the RPM files to be installed. The search order is:
+        1. The 'dir' named argument given to the RpmInstaller(), if one.
+        2. The current working directory.
+        3. The ./packages/rpmbuild/RPMS/<arch> directory. (This is where
+           the `afsutil package` command places the built rpms.)"""
         # Older versions of this tried to parse the filenames to get package
         # attributes. This version uses rpm query in instead, which seems to
         # to be less error prone.  We build a list instead of a dict, since
         # there could be more than one rpm per package name, e.g.,
         # kmod_openafs*.
         if self.packages is not None:
-            return self.packages  # Scan the first time needed.
-        if not os.path.isdir(self.pkgdir):
-            raise AssertionError("Cannot find pkgdir directory '%s'!" % self.pkgdir)
-        self.packages = []
-        files = glob.glob(os.path.join(self.pkgdir, '*.rpm'))
-        for file in files:
-            # Skip the source rpm, if present.
-            if file.endswith('.src.rpm'):
-                continue
-            output = rpm('--query', '--package', file,
-                         '--queryformat', '%{NAME} %{VERSION} %{RELEASE} %{ARCH}\\n')
-            name,version,release,arch = output[0].split()
-            self.packages.append({'file': file, 'name': name, 'version': version,
-                                  'release': release, 'arch': arch})
-        if len(self.packages) == 0:
-            raise AssertionError("No packages found in directory '%s'" % self.pkgdir)
+            return self.packages  # Lazy evaluated.
+        # Setup search paths.
+        packages = []
+        search_paths = []
+        cwd = os.getcwd()
+        arch = os.uname()[4] # e.g. x86_64
+        if self.pkgdir:
+            search_paths.append(self.pkgdir)
+        search_paths.append(cwd)
+        search_paths.append(os.path.join(cwd, "packages/rpmbuild/RPMS/%s" % (arch)))
+        for sp in search_paths:
+            files = glob.glob(os.path.join(sp, '*.rpm'))
+            for f in files:
+                if f.endswith('.src.rpm'): # Skip the source rpm, if present.
+                    continue
+                output = rpm('--query', '--package', f,
+                             '--queryformat', '%{NAME} %{VERSION} %{RELEASE} %{ARCH}\\n')
+                name,version,release,arch = output[0].split()
+                packages.append({'file': f, 'name': name, 'version': version,
+                                'release': release, 'arch': arch})
+            if len(packages) != 0:
+                break
+        if len(packages) == 0:
+            raise AssertionError("No packages found in paths: '%s'" % ":".join(search_paths))
+        self.packages = packages
         return self.packages
 
     def find_package(self, name):
