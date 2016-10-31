@@ -160,7 +160,8 @@ class SolarisClientSetup(TransarcClientSetup):
         Does not configure the system to run the init script automatically on
         reboot.  Changes the init script to avoid starting the bosserver
         by default."""
-        src = pkg_resources.resource_filename('afsutil', 'data/openafs-client-solaris.init')
+        osrel = os.uname()[2]
+        src = pkg_resources.resource_filename('afsutil', 'data/openafs-client-solaris-%s.init' % (osrel))
         dst = "/etc/init.d/openafs-client"
         logger.info("Installing client init script from '%s' to '%s'.", src,dst)
         shutil.copy2(src, dst)
