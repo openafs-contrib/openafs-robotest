@@ -11,40 +11,40 @@
 #    ./install.sh --user [--verbose]
 #
 
-PACKAGE="afsrobot"
-USAGE="usage: sudo ./install [--user] [--verbose]"
-PIP_OPTS="--upgrade"
-UID=`python -c 'import os; print os.getuid()'` # for portability
+RT_PACKAGE="afsrobot"
+RT_USAGE="usage: sudo ./install [--user] [--verbose]"
+RT_PIPOPTS="--upgrade"
+RT_UID=`python -c 'import os; print os.getuid()'` # for portability
 
 while [ "x$1" != "x" ]; do
     case "$1" in
     -h|--help)
-        echo "$USAGE"
+        echo "$RT_USAGE"
         exit 0
         ;;
     -u|--user)
-        PIP_OPTS="$PIP_OPTS --user"
+        RT_PIPOPTS="$RT_PIPOPTS --user"
         shift
         ;;
     -v|--verbose)
-        PIP_OPTS="$PIP_OPTS --verbose"
+        RT_PIPOPTS="$RT_PIPOPTS --verbose"
         shift
         ;;
     *)
-        echo "$USAGE" >&2
+        echo "$RT_USAGE" >&2
         exit 1
         ;;
     esac
 done
 
-git clean -f -d -x dist/ ${PACKAGE}.egg-info/ || exit 1
-if [ $UID -eq 0 ]; then
-    owner=`python -c 'import os; import pwd; print pwd.getpwuid(os.stat(".").st_uid).pw_name'`
-    echo "Building source distribution as ${owner}."
-    su $owner -c "python setup.py sdist --formats gztar --verbose" || exit 1
+git clean -f -d -x dist/ ${RT_PACKAGE}.egg-info/ || exit 1
+if [ $RT_UID -eq 0 ]; then
+    RT_OWNER=`python -c 'import os; import pwd; print pwd.getpwuid(os.stat(".").st_uid).pw_name'`
+    echo "Building source distribution as ${RT_OWNER}."
+    su $RT_OWNER -c "python setup.py sdist --formats gztar --verbose" || exit 1
 else
     python setup.py sdist --formats gztar --verbose || exit 1
 fi
 
-pip install $PIP_OPTS dist/${PACKAGE}*.tar.gz || exit 1
+pip install $RT_PIPOPTS dist/${RT_PACKAGE}*.tar.gz || exit 1
 

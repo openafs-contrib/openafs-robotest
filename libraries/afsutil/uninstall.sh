@@ -4,7 +4,5 @@
 #        sudo ./uninstall.sh  # global uninstall
 #
 
-PACKAGE="afsutil"
-
-pip show --quiet $PACKAGE && pip uninstall -y $PACKAGE
-
+RT_PACKAGE="afsutil"
+pip show --quiet $RT_PACKAGE && pip uninstall -y $RT_PACKAGE
