@@ -23,7 +23,9 @@
 import logging
 import os
 import re
+import socket
 import subprocess
+import sys
 import time
 
 logger = logging.getLogger(__name__)
@@ -391,6 +393,40 @@ def _solaris_load_module(kmod):
     sh('cp', kmod, afs)
     logger.info("Loading AFS kernel extensions.")
     sh('modload', afs)
+
+def check_hosts_file():
+    """Check for loopback addresses in the /etc/hosts file.
+
+    Modern linux distros assign a loopback address to the hostname. While not
+    strictly incorrect, this can confuse OpenAFS which gets our IP address from
+    gethostbyname()."""
+    result = True
+    nr = 0
+    hostname = socket.gethostname()
+    with open('/etc/hosts', 'r') as f:
+        for line in f.readlines():
+            nr += 1
+            if line.startswith('127.'):
+                if hostname in line.split()[1:]:
+                    sys.stderr.write(
+                        "Warning: loopback address '%s' assigned to our hostname '%s' on line %d of /etc/hosts.\n" % \
+                        (line.split()[0], hostname, nr))
+                    result = False
+    return result
+
+def check_host_address():
+    """Verify our hostname resolves to a useable address."""
+    hostname = socket.gethostname()
+    ip = socket.gethostbyname(hostname)
+    ips = network_interfaces()
+    if len(ips) == 0:
+        sys.stderr.write("Warning: Unable to detect any non-loopback network interfaces.\n")
+        return False
+    if not ip in ips:
+        sys.stderr.write("Warning: hostname '%s' resolves to '%s', not found in network interfaces: '%s'.\n" % \
+                         (hostname, ip, " ".join(ips)))
+        return False
+    return True
 
 _uname = os.uname()[0]
 if _uname == "Linux":
