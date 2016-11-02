@@ -152,23 +152,9 @@ make_doc() {
     _run python -m robot.libdoc --format HTML --pythonpath $pypath $input $DIR_DOC/OpenAFSLibary.html
 }
 
-make_sdist() {
-    package=$1
-    _run rm -f libraries/$package/dist/*  # Remove any old versions.
-    echo "Creating source distribution for package '${package}'."
-    ( cd libraries/${package} && python setup.py $VERBOSITY sdist --formats gztar ) || exit 1
-}
-
 install_package() {
     package=$1
     ( cd libraries/$package && ./install.sh ) || exit 1
-}
-
-make_sdists() {
-    for package in $PACKAGES
-    do
-        _run make_sdist $package
-    done
 }
 
 install_packages() {
