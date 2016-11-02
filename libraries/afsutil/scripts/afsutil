@@ -93,6 +93,13 @@ def version(**kwargs):
 def getdeps(**kwargs):
     afsutil.build.getdeps(**kwargs)
 
+def check(**kwargs):
+    result = 0
+    if not afsutil.system.check_hosts_file():
+        result = 1
+    if not afsutil.system.check_host_address():
+        result = 2
+
 def build(**kwargs):
     afsutil.build.build(**kwargs)
 
@@ -252,6 +259,10 @@ def main():
     p = subparsers.add_parser('getdeps', help='install build dependencies')
     _common_opts(p)
     p.set_defaults(fn=getdeps, must_be_root=True)
+
+    p = subparsers.add_parser('check', help='check system')
+    _common_opts(p)
+    p.set_defaults(fn=check, must_be_root=False)
 
     p = subparsers.add_parser('build', help='build binaries')
     _common_opts(p)

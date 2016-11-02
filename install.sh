@@ -4,6 +4,7 @@ PROGNAME=`basename $0`
 TARGETS=""
 VERBOSE="no"
 PACKAGES="afsutil afsrobot OpenAFSLibrary"
+DO_CHECK="no"
 
 DIR_PREFIX="/usr/local"
 DIR_ROOT="$DIR_PREFIX/afsrobotest"
@@ -204,6 +205,7 @@ while :; do
         ;;
     pkg)
         install_packages
+        DO_CHECK="yes"
         break
         ;;
     tests)
@@ -217,6 +219,7 @@ while :; do
         install_tests
         make_output_dirs
         make_doc
+        DO_CHECK="yes"
         break
         ;;
     *)
@@ -225,3 +228,7 @@ while :; do
         ;;
     esac
 done
+
+if [ "$DO_CHECK" = "yes" ]; then
+    afsutil check
+fi
