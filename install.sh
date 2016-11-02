@@ -56,35 +56,58 @@ art_detect_sysname() {
 }
 
 art_debian_install_deps() {
-    # Install dependencies on Debian.
-    echo "Installing python."
-    art_run apt-get install -q -y python
-    echo "Installing pip."
-    art_run apt-get install -q -y python-pip
-    echo "Installing argparse."
-    art_run apt-get install -q -y python-argparse
-    echo "Installing robotframework."
-    art_run pip -q install robotframework
+    # Install missing dependencies on Debian.
+    if ! dpkg --status python >/dev/null 2>/dev/null; then
+        echo "Installing python."
+        art_run apt-get install -q -y python
+    fi
+    if ! dpkg --status python-pip >/dev/null 2>/dev/null; then
+        echo "Installing pip."
+        art_run apt-get install -q -y python-pip
+    fi
+    # argparse has been pulled into the python core package on
+    # modern systems, but it a separate package on older systems.
+    if ! python -c 'import argparse' >/dev/null 2>/dev/null; then
+        echo "Installing argparse."
+        art_run apt-get install -q -y python-argparse
+    fi
+    if ! python -c 'import robot.api' >/dev/null 2>/dev/null; then
+        echo "Installing robotframework."
+        art_run pip -q install robotframework
+    fi
 }
 
 art_rhel_install_deps() {
-    # Install dependencies on RHEL/CentOS.
-    echo "Installing epel."
-    art_run yum install -q -y epel-release
-    echo "Installing python."
-    art_run yum install -q -y python
-    echo "Installing pip."
-    art_run yum install -q -y python-pip
-    echo "Installing argparse."
-    art_run yum install -q -y python-argparse
-    echo "Installing robotframework."
-    art_run pip -q install robotframework
+    # Install missing dependencies on RHEL/CentOS.
+    if ! rpm -q epel-release >/dev/null 2>/dev/null; then
+        echo "Installing epel."
+        art_run yum install -q -y epel-release
+    fi
+    if ! rpm -q python >/dev/null 2>/dev/null; then
+        echo "Installing python."
+        art_run yum install -q -y python
+    fi
+    if ! rpm -q python-pip >/dev/null 2>/dev/null; then
+        echo "Installing pip."
+        art_run yum install -q -y python-pip
+    fi
+    # argparse has been pulled into the python core package on
+    # modern systems, but it a separate package on older systems.
+    if ! python -c 'import argparse' >/dev/null 2>/dev/null; then
+        echo "Installing argparse."
+        art_run yum install -q -y python-argparse
+    fi
+    if ! python -c 'import robot.api' >/dev/null 2>/dev/null; then
+        echo "Installing robotframework."
+        art_run pip -q install robotframework
+    fi
 }
 
 art_solaris_install_deps() {
     # Install dependencies on Solaris.
+    DID_UPDATE='no'
     if [ ! -x /opt/csw/bin/pkgutil ]; then
-        cat <<_EOF_ >.pkgadd
+        cat <<_EOF_ >/tmp/pkgadd-conf-$$
 mail=
 instance=overwrite
 partial=nocheck
@@ -103,18 +126,37 @@ proxy=
 basedir=default
 _EOF_
         echo "Installing OpenCSW pkgutil."
-        art_run pkgadd -a .pkgadd -d http://get.opencsw.org/now CSWpkgutil
-        rm -f .pkgadd
+        art_run pkgadd -a /tmp/pkgadd-conf-$$ -d http://get.opencsw.org/now CSWpkgutil
+        rm -f /tmp/pkgadd-conf-$$
     fi
-    art_run /opt/csw/bin/pkgutil -U
-    echo "Installing python 2.7."
-    art_run /opt/csw/bin/pkgutil -y -i python27
-    echo "Installing pip."
-    art_run /opt/csw/bin/pkgutil -y -i py_pip
-    echo "Installing argparse."
-    art_run /opt/csw/bin/pkgutil -y -i py_argparse
-    echo "Installing robotframework."
-    art_run pip -q install robotframework
+    if ! /opt/csw/bin/pkgutil --list | grep '^CSWpython27$' >/dev/null; then
+        echo "Installing python 2.7."
+        if [ $DID_UPDATE = 'no' ]; then
+            art_run /opt/csw/bin/pkgutil -U
+            DID_UPDATE='yes'
+        fi
+        art_run /opt/csw/bin/pkgutil -y -i python27
+    fi
+    if ! /opt/csw/bin/pkgutil --list | grep '^CSWpy-pip$' >/dev/null; then
+        echo "Installing pip."
+        if [ $DID_UPDATE = 'no' ]; then
+            art_run /opt/csw/bin/pkgutil -U
+            DID_UPDATE='yes'
+        fi
+        art_run /opt/csw/bin/pkgutil -y -i py_pip
+    fi
+    if ! /opt/csw/bin/pkgutil --list | grep '^CSWpy-argparse$' >/dev/null; then
+        echo "Installing argparse."
+        if [ $DID_UPDATE = 'no' ]; then
+            art_run /opt/csw/bin/pkgutil -U
+            DID_UPDATE='yes'
+        fi
+        art_run /opt/csw/bin/pkgutil -y -i py_argparse
+    fi
+    if ! python -c 'import robot.api' >/dev/null 2>/dev/null; then
+        echo "Installing robotframework."
+        art_run pip -q install robotframework
+    fi
 }
 
 art_install_deps() {
