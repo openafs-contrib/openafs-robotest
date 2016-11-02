@@ -30,6 +30,8 @@ Notable changes.
 * Add the `afs-robotest ssh exec` subcommand to run remote commands hosts listed in the configuration file.
 * Add the `afs-robotest version` subcommand to print version information.
 * Cleanup the akimpersonate fake keytab file.
+* Install: automatically install external dependenices on some platforms
+* Install: put per user data under $HOME/.afsrobotestrc/ and tests under /usr/local/afsrobotest/
 
 ### Tests
 
