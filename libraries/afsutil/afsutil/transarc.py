@@ -192,6 +192,7 @@ class SolarisClientSetup(TransarcClientSetup):
 
     def remove_driver(self):
         remove_file(self._afs_driver())
+        remove_file('/kernel/drv/afs.conf')
 
     def install_kmod(self, kmod):
         """Install the kernel module by filename."""
