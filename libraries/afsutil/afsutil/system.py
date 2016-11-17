@@ -304,6 +304,18 @@ def _linux_unload_module():
 def _linux_load_module(kmod):
     run('insmod', args=[kmod])
 
+def _solaris_network_interfaces_old():
+    """Return a list of non-loopback networks interfaces."""
+    addrs = []
+    lines = sh('/usr/sbin/ifconfig', '-a', output=True, quiet=True)
+    for line in lines:
+        match = re.search(r'inet (\d+\.\d+\.\d+\.\d+)', line)
+        if match:
+            addr = match.group(1)
+            if not addr.startswith("127."):
+                addrs.append(addr)
+    return addrs
+
 def _solaris_network_interfaces():
     """Return list of non-loopback network interfaces."""
     addrs = []
@@ -429,6 +441,7 @@ def check_host_address():
     return True
 
 _uname = os.uname()[0]
+_osrel = os.uname()[2]
 if _uname == "Linux":
     network_interfaces = _linux_network_interfaces
     is_loaded = _linux_is_loaded
@@ -436,7 +449,10 @@ if _uname == "Linux":
     unload_module = _linux_unload_module
     load_module = _linux_load_module
 elif _uname == "SunOS":
-    network_interfaces = _solaris_network_interfaces
+    if _osrel == "5.10":
+        network_interfaces = _solaris_network_interfaces_old
+    else:
+        network_interfaces = _solaris_network_interfaces
     is_loaded = _solaris_is_loaded
     configure_dynamic_linker = _solaris_configure_dynamic_linker
     unload_module = _solaris_unload_module
