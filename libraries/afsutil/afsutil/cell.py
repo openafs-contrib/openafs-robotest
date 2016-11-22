@@ -417,9 +417,9 @@ class Cell(object):
                     pass
             return _unlock
         vos('addsite', '-server', server, '-partition', partition, '-id', name,
-            retry=20, wait=15, cleanup=_unlocker(name))
+            retry=20, wait=80, cleanup=_unlocker(name))
         vos('release', '-id', name,
-            retry=20, wait=15, cleanup=_unlocker(name))
+            retry=20, wait=80, cleanup=_unlocker(name))
 
     def ping_hosts(self):
         """Verify hosts are reachable and bosserver is running."""
