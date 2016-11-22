@@ -441,8 +441,6 @@ class Cell(object):
         # be created and quorum established.
         self.primary_db.setcellname(self.cell)
         self.primary_db.setcellhosts([self.primary_db])
-        for admin in self.admins:
-            self.primary_db.adduser(admin)
         for dbname in DBNAMES:
             self.primary_db.create_database(dbname, self.options)
             self.primary_db.wait_for_status(dbname, target='running')
@@ -485,6 +483,8 @@ class Cell(object):
             self.primary_db.wait_for_status(dbname, target='running')
             for host in self.db:
                 if host != self.primary_db:
+                    for admin in self.admins:
+		        host.adduser(admin)
                     host.create_database(dbname, self.options)
                     host.wait_for_status(dbname, target='running')
 
