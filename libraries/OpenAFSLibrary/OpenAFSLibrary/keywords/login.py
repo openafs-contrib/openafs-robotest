@@ -22,7 +22,7 @@
 import os
 from robot.api import logger
 
-from OpenAFSLibrary.variable import get_var
+from OpenAFSLibrary.variable import get_var, get_bool
 from OpenAFSLibrary.command import run_program
 
 
@@ -80,14 +80,14 @@ class _LoginKeywords(object):
         """Acquire an AFS token for authenticated access."""
         if user is None:
             user = get_var('AFS_ADMIN')
-        if get_var('AFS_AKIMPERSONATE'):
+        if get_bool('AFS_AKIMPERSONATE'):
             akimpersonate(user)
         else:
             login_with_keytab(user)
 
     def logout(self):
         """Release the AFS token."""
-        if not get_var('AFS_AKIMPERSONATE'):
+        if not get_bool('AFS_AKIMPERSONATE'):
             kdestroy = get_var('KDESTROY')
             krb5cc = "/tmp/krb5cc-afs-robotest"
             cmd = "KRB5CCNAME=%s %s" % (krb5cc, kdestroy)

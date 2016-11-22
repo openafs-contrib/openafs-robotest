@@ -28,7 +28,7 @@ from robot.libraries.BuiltIn import BuiltIn
 _rf = BuiltIn()
 
 def get_var(name):
-    """Return the variable value."""
+    """Return the variable value as a string."""
     if not name:
         raise AssertionError("get_var argument is missing!")
     try:
@@ -40,3 +40,8 @@ def get_var(name):
     if value == "":
         raise AssertionError("%s is empty!" % name)
     return value
+
+def get_bool(name):
+    """Return the variable value as a bool."""
+    value = get_var(name)
+    return value.lower() in ("yes", "y", "true", "t", "1")
