@@ -372,6 +372,10 @@ def symlink(src, dst):
         os.remove(dst)
     os.symlink(src, dst)
 
+def tar(taball, source_path):
+    tar = 'gtar' if os.uname()[0] == "SunOS" else 'tar'
+    sh(tar, 'czf', tarball, source_path, quiet=True)
+
 def _so_symlinks(path):
     """Create shared lib symlinks."""
     if not os.path.isdir(path):

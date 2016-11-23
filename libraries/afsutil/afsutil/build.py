@@ -27,7 +27,7 @@ import re
 import shlex
 import platform
 
-from afsutil.system import sh, CommandFailed, file_should_exist
+from afsutil.system import sh, CommandFailed, file_should_exist, tar
 import afsutil.service
 
 logger = logging.getLogger(__name__)
@@ -39,6 +39,18 @@ DEFAULT_CF = [
     '--disable-optimize-kernel',
     '--without-dot',
 ]
+
+def _detect_sysname():
+    """Try to detect the sysname from the previous build output."""
+    sysname = None
+    if os.path.exists("src/config/Makefile.config"):
+        with open("src/config/Makefile.config", "r") as f:
+            for line in f.readlines():
+                match = re.match(r'SYS_NAME\s*=\s*(\S+)', line)
+                if match:
+                    sysname = match.group(1)
+                    break
+    return sysname
 
 def _sanity_check_dir():
     msg = "Missing '%s'; are you in the OpenAFS source top-level directory?"
@@ -179,6 +191,16 @@ def getdeps(**kwargs):
     else:
         raise AssertionError("Unsupported operating system: %s" % (system))
 
+def _make_tarball():
+    sysname = _detect_sysname()
+    if sysname is None:
+        raise AssertionError("Cannot find sysname.")
+    destdir = os.path.join(sysname, "dest")
+    if not os.path.isdir(destdir):
+        raise AssertionError("dest dir not found: %s" % (destdir))
+    tarball = "openafs-%s.tar.gz" % (sysname)
+    tar(tarball, sysname)
+
 def build(**kwargs):
     """Build the OpenAFS binaries.
 
@@ -216,6 +238,8 @@ def build(**kwargs):
     sh('./regen.sh')
     sh('./configure', *cf)
     _make(jobs, target)
+    if target == 'dest':
+        _make_tarball()
 
 def _linux_kernel_packaging():
     """Returns true if built with --with-linux-kernel-packaging."""
