@@ -30,6 +30,7 @@ import socket
 import glob
 import pkg_resources
 import tempfile
+import urllib2
 
 from afsutil.install import Installer, \
                             copy_files, remove_file, remove_files
@@ -361,18 +362,29 @@ class TransarcInstaller(Installer):
         * url path: Download the tarball file at the given url, untar the tarball,
           and install the bins found under <sysname>/dest.
         """
+        def _untar(tarball):
+            self.tmpdir = tempfile.mkdtemp()
+            logger.info("Untarring %s into %s", self.bins, self.tmpdir)
+            untar(tarball, chdir=self.tmpdir)
+            return glob.glob("%s/*/dest" % (self.tmpdir))[0] # must have a dest dir.
+
+        def _download(url):
+            rsp = urllib2.urlopen(url)
+            (fh, self.tmpfile) = tempfile.mkstemp(suffix='.tar.gz')
+            logger.info("Downloading %s to %s", url, self.tmpfile)
+            with open(self.tmpfile, 'w') as tarball:
+                tarball.write(rsp.read())
+            os.close(fh)
+            return self.tmpfile
 
         if self.bins is None:
             self.dest = self._detect_dest()
         elif os.path.isdir(self.bins):
             self.dest = self.bins
-        elif self.bins.startswith('http://') or self.bins.startswith('https://'):
-            raise NotImplementedError("url paths")
+        elif (self.bins.startswith('http://') or self.bins.startswith('https://')) and self.bins.endswith('.tar.gz'):
+            self.dest = _untar(_download(self.bins))
         elif os.path.isfile(self.bins) and self.bins.endswith('.tar.gz'):
-            self.tmpdir = tempfile.mkdtemp()
-            logger.info("Untarring %s into %s", self.bins, self.tmpdir)
-            untar(self.bins, chdir=self.tmpdir)
-            self.dest = glob.glob("%s/*/dest" % (self.tmpdir))[0]
+            self.dest = _untar(self.bins)
         else:
             raise AssertionError("Unrecognized path to installation files: %s" % (self.bins))
         self._check_dest(self.dest)
@@ -382,6 +394,9 @@ class TransarcInstaller(Installer):
         if self.do_client:
             self._install_client()
         self.post_install()
+        if self.tmpfile:
+            logger.info("Removing tmp file %s", self.tmpfile)
+            os.remove(self.tmpfile)
         if self.tmpdir:
             logger.info("Removing tmp dir %s", self.tmpdir)
             shutil.rmtree(self.tmpdir)
