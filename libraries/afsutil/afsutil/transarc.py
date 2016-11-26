@@ -29,13 +29,15 @@ import sys
 import socket
 import glob
 import pkg_resources
+import tempfile
 
 from afsutil.install import Installer, \
                             copy_files, remove_file, remove_files
 
 from afsutil.system import sh, directory_should_exist, \
                            configure_dynamic_linker, \
-                           is_loaded, is_running, mkdirp, path_join \
+                           is_loaded, is_running, mkdirp, path_join, \
+                           untar
 
 logger = logging.getLogger(__name__)
 
@@ -204,15 +206,16 @@ class SolarisClientSetup(TransarcClientSetup):
 class TransarcInstaller(Installer):
     """Install a Transarc-style distribution of OpenAFS on linux or solaris."""
 
-    def __init__(self, dir=None, **kwargs):
+    def __init__(self, **kwargs):
         """Initialize the Transarc-style installer.
 
-        dir: path to the 'dest' directory created by previous make dest
-             If None, try to detect the sysname and find the dest directory
-             in the current working directory.
         """
         Installer.__init__(self, **kwargs)
-        self.dest = dir # defer detection/checks until install().
+        self.bins = kwargs.get('dir', None)
+        self.tmpdir = None
+        self.url = None
+        self.tarball = None
+        self.dest = None
         uname = os.uname()[0]
         if uname == "Linux":
             self.client_setup = LinuxClientSetup()
@@ -348,10 +351,30 @@ class TransarcInstaller(Installer):
         self.client_setup.remove_driver()
 
     def install(self):
-        """Install Transarc-style distribution OpenAFS binaries."""
-        # Verify we have the dest directory before starting.
-        if self.dest is None:
+        """Install Transarc-style distribution OpenAFS binaries.
+
+        self.bins specifies the bins to be installed.
+        * None: Install the bins under <sysname>/dest in the current directory.
+        * a directory path:  Install the bins found in the given dest directory.
+        * a path to a tarball: Untar the tarball in a temporary directory and
+          install the bins found under <sysname>/dest.
+        * url path: Download the tarball file at the given url, untar the tarball,
+          and install the bins found under <sysname>/dest.
+        """
+
+        if self.bins is None:
             self.dest = self._detect_dest()
+        elif os.path.isdir(self.bins):
+            self.dest = self.bins
+        elif self.bins.startswith('http://') or self.bins.startswith('https://'):
+            raise NotImplementedError("url paths")
+        elif os.path.isfile(self.bins) and self.bins.endswith('.tar.gz'):
+            self.tmpdir = tempfile.mkdtemp()
+            logger.info("Untarring %s into %s", self.bins, self.tmpdir)
+            untar(self.bins, chdir=self.tmpdir)
+            self.dest = glob.glob("%s/*/dest" % (self.tmpdir))[0]
+        else:
+            raise AssertionError("Unrecognized path to installation files: %s" % (self.bins))
         self._check_dest(self.dest)
         self.pre_install()
         if self.do_server:
@@ -359,6 +382,9 @@ class TransarcInstaller(Installer):
         if self.do_client:
             self._install_client()
         self.post_install()
+        if self.tmpdir:
+            logger.info("Removing tmp dir %s", self.tmpdir)
+            shutil.rmtree(self.tmpdir)
 
     def remove(self):
         """Remove Transarc-style distribution OpenAFS binaries."""
