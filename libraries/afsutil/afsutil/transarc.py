@@ -369,11 +369,15 @@ class TransarcInstaller(Installer):
             return glob.glob("%s/*/dest" % (self.tmpdir))[0] # must have a dest dir.
 
         def _download(url):
+            BLOCK_SIZE = 4 * 1024
             rsp = urllib2.urlopen(url)
             (fh, self.tmpfile) = tempfile.mkstemp(suffix='.tar.gz')
             logger.info("Downloading %s to %s", url, self.tmpfile)
-            with open(self.tmpfile, 'w') as tarball:
-                tarball.write(rsp.read())
+            with open(self.tmpfile, 'wb') as tarball:
+                block = rsp.read(BLOCK_SIZE)
+                while block:
+                    tarball.write(block)
+                    block = rsp.read(BLOCK_SIZE)
             os.close(fh)
             return self.tmpfile
 
