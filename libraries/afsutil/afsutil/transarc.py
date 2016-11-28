@@ -213,6 +213,7 @@ class TransarcInstaller(Installer):
         """
         Installer.__init__(self, **kwargs)
         self.bins = kwargs.get('dir', None)
+        self.tmpfile = None
         self.tmpdir = None
         self.url = None
         self.tarball = None
