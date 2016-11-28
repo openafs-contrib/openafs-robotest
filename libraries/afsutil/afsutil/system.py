@@ -372,7 +372,7 @@ def symlink(src, dst):
         os.remove(dst)
     os.symlink(src, dst)
 
-def tar(taball, source_path):
+def tar(tarball, source_path):
     tar = 'gtar' if os.uname()[0] == "SunOS" else 'tar'
     sh(tar, 'czf', tarball, source_path, quiet=True)
 
