@@ -198,8 +198,13 @@ def _make_tarball():
     destdir = os.path.join(sysname, "dest")
     if not os.path.isdir(destdir):
         raise AssertionError("dest dir not found: %s" % (destdir))
-    tarball = "openafs-%s.tar.gz" % (sysname)
+    # Hack Alert:  Put the tarball into the afs-robotest distribution directory if present.
+    tardir = os.path.expanduser('~/.afsrobotestrc/dist')
+    if not os.path.isdir(tardir):
+        tardir = '.'
+    tarball = os.path.join(tardir, "openafs-%s.tar.gz" % (sysname))
     tar(tarball, sysname)
+    logger.info("Created tar file %s", tarball)
 
 def build(**kwargs):
     """Build the OpenAFS binaries.
