@@ -1,7 +1,5 @@
 
-Notable changes.
-
-## [Unreleased]
+## [v0.5.0]
 
 ### Setup/Teardown
 
@@ -55,6 +53,7 @@ Notable changes.
 * New `afsutil reload` command to reload the kernel module after rebuilding it.
 * `afsutil login`: Add the `--user` option to specify the username.
 * `afsutil build --jobs` option for parallel builds on Linux. (`nproc` determines the default number of jobs.)
+* `afsutil build` create tarball of transarc-style distribution files
 
 ## [v0.4.0] 2016-02-23
 
