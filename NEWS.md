@@ -1,4 +1,8 @@
 
+## [v0.5.1]
+
+* Fix afs-robotest ssh exec flags (--sudo, --quiet, --exclude)
+
 ## [v0.5.0]
 
 ### Setup/Teardown
