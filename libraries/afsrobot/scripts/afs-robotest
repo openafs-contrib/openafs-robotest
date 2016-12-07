@@ -162,7 +162,9 @@ def cmd_ssh_check(c):
 def cmd_ssh_exec(c):
     keyfile = c.config.optstr('ssh', 'keyfile', required=True)
     hostnames = c.config.opthostnames()
-    return afsrobot.ssh.execute(keyfile, hostnames, c.args.command)
+    return afsrobot.ssh.execute(keyfile, hostnames, c.args.command,
+                                exclude=c.args.exclude, quiet=c.args.quiet,
+                                sudo=c.args.sudo)
 
 def cmd_setup(c):
     r = afsrobot.runner.Runner(c.config)
