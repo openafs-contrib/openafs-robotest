@@ -3,7 +3,7 @@
 # See LICENSE
 
 *** Settings ***
-Documentation     Basic Functional Tests, part 1
+Documentation     Basic Functional Tests
 Resource          openafs.robot
 Suite Setup       Setup
 Suite Teardown    Teardown
@@ -132,7 +132,7 @@ Rewrite a file
     ${text2}=  Get File     ${file}
     Should Not Be Equal     ${text}  ${text2}
     Remove File             ${file}
-    Should Not Exist        ${file}  
+    Should Not Exist        ${file}
 
 Rename a File
     [Tags]  arla  #(rename1)
@@ -147,4 +147,20 @@ Rename a File
     Should Be Equal  ${before}  ${after}
     Remove File  ${b}
     Should Not Exist  ${b}
+
+Write and Execute a Script in a Directory
+    [Tags]  arla  #(exec)
+    ${file}=  Set Variable  ${TESTPATH}/script.sh
+    ${text}=  Set Variable  hello world
+    #Should Not Exist        ${file}
+    ${code}=  Catenate
+    ...  \#!/bin/sh\n
+    ...  echo ${text}\n
+    Create File                  ${file}  ${code}
+    Should Exist                 ${file}
+    Command Should Succeed       chmod +x ${file}
+    File Should Be Executable    ${file}
+    ${rc}  ${output}  Run And Return Rc And Output  ${file}
+    Should Be Equal As Integers  ${rc}  0
+    Should Match  ${output}  ${text}
 
