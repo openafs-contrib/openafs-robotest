@@ -31,20 +31,20 @@ Teardown Users and Groups
 
 *** Test Cases ***
 Add a Bosserver Host
-    [Tags]  todo  arla  #(bosaddhost)
+    [Tags]  todo  #(bosaddhost)
     TODO
 
 List Server Hosts
-    [Tags]  arla  #(bostlisthosts)
+    [Tags]  #(bostlisthosts)
     ${output}=  Run       ${BOS} listhosts ${HOSTNAME}
     Should Contain        ${output}  ${AFS_CELL}
 
 Remove a Server Host
-    [Tags]  todo  arla  #(bosremovehost)
+    [Tags]  todo  #(bosremovehost)
     TODO
 
 Add a Superuser
-    [Tags]  arla  #(bosadduser)
+    [Tags]  #(bosadduser)
     ${output}=  Run           ${BOS} listusers ${HOSTNAME}
     Should Not Contain        ${output}  user1
     Command Should Succeed    ${BOS} adduser ${HOSTNAME} user1
@@ -55,12 +55,12 @@ Add a Superuser
     Should Not Contain        ${output}  user1
 
 List Superusers
-    [Tags]  arla  #(boslistusers)
+    [Tags]  #(boslistusers)
     ${output}=  Run           ${BOS} listusers ${HOSTNAME}
     Should Not Contain        ${output}  user1
 
 Remove a Superuser
-    [Tags]  arla  #(bosremoveuser)
+    [Tags]  #(bosremoveuser)
     ${output}=  Run           ${BOS} listusers ${HOSTNAME}
     Should Not Contain        ${output}  user2
     Command Should Succeed    ${BOS} adduser ${HOSTNAME} user2
@@ -71,72 +71,72 @@ Remove a Superuser
     Should Not Contain        ${output}  user2
 
 Install an Executable Shell Script
-    [Tags]  todo  arla  #(bosinstall)
+    [Tags]  todo  #(bosinstall)
     TODO
 
 Execute Something Via the bosserver
-    [Tags]  todo  arla  #(bosexec)
+    [Tags]  todo  #(bosexec)
     TODO
 
 Create a bos bnode
-    [Tags]  todo  arla  #(boscreate)
+    [Tags]  todo  #(boscreate)
     TODO
 
 Delete a Running bnode
-    [Tags]  todo  arla  #(bosdeleterunning)
+    [Tags]  todo  #(bosdeleterunning)
     TODO
 
 Get a bnode Status
-    [Tags]  arla  #(bosstatus)
+    [Tags]  #(bosstatus)
     ${output}=  Run            ${BOS} status ${HOSTNAME}
     Should Contain             ${output}  ptserver
     Should Contain             ${output}  vlserver
     Should Contain             ${output}  dafs
 
 Stop a bos bnode
-    [Tags]  todo  arla  #(bosstop)
+    [Tags]  todo  #(bosstop)
     TODO
 
 Restart a bos bnode
-    [Tags]  todo  arla  #(bosrestartstopped)
+    [Tags]  todo  #(bosrestartstopped)
     Command Should Succeed     ${BOS} restart ${HOSTNAME} -instance ptserver vlserver
     ${output}=  Run            ${BOS} status ${HOSTNAME}
     Should Contain             ${output}  ptserver
     Should Contain             ${output}  vlserver
 
 Start a bos bnode
-    [Tags]  todo  arla  #(bosstart)
+    [Tags]  todo  #(bosstart)
     TODO
 
 Shutdown a bnode
-    [Tags]  todo  arla  #(bosshutdown)
+    [Tags]  todo  #(bosshutdown)
     TODO
 
 Delete a Stopped bnode
-    [Tags]  todo  arla  #(bosdelete)
+    [Tags]  todo  #(bosdelete)
     TODO
 
 Add a Key
-    [Tags]  todo  arla  #(bosaddkey)
+    [Tags]  todo  #(bosaddkey)
     TODO
 
 List Keys
-    [Tags]  todo  arla  #(boslistkeys)
+    [Tags]  todo  #(boslistkeys)
     TODO
 
 Remove a Key
-    [Tags]  todo  arla  #(bosremovekey)
+    [Tags]  todo  #(bosremovekey)
     TODO
 
 Salvage a Volume
-    [Tags]  todo  arla  #(bossalvagevolume)
+    [Tags]  todo  #(bossalvagevolume)
     TODO
 
 Salvage a Partition
-    [Tags]  todo  arla  #(bossalvagepart)
+    [Tags]  todo  #(bossalvagepart)
     TODO
 
 Salvage a Server
-    [Tags]  todo  arla  #(bossalvageserver)
+    [Tags]  todo  #(bossalvageserver)
     TODO
 

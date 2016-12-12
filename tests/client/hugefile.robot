@@ -8,14 +8,14 @@ Resource          openafs.robot
 
 *** Test Cases ***
 Create a Larger Than 2gb File
-    [Tags]  todo  arla  #(write-large)
+    [Tags]  todo  #(write-large)
     TODO
 
 Write a File Larger than the Cache
-    [Tags]  todo  arla  #(fcachesize-write-file)
+    [Tags]  todo  #(fcachesize-write-file)
     TODO
 
 Read a File Larger than the Cache
-    [Tags]  todo  arla  #(fcachesize-read-file)
+    [Tags]  todo  #(fcachesize-read-file)
     TODO
 

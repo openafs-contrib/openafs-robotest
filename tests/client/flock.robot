@@ -8,7 +8,7 @@ Resource          openafs.robot
 
 *** Test Cases ***
 Test pine Lockfile Semantics
-    [Tags]  todo  arla  #(pine)
+    [Tags]  todo  #(pine)
     TODO
 
 

@@ -13,7 +13,7 @@ Teardown Users and Groups
 
 *** Test Cases ***
 Create a User
-    [Tags]  arla  #(ptscreateuser)
+    [Tags]  #(ptscreateuser)
     Login  ${AFS_ADMIN}
     ${output}=  Run         ${PTS} listentries 
     Should Not Contain      ${output}  user12
@@ -25,7 +25,7 @@ Create a User
     Should Not Contain      ${output}  user12
 
 Create a Group
-    [Tags]  arla  #(ptscreategroup)
+    [Tags]  #(ptscreategroup)
     ${output}=  Run         ${PTS} listentries -groups
     Should Not Contain      ${output}  group12
     Command Should Succeed  ${PTS} creategroup group12 -owner ${AFS_ADMIN}
@@ -36,7 +36,7 @@ Create a Group
     Should Not Contain      ${output}  group12
 
 Add a User to a Group
-    [Tags]  arla  #(ptsadduser)
+    [Tags]  #(ptsadduser)
     ${output}=  Run         ${PTS} listentries -users -groups
     Should Not Contain      ${output}  user12
     Should Not Contain      ${output}  group12
@@ -58,7 +58,7 @@ Add a User to a Group
     Should Not Contain      ${output}  group12
 
 Chown a Group
-    [Tags]  arla  #(ptschown)
+    [Tags]  #(ptschown)
     ${output}=  Run         ${PTS} listentries -users -groups
     Should Not Contain      ${output}  user12
     Should Not Contain      ${output}  group12
@@ -77,7 +77,7 @@ Chown a Group
     Should Not Contain      ${output}  group12
 
 Get User Membership
-    [Tags]  arla  #(ptsmembersuser)
+    [Tags]  #(ptsmembersuser)
     ${output}=  Run         ${PTS} listentries
     Should Not Contain      ${output}  user12
     Command Should Succeed  ${PTS} createuser user12
@@ -88,7 +88,7 @@ Get User Membership
     Should Not Contain      ${output}  user12
 
 Get Group Membership
-    [Tags]  arla  #(ptsmembersgroup)
+    [Tags]  #(ptsmembersgroup)
     ${output}=  Run         ${PTS} listentries -groups
     Should Not Contain      ${output}  group12
     Command Should Succeed  ${PTS} creategroup group12 -owner ${AFS_ADMIN}
@@ -99,7 +99,7 @@ Get Group Membership
     Should Not Contain      ${output}  user12
 
 Examine a User
-    [Tags]  arla  #(ptsexamineuser)
+    [Tags]  #(ptsexamineuser)
     ${output}=  Run         ${PTS} listentries
     Should Not Contain      ${output}  user12
     Command Should Succeed  ${PTS} createuser user12
@@ -110,7 +110,7 @@ Examine a User
     Should Not Contain      ${output}  user12
 
 Examine a Group
-    [Tags]  arla  #(ptsexaminegroup)
+    [Tags]  #(ptsexaminegroup)
     ${output}=  Run         ${PTS} listentries -groups
     Should Not Contain      ${output}  group12
     Command Should Succeed  ${PTS} creategroup group12 -owner ${AFS_ADMIN}
@@ -121,7 +121,7 @@ Examine a Group
     Should Not Contain      ${output}  group12
 
 Remove a User from a Group
-    [Tags]  arla  #(ptsremove)
+    [Tags]  #(ptsremove)
     ${output}=  Run         ${PTS} listentries -users -groups
     Should Not Contain      ${output}  user12
     Should Not Contain      ${output}  group12
@@ -143,7 +143,7 @@ Remove a User from a Group
     Should Not Contain      ${output}  user12
 
 List Groups a User Owns
-    [Tags]  arla  #(ptslistown)
+    [Tags]  #(ptslistown)
     ${output}=  Run         ${PTS} listentries -groups
     Should Not Contain      ${output}  groups12
     Command Should Succeed  ${PTS} createuser user12
@@ -154,19 +154,19 @@ List Groups a User Owns
     Should Not Contain      ${output}  group12
 
 Set Maxuser
-    [Tags]  arla  #(ptssetmax)
+    [Tags]  #(ptssetmax)
     ${output}  Run          ${PTS} setmax -group -500 -user 1000
     ${output}  Run          ${PTS} listmax
     Should Be Equal         ${output}  Max user id is 1000 and max group id is -500.
 
 List Maxuser
-    [Tags]  arla  #(ptslistmax)
+    [Tags]  #(ptslistmax)
     ${output}  Run          ${PTS} setmax -group -520 -user 1200
     ${output}  Run          ${PTS} listmax
     Should Be Equal         ${output}  Max user id is 1200 and max group id is -520.
 
 Set Fields on a User
-    [Tags]  arla  #(ptssetf)
+    [Tags]  #(ptssetf)
     ${output}=  Run         ${PTS} listentries
     Should Not Contain      ${output}  user12
     Command Should Succeed  ${PTS} createuser user12
@@ -180,7 +180,7 @@ Set Fields on a User
     Should Not Contain      ${output}  user12
 
 Delete a Group
-    [Tags]  arla  #(ptsdeletegroup)
+    [Tags]  #(ptsdeletegroup)
     ${output}=  Run         ${PTS} listentries -groups
     Should Not Contain      ${output}  group12
     Command Should Succeed  ${PTS} creategroup group12 -owner ${AFS_ADMIN}
@@ -191,7 +191,7 @@ Delete a Group
     Should Not Contain      ${output}  group12
 
 Delete a User
-    [Tags]  arla  #(ptsdeleteuser)
+    [Tags]  #(ptsdeleteuser)
     ${output}=  Run         ${PTS} listentries
     Should Not Contain      ${output}  user12
     Command Should Succeed  ${PTS} createuser user12

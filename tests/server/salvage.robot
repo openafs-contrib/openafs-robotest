@@ -8,5 +8,5 @@ Resource          openafs.robot
 
 *** Test Cases ***
 Restore Volume with a Bad Uniquifier in it, salvage, check
-    [Tags]  todo  arla  #(baduniq)
+    [Tags]  todo  #(baduniq)
     TODO

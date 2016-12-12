@@ -8,6 +8,6 @@ Resource          openafs.robot
 
 *** Test Cases ***
 Create a File with 8 bit Characters in its Name
-    [Tags]  todo  arla  #(strange-characters)
+    [Tags]  todo  #(strange-characters)
     TODO
 

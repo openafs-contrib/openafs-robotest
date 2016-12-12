@@ -8,9 +8,9 @@ Resource          openafs.robot
 
 *** Test Cases ***
 Write a File Locally and Read it in a Foreign Cache Manager
-    [Tags]  todo  arla  #(extcopyin)
+    [Tags]  todo  #(extcopyin)
     TODO
 
 Write a File in a Foreign Cache Manager and Read it Locally
-    [Tags]  todo  arla  #(extcopyout)
+    [Tags]  todo  #(extcopyout)
     TODO

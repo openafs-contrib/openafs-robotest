@@ -14,10 +14,10 @@ Suite Teardown    Teardown Test Suite
 
 *** Test Cases ***
 Test setpag
-    [Tags]  todo  arla  #(setpag)
+    [Tags]  todo  #(setpag)
     TODO
 
 Test setgroups
-    [Tags]  todo  arla  #(setgroups)
+    [Tags]  todo  #(setgroups)
     TODO
 

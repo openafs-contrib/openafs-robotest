@@ -25,7 +25,7 @@ Teardown
 
 *** Test Cases ***
 Create a File
-    [Tags]  arla  #(creat1)
+    [Tags]  #(creat1)
     ${file}=  Set Variable  ${TESTPATH}/file
     Should Not Exist        ${file}
     Command Should Succeed  touch ${file}
@@ -35,7 +35,7 @@ Create a File
     Should Not Exist        ${file}
 
 Create a Directory
-    [Tags]  arla  #(mkdir1)
+    [Tags]  #(mkdir1)
     ${dir}=  Set Variable  ${TESTPATH}/dir
     Should Not Exist  ${dir}
     Create Directory  ${dir}
@@ -47,7 +47,7 @@ Create a Directory
     Should Not Exist  ${dir}
 
 Create a Symlink
-    [Tags]  arla  #(symlink)
+    [Tags]  #(symlink)
     ${dir}=      Set Variable  ${TESTPATH}/dir
     ${symlink}=  Set Variable  ${TESTPATH}/symlink
     Should Not Exist        ${dir}
@@ -61,7 +61,7 @@ Create a Symlink
     Should Not Exist        ${symlink}
 
 Create a Hard Link within a Directory
-    [Tags]  arla  #(hardlink1)
+    [Tags]  #(hardlink1)
     ${file}=  Set Variable  ${TESTPATH}/file
     ${link}=  Set Variable  ${TESTPATH}/link
     Should Not Exist        ${file}
@@ -79,11 +79,11 @@ Create a Hard Link within a Directory
     Should Not Exist        ${file}
 
 Create a Hard Link within a Volume
-    [Tags]  todo  arla  #(hardlink4)
+    [Tags]  todo  #(hardlink4)
     TODO  Should fail with EXDEV
 
 Create a Hard Link to a Directory
-    [Tags]  arla  #(hardlink2)
+    [Tags]  #(hardlink2)
     ${dir}=  Set Variable   ${TESTPATH}/dir
     ${link}=  Set Variable  ${TESTPATH}/link
     Should Not Exist        ${dir}
@@ -98,11 +98,11 @@ Create a Hard Link to a Directory
     Should Not Exist        ${link}
 
 Create a Cross-Volume Hard Link
-    [Tags]  todo  arla  #(hardlink5)
+    [Tags]  todo  #(hardlink5)
     TODO
 
 Touch a file
-    [Tags]  arla  #(touch1)
+    [Tags]  #(touch1)
     ${file}=  Set Variable  ${TESTPATH}/file
     Should Not Exist        ${file}
     Command Should Succeed  touch ${file}
@@ -111,7 +111,7 @@ Touch a file
     Should Not Exist        ${file}
 
 Write to a File
-    [Tags]  arla  #(write1)
+    [Tags]  #(write1)
     ${file}=  Set Variable  ${TESTPATH}/file
     Should Not Exist    ${file}
     Create File         ${file}  Hello world!\n
@@ -122,7 +122,7 @@ Write to a File
     Should Not Exist    ${file}
 
 Rewrite a file
-    [Tags]  arla  #(write3)
+    [Tags]  #(write3)
     ${file}=  Set Variable  ${TESTPATH}/file
     Should Not Exist        ${file}
     Create File             ${file}  Hello world!\n
@@ -135,7 +135,7 @@ Rewrite a file
     Should Not Exist        ${file}
 
 Rename a File
-    [Tags]  arla  #(rename1)
+    [Tags]  #(rename1)
     ${a}=  Set Variable  ${TESTPATH}/a
     ${b}=  Set Variable  ${TESTPATH}/b
     Should Not Exist  ${a}
@@ -149,7 +149,7 @@ Rename a File
     Should Not Exist  ${b}
 
 Write and Execute a Script in a Directory
-    [Tags]  arla  #(exec)
+    [Tags]  #(exec)
     ${file}=  Set Variable  ${TESTPATH}/script.sh
     ${text}=  Set Variable  hello world
     #Should Not Exist        ${file}
