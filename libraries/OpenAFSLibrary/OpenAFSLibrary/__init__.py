@@ -30,7 +30,9 @@ class OpenAFSLibrary(
     _PathKeywords,
     _ACLKeywords,
     _VolumeKeywords,
-    _RxKeywords):
+    _RxKeywords,
+    _PagKeywords,
+    ):
     """Robot Framework test library for OpenAFS (preliminary).
 
     `OpenAFSLibrary` provides keywords for basic OpenAFS testing. It
@@ -110,6 +112,7 @@ class OpenAFSLibrary(
     | ASETKEY |   `/usr/afs/bin/asetkey` |
     | BOS     |   `/usr/afs/bin/bos` |
     | FS      |   `/usr/afs/bin/fs` |
+    | PAGSH   |   `/usr/afsws/bin/pagsh` |
     | PTS     |   `/usr/afs/bin/pts` |
     | RXDEBUG |   `/usr/afsws/etc/rxdebug` |
     | TOKENS  |   `/usr/afsws/bin/tokens` |
