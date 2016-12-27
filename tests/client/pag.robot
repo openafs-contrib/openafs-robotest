@@ -1,23 +1,19 @@
 # Copyright (c) 2015 Sine Nomine Associates
-# Copyright (c) 2001 Kungliga Tekniska Högskolan
 # See LICENSE
 
 *** Settings ***
 Documentation     AFS PAG tests
 Resource          openafs.robot
-Suite Setup       Setup Test Suite
-Suite Teardown    Teardown Test Suite
 
 *** Variables ***
-
-*** Keywords ***
+${PRINT_GROUPS}    python -c 'import os; print os.getgroups()'
 
 *** Test Cases ***
-Test setpag
-    [Tags]  todo  #(setpag)
-    TODO
-
-Test setgroups
-    [Tags]  todo  #(setgroups)
-    TODO
+Obtain a PAG with pagsh
+    [Documentation]   Run a pagsh as a child process verify a PAG is set.
+    PAG Should Not Exist
+    ${gids}=    PAG Shell          ${PRINT_GROUPS}
+    ${pag}=     PAG From Groups    ${gids}
+    PAG Should Be Valid            ${pag}
+    PAG Should Not Exist
 
