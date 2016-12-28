@@ -66,7 +66,12 @@ AFS_ROBOTEST_CONF = os.getenv('AFS_ROBOTEST_CONF', os.path.join(AFS_ROBOTEST_USE
 # version sub-command
 #
 def cmd_version(c):
-    sys.stdout.write("Version %s\n" % (afsrobot.__version__))
+    import afsrobot
+    import afsutil
+    import OpenAFSLibrary
+    sys.stdout.write("afsrobot %s\n" % (afsrobot.__version__))
+    sys.stdout.write("afsutil %s\n" % (afsutil.__version__))
+    sys.stdout.write("OpenAFSLibrary %s\n" % (OpenAFSLibrary.__version__))
 
 def cmd_init(c):
     if os.path.exists(c.args.config):
