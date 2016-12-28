@@ -58,10 +58,10 @@ def _sanity_check_dir():
         if not os.path.isdir(d):
             raise AssertionError(msg % (d))
 
-def _allow_git_clean():
+def _allow_git_clean(gitdir):
     clean = False
     try:
-        output = sh('git', 'config', '--bool', '--get', 'afsutil.clean', output=True)
+        output = sh('git', '--git-dir', gitdir, 'config', '--bool', '--get', 'afsutil.clean', output=True)
         if output[0] == 'true':
             clean = True
     except CommandFailed as e:
@@ -72,12 +72,15 @@ def _allow_git_clean():
             raise e
     return clean
 
-def _clean():
-    if os.path.isdir('.git'):
-        if _allow_git_clean():
-            sh('git', 'clean', '-f', '-d', '-x', '-q')
+def _clean(srcdir):
+    if not os.path.exists(srcdir):
+        raise AssertionError("srcdir not found: %s" % (srcdir))
+    gitdir = '%s/.git' % (srcdir)
+    if os.path.isdir(gitdir):
+        if _allow_git_clean(gitdir):
+            sh('git', '--git-dir', gitdir, '--work-tree', srcdir, 'clean', '-f', '-d', '-x', '-q')
     else:
-        if os.path.isfile('./Makefile'):
+        if os.path.isfile('./Makefile'): # Maybe out of tree, not in srcdir.
             sh('make', 'clean')
 
 def _make_srpm(jobs=1):
@@ -219,6 +222,7 @@ def build(**kwargs):
     transarc_paths = kwargs.get('transarc_paths', True)
     modern_kmod_name = kwargs.get('modern_kmod_name', True)
     jobs = kwargs.get('jobs', 1)
+    srcdir = kwargs.get('srcdir', '.')
 
     if cf is not None:
         cf = shlex.split(cf)  # Note: shlex handles quoting properly.
@@ -237,11 +241,14 @@ def build(**kwargs):
     if target == 'all' and '--enable-transarc-paths' in cf:
         target = 'dest'
 
-    _sanity_check_dir()
+    if srcdir == '.':
+        _sanity_check_dir()
     if clean:
-        _clean()
-    sh('./regen.sh')
-    sh('./configure', *cf)
+        _clean(srcdir)
+    if not os.path.exists('%s/configure' % srcdir):
+        sh('/bin/sh', '-c', 'cd %s && ./regen.sh' % srcdir)
+    if not os.path.exists('config.status'):
+        sh('%s/configure' % srcdir, *cf)
     _make(jobs, target)
     if target == 'dest':
         _make_tarball()
@@ -356,7 +363,7 @@ def package(**kwargs):
     package = kwargs.get('package', None)
     jobs = kwargs.get('jobs', 1)
     if clean:
-        _clean()
+        _clean('.')
     sh('./regen.sh', '-q')
     sh('./configure')
     sh('make', '-j', jobs, 'dist')
