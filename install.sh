@@ -2,7 +2,7 @@
 
 PACKAGES="afsutil afsrobot OpenAFSLibrary"
 OPT_VERBOSE="no"
-DO_CHECK="no"
+OPT_ALLOW_USER="no"
 
 DIR_PREFIX="/usr/local"
 DIR_ROOT="$DIR_PREFIX/afsrobotest"
@@ -13,14 +13,14 @@ DIR_OUTPUT="$DIR_HTML/output"
 
 art_usage() {
     _progname=`basename $0`
-    echo "usage: sudo ./$_progname [--verbose] [<target>]"
+    echo "usage: ./$_progname [--user] [--verbose] [<target> ...]"
     echo ""
-    echo "where <target> is one of:"
-    echo "  all   - full install (default)"
-    echo "  deps  - external dependencies"
-    echo "  tests - test suites"
-    echo "  doc   - generate docs"
-    echo "  pkg   - python packages"
+    echo "where <target> is:"
+    echo "  all  - full install (default)"
+    echo "  dep  - external dependencies"
+    echo "  test - test suites"
+    echo "  doc  - generate docs"
+    echo "  pkg  - python packages"
 }
 
 art_run() {
@@ -160,6 +160,7 @@ _EOF_
 }
 
 art_install_deps() {
+    echo "Checking dependencies."
     sysname=`art_detect_sysname`
     case "$sysname" in
     linux-debian*)
@@ -178,16 +179,20 @@ art_install_deps() {
 }
 
 art_make_output_dirs() {
+    echo "Making output directories."
     art_run mkdir -p $DIR_LOG
     art_run mkdir -p $DIR_OUTPUT
 }
 
 art_make_doc() {
+    echo "Generating documentation."
     # Generate the library documentation. Requires robotframework.
     pypath=libraries/OpenAFSLibrary/OpenAFSLibrary
     input="$pypath"
     output="$DIR_DOC/OpenAFSLibary.html"
-    echo "Generating documentation file $output."
+    if [ "$OPT_VERBOSE" = "yes" ]; then
+        echo "Writing file $output"
+    fi
     art_run mkdir -p $DIR_DOC
     art_run python -m robot.libdoc --format HTML --pythonpath $pypath $input $DIR_DOC/OpenAFSLibary.html
 }
@@ -197,55 +202,46 @@ art_install_package() {
 }
 
 art_install_packages() {
+    echo "Installing our packages."
     for package in $PACKAGES
     do
-        echo "Installing package ${package}."
+        echo "  Installing package ${package}."
         art_run art_install_package $package
     done
 }
 
 art_install_tests() {
+    echo "Installing test suites."
     art_run mkdir -p $DIR_ROOT
     art_run cp -r tests/ $DIR_ROOT
     art_run cp -r resources/ $DIR_ROOT
 }
 
+SEEN=""
 while :; do
     case "$1" in
-    -h|--help|help)
-        art_usage
+    "")
         break
+        ;;
+    -h|--help)
+        art_usage
+        exit 0
+        ;;
+    -u|--user)
+        OPT_ALLOW_USER="yes"
+        shift
         ;;
     -v|--verbose)
         OPT_VERBOSE="yes"
         shift
         ;;
-    deps)
-        art_install_deps
+    dep|doc|pkg|test)
+        SEEN="$SEEN:$1:"
         shift
         ;;
-    doc)
-        art_make_doc
-        break
-        ;;
-    pkg)
-        art_install_packages
-        DO_CHECK="yes"
-        break
-        ;;
-    tests)
-        art_install_tests
-        art_make_output_dirs
-        break
-        ;;
-    all|"")
-        art_install_deps
-        art_install_packages
-        art_install_tests
-        art_make_output_dirs
-        art_make_doc
-        DO_CHECK="yes"
-        break
+    all)
+        SEEN="$SEEN:dep:doc:pkg:test:"
+        shift
         ;;
     *)
         art_usage
@@ -254,6 +250,36 @@ while :; do
     esac
 done
 
-if [ "$DO_CHECK" = "yes" ]; then
+# Avoid accidental local installs by requiring --user when
+# not run by root.
+if [ `python -c 'import os; print os.getuid()'` -ne 0 ]; then
+    if [ "$OPT_ALLOW_USER" = "no" ]; then
+        echo "Please run as root, or give the --user option for a local installation."
+        exit 1
+    fi
+fi
+
+# Install specified targets.
+if [ -z $SEEN ]; then
+    SEEN=":dep:doc:pkg:test:"  # Install all by default.
+fi
+for TARGET in "dep" "pkg" "test" "doc"
+do
+    if echo "$SEEN" | grep -q ":$TARGET:"; then
+        case "$TARGET" in
+        dep)    art_install_deps ;;
+        pkg)    art_install_packages ;;
+        test)   art_install_tests ;;
+        doc)    art_make_doc ;;
+        esac
+    fi
+done
+
+# Post install steps.
+if echo "$SEEN" | grep -q ":test:"; then
+    art_make_output_dirs
+fi
+if echo "$SEEN" | grep -q ":pkg:"; then
     afsutil check
 fi
+echo "Done."
