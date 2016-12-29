@@ -1,9 +1,9 @@
 # AFS Robotest
 
 AFS Robotest is a [Robotframework][1] based test suite for OpenAFS. This test
-suite will install the OpenAFS binaries, setup a simple AFS cell, and run a
-series of basic tests, and finally remove the AFS cell.  The tests can be run
-with or without an external Kerberos realm.
+suite will install the OpenAFS binaries, setup a simple AFS cell on one or more
+systems, run a series of basic tests, and finally remove the AFS cell.  The
+tests can be run with or without an external Kerberos realm.
 
 This test suite should be run on a non-production development or test system.
 Typically you will want to setup one or more virtual machines to install
