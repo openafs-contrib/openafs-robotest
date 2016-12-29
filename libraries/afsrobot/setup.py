@@ -9,6 +9,6 @@ setup(name='afsrobot',
       url='http://www.sinenomine.net',
       license='BSD',
       packages=['afsrobot'],
-      scripts=['scripts/afsrobot'],
+      scripts=['scripts/afsrobot', 'scripts/afs-robotest'],
       zip_safe=False)
 
