@@ -39,7 +39,7 @@ following to your sudoers file with `visudo`:
 
     %testers ALL=(root) NOPASSWD: /usr/local/bin/afsutil
 
-Then add users which will run `afs-robotest` to the `testers` group.
+Then add users which will run `afsrobot` to the `testers` group.
 
     $ sudo usermod -a -G testers <username>
 
@@ -62,21 +62,21 @@ non-loopback address.  Loopback addresses start with `127.`.
 As the regular test user, run the `init` subcommand to create the initial
 configuration file.
 
-    $ afs-robotest init
+    $ afsrobot init
 
 To show the current configuration:
 
-    $ afs-robotest config list
+    $ afsrobot config list
 
 To install Transarc-style binaries:
 
-    $ afs-robotest config set variables afs_dist transarc
-    $ afs-robotest config set host:$HOSTNAME installer transarc
+    $ afsrobot config set variables afs_dist transarc
+    $ afsrobot config set host:$HOSTNAME installer transarc
 
 To install RPM packages:
 
-    $ afs-robotest config set variables afs_dist rhel6
-    $ afs-robotest config set host:$HOSTNAME installer rpm
+    $ afsrobot config set variables afs_dist rhel6
+    $ afsrobot config set host:$HOSTNAME installer rpm
 
 ### akimpersonate notes
 
@@ -93,7 +93,7 @@ better) version of `aklog`.  Build a recent version of 1.6.x, and copy the
 section of the configuration file to specify which `aklog` program is to be
 used during the setup and tests. For example:
 
-    $ afs-robotest config set variables aklog /usr/local/bin/aklog-1.6
+    $ afsrobot config set variables aklog /usr/local/bin/aklog-1.6
 
 ## Building OpenAFS
 
@@ -122,15 +122,15 @@ To build RPM packages on RHEL/Centos:
 
 To install the OpenAFS binaries and create the test cell:
 
-    $ afs-robotest setup
+    $ afsrobot setup
 
 To run the tests:
 
-    $ afs-robotest run
+    $ afsrobot run
 
 After running the tests, the AFS cell may be removed with:
 
-    $ afs-robotest teardown
+    $ afsrobot teardown
 
 ## Test results
 
@@ -140,11 +140,11 @@ reports.
 
 To start the minimal web server:
 
-    $ afs-robotest web start
+    $ afsrobot web start
 
 To stop the minimal web server:
 
-    $ afs-robotest web stop
+    $ afsrobot web stop
 
 ## Multiple configuration files
 
@@ -152,7 +152,7 @@ It can be useful to have more than one configuration file, instead of changing
 values in the default configuration file.
 
 Set the `AFS_ROBOTEST_CONF` environment variable to specify the fully qualified
-file name of the configuration file to be used by `afs-robotest`.  This value
+file name of the configuration file to be used by `afsrobot`.  This value
 is overridden by the `--config` command line option.
 
 Example:
@@ -162,7 +162,7 @@ Example:
 ## Multiple servers
 
 This test harness supports setting up multiple file and database servers.
-Install `openafs-robotest` on each server, as described above.  `sudo` must be
+Install AFS Robotest on each server, as described above.  `sudo` must be
 configured with NOPASSWD for the test user account on each host.
 
 A configuration section must be added for each test server. The name of the
@@ -198,12 +198,12 @@ The OpenAFS installation and setup is done using ssh with keyfiles. The
 the public keys to each test server.  Run the following on the primary host to
 create and distribute the ssh key.
 
-    $ afs-robotest ssh create
-    $ afs-robotest ssh dist
-    $ afs-robotest ssh check
+    $ afsrobot ssh create
+    $ afsrobot ssh dist
+    $ afsrobot ssh check
 
 Perform the setup on the primary host. This will take several minutes to
 complete the setup of the new AFS cell.
 
-    $ afs-robotest setup
+    $ afsrobot setup
 
