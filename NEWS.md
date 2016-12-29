@@ -1,3 +1,22 @@
+## [unreleased]
+
+### Tests
+
+* Reorg test suites into client and server tests.
+* Added more bos and pts tests.
+* Made pts test independent
+* Added more basic client tests.
+* Added a pagsh test.
+
+### Library
+
+* Added PAG keywords for the pagsh test.
+
+### Other
+
+* Renamed afs-robotest to afsrobot (and provided a compat wrapper).
+* Add --user option to install.sh to avoid accidental local installs.
+* Add --srcdir option to 'afsutil build' to support out-of-tree builds.
 
 ## [v0.5.0]
 
