@@ -26,6 +26,7 @@ from OpenAFSLibrary.keywords.acl import _ACLKeywords
 from OpenAFSLibrary.keywords.volume import _VolumeKeywords
 from OpenAFSLibrary.keywords.rx import _RxKeywords
 from OpenAFSLibrary.keywords.pag import _PagKeywords
+from OpenAFSLibrary.keywords.cache import _CacheKeywords
 
 __all__ = [
     '_SystemKeywords',
@@ -35,5 +36,6 @@ __all__ = [
     '_VolumeKeywords',
     '_RxKeywords',
     '_PagKeywords',
+    '_CacheKeywords',
 ]
 
