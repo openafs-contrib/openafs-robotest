@@ -32,6 +32,7 @@ class OpenAFSLibrary(
     _VolumeKeywords,
     _RxKeywords,
     _PagKeywords,
+    _CacheKeywords,
     ):
     """Robot Framework test library for OpenAFS (preliminary).
 
