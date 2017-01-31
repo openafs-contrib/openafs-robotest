@@ -16,11 +16,11 @@ usage() {
     echo "usage: ./$_progname [--user] [--verbose] [<target> ...]"
     echo ""
     echo "where <target> is:"
-    echo "  all  - full install (default)"
-    echo "  dep  - external dependencies"
-    echo "  test - test suites"
-    echo "  doc  - generate docs"
-    echo "  pkg  - python packages"
+    echo "  all   - full install (default)"
+    echo "  deps  - external dependencies"
+    echo "  tests - test suites"
+    echo "  docs  - generate docs"
+    echo "  pkgs  - python packages"
 }
 
 run() {
@@ -235,12 +235,12 @@ while :; do
         OPT_VERBOSE="yes"
         shift
         ;;
-    dep|doc|pkg|test)
+    deps|docs|pkgs|tests)
         SEEN="$SEEN:$1:"
         shift
         ;;
     all)
-        SEEN="$SEEN:dep:doc:pkg:test:"
+        SEEN="$SEEN:deps:docs:pkgs:tests:"
         shift
         ;;
     *)
@@ -261,25 +261,25 @@ fi
 
 # Install specified targets.
 if [ -z $SEEN ]; then
-    SEEN=":dep:doc:pkg:test:"  # Install all by default.
+    SEEN=":deps:docs:pkgs:tests:"  # Install all by default.
 fi
-for TARGET in "dep" "pkg" "test" "doc"
+for TARGET in "deps" "pkgs" "tests" "docs"
 do
     if echo "$SEEN" | grep -q ":$TARGET:"; then
         case "$TARGET" in
-        dep)    install_deps ;;
-        pkg)    install_packages ;;
-        test)   install_tests ;;
-        doc)    make_doc ;;
+        deps)    install_deps ;;
+        pkgs)    install_packages ;;
+        tests)   install_tests ;;
+        docs)    make_doc ;;
         esac
     fi
 done
 
 # Post install steps.
-if echo "$SEEN" | grep -q ":test:"; then
+if echo "$SEEN" | grep -q ":tests:"; then
     make_output_dirs
 fi
-if echo "$SEEN" | grep -q ":pkg:"; then
+if echo "$SEEN" | grep -q ":pkgs:"; then
     afsutil check
 fi
 echo "Done."
