@@ -11,7 +11,7 @@ DIR_DOC="$DIR_HTML/doc"
 DIR_LOG="$DIR_HTML/log"
 DIR_OUTPUT="$DIR_HTML/output"
 
-art_usage() {
+usage() {
     _progname=`basename $0`
     echo "usage: ./$_progname [--user] [--verbose] [<target> ...]"
     echo ""
@@ -23,7 +23,7 @@ art_usage() {
     echo "  pkg  - python packages"
 }
 
-art_run() {
+run() {
     if [ "$OPT_VERBOSE" = "yes" ]; then
         $@ || exit 1
     else
@@ -31,7 +31,7 @@ art_run() {
     fi
 }
 
-art_detect_sysname() {
+detect_sysname() {
     # We might not have python yet, so we can't use python -m platform.
     case `uname` in
     Linux)
@@ -55,55 +55,55 @@ art_detect_sysname() {
     esac
 }
 
-art_debian_install_deps() {
+debian_install_deps() {
     # Install missing dependencies on Debian.
     if ! dpkg --status python >/dev/null 2>/dev/null; then
         echo "Installing python."
-        art_run apt-get install -q -y python
+        run apt-get install -q -y python
     fi
     if ! dpkg --status python-pip >/dev/null 2>/dev/null; then
         echo "Installing pip."
-        art_run apt-get install -q -y python-pip
+        run apt-get install -q -y python-pip
     fi
     # argparse has been pulled into the python core package on
     # modern systems, but it a separate package on older systems.
     if ! python -c 'import argparse' >/dev/null 2>/dev/null; then
         echo "Installing argparse."
-        art_run apt-get install -q -y python-argparse
+        run apt-get install -q -y python-argparse
     fi
     if ! python -c 'import robot.api' >/dev/null 2>/dev/null; then
         echo "Installing robotframework."
-        art_run pip -q install robotframework
+        run pip -q install robotframework
     fi
 }
 
-art_rhel_install_deps() {
+rhel_install_deps() {
     # Install missing dependencies on RHEL/CentOS.
     if ! rpm -q epel-release >/dev/null 2>/dev/null; then
         echo "Installing epel."
-        art_run yum install -q -y epel-release
+        run yum install -q -y epel-release
     fi
     if ! rpm -q python >/dev/null 2>/dev/null; then
         echo "Installing python."
-        art_run yum install -q -y python
+        run yum install -q -y python
     fi
     if ! rpm -q python-pip >/dev/null 2>/dev/null; then
         echo "Installing pip."
-        art_run yum install -q -y python-pip
+        run yum install -q -y python-pip
     fi
     # argparse has been pulled into the python core package on
     # modern systems, but it a separate package on older systems.
     if ! python -c 'import argparse' >/dev/null 2>/dev/null; then
         echo "Installing argparse."
-        art_run yum install -q -y python-argparse
+        run yum install -q -y python-argparse
     fi
     if ! python -c 'import robot.api' >/dev/null 2>/dev/null; then
         echo "Installing robotframework."
-        art_run pip -q install robotframework
+        run pip -q install robotframework
     fi
 }
 
-art_solaris_install_deps() {
+solaris_install_deps() {
     # Install dependencies on Solaris.
     DID_UPDATE='no'
     if [ ! -x /opt/csw/bin/pkgutil ]; then
@@ -126,51 +126,51 @@ proxy=
 basedir=default
 _EOF_
         echo "Installing OpenCSW pkgutil."
-        art_run pkgadd -a /tmp/pkgadd-conf-$$ -d http://get.opencsw.org/now CSWpkgutil
+        run pkgadd -a /tmp/pkgadd-conf-$$ -d http://get.opencsw.org/now CSWpkgutil
         rm -f /tmp/pkgadd-conf-$$
     fi
     if ! /opt/csw/bin/pkgutil --list | grep '^CSWpython27$' >/dev/null; then
         echo "Installing python 2.7."
         if [ $DID_UPDATE = 'no' ]; then
-            art_run /opt/csw/bin/pkgutil -U
+            run /opt/csw/bin/pkgutil -U
             DID_UPDATE='yes'
         fi
-        art_run /opt/csw/bin/pkgutil -y -i python27
+        run /opt/csw/bin/pkgutil -y -i python27
     fi
     if ! /opt/csw/bin/pkgutil --list | grep '^CSWpy-pip$' >/dev/null; then
         echo "Installing pip."
         if [ $DID_UPDATE = 'no' ]; then
-            art_run /opt/csw/bin/pkgutil -U
+            run /opt/csw/bin/pkgutil -U
             DID_UPDATE='yes'
         fi
-        art_run /opt/csw/bin/pkgutil -y -i py_pip
+        run /opt/csw/bin/pkgutil -y -i py_pip
     fi
     if ! /opt/csw/bin/pkgutil --list | grep '^CSWpy-argparse$' >/dev/null; then
         echo "Installing argparse."
         if [ $DID_UPDATE = 'no' ]; then
-            art_run /opt/csw/bin/pkgutil -U
+            run /opt/csw/bin/pkgutil -U
             DID_UPDATE='yes'
         fi
-        art_run /opt/csw/bin/pkgutil -y -i py_argparse
+        run /opt/csw/bin/pkgutil -y -i py_argparse
     fi
     if ! python -c 'import robot.api' >/dev/null 2>/dev/null; then
         echo "Installing robotframework."
-        art_run pip -q install robotframework
+        run pip -q install robotframework
     fi
 }
 
-art_install_deps() {
+install_deps() {
     echo "Checking dependencies."
-    sysname=`art_detect_sysname`
+    sysname=`detect_sysname`
     case "$sysname" in
     linux-debian*)
-        art_debian_install_deps
+        debian_install_deps
         ;;
     linux-centos*|linux-rhel*)
-        art_rhel_install_deps
+        rhel_install_deps
         ;;
     solaris-10*|solaris-11*)
-        art_solaris_install_deps
+        solaris_install_deps
         ;;
     *)
         echo "WARNING: Unable to install deps on unknown platform: $sysname" >&2
@@ -178,13 +178,13 @@ art_install_deps() {
     esac
 }
 
-art_make_output_dirs() {
+make_output_dirs() {
     echo "Making output directories."
-    art_run mkdir -p $DIR_LOG
-    art_run mkdir -p $DIR_OUTPUT
+    run mkdir -p $DIR_LOG
+    run mkdir -p $DIR_OUTPUT
 }
 
-art_make_doc() {
+make_doc() {
     echo "Generating documentation."
     # Generate the library documentation. Requires robotframework.
     pypath=libraries/OpenAFSLibrary/OpenAFSLibrary
@@ -193,28 +193,28 @@ art_make_doc() {
     if [ "$OPT_VERBOSE" = "yes" ]; then
         echo "Writing file $output"
     fi
-    art_run mkdir -p $DIR_DOC
-    art_run python -m robot.libdoc --format HTML --pythonpath $pypath $input $DIR_DOC/OpenAFSLibary.html
+    run mkdir -p $DIR_DOC
+    run python -m robot.libdoc --format HTML --pythonpath $pypath $input $DIR_DOC/OpenAFSLibary.html
 }
 
-art_install_package() {
+install_package() {
     ( cd libraries/$1 && ./install.sh )
 }
 
-art_install_packages() {
+install_packages() {
     echo "Installing our packages."
     for package in $PACKAGES
     do
         echo "  Installing package ${package}."
-        art_run art_install_package $package
+        run install_package $package
     done
 }
 
-art_install_tests() {
+install_tests() {
     echo "Installing test suites."
-    art_run mkdir -p $DIR_ROOT
-    art_run cp -r tests/ $DIR_ROOT
-    art_run cp -r resources/ $DIR_ROOT
+    run mkdir -p $DIR_ROOT
+    run cp -r tests/ $DIR_ROOT
+    run cp -r resources/ $DIR_ROOT
 }
 
 SEEN=""
@@ -224,7 +224,7 @@ while :; do
         break
         ;;
     -h|--help)
-        art_usage
+        usage
         exit 0
         ;;
     -u|--user)
@@ -244,7 +244,7 @@ while :; do
         shift
         ;;
     *)
-        art_usage
+        usage
         exit 1
         ;;
     esac
@@ -267,17 +267,17 @@ for TARGET in "dep" "pkg" "test" "doc"
 do
     if echo "$SEEN" | grep -q ":$TARGET:"; then
         case "$TARGET" in
-        dep)    art_install_deps ;;
-        pkg)    art_install_packages ;;
-        test)   art_install_tests ;;
-        doc)    art_make_doc ;;
+        dep)    install_deps ;;
+        pkg)    install_packages ;;
+        test)   install_tests ;;
+        doc)    make_doc ;;
         esac
     fi
 done
 
 # Post install steps.
 if echo "$SEEN" | grep -q ":test:"; then
-    art_make_output_dirs
+    make_output_dirs
 fi
 if echo "$SEEN" | grep -q ":pkg:"; then
     afsutil check
