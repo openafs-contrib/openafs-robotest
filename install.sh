@@ -287,7 +287,7 @@ if [ -z $SEEN ]; then
 fi
 for TARGET in "deps" "pkgs" "tests" "docs"
 do
-    if echo "$SEEN" | grep -q ":$TARGET:"; then
+    if echo "$SEEN" | grep ":$TARGET:" >/dev/null; then
         case "$TARGET" in
         deps)    install_deps ;;
         pkgs)    install_packages ;;
@@ -298,10 +298,10 @@ do
 done
 
 # Post install steps.
-if echo "$SEEN" | grep -q ":tests:"; then
+if echo "$SEEN" | grep ":tests:" >/dev/null; then
     make_output_dirs
 fi
-if echo "$SEEN" | grep -q ":pkgs:"; then
+if echo "$SEEN" | grep ":pkgs:" >/dev/null; then
     afsutil check
 fi
 echo "Done."
