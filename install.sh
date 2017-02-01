@@ -37,6 +37,8 @@ detect_sysname() {
     Linux)
         if [ -f /etc/debian_version ]; then
             echo "linux-debian"
+        elif [ -f /etc/fedora-release ]; then
+            echo "linux-fedora"
         elif [ -f /etc/centos-release ]; then
             echo "linux-centos"
         elif [ -f /etc/redhat-release ]; then
@@ -70,6 +72,22 @@ debian_install_deps() {
     if ! python -c 'import argparse' >/dev/null 2>/dev/null; then
         echo "Installing argparse."
         run apt-get install -q -y python-argparse
+    fi
+    if ! python -c 'import robot.api' >/dev/null 2>/dev/null; then
+        echo "Installing robotframework."
+        run pip -q install robotframework
+    fi
+}
+
+fedora_install_deps() {
+    # Install missing dependencies on Fedora.
+    if ! rpm -q python >/dev/null 2>/dev/null; then
+        echo "Installing python."
+        run dnf install -q -y python
+    fi
+    if ! rpm -q python-pip >/dev/null 2>/dev/null; then
+        echo "Installing pip."
+        run dnf install -q -y python-pip
     fi
     if ! python -c 'import robot.api' >/dev/null 2>/dev/null; then
         echo "Installing robotframework."
@@ -165,6 +183,9 @@ install_deps() {
     case "$sysname" in
     linux-debian*)
         debian_install_deps
+        ;;
+    linux-fedora*)
+        fedora_install_deps
         ;;
     linux-centos*|linux-rhel*)
         rhel_install_deps
