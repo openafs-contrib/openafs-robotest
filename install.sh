@@ -250,13 +250,14 @@ while :; do
     esac
 done
 
-# Avoid accidental local installs by requiring --user when
-# not run by root.
-if [ `python -c 'import os; print os.getuid()'` -ne 0 ]; then
-    if [ "$OPT_ALLOW_USER" = "no" ]; then
-        echo "Please run as root, or give the --user option for a local installation."
-        exit 1
-    fi
+# Avoid accidental local installs by requiring --user when not running as root.
+if [ $UID -ne 0 -a "$OPT_ALLOW_USER" = "no" ]; then
+    echo "Please run as root, or specify --user for a local installation."
+    exit 1
+fi
+if [ $UID -eq 0 -a "$OPT_ALLOW_USER" = "yes" ]; then
+    echo "Cannot do a local installation as root."
+    exit 1
 fi
 
 # Install specified targets.
