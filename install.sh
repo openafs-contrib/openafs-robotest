@@ -33,7 +33,9 @@ run() {
 
 detect_sysname() {
     # We might not have python yet, so we can't use python -m platform.
-    case `uname` in
+    _sname=`uname -s`
+    _rname=`uname -r`
+    case $_sname in
     Linux)
         if [ -f /etc/debian_version ]; then
             echo "linux-debian"
@@ -44,12 +46,21 @@ detect_sysname() {
         elif [ -f /etc/redhat-release ]; then
             echo "linux-rhel"
         else
-            echo "linux-unknown"
+            echo "unknown"
         fi
         ;;
     SunOS)
-        _osrel=`uname -r | sed 's/^5\.//'`
-        echo "solaris-$_osrel"
+        case $_rname in
+        5.10)
+            echo "solaris-10"
+            ;;
+        5.11)
+            echo "solaris-11"
+            ;;
+        *)
+            echo "unknown"
+            ;;
+        esac
         ;;
     *)
         echo "unknown"
@@ -121,7 +132,7 @@ rhel_install_deps() {
     fi
 }
 
-solaris_install_deps() {
+solaris10_install_deps() {
     # Install dependencies on Solaris.
     DID_UPDATE='no'
     if [ ! -x /opt/csw/bin/pkgutil ]; then
@@ -177,6 +188,26 @@ _EOF_
     fi
 }
 
+solaris11_install_deps() {
+    if pkg verify -q pkg://solaris/runtime/python-27 2>/dev/null; then
+        :
+    else
+        echo "Installing python 2.7."
+        run pkg install pkg://solaris/runtime/python-27
+    fi
+    if pkg verify -q pkg://solaris/library/python/pip 2>/dev/null; then
+        :
+    else
+        echo "Installing pip."
+        run pkg install pkg://solaris/library/python/pip
+    fi
+    # argparse is bundled in runtime/python-27
+    if ! python -c 'import robot.api' >/dev/null 2>/dev/null; then
+        echo "Installing robotframework."
+        run pip -q install robotframework
+    fi
+}
+
 install_deps() {
     echo "Checking dependencies."
     sysname=`detect_sysname`
@@ -190,8 +221,11 @@ install_deps() {
     linux-centos*|linux-rhel*)
         rhel_install_deps
         ;;
-    solaris-10*|solaris-11*)
-        solaris_install_deps
+    solaris-10*)
+        solaris10_install_deps
+        ;;
+    solaris-11*)
+        solaris11_install_deps
         ;;
     *)
         echo "WARNING: Unable to install deps on unknown platform: $sysname" >&2
