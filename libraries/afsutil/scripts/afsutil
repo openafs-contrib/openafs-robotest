@@ -258,6 +258,7 @@ def main():
 
     p = subparsers.add_parser('getdeps', help='install build dependencies')
     _common_opts(p)
+    p.add_argument('--creds', help='location of repo creds (maybe url)', default='/root/creds')
     p.set_defaults(fn=getdeps, must_be_root=True)
 
     p = subparsers.add_parser('check', help='check system')
