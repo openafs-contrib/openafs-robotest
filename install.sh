@@ -251,7 +251,8 @@ install_deps() {
         solaris10_install_deps
         ;;
     solaris-11.[012])
-        solaris11_install_deps
+        # Install OpenCSW packages on old versions.
+        solaris10_install_deps
         ;;
     solaris-11.3)
         solaris11_install_deps
