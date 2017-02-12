@@ -183,9 +183,9 @@ _EOF_
         fi
         run /opt/csw/bin/pkgutil -y -i py_argparse
     fi
-    if ! python -c 'import robot.api' >/dev/null 2>/dev/null; then
+    if ! /opt/csw/bin/python -c 'import robot.api' >/dev/null 2>/dev/null; then
         echo "Installing robotframework."
-        run pip -q install robotframework
+        run /opt/csw/bin/pip -q install robotframework
     fi
 }
 
@@ -280,7 +280,14 @@ make_doc() {
         echo "Writing file $output"
     fi
     run mkdir -p $DIR_DOC
-    run python -m robot.libdoc --format HTML --pythonpath $pypath $input $DIR_DOC/OpenAFSLibary.html
+
+    # Get a useable python on old solaris.
+    PYTHON=`PATH=/opt/csw/bin:$PATH which python`
+    if [ $? -ne 0 ]; then
+        echo "Cannot generate docs; python is not in the PATH"
+    else
+        run $PYTHON -m robot.libdoc --format HTML --pythonpath $pypath $input $DIR_DOC/OpenAFSLibary.html
+    fi
 }
 
 install_package() {

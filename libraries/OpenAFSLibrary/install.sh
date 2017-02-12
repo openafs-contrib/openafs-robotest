@@ -11,6 +11,7 @@
 #    ./install.sh --user [--verbose]
 #
 
+PATH=/opt/csw/bin:$PATH
 RT_PACKAGE="OpenAFSLibrary"
 RT_USAGE="usage: sudo ./install [--user] [--verbose]"
 RT_PIPOPTS="--upgrade"
