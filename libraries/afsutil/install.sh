@@ -49,3 +49,9 @@ fi
 
 pip install $RT_PIPOPTS dist/${RT_PACKAGE}*.tar.gz || exit 1
 
+# For old versions of solaris.
+if [ $RT_UID -eq 0 -a -x /opt/csw/bin/${RT_PACKAGE} ]; then
+    test -h /usr/bin/${RT_PACKAGE} && rm -f /usr/bin/${RT_PACKAGE}
+    ln -s /opt/csw/bin/${RT_PACKAGE} /usr/bin/${RT_PACKAGE}
+fi
+
