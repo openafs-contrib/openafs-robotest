@@ -29,6 +29,7 @@ import platform
 import urllib2
 import tempfile
 import pprint
+import glob
 
 from afsutil.system import sh, CommandFailed, file_should_exist, tar
 import afsutil.service
@@ -85,6 +86,43 @@ def _clean(srcdir):
     else:
         if os.path.isfile('./Makefile'): # Maybe out of tree, not in srcdir.
             sh('make', 'clean')
+
+def _detect_solariscc():
+    search = [
+        '/opt/developerstudio*/bin',
+        '/opt/solarisstudio*/bin',
+    ]
+    for pattern in search:
+        paths = sorted(glob.glob(pattern), reverse=True)
+        if len(paths) != 0:
+            return paths[0]
+    return None
+
+def _setenv_solaris():
+    need = [
+        '/usr/perl5/bin',   # for pod2man
+    ]
+    # Update the path to the solaris studio cc.
+    if not 'SOLARISCC' in os.environ:
+        ccpath = _detect_solariscc()
+        if ccpath:
+            need.append(ccpath)
+            logger.info("Adding '%s' to SOLARISCC." % (ccpath))
+            os.environ['SOLARISCC'] = os.path.join(ccpath, 'cc')
+        else:
+            logger.warning("Failed to find path to solaris cc!")
+    # Update the PATH.
+    paths = os.getenv('PATH', '').split(':')
+    for path in need:
+        if not path in paths:
+            logger.info("Adding '%s' to PATH." % (path))
+            paths.append(path)
+    os.environ['PATH'] = ':'.join(paths)
+
+def _setenv():
+    system = platform.system()
+    if system == 'SunOS':
+        _setenv_solaris()
 
 def _make_srpm(jobs=1):
     # Get the filename of the generated source rpm from the output of the
@@ -372,6 +410,7 @@ def build(**kwargs):
         _sanity_check_dir()
     if clean:
         _clean(srcdir)
+    _setenv()
     if not os.path.exists('%s/configure' % srcdir):
         sh('/bin/sh', '-c', 'cd %s && ./regen.sh' % srcdir)
     if not os.path.exists('config.status'):

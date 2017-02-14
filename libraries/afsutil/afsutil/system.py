@@ -98,6 +98,7 @@ def run(cmd, args=None, quiet=False, retry=0, wait=1, cleanup=None):
                    executable=cmd,
                    shell=False,
                    bufsize=-1,
+                   env=os.environ,
                    stdout=subprocess.PIPE,
                    stderr=subprocess.PIPE)
         output,error = proc.communicate()
@@ -132,7 +133,7 @@ def sh(*args, **kwargs):
     if not quiet:
         cmdline = subprocess.list2cmdline(args)
         logger.info("running %s", cmdline)
-    p = subprocess.Popen(args, bufsize=1, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    p = subprocess.Popen(args, bufsize=1, env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     with p.stdout:
         for line in iter(p.stdout.readline, ''):
             line = line.rstrip("\n")
