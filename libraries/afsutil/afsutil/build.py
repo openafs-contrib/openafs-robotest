@@ -303,7 +303,7 @@ def getdeps(**kwargs):
     system = platform.system()
     if system == 'Linux':
         dist = platform.dist()[0]
-        if dist == 'debian':
+        if dist == 'debian' or dist == 'Ubuntu':
             _debian_getdeps()
         elif dist == 'centos':
             _centos_getdeps()
