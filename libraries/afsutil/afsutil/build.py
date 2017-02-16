@@ -194,7 +194,7 @@ def _compare_versions(a, b):
     return cmp(_normalize(a), _normalize(b))
 
 def _sol11_getdeps(**kwargs):
-    """Install solaris studio and development packages. 
+    """Install solaris studio and development packages.
 
     Before running this function, create an account on the Oracle Technology Network
     and follow the instructions to create and download the key and certificate files.
@@ -228,7 +228,7 @@ def _sol11_getdeps(**kwargs):
         logger.info("Getting available solarisstudio packages.")
         output = sh('pkg', 'list', '-H', '-a', '-v', '--no-refresh', 'pkg://solarisstudio/*', output=True, quiet=True)
         packages = {}
-        installed = False # alread installed? 
+        installed = False # alread installed?
         for line in output:
             # Extract the root package name, version, and install state.
             # Example:
@@ -250,7 +250,7 @@ def _sol11_getdeps(**kwargs):
         if installed:
             logger.info("Skipping solarisstudio install; already installed.")
         else:
-            logger.info("Determining which solarisstudio package to install.") 
+            logger.info("Determining which solarisstudio package to install.")
             pkg = None
             vers = '0.0' # Find the most recent version.
             for name in packages.keys():
@@ -258,9 +258,9 @@ def _sol11_getdeps(**kwargs):
                     vers = packages[name]['version']
                     pkg = 'pkg://solarisstudio/developer/%s' % name
             if pkg is None:
-                raise AssertionError("Unable to find a solarisstudio package to install.") 
+                raise AssertionError("Unable to find a solarisstudio package to install.")
 
-            logger.info("Installing solarisstudio package '%s'." % (pkg)) 
+            logger.info("Installing solarisstudio package '%s'." % (pkg))
             sh('pkg', 'install', '--accept', pkg)
 
 
@@ -283,16 +283,16 @@ def _sol11_getdeps(**kwargs):
         except CommandFailed as e:
             if e.code != 4:  # 4 is means installed (not an error)
                 logger.error("pkg install failed: %s" % e)
-    
+
     except urllib2.HTTPError as e:
-        logger.error("Unable to download files from url '%s', %s'" % (creds, e)) 
+        logger.error("Unable to download files from url '%s', %s'" % (creds, e))
     except ValueError as e:
         logger.error("%s" % e)
     finally:
         if tmpdir:
             logger.info("Cleaning up temp files.")
             if os.path.exists(os.path.join(tmpdir, key)):
-                os.remove(os.path.join(tmpdir, key)) 
+                os.remove(os.path.join(tmpdir, key))
             if os.path.exists(os.path.join(tmpdir, cert)):
                 os.remove(os.path.join(tmpdir, cert))
             if os.path.exists(tmpdir) and tmpdir != "/":
