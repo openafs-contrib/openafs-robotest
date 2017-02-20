@@ -337,5 +337,8 @@ if echo "$SEEN" | grep ":tests:" >/dev/null; then
 fi
 if echo "$SEEN" | grep ":pkgs:" >/dev/null; then
     afsutil check
+    if [ $? -ne 0 ]; then
+        echo "Try: sudo afsutil check --fix-hosts"
+    fi
 fi
 echo "Done."
