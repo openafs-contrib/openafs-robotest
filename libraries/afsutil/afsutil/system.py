@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2015 Sine Nomine Associates
+# Copyright (c) 2014-2017 Sine Nomine Associates
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -441,6 +441,23 @@ def check_hosts_file():
                         (line.split()[0], hostname, nr))
                     result = False
     return result
+
+def fix_hosts_file():
+    hostname = socket.gethostname()
+    ips = network_interfaces()
+    if len(ips) == 0:
+        raise AssertionError("Unable to detect any non-loopback network interfaces.")
+    ip = ips[0]
+
+    with open('/etc/hosts', 'r') as f:
+        hosts = f.read()
+
+    with open('/etc/hosts', 'w') as f:
+        for line in hosts.splitlines():
+            line = line.strip()
+            if not re.search(r'\b%s\b' % (hostname), line):
+                f.write("%s\n" % line)
+        f.write("%s\t%s\n" % (ip, hostname))
 
 def check_host_address():
     """Verify our hostname resolves to a useable address."""
