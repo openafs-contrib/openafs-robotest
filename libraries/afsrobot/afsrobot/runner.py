@@ -254,10 +254,13 @@ class Runner(object):
                     self._afsutil(hostname, 'remove', ['--purge'])
                     if self.config.optbool('kerberos', 'akimpersonate'):
                         keytab = self.config.optkeytab('fake')
-                        if keytab and os.path.exists(keytab):
-                            self._run(hostname, ['rm', '-f', keytab])
+                        if keytab:
+                            try:
+                                self._run(hostname, ['rm', '-f', keytab])
+                            except afsutil.system.CommandFailed as e:
+                                logger.warning("Unable to remove keytab; code=%d" % (e.code))
             else:
-                logger.info("Invalid installer option for hostname %s!; installer='%s'.\n" % (hostname, installer))
+                logger.info("Invalid installer option for hostname %s!; installer='%s'." % (hostname, installer))
         logger.info("teardown done")
 
 
