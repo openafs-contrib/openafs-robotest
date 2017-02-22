@@ -129,6 +129,7 @@ def _make_rpm(srpm):
 def _debian_getdeps():
     sh('sudo', '-n', 'apt-get', '-y', 'build-dep', 'openafs')
     sh('sudo', '-n', 'apt-get', '-y', 'install', 'linux-headers-%s' % platform.release())
+    sh('sudo', '-n', 'apt-get', '-y', 'install', 'libtool')
 
 def _centos_getdeps():
     sh('sudo', '-n', 'yum', 'install', '-y',
