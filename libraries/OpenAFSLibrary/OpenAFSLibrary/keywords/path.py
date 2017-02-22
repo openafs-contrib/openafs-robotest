@@ -106,6 +106,18 @@ class _PathKeywords(object):
         if os.path.isdir(path):
             raise AssertionError("%s is a directory." % path)
 
+    def link(self, src, dst, code_should_be=0):
+        """Create a hard link."""
+        code = 0
+        try:
+            os.link(src, dst)
+        except OSError as e:
+            logger.info("os.link(): %s" % e)
+            code = e.errno
+        logger.info("os.link()=%d" % code)
+        if code != int(code_should_be):
+            raise AssertionError("link returned an unexpected code: %d" % code)
+
     def link_count_should_be(self, path, count):
         """Fails if the inode link count is not `count`."""
         count = int(count)

@@ -13,6 +13,7 @@ ${VOLUME}      test.basic
 ${PARTITION}   a
 ${SERVER}      ${HOSTNAME}
 ${TESTPATH}    /afs/.${AFS_CELL}/test/${VOLUME}
+${EXDEV}       18
 
 *** Keywords ***
 Setup
@@ -91,7 +92,7 @@ Create a Hard Link within a Volume
     Create Directory         ${dir}
     Create Directory         ${dir2}
     Create File              ${file}
-    Command Should Fail      ln ${file} ${link}
+    Link                     ${file}  ${link}  code_should_be=${EXDEV}
     Remove File              ${file}
     Remove File              ${link}
     Remove Directory         ${dir}

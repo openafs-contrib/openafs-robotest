@@ -65,6 +65,7 @@ class _SystemKeywords(object):
         rc,out,err = run_program(cmd)
         logger.info("Output: " + out)
         logger.info("Error: " + err)
+        logger.info("Code: %d" % rc)
         if rc == 0:
             raise AssertionError("Command should have failed: %s" % cmd)
 
