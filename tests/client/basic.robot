@@ -56,7 +56,7 @@ Create a Symlink
     Should Not Exist        ${dir}
     Should Not Exist        ${symlink}
     Create Directory        ${dir}
-    Command Should Succeed  ln -s ${dir} ${symlink}
+    Symlink                 ${dir}    ${symlink}
     Should Be Symlink       ${symlink}
     Command Should Succeed  rm ${symlink}
     Remove Directory        ${dir}

@@ -118,6 +118,18 @@ class _PathKeywords(object):
         if code != int(code_should_be):
             raise AssertionError("link returned an unexpected code: %d" % code)
 
+    def symlink(self, src, dst, code_should_be=0):
+        """Create a symlink."""
+        code = 0
+        try:
+            os.symlink(src, dst)
+        except OSError as e:
+            logger.info("os.symlink(): %s" % e)
+            code = e.errno
+        logger.info("os.symlink()=%d" % code)
+        if code != int(code_should_be):
+            raise AssertionError("symlink returned an unexpected code: %d" % code)
+
     def link_count_should_be(self, path, count):
         """Fails if the inode link count is not `count`."""
         count = int(count)
