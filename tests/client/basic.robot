@@ -13,6 +13,8 @@ ${VOLUME}      test.basic
 ${PARTITION}   a
 ${SERVER}      ${HOSTNAME}
 ${TESTPATH}    /afs/.${AFS_CELL}/test/${VOLUME}
+${EPERM}       1
+${EEXIST}      17
 ${EXDEV}       18
 
 *** Keywords ***
@@ -69,7 +71,7 @@ Create a Hard Link within a Directory
     Should Not Exist        ${link}
     Create File             ${file}
     Link Count Should Be    ${file}  1
-    Command Should Succeed  ln ${file} ${link}
+    Link                    ${file}  ${link}
     Inode Should Be Equal   ${link}  ${file}
     Link Count Should Be    ${file}  2
     Link Count Should Be    ${link}  2
@@ -111,7 +113,7 @@ Create a Hard Link to a Directory
     Create Directory        ${dir}
     Should Exist            ${dir}
     Should Be Dir           ${dir}
-    Command Should Fail     ln ${dir} ${link}
+    Link                    ${dir}  ${link}  code_should_be=${EPERM}
     Remove File             ${link}
     Remove Directory        ${dir}
     Should Not Exist        ${dir}
@@ -122,7 +124,7 @@ Create a Cross-Volume Hard Link
     ${nvolume}=  Set Variable  ${TESTPATH}/xyzzy
     Should Not Exist           ${nvolume}
     Create Volume  xyzzy  server=${SERVER}  part=${PARTITION}  path=${nvolume}  acl=system:anyuser,read
-    Command Should Fail        ln ${TESTPATH} ${nvolume}
+    Link  ${TESTPATH}  ${nvolume}  code_should_be=${EEXIST}
     Remove Volume  xyzzy  path=${nvolume}
     Remove File                ${nvolume}
     Should Not Exist           ${nvolume}
