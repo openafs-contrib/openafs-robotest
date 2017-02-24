@@ -25,7 +25,7 @@ Teardown
 
 *** Test Cases ***
 Create a Larger Than 2gb File
-    [Tags]  slow  #(write-large)
+    [Tags]  slow
     ${file}=  Set Variable         ${TESTPATH}/file
     Create File                    ${file}
     Should Exist                   ${file}
@@ -34,7 +34,7 @@ Create a Larger Than 2gb File
     Should Not Exist               ${file}
 
 Write a File Larger than the Cache
-    [Tags]  #(fcachesize-write-file)
+    [Tags]  slow
     ${size}=  Get Cache Size
     ${file}=  Set Variable         ${TESTPATH}/file
     Should Not Exist               ${file}
@@ -45,7 +45,7 @@ Write a File Larger than the Cache
     Should Not Exist               ${file}
 
 Read a File Larger than the Cache
-    [Tags]  #(fcachesize-read-file)
+    [Tags]  slow
     ${size}=  Get Cache Size
     ${file}=  Set Variable         ${TESTPATH}/file
     Should Not Exist               ${file}
