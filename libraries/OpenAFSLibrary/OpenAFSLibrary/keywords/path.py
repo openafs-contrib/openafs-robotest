@@ -130,6 +130,18 @@ class _PathKeywords(object):
         if code != int(code_should_be):
             raise AssertionError("symlink returned an unexpected code: %d" % code)
 
+    def unlink(self, path, code_should_be=0):
+        """Unlink the directory entry."""
+        code = 0
+        try:
+            os.unlink(path)
+        except OSError as e:
+            logger.info("os.unlink(): %s" % e)
+            code = e.errno
+        logger.info("os.unlink()=%d" % code)
+        if code != int(code_should_be):
+            raise AssertionError("unlink returned an unexpected code: %d" % code)
+
     def link_count_should_be(self, path, count):
         """Fails if the inode link count is not `count`."""
         count = int(count)

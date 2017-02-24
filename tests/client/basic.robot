@@ -58,7 +58,7 @@ Create a Symlink
     Create Directory        ${dir}
     Symlink                 ${dir}    ${symlink}
     Should Be Symlink       ${symlink}
-    Command Should Succeed  rm ${symlink}
+    Unlink                  ${symlink}
     Remove Directory        ${dir}
     Should Not Exist        ${dir}
     Should Not Exist        ${symlink}
@@ -75,7 +75,7 @@ Create a Hard Link within a Directory
     Inode Should Be Equal   ${link}  ${file}
     Link Count Should Be    ${file}  2
     Link Count Should Be    ${link}  2
-    Command Should Succeed  rm ${link}
+    Unlink                  ${link}
     Should Not Exist        ${link}
     Link Count Should Be    ${file}  1
     Remove File             ${file}
