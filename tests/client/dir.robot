@@ -24,11 +24,12 @@ Teardown
     Logout
 
 *** Test Cases ***
-Create a File with 8 bit Characters in its Name
-    ${file}=   Set Variable      ${TESTPATH}/€†‡
+Unicode File Name
+    ${name}=   Set Variable      \u20ac\u2020\u2021
+    ${file}=   Set Variable      ${TESTPATH}/${name}
     Should Not Exist             ${file}
     Create File                  ${file}  Hello world!  UTF-8
     Should Exist                 ${file}
     Remove File                  ${file}
-    Should Not Exist             ${file}   
+    Should Not Exist             ${file}
 
