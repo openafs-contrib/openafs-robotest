@@ -3,8 +3,6 @@ Documentation     File Hierarchy Traversal Tests
 Resource          openafs.robot
 Suite Setup       Login  ${AFS_ADMIN}
 Suite Teardown    Logout
-Test Setup        Create Tree
-Test Teardown     Remove Tree
 
 *** Variables ***
 ${VOLUME}      test.find
@@ -32,7 +30,7 @@ Create Tree
     Create File     ${TESTPATH}/v0/v3/file1  hello world\n
     Create File     ${TESTPATH}/v2/file2     greetings\n
 
-Add Second Parent
+Create Tree With Two Parents
     [Documentation]  Add a second mount point to volume 3 so it
     ...              will have two parents in the hierarchy.
     ...  |
@@ -46,6 +44,7 @@ Add Second Parent
     ...  |    `-- v2
     ...  |        `-- file2
     ...  |
+    Create Tree
     Command Should Succeed   ${FS} mkm -dir ${TESTPATH}/v1/v3a -vol ${VOLUME}.3
 
 Remove Tree
@@ -66,13 +65,16 @@ File Should Be Found
 
 *** Test Cases ***
 Traverse Simple Tree
+    [Setup]       Create Tree
     File Should Be Found     ${TESTPATH}/v0/v3/file1
     File Should Be Found     ${TESTPATH}/v2/file2
+    [Teardown]    Remove Tree
 
 Traverse Tree with Two Parents
     [Tags]    fts
-    Add Second Parent
+    [Setup]       Create Tree With Two Parents
     File Should Be Found     ${TESTPATH}/v0/v3/file1
     File Should Be Found     ${TESTPATH}/v1/v3a/file1
     File Should Be Found     ${TESTPATH}/v2/file2
+    [Teardown]    Remove Tree
 
