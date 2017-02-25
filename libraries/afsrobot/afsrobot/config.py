@@ -44,6 +44,7 @@ log_level = INFO
 
 [variables]
 afs_dist = transarc
+pag_onegroup = yes
 
 [cell]
 name = robotest

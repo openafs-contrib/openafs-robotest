@@ -22,15 +22,11 @@
 import os
 import subprocess
 from robot.api import logger
-from OpenAFSLibrary.variable import get_var
+from OpenAFSLibrary.variable import get_var, get_bool
 
 PAG_MIN = 0x41000000
 PAG_MAX = 0x41ffffff
 PAG_ONEGROUP = True
-
-# Solaris still uses 2 group ids for PAGs.
-if os.uname()[0] == 'SunOS':
-    PAG_ONEGROUP = False
 
 def _get_pag_from_one_group(gids):
     pag = None
@@ -59,6 +55,11 @@ def _get_pag_from_two_groups(g0, g1):
 def _pag_from_groups(gids):
     logger.debug("gids=%s" % (gids,))
     pag = None
+    try:
+        PAG_ONEGROUP = get_bool('PAG_ONEGROUP')
+    except:
+        PAG_ONEGROUP = True
+
     if PAG_ONEGROUP:
         pag = _get_pag_from_one_group(gids)
     elif len(gids) > 1:
