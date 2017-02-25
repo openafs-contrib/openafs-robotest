@@ -2,21 +2,33 @@
 
 ### Tests
 
-* Reorg test suites into client and server tests.
-* Added more bos and pts tests.
+* Reorg test suites into client and server tests
+* Add more bos and pts tests
 * Made pts test independent
-* Added more basic client tests.
-* Added a pagsh test.
+* Add more basic client tests
+* Add a pagsh test
+* Add client find tests
+* Add client dir tests
+* Add client huge file tests
 
 ### Library
 
-* Added PAG keywords for the pagsh test.
+* Add PAG keywords for the pagsh test
+* Add Link, Symlink, Unlink keywords
+* Add cache parameter keywords
 
 ### Other
 
-* Renamed afs-robotest to afsrobot (and provided a compat wrapper).
-* Add --user option to install.sh to avoid accidental local installs.
-* Add --srcdir option to 'afsutil build' to support out-of-tree builds.
+* User documentation added
+* Renamed afs-robotest to afsrobot (and provided a compat wrapper)
+* Add --user option to install.sh to avoid accidental local installs
+* Add --srcdir option to 'afsutil build' to support out-of-tree builds
+* Modernize afsutil getdeps on solaris 11
+* Add env vars setup in afsutil build on solaris 11
+* Add more needed packages on debian
+* Add fedora support in install
+* Fix afsutil getdeps on ubuntu
+* Carry on if we cannot delete the temporary keytab during teardown
 
 ## [v0.5.0]
 
