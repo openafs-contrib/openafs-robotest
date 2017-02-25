@@ -20,7 +20,7 @@ usage() {
     echo "  deps  - external dependencies"
     echo "  tests - test suites"
     echo "  docs  - generate docs"
-    echo "  pkgs  - python packages"
+    echo "  libs  - libraries"
 }
 
 run() {
@@ -290,12 +290,12 @@ while :; do
         OPT_VERBOSE="yes"
         shift
         ;;
-    deps|docs|pkgs|tests)
+    deps|docs|libs|tests)
         SEEN="$SEEN:$1:"
         shift
         ;;
     all)
-        SEEN="$SEEN:deps:docs:pkgs:tests:"
+        SEEN="$SEEN:deps:docs:libs:tests:"
         shift
         ;;
     *)
@@ -317,14 +317,14 @@ fi
 
 # Install specified targets.
 if [ -z $SEEN ]; then
-    SEEN=":deps:docs:pkgs:tests:"  # Install all by default.
+    SEEN=":deps:docs:libs:tests:"  # Install all by default.
 fi
-for TARGET in "deps" "pkgs" "tests" "docs"
+for TARGET in "deps" "libs" "tests" "docs"
 do
     if echo "$SEEN" | grep ":$TARGET:" >/dev/null; then
         case "$TARGET" in
         deps)    install_deps ;;
-        pkgs)    install_packages ;;
+        libs)    install_packages ;;
         tests)   install_tests ;;
         docs)    make_doc ;;
         esac
@@ -335,7 +335,7 @@ done
 if echo "$SEEN" | grep ":tests:" >/dev/null; then
     make_output_dirs
 fi
-if echo "$SEEN" | grep ":pkgs:" >/dev/null; then
+if echo "$SEEN" | grep ":libs:" >/dev/null; then
     afsutil check
     if [ $? -ne 0 ]; then
         echo "Try: sudo afsutil check --fix-hosts"
