@@ -397,7 +397,7 @@ def build(**kwargs):
             if not '--disable-checking' in cf:
                 cf.append('--enable-checking')
             if modern_kmod_name:
-                cf.append('--enable-linux-kernel-packaging')
+                cf.append('--with-linux-kernel-packaging')
         if transarc_paths and not '--enable-transarc-paths' in cf:
             cf.append('--enable-transarc-paths')
 
