@@ -142,9 +142,9 @@ echo ;;
 'stop')
 
 afsroot=`awk -F: '{print $1}' /usr/vice/etc/cacheinfo` || exit 1
-if mount | grep -q "$afsroot"; then
+if /usr/sbin/mount | grep -q "$afsroot"; then
     echo "Unmounting $afsroot"
-    umount $afsroot || exit 1
+    /usr/sbin/umount $afsroot || exit 1
 
     echo "Stopping afsd"
     /usr/vice/etc/afsd -shutdown || exit 1

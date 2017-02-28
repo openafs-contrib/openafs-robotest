@@ -246,7 +246,8 @@ def afs_umount():
     """Attempt to unmount afs, if mounted."""
     afs = afs_mountpoint()
     if afs:
-        run('umount', args=[afs])
+        umount = which('umount', extra_paths=['/bin', '/sbin', '/usr/sbin'])
+        run(umount, args=[afs])
 
 def nproc():
     """Return the number of processing units."""
