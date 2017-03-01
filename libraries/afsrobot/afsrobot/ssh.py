@@ -52,7 +52,7 @@ def generate_key(keyfile, keytype='rsa'):
         sys.stderr.write("ssh-keygen failed; exit code %d\n" % (code))
     return code
 
-def _copyid(keyfile, hostname):
+def _copyid(key, hostname):
     """Distribute the public key files to the remote host.
 
     Do not use ssh-copy-id, since that is not available everywhere. Instead
@@ -65,8 +65,6 @@ def _copyid(keyfile, hostname):
         "(test -x /sbin/restorecon && " \
         "/sbin/restorecon ~/.ssh ~/.ssh/authorized_keys >/dev/null 2>&1 || " \
         "true)"
-    with open(keyfile, 'r') as f:
-        key = f.read()
     p = subprocess.Popen(['ssh', hostname, copyid], stdin=subprocess.PIPE)
     p.stdin.write(key)
     p.stdin.close()
@@ -78,17 +76,25 @@ def distribute_key(keyfile, hostnames):
     The key file should have been prevously created with ssh-keygen."""
     if not keyfile.endswith(".pub"):
         keyfile += ".pub"
-    if not os.access(keyfile, os.F_OK):
-        sys.stderr.write("Cannot access keyfile %s.\n" % (keyfile))
+    try:
+        sys.stdout.write("Reading identities from file '%s'.\n" % (keyfile))
+        with open(keyfile, 'r') as f:
+            key = f.read()
+    except Exception as e:
+        sys.stderr.write("Cannot read ssh public key %s; %s.\n" % (keyfile, e))
+        return 1
+    if len(key) == 0:
+        sys.stderr.write("No identities found in '%s'.\n" % (keyfile))
         return 1
     result = 0
     for hostname in hostnames:
         if islocal(hostname):
+            sys.stdout.write("Skipping local host '%s'.\n" % (hostname))
             continue
-        sys.stdout.write("Copying ssh identity '%s' to host '%s'.\n" % (keyfile, hostname))
+        sys.stdout.write("Copying ssh identities in '%s' to host '%s'.\n" % (keyfile, hostname))
         code = _copyid(keyfile, hostname)
         if code != 0:
-            sys.stderr.write("Failed to copy ssh identity to host %s; exit code %d.\n" % (hostname, code))
+            sys.stderr.write("Failed to copy ssh identities to host '%s'; exit code %d.\n" % (hostname, code))
             result = 1
     return result
 
