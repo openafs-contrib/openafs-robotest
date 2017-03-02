@@ -33,9 +33,10 @@ run() {
 
 detect_sysname() {
     # We might not have python yet, so we can't use python -m platform.
-    _sname=`uname -s`
-    _rname=`uname -r`
-    case $_sname in
+    local sname=`uname -s`
+    local rname=`uname -r`
+    local vname=`uname -v`
+    case $sname in
     Linux)
         if [ -f /etc/debian_version ]; then
             echo "linux-debian"
@@ -50,12 +51,12 @@ detect_sysname() {
         fi
         ;;
     SunOS)
-        case $_rname in
+        case $rname in
         5.10)
             echo "solaris-10"
             ;;
         5.11)
-            echo "solaris-11"
+            echo "solaris-$vname"
             ;;
         *)
             echo "unknown"
