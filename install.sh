@@ -209,6 +209,31 @@ solaris11_install_deps() {
     fi
 }
 
+# The nm changed in 11.3 which broke libtool.
+# See http://lists.gnu.org/archive/html/bug-libtool/2016-01/msg00000.html
+solaris113_patch_libtool() {
+    if [ -f /usr/share/aclocal/libtool.m4.unpatched ]; then
+        echo "Skipping libtool patch; already patched."
+        return
+    fi
+    cp /usr/share/aclocal/libtool.m4 /usr/share/aclocal/libtool.m4.unpatched
+    chmod +w /usr/share/aclocal/libtool.m4
+    echo "Patching libtool"
+    ( cd / ; cat <<_EOF_ | patch -p1 )
+--- /usr/share/aclocal/libtool.m4.orig	Sun Aug 14 12:04:03 2016
++++ /usr/share/aclocal/libtool.m4	Sun Aug 14 12:05:55 2016
+@@ -3651,7 +3651,7 @@
+   symcode='[[BCDEGQRST]]'
+   ;;
+ solaris*)
+-  symcode='[[BDRT]]'
++  symcode='[[BCDRT]]'
+   ;;
+ sco3.2v5*)
+   symcode='[[DT]]'
+_EOF_
+}
+
 install_deps() {
     echo "Checking dependencies."
     sysname=`detect_sysname`
@@ -225,8 +250,12 @@ install_deps() {
     solaris-10*)
         solaris10_install_deps
         ;;
-    solaris-11*)
+    solaris-11.[012])
         solaris11_install_deps
+        ;;
+    solaris-11.3)
+        solaris11_install_deps
+        solaris113_patch_libtool
         ;;
     *)
         echo "WARNING: Unable to install deps on unknown platform: $sysname" >&2
