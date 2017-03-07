@@ -165,12 +165,12 @@ def _make_rpm(srpm):
     logger.info("Packages written to %s/packages/rpmbuild/RPMS/%s" % (cwd, arch))
 
 def _debian_getdeps():
-    sh('sudo', '-n', 'apt-get', '-y', 'build-dep', 'openafs')
-    sh('sudo', '-n', 'apt-get', '-y', 'install', 'linux-headers-%s' % platform.release())
-    sh('sudo', '-n', 'apt-get', '-y', 'install', 'libtool')
+    sh('apt-get', '-y', 'build-dep', 'openafs')
+    sh('apt-get', '-y', 'install', 'linux-headers-%s' % platform.release())
+    sh('apt-get', '-y', 'install', 'libtool')
 
 def _centos_getdeps():
-    sh('sudo', '-n', 'yum', 'install', '-y',
+    sh('yum', 'install', '-y',
        'gcc',
        'autoconf',
        'automake',
@@ -197,7 +197,7 @@ def _fedora_getdeps():
         package_manager = 'dnf'
     else:
         package_manager = 'yum'
-    sh('sudo', '-n', package_manager, 'install', '-y',
+    sh(package_manager, 'install', '-y',
        'gcc',
        'autoconf',
        'automake',
