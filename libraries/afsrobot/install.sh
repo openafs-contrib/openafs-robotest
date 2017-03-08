@@ -16,6 +16,7 @@ RT_PACKAGE="afsrobot"
 RT_USAGE="usage: sudo ./install [--user] [--verbose]"
 RT_PIPOPTS="--upgrade"
 RT_UID=`python -c 'import os; print os.getuid()'` # for portability
+PIP_DISABLE_PIP_VERSION_CHECK=1
 
 while [ "x$1" != "x" ]; do
     case "$1" in

@@ -11,6 +11,9 @@ DIR_DOC="$DIR_HTML/doc"
 DIR_LOG="$DIR_HTML/log"
 DIR_OUTPUT="$DIR_HTML/output"
 
+# Turn off annoying pip version warnings.
+PIP_DISABLE_PIP_VERSION_CHECK=1
+
 usage() {
     _progname=`basename $0`
     echo "usage: ./$_progname [--user] [--verbose] [<target> ...]"

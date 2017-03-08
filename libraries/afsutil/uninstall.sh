@@ -7,6 +7,7 @@
 PATH=/opt/csw/bin:$PATH
 RT_PACKAGE="afsutil"
 RT_UID=`python -c 'import os; print os.getuid()'` # for portability
+PIP_DISABLE_PIP_VERSION_CHECK=1
 
 pip show --quiet $RT_PACKAGE && pip uninstall -y $RT_PACKAGE
 
