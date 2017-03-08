@@ -92,7 +92,7 @@ def distribute_key(keyfile, hostnames):
             sys.stdout.write("Skipping local host '%s'.\n" % (hostname))
             continue
         sys.stdout.write("Copying ssh identities in '%s' to host '%s'.\n" % (keyfile, hostname))
-        code = _copyid(keyfile, hostname)
+        code = _copyid(key, hostname)
         if code != 0:
             sys.stderr.write("Failed to copy ssh identities to host '%s'; exit code %d.\n" % (hostname, code))
             result = 1
