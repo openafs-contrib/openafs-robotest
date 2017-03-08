@@ -190,6 +190,28 @@ def _centos_getdeps():
        'rpm-build',
        'redhat-rpm-config')
 
+def _opensuse_getdeps():
+    sh('zypper', 'install', '-y',
+       'gcc',
+       'autoconf',
+       'automake',
+       'libtool',
+       'make',
+       'flex',
+       'bison',
+       'glibc-devel',
+       'krb5-devel',
+       'ncurses-devel',
+       'pam-devel',
+       'fuse-devel',
+       'kernel-devel',
+       'wget',
+       'rpm-build',
+    )
+    #'perl-devel',
+    #'perl-ExtUtils-Embed',
+    #'redhat-rpm-config',
+
 def _fedora_getdeps():
     rel = platform.dist()[1]
     if rel >= 22:
@@ -344,6 +366,8 @@ def getdeps(**kwargs):
             _debian_getdeps()
         elif dist == 'centos':
             _centos_getdeps()
+        elif dist == 'SuSE':
+            _opensuse_getdeps()
         elif dist == 'fedora':
             _fedora_getdeps()
         else:
