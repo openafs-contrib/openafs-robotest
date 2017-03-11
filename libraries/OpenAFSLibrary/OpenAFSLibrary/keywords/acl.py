@@ -19,11 +19,9 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
 
-import sys
 import os
 import re
 from robot.api import logger
-from OpenAFSLibrary.variable import get_var
 from OpenAFSLibrary.command import fs
 
 _RIGHTS = list("rlidwkaABCDEFGH")
@@ -209,7 +207,7 @@ class _ACLKeywords(object):
 
     def access_control_should_exist(self, path, name):
         """Fails if the access control does not exist for the the given user or group name."""
-        logger.debug("access_control_should_exist: path=%s, name=%s, rights=%s" % (path, name, rights))
+        logger.debug("access_control_should_exist: path=%s, name=%s" % (path, name))
         a = AccessControlList.from_path(path)
         if name not in a.acls:
             raise AssertionError("ACL entry does not exist for name '%s'" % (name))

@@ -19,8 +19,16 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
 
-from OpenAFSLibrary.keywords import *
 from OpenAFSLibrary.version import VERSION
+
+from OpenAFSLibrary.keywords import _SystemKeywords
+from OpenAFSLibrary.keywords import _LoginKeywords
+from OpenAFSLibrary.keywords import _PathKeywords
+from OpenAFSLibrary.keywords import _ACLKeywords
+from OpenAFSLibrary.keywords import _VolumeKeywords
+from OpenAFSLibrary.keywords import _RxKeywords
+from OpenAFSLibrary.keywords import _PagKeywords
+from OpenAFSLibrary.keywords import _CacheKeywords
 
 __version__ = VERSION
 

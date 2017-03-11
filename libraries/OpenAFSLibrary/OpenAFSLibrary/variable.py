@@ -19,10 +19,6 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
 
-import os
-import glob
-import imp
-from robot.api import logger
 from robot.libraries.BuiltIn import BuiltIn
 
 _rf = BuiltIn()

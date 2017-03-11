@@ -19,13 +19,9 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
 
-import sys
 import os
-import re
 import math
-import socket
 from robot.api import logger
-from robot.libraries.BuiltIn import BuiltIn
 
 class _PathKeywords(object):
 

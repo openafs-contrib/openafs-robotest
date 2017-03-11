@@ -33,7 +33,7 @@ def get_principal(user, realm):
 def akimpersonate(user):
     """Acquire an AFS token for authenticated access without Kerberos."""
     if not user:
-        raise AsseritionError("User name is required")
+        raise AssertionError("User name is required")
     aklog = get_var('AKLOG')
     cell = get_var('AFS_CELL')
     realm = get_var('KRB_REALM')
@@ -47,7 +47,7 @@ def akimpersonate(user):
 def login_with_keytab(user):
     """Acquire an AFS token for authenticated access with Kerberos."""
     if not user:
-        raise AsseritionError("User name is required")
+        raise AssertionError("User name is required")
     kinit = get_var('KINIT')
     aklog = get_var('AKLOG')
     cell = get_var('AFS_CELL')
@@ -63,7 +63,7 @@ def login_with_keytab(user):
         raise AssertionError("Keytab not set for user '%s'." % user)
     logger.info("keytab: " + keytab)
     if not os.path.exists(keytab):
-        raise AsseritionError("Keytab file '%s' is missing." % keytab)
+        raise AssertionError("Keytab file '%s' is missing." % keytab)
     krb5cc = "/tmp/krb5cc-afs-robotest"
     cmd = "KRB5CCNAME=%s %s -5 -k -t %s %s" % (krb5cc, kinit, keytab, principal)
     rc,out,err = run_program(cmd)

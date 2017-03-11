@@ -19,7 +19,6 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
 
-import pprint
 import os
 import struct
 import socket
@@ -276,8 +275,8 @@ class _VolumeKeywords(object):
     def volume_should_be_locked(self, name):
         """Verify the volume is locked."""
         volume = get_volume_entry(name)
-        #if not volume['locked']:
-        #    raise AssertionError("Volume '%s' is not locked." % (name))
+        if not volume['locked']:
+            raise AssertionError("Volume '%s' is not locked." % (name))
 
     def volume_should_be_unlocked(self, name):
         """Verify the volume is unlocked."""

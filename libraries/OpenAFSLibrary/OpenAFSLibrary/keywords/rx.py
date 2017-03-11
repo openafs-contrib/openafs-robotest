@@ -19,7 +19,6 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
 
-from robot.api import logger
 from OpenAFSLibrary.command import rxdebug
 
 

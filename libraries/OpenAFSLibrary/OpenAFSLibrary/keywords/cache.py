@@ -1,8 +1,5 @@
-import sys
-import os
 import re
 
-from robot.api import logger
 from OpenAFSLibrary.command import fs
 
 class _CacheKeywords(object):

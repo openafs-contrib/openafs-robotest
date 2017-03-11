@@ -1,6 +1,5 @@
 from setuptools import setup
-
-execfile("./OpenAFSLibrary/version.py") # sets VERSION
+from OpenAFSLibrary.version import VERSION
 
 setup(name='OpenAFSLibrary',
       version=VERSION,
