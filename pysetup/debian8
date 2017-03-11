@@ -1,0 +1,4 @@
+#!/bin/sh
+
+apt-get install -q -y python python-pip
+
