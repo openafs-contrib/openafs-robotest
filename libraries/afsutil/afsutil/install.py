@@ -20,12 +20,10 @@
 
 """Install and remove Transarc-style OpenAFS distributions."""
 
-import errno
 import logging
 import os
 import re
 import shutil
-import sys
 import socket
 import glob
 import pprint
@@ -307,7 +305,7 @@ class Installer(object):
                 self.dirs['AFS_DATA_DIR'],
                 self.dirs['AFS_MOUNT_DIR'],
                 self.dirs['AFS_CACHE_DIR'],
-                102400)
+                cache_size)
 
     def pre_remove(self):
         """Pre remove steps."""

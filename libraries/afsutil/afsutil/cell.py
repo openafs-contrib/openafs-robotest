@@ -29,7 +29,6 @@ import logging
 import os
 import re
 import socket
-import sys
 
 from afsutil.cli import bos, vos, pts, fs, udebug, rxdebug
 from afsutil.system import CommandFailed, afs_mountpoint
@@ -495,9 +494,9 @@ class Cell(object):
 
     def _add_fs_servers(self):
         """Add remaining file servers."""
-        for fs in self.fs:
-            if fs != self.primary_fs:
-                self.add_fileserver(fs)
+        for server in self.fs:
+            if server != self.primary_fs:
+                self.add_fileserver(server)
 
     def _setup_first_fs_server(self):
         """Startup the file server processes and create the root volumes if needed."""

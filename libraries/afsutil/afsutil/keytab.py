@@ -25,11 +25,10 @@ import hashlib
 import os
 import struct
 import time
-
 import logging
-import os
 import shutil
-from afsutil.system import which, CommandFailed
+
+from afsutil.system import CommandFailed
 from afsutil.transarc import AFS_CONF_DIR
 from afsutil.cli import asetkey, aklog
 

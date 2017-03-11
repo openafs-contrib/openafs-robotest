@@ -23,11 +23,10 @@
 import logging
 import os
 import sys
-import re
 import glob
 import pprint
 
-from afsutil.system import sh, CommandFailed
+from afsutil.system import sh
 from afsutil.install import Installer
 
 logger = logging.getLogger(__name__)

@@ -28,7 +28,6 @@ import shlex
 import platform
 import urllib2
 import tempfile
-import pprint
 import glob
 
 from afsutil.system import sh, CommandFailed, file_should_exist, tar
@@ -548,7 +547,6 @@ def package(**kwargs):
     # The rpm spec file contains the configure options for the actual build.
     # We run configure here just to bootstrap the process.
     clean = kwargs.get('clean', True)
-    package = kwargs.get('package', None)
     jobs = kwargs.get('jobs', 1)
     if clean:
         _clean('.')

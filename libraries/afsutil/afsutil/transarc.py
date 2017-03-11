@@ -20,13 +20,11 @@
 
 """Install and remove Transarc-style OpenAFS distributions."""
 
-import errno
 import logging
 import os
 import re
 import shutil
 import sys
-import socket
 import glob
 import pkg_resources
 import tempfile
@@ -237,7 +235,7 @@ class TransarcInstaller(Installer):
                     if match:
                         sysname = match.group(1)
                         break
-        except IOError as e:
+        except IOError:
             pass
         return sysname
 

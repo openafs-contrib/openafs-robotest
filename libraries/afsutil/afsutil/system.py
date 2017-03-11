@@ -360,7 +360,7 @@ def cat(files, path):
 
 def touch(path):
     """Touch a file; create a empty file if not already existing."""
-    with open(path, 'a') as f:
+    with open(path, 'a'):
         os.utime(path, None)
 
 def symlink(src, dst):
@@ -493,5 +493,5 @@ elif _uname == "SunOS":
     unload_module = _solaris_unload_module
     load_module = _solaris_load_module
 else:
-    raise AssertionError("Unsupported operating system: %s" % (uname))
+    raise AssertionError("Unsupported operating system: %s" % (_uname))
 

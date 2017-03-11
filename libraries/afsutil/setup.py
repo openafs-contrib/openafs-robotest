@@ -1,6 +1,6 @@
 from setuptools import setup
+from afsutil import __version__
 
-execfile("./afsutil/__init__.py") # sets __version__
 setup(name='afsutil',
       version=__version__,
       description='Utilities to setup OpenAFS clients and servers',
