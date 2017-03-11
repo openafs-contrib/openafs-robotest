@@ -333,7 +333,6 @@ class Config(ConfigParser.SafeConfigParser):
 
     def optsetkey(self, hostname):
         args = []
-        section = "host:%s" % (hostname)
         cell = self.optstr('cell', 'name')
         if cell:
             args.append('--cell')

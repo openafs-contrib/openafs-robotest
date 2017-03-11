@@ -1,6 +1,6 @@
 from setuptools import setup
+from afsrobot import __version__
 
-execfile("./afsrobot/__init__.py") # sets __version__
 setup(name='afsrobot',
       version=__version__,
       description='OpenAFS Robotest Runner',

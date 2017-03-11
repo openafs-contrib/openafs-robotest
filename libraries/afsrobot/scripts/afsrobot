@@ -23,7 +23,6 @@ import logging
 import gettext
 import os
 import sys
-import logging
 import traceback
 
 import afsrobot.config
@@ -107,10 +106,10 @@ def cmd_config_init(c):
     cmd_init(c) # alias
 
 def cmd_config_copy(c):
-    c.say("Copying to file %s." % (args.dest))
+    c.say("Copying to file %s." % (c.args.dest))
     new_config = afsrobot.config.Config()
-    new_config.load_from_file(config.filename)
-    new_config.save_as(args.dest)
+    new_config.load_from_file(c.config.filename)
+    new_config.save_as(c.args.dest)
 
 def cmd_config_list(c):
     c.config.print_values(section=c.args.section, raw=c.args.raw)
