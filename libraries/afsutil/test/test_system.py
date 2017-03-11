@@ -91,9 +91,9 @@ class SystemTest(unittest.TestCase):
     def test_is_loaded(self):
         output = run("/bin/mount")
         if "AFS on /afs" in output:
-            self.assertTrue(is_loaded('libafs'))
+            self.assertTrue(is_loaded('openafs'))
         else:
-            self.assertFalse(is_loaded('libafs'))
+            self.assertFalse(is_loaded('openafs'))
 
 if __name__ == "__main__":
      unittest.main()
