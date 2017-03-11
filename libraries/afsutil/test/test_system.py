@@ -22,7 +22,17 @@ import os
 import unittest
 import tempfile
 import shutil
-from afsutil.system import *
+
+from afsutil.system import CommandFailed
+from afsutil.system import directory_should_exist
+from afsutil.system import directory_should_not_exist
+from afsutil.system import is_loaded
+from afsutil.system import is_running
+from afsutil.system import network_interfaces
+from afsutil.system import run
+from afsutil.system import symlink
+from afsutil.system import touch
+from afsutil.system import which
 
 class SystemTest(unittest.TestCase):
 

@@ -41,7 +41,6 @@ class _KeytabTest(unittest.TestCase):
         assert os.path.exists(self.testfile)
 
     def test_split_principal(self):
-        k = Keytab()
         self.assertRaises(ValueError, _split_principal, "missing_realm")
         c,r = _split_principal("myname@MYREALM")
         self.assertEqual(c, ["myname"])
