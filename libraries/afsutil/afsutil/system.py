@@ -230,7 +230,8 @@ def afs_mountpoint():
         pattern = r'(/.\S+) on AFS'
     else:
         raise AssertionError("Unsupported operating system: %s" % (uname))
-    output = run('mount')
+    mount = which('mount', extra_paths=['/bin', '/sbin', '/usr/sbin'])
+    output = run(mount)
     found = re.search(pattern, output, re.M)
     if found:
         mountpoint = found.group(1)
