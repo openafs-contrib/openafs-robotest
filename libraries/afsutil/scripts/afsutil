@@ -281,6 +281,7 @@ def main():
                        action='store_false')
     p.add_argument('-j', '--jobs', help='parallel build jobs (default: %d)' % nproc, default=nproc)
     p.add_argument('--srcdir', help='source code directory (default: .)', default='.')
+    p.add_argument('--tarball', help='path and file name of dest tarball (default: openafs-<sysname>.tar.gz)', default=None)
     p.set_defaults(fn=build, must_be_root=False)
 
     p = subparsers.add_parser('reload', help='reload the kernel module after a build')

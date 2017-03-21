@@ -380,18 +380,16 @@ def getdeps(**kwargs):
     else:
         raise AssertionError("Unsupported operating system: %s" % (system))
 
-def _make_tarball():
+def _make_tarball(tarball=None):
     sysname = _detect_sysname()
     if sysname is None:
         raise AssertionError("Cannot find sysname.")
-    destdir = os.path.join(sysname, "dest")
-    if not os.path.isdir(destdir):
-        raise AssertionError("dest dir not found: %s" % (destdir))
-    # Hack Alert:  Put the tarball into the afs-robotest distribution directory if present.
-    tardir = os.path.expanduser('~/.afsrobotestrc/dist')
-    if not os.path.isdir(tardir):
-        tardir = '.'
-    tarball = os.path.join(tardir, "openafs-%s.tar.gz" % (sysname))
+    if tarball is None:
+        # Hack Alert:  Put the tarball into the afs-robotest distribution directory if present.
+        tardir = os.path.expanduser('~/.afsrobotestrc/dist')
+        if not os.path.isdir(tardir):
+            tardir = '.'
+        tarball = os.path.join(tardir, "openafs-%s.tar.gz" % (sysname))
     tar(tarball, sysname)
     logger.info("Created tar file %s", tarball)
 
@@ -409,6 +407,7 @@ def build(**kwargs):
     modern_kmod_name = kwargs.get('modern_kmod_name', True)
     jobs = kwargs.get('jobs', 1)
     srcdir = kwargs.get('srcdir', '.')
+    tarball = kwargs.get('tarball', None)
 
     if cf is not None:
         cf = shlex.split(cf)  # Note: shlex handles quoting properly.
@@ -438,7 +437,7 @@ def build(**kwargs):
         sh('%s/configure' % srcdir, *cf)
     _make(jobs, target)
     if target == 'dest':
-        _make_tarball()
+        _make_tarball(tarball)
 
 def _linux_kernel_packaging():
     """Returns true if built with --with-linux-kernel-packaging."""
