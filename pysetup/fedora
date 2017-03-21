@@ -1,4 +1,0 @@
-#!/bin/sh
-
-dnf install -q -y python python-pip
-

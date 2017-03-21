@@ -1,2 +1,0 @@
-Platform specific setup scripts.
-
