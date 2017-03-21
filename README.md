@@ -14,53 +14,35 @@ OpenAFS and run the tests.
 ## System Requirements
 
 * Linux or Solaris
-* Python 2.6 or 2.7
+* Python 2.7
+* Python pip
 * Python argparse
 * Robotframework 2.7+
 * OpenAFS installation packages or binaries built from source
 
+## System Setup
+
+Scripts are provided for supported platforms in the `setup` directory to
+install the needed software prerequisites and perform any required system
+setup.
+
+To setup Debian jessie:
+
+    $ sudo setup/debian8
+
+
 ## Installation
 
-### Install
+Install the OpenAFS Robotest tests, libraries, and utilities with the provided
+installation script:
 
-Clone the git repository and install AFS Robotest and dependencies with the
-provided install shell script.
-
-    $ cd
-    $ git clone https://github.com/openafs-contrib/openafs-robotest.git
-    $ cd openafs-robotest
     $ sudo ./install.sh
 
-### Setup sudo
 
-The `sudo` command must be available and configured to run `afsutil` without a
-password in order to install and configure OpenAFS. For example, add the
-following to your sudoers file with `visudo`:
+## Configure
 
-    %testers ALL=(root) NOPASSWD: /usr/local/bin/afsutil
-
-Then add users which will run `afsrobot` to the `testers` group.
-
-    $ sudo usermod -a -G testers <username>
-
-Verify sudo can be used with the command:
-
-    $ sudo -n afsutil version
-
-### Check the host file
-
-Modern Linux distributions will add an entry to the `/etc/hosts` file to map a
-loopback address to the hostname.  While, this is not strictly wrong, it can
-confuse current versions of OpenAFS.
-
-Remove any entries from `/etc/hosts` which map loopback addresses to the
-current hostname.  The lookback address should be replaced with the primary
-non-loopback address.  Loopback addresses start with `127.`.
-
-## Setup
-
-As the regular test user, run the `init` subcommand to create the initial
-configuration file.
+As the regular test user (not-root), run the `afsrobot init` command to create
+the initial configuration file.
 
     $ afsrobot init
 
