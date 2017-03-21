@@ -1,0 +1,16 @@
+#!/bin/sh
+set -e
+PATH=.:./setup:$PATH source linux-functions.sh
+
+# System setup
+create_tester "$AFSROBOT_USERNAME" "$SETUP_GROUP"
+if hostnamectl --no-ask-password --static status | grep -q '^localhost'; then
+    hostnamectl --no-ask-password set-hostname ${AFSROBOT_HOSTNAME:-"afsrobot"}
+fi
+fixup_etc_hosts "$AFSROBOT_IFDEVICE"
+
+# Install prereqs
+export PIP_DISABLE_PIP_VERSION_CHECK=1
+yum install -q -y epel-release
+yum install -q -y python python-pip
+pip install --upgrade robotframework
