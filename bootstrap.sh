@@ -53,7 +53,7 @@ gopt() {
 usage() {
     cat <<EOF
 usage: sudo ./bootstrap.sh [--help] [--username <username>] [--group <group>]
-                           [--ifdevice <device>]
+                           [--ifdevice <device>] [--creds <location>]
 
 where:
    --help        display help then exit
