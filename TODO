@@ -1,10 +1,4 @@
-v0.6
-----
 
-* install
-  - per user vs global installs
-  - cope with /etc/hosts with loopback addresses for the hostname
-  - helper for sudo -n setup (at least for debian?)
 * tests
   - implement or remove tests tagged as TODO
 * more packaging formats
@@ -14,7 +8,6 @@ v0.6
   - cm only tests
   - utils tests
 * OpenAFSLibrary
-  - new keywords
   - more complete unit tests
 * Server setup and cell creation sans libafs.ko.
   Some options are:

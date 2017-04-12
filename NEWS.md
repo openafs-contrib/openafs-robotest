@@ -19,6 +19,8 @@
 
 ### Other
 
+* Add setup scripts for various linux distros and solaris
+* Add bootstrap.sh script to quickly setup a single system test
 * User documentation added
 * Renamed afs-robotest to afsrobot (and provided a compat wrapper)
 * Add --user option to install.sh to avoid accidental local installs
