@@ -117,9 +117,10 @@ Create a Hard Link to a Directory
     ...    Should Not Exist        ${DIR}  AND
     ...    Should Not Exist        ${LINK}  AND
     ...    Create Directory        ${DIR}
-    Should Exist            ${DIR}
-    Should Be Dir           ${DIR}
-    Link                    ${DIR}  ${LINK}  code_should_be=${EPERM}
+    Should Exist     ${DIR}
+    Should Be Dir    ${DIR}
+    Run Keyword and Expect Error   *
+    ...    Link      ${DIR}    ${LINK}
     [Teardown]  Run Keywords
     ...    Remove File             ${LINK}  AND
     ...    Remove Directory        ${DIR}  AND
@@ -131,7 +132,8 @@ Create a Cross-Volume Hard Link
     [Setup]  Run Keywords
     ...    Should Not Exist           ${NVOLUME}  AND
     ...    Create Volume  xyzzy  server=${SERVER}  part=${PARTITION}  path=${NVOLUME}  acl=system:anyuser,read
-    Link  ${TESTPATH}  ${NVOLUME}  code_should_be=${EEXIST}
+    Run Keyword and Expect Error   *
+    ...    Link  ${TESTPATH}  ${NVOLUME}
     [Teardown]  Run Keywords
     ...    Remove Volume  xyzzy  path=${NVOLUME}  AND
     ...    Remove File                ${NVOLUME}  AND
