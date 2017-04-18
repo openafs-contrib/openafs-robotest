@@ -5,199 +5,139 @@
 *** Settings ***
 Documentation     Ptserver tests
 Resource          openafs.robot
+Suite Setup       Login  ${AFS_ADMIN}
+Suite Teardown    Logout
 
 *** Keywords ***
 Teardown Users and Groups
     Command Should Succeed  ${PTS} delete user12
     Command Should Succeed  ${PTS} delete group12
 
+Create User and Group
+     ${output}=  Run         ${PTS} listentries -users -groups
+     Should Not Contain      ${output}  user12
+     Should Not Contain      ${output}  group12
+     Command Should Succeed  ${PTS} createuser user12
+     Command Should Succeed  ${PTS} creategroup group12 -owner ${AFS_ADMIN}
+     ${output}=  Run         ${PTS} listentries -users -groups
+
+Remove User and Group
+     Command Should Succeed  ${PTS} delete group12
+     Command Should Succeed  ${PTS} delete user12
+     ${output}=  Run         ${PTS} listentries -users -groups
+     Should Not Contain      ${output}  user12
+     Should Not Contain      ${output}  group12
+
+Create User
+     ${output}=  Run         ${PTS} listentries
+     Should Not Contain      ${output}  user12
+     Command Should Succeed  ${PTS} createuser user12
+
+Remove User
+     Command Should Succeed  ${PTS} delete user12
+     ${output}=  Run         ${PTS} listentries
+     Should Not Contain      ${output}  user12
+
+Create Group
+     ${output}=  Run         ${PTS} listentries
+     Should Not Contain      ${output}  group12
+     Command Should Succeed  ${PTS} creategroup group12
+
+Remove Group
+     Command Should Succeed  ${PTS} delete group12
+     ${output}=  Run         ${PTS} listentries
+     Should Not Contain      ${output}  group12
+
 *** Test Cases ***
 Create a User
-    [Tags]  #(ptscreateuser)
-    Login  ${AFS_ADMIN}
-    ${output}=  Run         ${PTS} listentries 
-    Should Not Contain      ${output}  user12
-    Command Should Succeed  ${PTS} createuser user12
+    [Setup]  Create User
     ${output}=  Run         ${PTS} listentries
     Should Contain          ${output}  user12
-    Command Should Succeed  ${PTS} delete user12
-    ${output}=  Run         ${PTS} listentries
-    Should Not Contain      ${output}  user12
+    [Teardown]  Remove User
 
 Create a Group
-    [Tags]  #(ptscreategroup)
-    ${output}=  Run         ${PTS} listentries -groups
-    Should Not Contain      ${output}  group12
-    Command Should Succeed  ${PTS} creategroup group12 -owner ${AFS_ADMIN}
+    [Setup]  Create Group
     ${output}=  Run         ${PTS} membership group12
     Should Not Contain      ${output}  user12
-    Command Should Succeed  ${PTS} delete group12
-    ${output}=  Run         ${PTS} listentries -groups
-    Should Not Contain      ${output}  group12
+    [Teardown]  Remove Group
 
 Add a User to a Group
-    [Tags]  #(ptsadduser)
-    ${output}=  Run         ${PTS} listentries -users -groups
-    Should Not Contain      ${output}  user12
-    Should Not Contain      ${output}  group12
-    Command Should Succeed  ${PTS} createuser user12
-    Command Should Succeed  ${PTS} creategroup group12 -owner ${AFS_ADMIN}
-    ${output}=  Run         ${PTS} listentries -users -groups
-    Should Contain          ${output}  user12
-    Should Contain          ${output}  group12
+    [Setup]  Create User and Group
     Command Should Succeed  ${PTS} adduser user12 group12
     ${output}=  Run         ${PTS} membership group12
     Should Contain          ${output}  user12
     Command Should Succeed  ${PTS} removeuser user12 group12
     ${output}=  Run         ${PTS} membership group12
     Should Not Contain      ${output}  user12
-    Command Should Succeed  ${PTS} delete group12
-    Command Should Succeed  ${PTS} delete user12
-    ${output}=  Run         ${PTS} listentries -users -groups
-    Should Not Contain      ${output}  user12
-    Should Not Contain      ${output}  group12
+    [Teardown]  Remove User and Group
 
 Chown a Group
-    [Tags]  #(ptschown)
-    ${output}=  Run         ${PTS} listentries -users -groups
-    Should Not Contain      ${output}  user12
-    Should Not Contain      ${output}  group12
-    Command Should Succeed  ${PTS} createuser user12
-    Command Should Succeed  ${PTS} creategroup group12 -owner ${AFS_ADMIN}
-    ${output}=  Run         ${PTS} listentries -users -groups
-    Should Contain          ${output}  user12
-    Should Contain          ${output}  group12
+    [Setup]  Create User and Group
     Command Should Succeed  ${PTS} chown group12 user12
     ${output}=  Run         ${PTS} examine group12
     Should Contain          ${output}  owner: user12
-    Command Should Succeed  ${PTS} delete group12
-    Command Should Succeed  ${PTS} delete user12
-    ${output}=  Run         ${PTS} listentries -users -groups
-    Should Not Contain      ${output}  user12
-    Should Not Contain      ${output}  group12
+    [Teardown]  Remove User and Group
 
 Get User Membership
-    [Tags]  #(ptsmembersuser)
-    ${output}=  Run         ${PTS} listentries
-    Should Not Contain      ${output}  user12
-    Command Should Succeed  ${PTS} createuser user12
+    [Setup]  Create User
     ${output}=  Run         ${PTS} membership user12
     Should Not Contain      ${output}  group12
-    Command Should Succeed  ${PTS} delete user12
-    ${output}=  Run         ${PTS} listentries
-    Should Not Contain      ${output}  user12
+    [Teardown]  Remove User
 
 Get Group Membership
-    [Tags]  #(ptsmembersgroup)
-    ${output}=  Run         ${PTS} listentries -groups
-    Should Not Contain      ${output}  group12
-    Command Should Succeed  ${PTS} creategroup group12 -owner ${AFS_ADMIN}
+    [Setup]  Create Group
     ${output}=  Run         ${PTS} membership group12
     Should Not Contain      ${output}  user12
-    Command Should Succeed  ${PTS} delete group12
-    ${output}=  Run         ${PTS} listentries -groups
-    Should Not Contain      ${output}  user12
+    [Teardown]  Remove Group
 
 Examine a User
-    [Tags]  #(ptsexamineuser)
-    ${output}=  Run         ${PTS} listentries
-    Should Not Contain      ${output}  user12
-    Command Should Succeed  ${PTS} createuser user12
+    [Setup]  Create User
     ${output}=  Run         ${PTS} examine user12
     Should Not Contain      ${output}  group12
-    Command Should Succeed  ${PTS} delete user12
-    ${output}=  Run         ${PTS} listentries
-    Should Not Contain      ${output}  user12
+    [Teardown]  Remove User
 
 Examine a Group
-    [Tags]  #(ptsexaminegroup)
-    ${output}=  Run         ${PTS} listentries -groups
-    Should Not Contain      ${output}  group12
-    Command Should Succeed  ${PTS} creategroup group12 -owner ${AFS_ADMIN}
+    [Setup]  Create Group
     ${output}=  Run         ${PTS} examine group12
     Should Not Contain      ${output}  user12
-    Command Should Succeed  ${PTS} delete group12
-    ${output}=  Run         ${PTS} listentries -groups
-    Should Not Contain      ${output}  group12
+    [Teardown]  Remove Group
 
 Remove a User from a Group
-    [Tags]  #(ptsremove)
-    ${output}=  Run         ${PTS} listentries -users -groups
-    Should Not Contain      ${output}  user12
-    Should Not Contain      ${output}  group12
-    Command Should Succeed  ${PTS} createuser user12
-    Command Should Succeed  ${PTS} creategroup group12 -owner ${AFS_ADMIN}
-    ${output}=  Run         ${PTS} listentries -users -groups
-    Should Contain          ${output}  user12
-    Should Contain          ${output}  group12
+    [Setup]  Create User and Group
     Command Should Succeed  ${PTS} adduser user12 group12
     ${output}=  Run         ${PTS} membership group12
     Should Contain          ${output}  user12
     Command Should Succeed  ${PTS} removeuser user12 group12
     ${output}=  Run         ${PTS} membership group12
     Should Not Contain      ${output}  user12
-    Command Should Succeed  ${PTS} delete group12
-    Command Should Succeed  ${PTS} delete user12
-    ${output}=  Run         ${PTS} listentries -users -groups
-    Should Not Contain      ${output}  group12
-    Should Not Contain      ${output}  user12
+    [Teardown]  Remove User and Group
 
 List Groups a User Owns
-    [Tags]  #(ptslistown)
-    ${output}=  Run         ${PTS} listentries -groups
-    Should Not Contain      ${output}  groups12
-    Command Should Succeed  ${PTS} createuser user12
+    [Setup]  Create User
     ${output}=  Run         ${PTS} listowned user12
     Should Not Contain      ${output}  group12
-    Command Should Succeed  ${PTS} delete user12
-    ${output}=  Run         ${PTS} listentries -groups
-    Should Not Contain      ${output}  group12
+    [Teardown]  Remove User
 
-Set Maxuser
-    [Tags]  #(ptssetmax)
-    ${output}  Run          ${PTS} setmax -group -500 -user 1000
-    ${output}  Run          ${PTS} listmax
-    Should Be Equal         ${output}  Max user id is 1000 and max group id is -500.
-
-List Maxuser
-    [Tags]  #(ptslistmax)
-    ${output}  Run          ${PTS} setmax -group -520 -user 1200
-    ${output}  Run          ${PTS} listmax
-    Should Be Equal         ${output}  Max user id is 1200 and max group id is -520.
+Set and List Maxuser
+    ${output}=  Run          ${PTS} setmax -group -500 -user 1000
+    ${output}=  Run          ${PTS} listmax
+    Should Be Equal          ${output}  Max user id is 1000 and max group id is -500.
 
 Set Fields on a User
-    [Tags]  #(ptssetf)
-    ${output}=  Run         ${PTS} listentries
-    Should Not Contain      ${output}  user12
-    Command Should Succeed  ${PTS} createuser user12
-    ${output}=  Run         ${PTS} listentries
-    Should Contain          ${output}  user12
+    [Setup]  Create User
     Command Should Succeed  ${PTS} setfields user12 -groupquota 56
     ${output}=  Run         ${PTS} examine user12
     Should Contain          ${output}  group quota: 56
-    Command Should Succeed  ${PTS} delete user12
-    ${output}=  Run         ${PTS} listentries
-    Should Not Contain      ${output}  user12
+    [Teardown]  Remove User
 
 Delete a Group
-    [Tags]  #(ptsdeletegroup)
-    ${output}=  Run         ${PTS} listentries -groups
-    Should Not Contain      ${output}  group12
-    Command Should Succeed  ${PTS} creategroup group12 -owner ${AFS_ADMIN}
+    [Setup]  Create Group
     ${output}=  Run         ${PTS} membership group12
     Should Not Contain      ${output}  user12
-    Command Should Succeed  ${PTS} delete group12
-    ${output}=  Run         ${PTS} listentries -groups
-    Should Not Contain      ${output}  group12
+    [Teardown]  Remove Group
 
 Delete a User
-    [Tags]  #(ptsdeleteuser)
-    ${output}=  Run         ${PTS} listentries
-    Should Not Contain      ${output}  user12
-    Command Should Succeed  ${PTS} createuser user12
-    ${output}=  Run         ${PTS} listentries
-    Should Contain          ${output}  user12
-    Command Should Succeed  ${PTS} delete user12
-    ${output}=  Run         ${PTS} listentries
-    Should Not Contain      ${output}  user12
-    Logout
+    [Setup]  Create User
+    ${output}=  Run         ${PTS} membership user12
+    Should Not Contain      ${output}  group12
+    [Teardown]  Remove User

@@ -11,9 +11,11 @@ ${PRINT_GROUPS}    python -c 'import os; print os.getgroups()'
 *** Test Cases ***
 Obtain a PAG with pagsh
     [Documentation]   Run a pagsh as a child process verify a PAG is set.
-    PAG Should Not Exist
+    [Setup]  Run Keyword
+    ...    PAG Should Not Exist
     ${gids}=    PAG Shell          ${PRINT_GROUPS}
     ${pag}=     PAG From Groups    ${gids}
     PAG Should Be Valid            ${pag}
-    PAG Should Not Exist
+    [Teardown]  Run Keywords
+    ...    PAG Should Not Exist
 

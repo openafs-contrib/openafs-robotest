@@ -30,6 +30,7 @@ Teardown Users and Groups
 
 Setup Test Directory
     Create Directory  ${PATH}
+    Create Directory  ${PATH2}
     Access Control List Matches      ${PATH}
     ...  system:administrators rlidwka
     ...  system:anyuser rl
@@ -37,6 +38,7 @@ Setup Test Directory
 Teardown Test Directory
     Access Control List Contains     ${PATH}  system:administrators  rlidwka
     Remove Directory  ${PATH}
+    Remove Directory  ${PATH2}
 
 *** Test Cases ***
 Add a User to an ACL
@@ -79,7 +81,6 @@ Remove a Group from an ACL
     Access Control Should Not Exist  ${PATH}  group1
 
 Copy an ACL
-    Create Directory                 ${PATH2}
     Command Should Succeed           ${FS} setacl ${PATH} user1 rlidw
     Command Should Succeed           ${FS} setacl ${PATH} user1 rl -negative
     Command Should Succeed           ${FS} setacl ${PATH} group1 rl
@@ -90,18 +91,13 @@ Copy an ACL
     ...  user1 rlidw
     ...  user1 -rl
     ...  group1 rl
-    Remove Directory                 ${PATH2}
 
 Remove Obsolete ACL Entries
-    Create Directory                 ${PATH2}
     Command Should Succeed           ${FS} setacl ${PATH2} user1 rlidw
     ${output}=  Run                  ${FS} cleanacl -path ${PATH2}
     Should Contain                   ${output}  fine
-    Remove Directory                 ${PATH2}
 
 Show User's Directory Access
-    Create Directory                 ${PATH2}
     Command Should Succeed           ${FS} setacl ${PATH2} user1 rlidw
     ${output}=  Run                  ${FS} gca ${PATH2}
     Should Contain                   ${output}  rlidw
-    Remove Directory                 ${PATH2}

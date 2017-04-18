@@ -8,32 +8,34 @@ Resource          openafs.robot
 Suite Setup       Login  ${AFS_ADMIN}
 Suite Teardown    Logout
 
+*** Variables ***
+${MTPT}         /afs/.${AFS_CELL}/test/mtpt
 
 *** Test Cases ***
 Make and Remove a Mountpoint
-    [Tags]  #(mkm-rmm)
-    ${mtpt}=  Set Variable  /afs/.${AFS_CELL}/test/mtpt1
-    Command Should Succeed  ${FS} mkmount -dir ${mtpt} -vol root.cell
-    Directory Should Exist  ${mtpt}
-    Command Should Succeed  ${FS} rmmount -dir ${mtpt}
-    Directory Should Not Exist  ${mtpt}
+    [Setup]    Run Keyword
+    ...    Command Should Succeed  ${FS} mkmount -dir ${MTPT} -vol root.cell
+    Directory Should Exist  ${MTPT}
+    [Teardown]  Run Keywords
+    ...    Command Should Succeed  ${FS} rmmount -dir ${MTPT}  AND
+    ...    Directory Should Not Exist  ${MTPT}
 
 Make and Remove a Mountpoint with Command Aliases
-    [Tags]
-    ${mtpt}=  Set Variable  /afs/.${AFS_CELL}/test/mtpt2
-    Command Should Succeed  ${FS} mkm ${mtpt} root.cell
-    Directory Should Exist  ${mtpt}
-    Command Should Succeed  ${FS} rmm ${mtpt}
-    Directory Should Not Exist  ${mtpt}
+    [Setup]    Run Keyword
+    ...    Command Should Succeed  ${FS} mkm ${MTPT} root.cell
+    Directory Should Exist  ${MTPT}
+    [Teardown]  Run Keywords
+    ...    Command Should Succeed  ${FS} rmm ${MTPT}  AND
+    ...    Directory Should Not Exist  ${MTPT}
 
 Create a Mountpoint to a Nonexistent Volume
-    [Tags]  #(mountpoint)
     [Documentation]   The fs command permits the creation of dangling mountpoints.
-    ...               A directory entry in created, but the directory is not usable.
-    ${mtpt}=  Set Variable        /afs/.${AFS_CELL}/test/mtpt3
-    Command Should Succeed        ${FS} mkm ${mtpt} no-such-volume
-    Directory Entry Should Exist  ${mtpt}
-    Command Should Fail           test -d ${mtpt}
-    Command Should Fail           touch ${mtpt}/foo
-    Command Should Succeed        ${FS} rmm ${mtpt}
+    ...               A directory entry is created, but the directory is not usable.
+    [Setup]    Run Keyword
+    ...    Command Should Succeed        ${FS} mkm ${MTPT} no-such-volume
+    Directory Entry Should Exist  ${MTPT}
+    Command Should Fail           test -d ${MTPT}
+    Command Should Fail           touch ${MTPT}/foo
+    [Teardown]    Run Keyword
+    ...    Command Should Succeed        ${FS} rmm ${MTPT}
 

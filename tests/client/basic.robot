@@ -41,41 +41,49 @@ Teardown
 *** Test Cases ***
 Create a File
     [Tags]  #(creat1)
-    Should Not Exist        ${FILE}
+    [Setup]  Run Keyword
+    ...      Should Not Exist        ${FILE}
     Command Should Succeed  touch ${FILE}
     Should Be File          ${FILE}
     Should Not Be Symlink   ${FILE}
-    Remove File             ${FILE}
-    Should Not Exist        ${FILE}
+    [Teardown]  Run Keywords
+    ...         Remove File             ${FILE}  AND
+    ...         Should Not Exist        ${FILE}
 
 Create a Directory
     [Tags]  #(mkdir1)
-    Should Not Exist  ${DIR}
+    [Setup]   Run Keyword
+    ...       Should Not Exist  ${DIR}
     Create Directory  ${DIR}
     Should Exist      ${DIR}
     Should Be Dir     ${DIR}
     Should Be Dir     ${DIR}/.
     Should Be Dir     ${DIR}/..
-    Remove Directory  ${DIR}
-    Should Not Exist  ${DIR}
+    [Teardown]  Run Keywords
+    ...         Remove Directory  ${DIR}  AND
+    ...         Should Not Exist  ${DIR}
 
 Create a Symlink
     [Tags]  #(symlink)
-    Should Not Exist        ${DIR}
-    Should Not Exist        ${SYMLINK}
-    Create Directory        ${DIR}
+    [Setup]  Run Keywords
+    ...    Should Not Exist        ${DIR}  AND
+    ...    Should Not Exist        ${SYMLINK}  AND
+    ...    Create Directory        ${DIR}
     Symlink                 ${DIR}    ${SYMLINK}
     Should Be Symlink       ${SYMLINK}
-    Unlink                  ${SYMLINK}
-    Remove Directory        ${DIR}
-    Should Not Exist        ${DIR}
-    Should Not Exist        ${SYMLINK}
+    [Teardown]  Run Keywords
+    ...    Unlink                  ${SYMLINK}  AND
+    ...    Remove Directory        ${DIR}  AND
+    ...    Should Not Exist        ${DIR}  AND
+    ...    Should Not Exist        ${SYMLINK}
 
 Create a Hard Link within a Directory
-    [Tags]  #(hardlink1)
-    Should Not Exist        ${FILE}
-    Should Not Exist        ${LINK}
-    Create File             ${FILE}
+    [Setup]  Run Keywords
+    ...    Should Not Exist        ${FILE}    AND
+    ...    Should Not Exist        ${LINK}    AND
+    ...    Create File             ${FILE}
+    [Teardown]  Run Keyword
+    ...    Remove File             ${FILE}
     Link Count Should Be    ${FILE}  1
     Link                    ${FILE}  ${LINK}
     Inode Should Be Equal   ${LINK}  ${FILE}
@@ -84,95 +92,109 @@ Create a Hard Link within a Directory
     Unlink                  ${LINK}
     Should Not Exist        ${LINK}
     Link Count Should Be    ${FILE}  1
-    Remove File             ${FILE}
-    Should Not Exist        ${FILE}
 
 Create a Hard Link within a Volume
-    [Tags]  #(hardlink4)
-    Should Not Exist         ${DIR}
-    Should Not Exist         ${DIR2}
-    Should Not Exist         ${LINK2}
-    Should Not Exist         ${FILE3}
-    Create Directory         ${DIR}
-    Create Directory         ${DIR2}
-    Create File              ${FILE3}
-    Link                     ${FILE3}  ${LINK2}  code_should_be=${EXDEV}
-    Remove File              ${FILE3}
-    Remove File              ${LINK2}
-    Remove Directory         ${DIR}
-    Remove Directory         ${DIR2}
-    Should Not Exist         ${DIR}
-    Should Not Exist         ${DIR2}
-    Should Not Exist         ${LINK2}
-    Should Not Exist         ${FILE3}
+    [Setup]     Run Keywords
+    ...    Should Not Exist         ${DIR}      AND
+    ...    Should Not Exist         ${DIR2}     AND
+    ...    Should Not Exist         ${LINK2}    AND
+    ...    Should Not Exist         ${FILE3}    AND
+    ...    Create Directory         ${DIR}      AND
+    ...    Create Directory         ${DIR2}     AND
+    ...    Create File              ${FILE3}
+    [Teardown]  Run Keywords
+    ...    Remove File              ${FILE3}    AND
+    ...    Remove File              ${LINK2}    AND
+    ...    Remove Directory         ${DIR}      AND
+    ...    Remove Directory         ${DIR2}     AND
+    ...    Should Not Exist         ${DIR}      AND
+    ...    Should Not Exist         ${DIR2}     AND
+    ...    Should Not Exist         ${LINK2}    AND
+    ...    Should Not Exist         ${FILE3}
+    Link    ${FILE3}  ${LINK2}  code_should_be=${EXDEV}
 
 Create a Hard Link to a Directory
     [Tags]  #(hardlink2)
-    Should Not Exist        ${DIR}
-    Should Not Exist        ${LINK}
-    Create Directory        ${DIR}
+    [Setup]  Run Keywords
+    ...    Should Not Exist        ${DIR}  AND
+    ...    Should Not Exist        ${LINK}  AND
+    ...    Create Directory        ${DIR}
     Should Exist            ${DIR}
     Should Be Dir           ${DIR}
     Link                    ${DIR}  ${LINK}  code_should_be=${EPERM}
-    Remove File             ${LINK}
-    Remove Directory        ${DIR}
-    Should Not Exist        ${DIR}
-    Should Not Exist        ${LINK}
+    [Teardown]  Run Keywords
+    ...    Remove File             ${LINK}  AND
+    ...    Remove Directory        ${DIR}  AND
+    ...    Should Not Exist        ${DIR}  AND
+    ...    Should Not Exist        ${LINK}
 
 Create a Cross-Volume Hard Link
     [Tags]  #(hardlink5)
-    Should Not Exist           ${NVOLUME}
-    Create Volume  xyzzy  server=${SERVER}  part=${PARTITION}  path=${NVOLUME}  acl=system:anyuser,read
+    [Setup]  Run Keywords
+    ...    Should Not Exist           ${NVOLUME}  AND
+    ...    Create Volume  xyzzy  server=${SERVER}  part=${PARTITION}  path=${NVOLUME}  acl=system:anyuser,read
     Link  ${TESTPATH}  ${NVOLUME}  code_should_be=${EEXIST}
-    Remove Volume  xyzzy  path=${NVOLUME}
-    Remove File                ${NVOLUME}
-    Should Not Exist           ${NVOLUME}
+    [Teardown]  Run Keywords
+    ...    Remove Volume  xyzzy  path=${NVOLUME}  AND
+    ...    Remove File                ${NVOLUME}  AND
+    ...    Should Not Exist           ${NVOLUME}
 
 Touch a file
     [Tags]  #(touch1)
-    Should Not Exist        ${FILE}
+    [Setup]  Run Keyword
+    ...    Should Not Exist        ${FILE}
     Command Should Succeed  touch ${FILE}
     Should Exist            ${FILE}
-    Remove File             ${FILE}
-    Should Not Exist        ${FILE}
+    [Teardown]  Run Keywords
+    ...    Remove File             ${FILE}  AND
+    ...    Should Not Exist        ${FILE}
 
 Write to a File
     [Tags]  #(write1)
-    Should Not Exist    ${FILE}
-    Create File         ${FILE}  Hello world!\n
+    [Setup]  Run Keywords
+    ...    Should Not Exist    ${FILE}  AND
+    ...    Create File         ${FILE}  Hello world!\n
     Should Exist        ${FILE}
     ${TEXT}=  Get File  ${FILE}
     Should Be Equal     ${TEXT}  Hello world!\n
-    Remove File         ${FILE}
-    Should Not Exist    ${FILE}
+    [Teardown]  Run Keywords
+    ...    Remove File         ${FILE}  AND
+    ...    Should Not Exist    ${FILE}
 
 Rewrite a file
     [Tags]  #(write3)
-    Should Not Exist        ${FILE}
-    Create File             ${FILE}  Hello world!\n
+    [Setup]  Run Keywords
+    ...    Should Not Exist        ${FILE}  AND
+    ...    Create File             ${FILE}  Hello world!\n
     Should Exist            ${FILE}
     ${TEXT}=  Get File      ${FILE}
     Command Should Succeed  echo "Hey Cleveland\n" > ${FILE}
     ${text2}=  Get File     ${FILE}
     Should Not Be Equal     ${TEXT}  ${text2}
-    Remove File             ${FILE}
-    Should Not Exist        ${FILE}
+    [Teardown]  Run Keywords
+    ...    Remove File             ${FILE}  AND
+    ...    Should Not Exist        ${FILE}
 
 Rename a File
     [Tags]  #(rename1)
-    Should Not Exist  ${FILE1}
-    Should Not Exist  ${FILE2}
-    Create File  ${FILE1}
+    [Setup]  Run Keywords
+    ...    Should Not Exist  ${FILE1}  AND
+    ...    Should Not Exist  ${FILE2}  AND
+    ...    Create File  ${FILE1}
     ${before}=  Get Inode  ${FILE1}
     Command Should Succeed  mv ${FILE1} ${FILE2}
     ${after}=   Get Inode  ${FILE2}
     Should Be Equal  ${before}  ${after}
-    Remove File  ${FILE2}
-    Should Not Exist  ${FILE2}
+    [Teardown]  Run Keywords
+    ...    Remove File  ${FILE2}  AND
+    ...    Should Not Exist  ${FILE2}
 
 Write and Execute a Script in a Directory
     [Tags]  #(exec)
-    Should Not Exist        ${SCRIPT}
+    [Setup]  Run Keyword
+    ...    Should Not Exist      ${SCRIPT}
+    [Teardown]  Run Keyword
+    ...    Remove File           ${SCRIPT}
     ${code}=  Catenate
     ...  \#!/bin/sh\n
     ...  echo ${TEXT}\n
@@ -183,4 +205,3 @@ Write and Execute a Script in a Directory
     ${rc}  ${output}  Run And Return Rc And Output  ${SCRIPT}
     Should Be Equal As Integers  ${rc}  0
     Should Match  ${output}  ${TEXT}
-

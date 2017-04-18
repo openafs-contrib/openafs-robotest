@@ -13,6 +13,7 @@ ${VOLUME}      test.basic
 ${PARTITION}   a
 ${SERVER}      ${HOSTNAME}
 ${TESTPATH}    /afs/.${AFS_CELL}/test/${VOLUME}
+${FILE}        ${TESTPATH}/file
 
 *** Keywords ***
 Setup
@@ -26,32 +27,35 @@ Teardown
 *** Test Cases ***
 Create a Larger Than 2gb File
     [Tags]  slow
-    ${file}=  Set Variable         ${TESTPATH}/file
-    Create File                    ${file}
-    Should Exist                   ${file}
-    ${output}=  Run                dd if=/dev/zero of=${file} bs=1024 count=2M
-    Remove File                    ${file}
-    Should Not Exist               ${file}
+    [Setup]  Run Keyword
+    ...    Create File                    ${FILE}
+    Should Exist                   ${FILE}
+    ${output}=  Run                dd if=/dev/zero of=${FILE} bs=1024 count=2M
+    [Teardown]  Run Keywords
+    ...    Remove File                    ${FILE}  AND
+    ...    Should Not Exist               ${FILE}
 
 Write a File Larger than the Cache
     [Tags]  slow
-    ${size}=  Get Cache Size
-    ${file}=  Set Variable         ${TESTPATH}/file
-    Should Not Exist               ${file}
-    Create File                    ${file}
-    Should Exist                   ${file}
-    ${output}=  Run                dd if=/dev/zero of=${file} bs=1024 count=${size+1}
-    Remove File                    ${file}
-    Should Not Exist               ${file}
+    [Setup]  Run Keywords
+    ...    ${size}=  Get Cache Size   AND
+    ...    Should Not Exist               ${FILE}  AND
+    ...    Create File                    ${FILE}
+    Should Exist                   ${FILE}
+    ${output}=  Run                dd if=/dev/zero of=${FILE} bs=1024 count=${size+1}
+    [Teardown]  Run Keywords
+    ...    Remove File                    ${FILE}  AND
+    ...    Should Not Exist               ${FILE}
 
 Read a File Larger than the Cache
     [Tags]  slow
-    ${size}=  Get Cache Size
-    ${file}=  Set Variable         ${TESTPATH}/file
-    Should Not Exist               ${file}
-    Create File                    ${file}
-    Should Exist                   ${file}
-    ${output}=  Run                dd if=/dev/zero of=${file} bs=1024 count=${size+1}
-    Should Not Contain             ${file}  0
-    Remove File                    ${file}
-    Should Not Exist               ${file}
+    [Setup]  Run Keywords
+    ...    ${size}=  Get Cache Size   AND
+    ...    Should Not Exist               ${FILE}  AND
+    ...    Create File                    ${FILE}
+    Should Exist                   ${FILE}
+    ${output}=  Run                dd if=/dev/zero of=${FILE} bs=1024 count=${size+1}
+    Should Not Contain             ${FILE}  0
+    [Teardown]  Run Keywords
+    ...    Remove File                    ${FILE}  AND
+    ...    Should Not Exist               ${FILE}

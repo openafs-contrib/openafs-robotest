@@ -13,6 +13,8 @@ ${VOLUME}      test.basic
 ${PARTITION}   a
 ${SERVER}      ${HOSTNAME}
 ${TESTPATH}    /afs/.${AFS_CELL}/test/${VOLUME}
+${NAME}        \u20ac\u2020\u2021
+${FILE}        ${TESTPATH}/${NAME}
 
 *** Keywords ***
 Setup
@@ -25,11 +27,11 @@ Teardown
 
 *** Test Cases ***
 Unicode File Name
-    ${name}=   Set Variable      \u20ac\u2020\u2021
-    ${file}=   Set Variable      ${TESTPATH}/${name}
-    Should Not Exist             ${file}
-    Create File                  ${file}  Hello world!  UTF-8
-    Should Exist                 ${file}
-    Remove File                  ${file}
-    Should Not Exist             ${file}
+    [Setup]  Run Keyword
+    ...    Should Not Exist    ${FILE}
+    [Teardown]  Run Keywords
+    ...    Remove File         ${FILE}  AND
+    ...    Should Not Exist    ${FILE}
+    Create File                ${FILE}    Hello world!   UTF-8
+    Should Exist               ${FILE}
 
