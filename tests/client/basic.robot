@@ -9,13 +9,25 @@ Suite Setup       Setup
 Suite Teardown    Teardown
 
 *** Variables ***
-${VOLUME}      test.basic
-${PARTITION}   a
-${SERVER}      ${HOSTNAME}
-${TESTPATH}    /afs/.${AFS_CELL}/test/${VOLUME}
-${EPERM}       1
-${EEXIST}      17
-${EXDEV}       18
+${VOLUME}     test.basic
+${PARTITION}  a
+${SERVER}     ${HOSTNAME}
+${TESTPATH}   /afs/.${AFS_CELL}/test/${VOLUME}
+${EPERM}      1
+${EEXIST}     17
+${EXDEV}      18
+${DIR2}       ${TESTPATH}/dir2
+${DIR}        ${TESTPATH}/dir
+${FILE1}      ${TESTPATH}/a
+${FILE2}      ${TESTPATH}/b
+${FILE3}      ${TESTPATH}/dir/file
+${FILE}       ${TESTPATH}/file
+${LINK2}      ${TESTPATH}/dir2/link
+${LINK}       ${TESTPATH}/link
+${NVOLUME}    ${TESTPATH}/xyzzy
+${SCRIPT}     ${TESTPATH}/script.sh
+${SYMLINK}    ${TESTPATH}/symlink
+${TEXT}       hello-world
 
 *** Keywords ***
 Setup
@@ -29,166 +41,146 @@ Teardown
 *** Test Cases ***
 Create a File
     [Tags]  #(creat1)
-    ${file}=  Set Variable  ${TESTPATH}/file
-    Should Not Exist        ${file}
-    Command Should Succeed  touch ${file}
-    Should Be File          ${file}
-    Should Not Be Symlink   ${file}
-    Remove File             ${file}
-    Should Not Exist        ${file}
+    Should Not Exist        ${FILE}
+    Command Should Succeed  touch ${FILE}
+    Should Be File          ${FILE}
+    Should Not Be Symlink   ${FILE}
+    Remove File             ${FILE}
+    Should Not Exist        ${FILE}
 
 Create a Directory
     [Tags]  #(mkdir1)
-    ${dir}=  Set Variable  ${TESTPATH}/dir
-    Should Not Exist  ${dir}
-    Create Directory  ${dir}
-    Should Exist      ${dir}
-    Should Be Dir     ${dir}
-    Should Be Dir     ${dir}/.
-    Should Be Dir     ${dir}/..
-    Remove Directory  ${dir}
-    Should Not Exist  ${dir}
+    Should Not Exist  ${DIR}
+    Create Directory  ${DIR}
+    Should Exist      ${DIR}
+    Should Be Dir     ${DIR}
+    Should Be Dir     ${DIR}/.
+    Should Be Dir     ${DIR}/..
+    Remove Directory  ${DIR}
+    Should Not Exist  ${DIR}
 
 Create a Symlink
     [Tags]  #(symlink)
-    ${dir}=      Set Variable  ${TESTPATH}/dir
-    ${symlink}=  Set Variable  ${TESTPATH}/symlink
-    Should Not Exist        ${dir}
-    Should Not Exist        ${symlink}
-    Create Directory        ${dir}
-    Symlink                 ${dir}    ${symlink}
-    Should Be Symlink       ${symlink}
-    Unlink                  ${symlink}
-    Remove Directory        ${dir}
-    Should Not Exist        ${dir}
-    Should Not Exist        ${symlink}
+    Should Not Exist        ${DIR}
+    Should Not Exist        ${SYMLINK}
+    Create Directory        ${DIR}
+    Symlink                 ${DIR}    ${SYMLINK}
+    Should Be Symlink       ${SYMLINK}
+    Unlink                  ${SYMLINK}
+    Remove Directory        ${DIR}
+    Should Not Exist        ${DIR}
+    Should Not Exist        ${SYMLINK}
 
 Create a Hard Link within a Directory
     [Tags]  #(hardlink1)
-    ${file}=  Set Variable  ${TESTPATH}/file
-    ${link}=  Set Variable  ${TESTPATH}/link
-    Should Not Exist        ${file}
-    Should Not Exist        ${link}
-    Create File             ${file}
-    Link Count Should Be    ${file}  1
-    Link                    ${file}  ${link}
-    Inode Should Be Equal   ${link}  ${file}
-    Link Count Should Be    ${file}  2
-    Link Count Should Be    ${link}  2
-    Unlink                  ${link}
-    Should Not Exist        ${link}
-    Link Count Should Be    ${file}  1
-    Remove File             ${file}
-    Should Not Exist        ${file}
+    Should Not Exist        ${FILE}
+    Should Not Exist        ${LINK}
+    Create File             ${FILE}
+    Link Count Should Be    ${FILE}  1
+    Link                    ${FILE}  ${LINK}
+    Inode Should Be Equal   ${LINK}  ${FILE}
+    Link Count Should Be    ${FILE}  2
+    Link Count Should Be    ${LINK}  2
+    Unlink                  ${LINK}
+    Should Not Exist        ${LINK}
+    Link Count Should Be    ${FILE}  1
+    Remove File             ${FILE}
+    Should Not Exist        ${FILE}
 
 Create a Hard Link within a Volume
     [Tags]  #(hardlink4)
-    ${dir}=    Set Variable  ${TESTPATH}/dir
-    ${dir2}=   Set Variable  ${TESTPATH}/dir2
-    ${file}=   Set Variable  ${dir}/file
-    ${link}=   Set Variable  ${dir2}/link
-    Should Not Exist         ${dir}
-    Should Not Exist         ${dir2}
-    Should Not Exist         ${link}
-    Should Not Exist         ${file}
-    Create Directory         ${dir}
-    Create Directory         ${dir2}
-    Create File              ${file}
-    Link                     ${file}  ${link}  code_should_be=${EXDEV}
-    Remove File              ${file}
-    Remove File              ${link}
-    Remove Directory         ${dir}
-    Remove Directory         ${dir2}
-    Should Not Exist         ${dir}
-    Should Not Exist         ${dir2}
-    Should Not Exist         ${link}
-    Should Not Exist         ${file}
+    Should Not Exist         ${DIR}
+    Should Not Exist         ${DIR2}
+    Should Not Exist         ${LINK2}
+    Should Not Exist         ${FILE3}
+    Create Directory         ${DIR}
+    Create Directory         ${DIR2}
+    Create File              ${FILE3}
+    Link                     ${FILE3}  ${LINK2}  code_should_be=${EXDEV}
+    Remove File              ${FILE3}
+    Remove File              ${LINK2}
+    Remove Directory         ${DIR}
+    Remove Directory         ${DIR2}
+    Should Not Exist         ${DIR}
+    Should Not Exist         ${DIR2}
+    Should Not Exist         ${LINK2}
+    Should Not Exist         ${FILE3}
 
 Create a Hard Link to a Directory
     [Tags]  #(hardlink2)
-    ${dir}=  Set Variable   ${TESTPATH}/dir
-    ${link}=  Set Variable  ${TESTPATH}/link
-    Should Not Exist        ${dir}
-    Should Not Exist        ${link}
-    Create Directory        ${dir}
-    Should Exist            ${dir}
-    Should Be Dir           ${dir}
-    Link                    ${dir}  ${link}  code_should_be=${EPERM}
-    Remove File             ${link}
-    Remove Directory        ${dir}
-    Should Not Exist        ${dir}
-    Should Not Exist        ${link}
+    Should Not Exist        ${DIR}
+    Should Not Exist        ${LINK}
+    Create Directory        ${DIR}
+    Should Exist            ${DIR}
+    Should Be Dir           ${DIR}
+    Link                    ${DIR}  ${LINK}  code_should_be=${EPERM}
+    Remove File             ${LINK}
+    Remove Directory        ${DIR}
+    Should Not Exist        ${DIR}
+    Should Not Exist        ${LINK}
 
 Create a Cross-Volume Hard Link
     [Tags]  #(hardlink5)
-    ${nvolume}=  Set Variable  ${TESTPATH}/xyzzy
-    Should Not Exist           ${nvolume}
-    Create Volume  xyzzy  server=${SERVER}  part=${PARTITION}  path=${nvolume}  acl=system:anyuser,read
-    Link  ${TESTPATH}  ${nvolume}  code_should_be=${EEXIST}
-    Remove Volume  xyzzy  path=${nvolume}
-    Remove File                ${nvolume}
-    Should Not Exist           ${nvolume}
+    Should Not Exist           ${NVOLUME}
+    Create Volume  xyzzy  server=${SERVER}  part=${PARTITION}  path=${NVOLUME}  acl=system:anyuser,read
+    Link  ${TESTPATH}  ${NVOLUME}  code_should_be=${EEXIST}
+    Remove Volume  xyzzy  path=${NVOLUME}
+    Remove File                ${NVOLUME}
+    Should Not Exist           ${NVOLUME}
 
 Touch a file
     [Tags]  #(touch1)
-    ${file}=  Set Variable  ${TESTPATH}/file
-    Should Not Exist        ${file}
-    Command Should Succeed  touch ${file}
-    Should Exist            ${file}
-    Remove File             ${file}
-    Should Not Exist        ${file}
+    Should Not Exist        ${FILE}
+    Command Should Succeed  touch ${FILE}
+    Should Exist            ${FILE}
+    Remove File             ${FILE}
+    Should Not Exist        ${FILE}
 
 Write to a File
     [Tags]  #(write1)
-    ${file}=  Set Variable  ${TESTPATH}/file
-    Should Not Exist    ${file}
-    Create File         ${file}  Hello world!\n
-    Should Exist        ${file}
-    ${text}=  Get File  ${file}
-    Should Be Equal     ${text}  Hello world!\n
-    Remove File         ${file}
-    Should Not Exist    ${file}
+    Should Not Exist    ${FILE}
+    Create File         ${FILE}  Hello world!\n
+    Should Exist        ${FILE}
+    ${TEXT}=  Get File  ${FILE}
+    Should Be Equal     ${TEXT}  Hello world!\n
+    Remove File         ${FILE}
+    Should Not Exist    ${FILE}
 
 Rewrite a file
     [Tags]  #(write3)
-    ${file}=  Set Variable  ${TESTPATH}/file
-    Should Not Exist        ${file}
-    Create File             ${file}  Hello world!\n
-    Should Exist            ${file}
-    ${text}=  Get File      ${file}
-    Command Should Succeed  echo "Hey Cleveland\n" > ${file}
-    ${text2}=  Get File     ${file}
-    Should Not Be Equal     ${text}  ${text2}
-    Remove File             ${file}
-    Should Not Exist        ${file}
+    Should Not Exist        ${FILE}
+    Create File             ${FILE}  Hello world!\n
+    Should Exist            ${FILE}
+    ${TEXT}=  Get File      ${FILE}
+    Command Should Succeed  echo "Hey Cleveland\n" > ${FILE}
+    ${text2}=  Get File     ${FILE}
+    Should Not Be Equal     ${TEXT}  ${text2}
+    Remove File             ${FILE}
+    Should Not Exist        ${FILE}
 
 Rename a File
     [Tags]  #(rename1)
-    ${a}=  Set Variable  ${TESTPATH}/a
-    ${b}=  Set Variable  ${TESTPATH}/b
-    Should Not Exist  ${a}
-    Should Not Exist  ${b}
-    Create File  ${a}
-    ${before}=  Get Inode  ${a}
-    Command Should Succeed  mv ${a} ${b}
-    ${after}=   Get Inode  ${b}
+    Should Not Exist  ${FILE1}
+    Should Not Exist  ${FILE2}
+    Create File  ${FILE1}
+    ${before}=  Get Inode  ${FILE1}
+    Command Should Succeed  mv ${FILE1} ${FILE2}
+    ${after}=   Get Inode  ${FILE2}
     Should Be Equal  ${before}  ${after}
-    Remove File  ${b}
-    Should Not Exist  ${b}
+    Remove File  ${FILE2}
+    Should Not Exist  ${FILE2}
 
 Write and Execute a Script in a Directory
     [Tags]  #(exec)
-    ${file}=  Set Variable  ${TESTPATH}/script.sh
-    ${text}=  Set Variable  hello world
-    #Should Not Exist        ${file}
+    Should Not Exist        ${SCRIPT}
     ${code}=  Catenate
     ...  \#!/bin/sh\n
-    ...  echo ${text}\n
-    Create File                  ${file}  ${code}
-    Should Exist                 ${file}
-    Command Should Succeed       chmod +x ${file}
-    File Should Be Executable    ${file}
-    ${rc}  ${output}  Run And Return Rc And Output  ${file}
+    ...  echo ${TEXT}\n
+    Create File                  ${SCRIPT}  ${code}
+    Should Exist                 ${SCRIPT}
+    Command Should Succeed       chmod +x ${SCRIPT}
+    File Should Be Executable    ${SCRIPT}
+    ${rc}  ${output}  Run And Return Rc And Output  ${SCRIPT}
     Should Be Equal As Integers  ${rc}  0
-    Should Match  ${output}  ${text}
+    Should Match  ${output}  ${TEXT}
 
