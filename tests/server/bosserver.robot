@@ -29,6 +29,22 @@ Teardown Users and Groups
     Command Should Succeed  ${PTS} delete group1
     Logout
 
+Superusers Exclude User1
+    ${output}=  Run           ${BOS} listusers ${HOSTNAME}
+    Should Not Contain        ${output}  user1
+
+Superusers Include User1
+    ${output}=  Run           ${BOS} listusers ${HOSTNAME}
+    Should Contain            ${output}  user1
+
+Add Superuser
+    Superusers Exclude User1
+    Command Should Succeed    ${BOS} adduser ${HOSTNAME} user1
+
+Remove Superuser
+    Command Should Succeed    ${BOS} removeuser ${HOSTNAME} user1
+    Superusers Exclude User1
+
 *** Test Cases ***
 Add a Bosserver Host
     [Tags]  todo  #(bosaddhost)
@@ -45,14 +61,10 @@ Remove a Server Host
 
 Add a Superuser
     [Tags]  #(bosadduser)
-    ${output}=  Run           ${BOS} listusers ${HOSTNAME}
-    Should Not Contain        ${output}  user1
+    [Setup]      Superusers Exclude User1
     Command Should Succeed    ${BOS} adduser ${HOSTNAME} user1
-    ${output}=  Run           ${BOS} listusers ${HOSTNAME}
-    Should Contain            ${output}  user1
-    Command Should Succeed    ${BOS} removeuser ${HOSTNAME} user1
-    ${output}=  Run           ${BOS} listusers ${HOSTNAME}
-    Should Not Contain        ${output}  user1
+    Superusers Include User1
+    [Teardown]   Remove Superuser
 
 List Superusers
     [Tags]  #(boslistusers)
@@ -61,14 +73,10 @@ List Superusers
 
 Remove a Superuser
     [Tags]  #(bosremoveuser)
-    ${output}=  Run           ${BOS} listusers ${HOSTNAME}
-    Should Not Contain        ${output}  user2
-    Command Should Succeed    ${BOS} adduser ${HOSTNAME} user2
-    ${output}=  Run           ${BOS} listusers ${HOSTNAME}
-    Should Contain            ${output}  user2
-    Command Should Succeed    ${BOS} removeuser ${HOSTNAME} user2
-    ${output}=  Run           ${BOS} listusers ${HOSTNAME}
-    Should Not Contain        ${output}  user2
+    [Setup]      Add Superuser
+    Superusers Include User1
+    Command Should Succeed    ${BOS} removeuser ${HOSTNAME} user1
+    [Teardown]   Superusers Exclude User1
 
 Install an Executable Shell Script
     [Tags]  todo  #(bosinstall)
