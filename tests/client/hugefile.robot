@@ -38,9 +38,9 @@ Create a Larger Than 2gb File
 Write a File Larger than the Cache
     [Tags]  slow
     [Setup]  Run Keywords
-    ...    ${size}=  Get Cache Size   AND
     ...    Should Not Exist               ${FILE}  AND
     ...    Create File                    ${FILE}
+    ${size}=  Get Cache Size 
     Should Exist                   ${FILE}
     ${output}=  Run                dd if=/dev/zero of=${FILE} bs=1024 count=${size+1}
     [Teardown]  Run Keywords
@@ -50,9 +50,9 @@ Write a File Larger than the Cache
 Read a File Larger than the Cache
     [Tags]  slow
     [Setup]  Run Keywords
-    ...    ${size}=  Get Cache Size   AND
     ...    Should Not Exist               ${FILE}  AND
     ...    Create File                    ${FILE}
+    ${size}=  Get Cache Size 
     Should Exist                   ${FILE}
     ${output}=  Run                dd if=/dev/zero of=${FILE} bs=1024 count=${size+1}
     Should Not Contain             ${FILE}  0
