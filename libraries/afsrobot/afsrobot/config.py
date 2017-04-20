@@ -39,7 +39,7 @@ log = %(userdir)s/log
 output = %(userdir)s/output
 
 [run]
-exclude_tags = todo,crash,slow,fts
+exclude_tags = todo,bug,slow
 log_level = INFO
 
 [variables]

@@ -67,7 +67,7 @@ Restore an Empty Dump
     [Teardown]    Remove Dumped Volume
 
 Restore a Volume Containing a Bogus ACL
-    [Tags]  crash
+    [Tags]    bug
     [Setup]       Bogus ACL Dump
     Command Should Fail  ${VOS} restore ${SERVER} ${PART} ${VOLUME} -file ${DUMP} -overwrite full
     [Teardown]    Remove Dumped Volume

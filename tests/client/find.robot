@@ -71,7 +71,7 @@ Traverse Simple Tree
     [Teardown]    Remove Tree
 
 Traverse Tree with Two Parents
-    [Tags]    fts
+    [Tags]    bug
     [Setup]       Create Tree With Two Parents
     File Should Be Found     ${TESTPATH}/v0/v3/file1
     File Should Be Found     ${TESTPATH}/v1/v3a/file1
