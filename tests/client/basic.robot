@@ -7,15 +7,13 @@ Documentation     Basic Functional Tests
 Resource          openafs.robot
 Suite Setup       Setup
 Suite Teardown    Teardown
+Variables         ${RESOURCES}/errorcodes.py
 
 *** Variables ***
 ${VOLUME}     test.basic
 ${PARTITION}  a
 ${SERVER}     ${HOSTNAME}
 ${TESTPATH}   /afs/.${AFS_CELL}/test/${VOLUME}
-${EPERM}      1
-${EEXIST}     17
-${EXDEV}      18
 ${DIR2}       ${TESTPATH}/dir2
 ${DIR}        ${TESTPATH}/dir
 ${FILE1}      ${TESTPATH}/a
