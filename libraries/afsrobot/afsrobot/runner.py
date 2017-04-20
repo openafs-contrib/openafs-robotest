@@ -215,6 +215,10 @@ class Runner(object):
 
         # Determine tests to exclude.
         exclude = config.get('run', 'exclude_tags').split(',')
+        gfind = self.config.optstr('variables', 'gfind')
+        if not gfind:
+            sys.stderr.write("Excluding 'requires-gfind'; variables.gfind is not set in config.\n")
+            exclude.append('requires-gfind')
 
         # Setup the rf options.
         tests = config.get('paths', 'tests') # path to our tests
