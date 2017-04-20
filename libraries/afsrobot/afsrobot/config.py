@@ -23,6 +23,7 @@ import os
 import socket
 import StringIO
 import sys
+import afsutil.system
 
 # Configuration defaults.
 DEFAULT_CONFIG_DATA = """
@@ -45,6 +46,7 @@ log_level = INFO
 [variables]
 afs_dist = transarc
 pag_onegroup = yes
+gfind = <GFIND>
 
 [cell]
 name = robotest
@@ -106,9 +108,13 @@ class Config(ConfigParser.SafeConfigParser):
 
     def load_defaults(self):
         """Load default values."""
+        gfind = afsutil.system.detect_gfind()
+        if not gfind:
+            gfind = ''
         text = DEFAULT_CONFIG_DATA
         text = text.replace('<HOME>', os.environ['HOME'])
         text = text.replace('<HOSTNAME>', socket.gethostname())
+        text = text.replace('<GFIND>', gfind)
         self.load_from_string(text)
 
     def load_from_file(self, filename):
