@@ -200,29 +200,33 @@ class Runner(object):
         if not os.path.isfile(keytab):
             raise ValueError("Cannot find keytab file '%s'!\n" % keytab)
 
+        # Additional variables.
+        variable = [
+            'RESOURCES:%s' % config.get('paths', 'resources'),
+            'AFS_CELL:%s' % config.get('cell', 'name'),
+            'AFS_ADMIN:%s' % config.get('cell', 'admin'),
+            'AFS_AKIMPERSONATE:%s' % config.getboolean('kerberos', 'akimpersonate'),
+            'KRB_REALM:%s' % config.get('kerberos', 'realm'),
+            'KRB_AFS_KEYTAB:%s' % keytab,
+        ]
+        if config.has_section('variables'):
+            for o,v in config.items('variables'):
+                variable.append("%s:%s" % (o.upper(), v))
+
+        # Determine tests to exclude.
+        exclude = config.get('run', 'exclude_tags').split(',')
+
         # Setup the rf options.
         tests = config.get('paths', 'tests') # path to our tests
         options = {
-            'variable': [
-                'RESOURCES:%s' % config.get('paths', 'resources'), # path to our resources
-                'AFS_CELL:%s' % config.get('cell', 'name'),
-                'AFS_ADMIN:%s' % config.get('cell', 'admin'),
-                'AFS_AKIMPERSONATE:%s' % config.getboolean('kerberos', 'akimpersonate'),
-                'KRB_REALM:%s' % config.get('kerberos', 'realm'),
-                'KRB_AFS_KEYTAB:%s' % keytab,
-            ],
             'report': 'index.html',
             'outputdir': output,
             'loglevel': config.get('run', 'log_level'),
-            'exclude': config.get('run', 'exclude_tags').split(','),
+            'variable': variable,
+            'exclude': exclude,
             'runemptysuite': True,
             'exitonfailure': False,
         }
-
-        # Additional variables.
-        if config.has_section('variables'):
-            for o,v in config.items('variables'):
-                options['variable'].append("%s:%s" % (o.upper(), v))
 
         # Additional options.
         if kwargs.has_key('suite') and kwargs['suite']:
