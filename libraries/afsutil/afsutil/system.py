@@ -307,6 +307,9 @@ def _linux_unload_module():
 def _linux_load_module(kmod):
     run('insmod', args=[kmod])
 
+def _linux_detect_gfind():
+    return which('find')
+
 def _solaris_network_interfaces_old():
     """Return a list of non-loopback networks interfaces."""
     addrs = []
@@ -344,6 +347,9 @@ def _solaris_is_loaded(kmod):
         if kmod == mname:
             return mid
     return 0
+
+def _solaris_detect_gfind():
+    return which('gfind', extra_paths=['/opt/csw/bin'])
 
 def mkdirp(path):
     """Make a directory with parents."""
@@ -484,6 +490,7 @@ if _uname == "Linux":
     configure_dynamic_linker = _linux_configure_dynamic_linker
     unload_module = _linux_unload_module
     load_module = _linux_load_module
+    detect_gfind = _linux_detect_gfind
 elif _uname == "SunOS":
     if _osrel == "5.10":
         network_interfaces = _solaris_network_interfaces_old
@@ -493,6 +500,7 @@ elif _uname == "SunOS":
     configure_dynamic_linker = _solaris_configure_dynamic_linker
     unload_module = _solaris_unload_module
     load_module = _solaris_load_module
+    detect_gfind = _solaris_detect_gfind
 else:
     raise AssertionError("Unsupported operating system: %s" % (_uname))
 
