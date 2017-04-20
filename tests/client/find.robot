@@ -58,20 +58,21 @@ Remove Tree
 
 File Should Be Found
     [Arguments]    ${target}
-    ${rc}  ${output}    Run And Return Rc And Output    find ${TESTPATH} -noleaf
+    ${rc}  ${output}    Run And Return Rc And Output    ${GFIND} ${TESTPATH} -noleaf
     Log    ${output}
     Should Be Equal As Integers  ${rc}  0
     Should Contain  ${output}  ${target}
 
 *** Test Cases ***
 Traverse Simple Tree
+    [Tags]    requires-gfind
     [Setup]       Create Tree
     File Should Be Found     ${TESTPATH}/v0/v3/file1
     File Should Be Found     ${TESTPATH}/v2/file2
     [Teardown]    Remove Tree
 
 Traverse Tree with Two Parents
-    [Tags]    bug
+    [Tags]    bug    requires-gfind
     [Setup]       Create Tree With Two Parents
     File Should Be Found     ${TESTPATH}/v0/v3/file1
     File Should Be Found     ${TESTPATH}/v1/v3a/file1
