@@ -81,7 +81,9 @@ ESRMNT = os.errno.ESRMNT
 ECOMM = os.errno.ECOMM
 EPROTO = os.errno.EPROTO
 EMULTIHOP = os.errno.EMULTIHOP
-EDOTDOT = os.errno.EDOTDOT
+# undefined on Solaris; 
+# comment out for now, since no test references it. 
+# EDOTDOT = os.errno.EDOTDOT
 EBADMSG = os.errno.EBADMSG
 EOVERFLOW = os.errno.EOVERFLOW
 ENOTUNIQ = os.errno.ENOTUNIQ
@@ -125,9 +127,19 @@ EHOSTUNREACH = os.errno.EHOSTUNREACH
 EALREADY = os.errno.EALREADY
 EINPROGRESS = os.errno.EINPROGRESS
 ESTALE = os.errno.ESTALE
-EUCLEAN = os.errno.EUCLEAN
-ENOTNAM = os.errno.ENOTNAM
-ENAVAIL = os.errno.ENAVAIL
-EISNAM = os.errno.EISNAM
-EREMOTEIO = os.errno.EREMOTEIO
+# undefined on Solaris; 
+# comment out for now, since no test references it. 
+# EUCLEAN = os.errno.EUCLEAN
+# undefined on Solaris; 
+# comment out for now, since no test references it. 
+# ENOTNAM = os.errno.ENOTNAM
+# undefined on Solaris; 
+# comment out for now, since no test references it. 
+# ENAVAIL = os.errno.ENAVAIL
+# undefined on Solaris; 
+# comment out for now, since no test references it. 
+# EISNAM = os.errno.EISNAM
+# undefined on Solaris; 
+# comment out for now, since no test references it. 
+# EREMOTEIO = os.errno.EREMOTEIO
 EDQUOT = os.errno.EDQUOT
