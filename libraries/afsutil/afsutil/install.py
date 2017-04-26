@@ -91,7 +91,7 @@ def _optlists2dict(options):
         return names
     for optlist in options:
         for o in optlist:
-            name,value = o.split('=')
+            name,value = o.split('=', 1)
             names[name.strip()] = value.strip()
     return names
 

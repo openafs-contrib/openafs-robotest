@@ -309,7 +309,7 @@ class Cell(object):
             names = {}
             for optlist in options:
                 for o in optlist:
-                    name,value = o.split('=')
+                    name,value = o.split('=', 1)
                     names[name] = value
             return names
         if options is None: options = [[]]
