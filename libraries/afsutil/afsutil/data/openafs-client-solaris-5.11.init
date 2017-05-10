@@ -34,6 +34,17 @@ killproc() {            # kill the named process(es)
         [ "$pid" != "" ] && kill -KILL $pid
 }
 
+generate_csdb() {
+    if [ -f /usr/vice/etc/CellServDB.local -a -f /usr/vice/etc/CellServDB.dist ]; then
+        if [ -h /usr/vice/etc/CellServDB ]; then
+            rm -f /usr/vice/etc/CellServDB
+        fi
+        cat /usr/vice/etc/CellServDB.local /usr/vice/etc/CellServDB.dist >/usr/vice/etc/CellServDB
+        chmod 644 /usr/vice/etc/CellServDB
+    fi
+}
+
+
 case $1 in
 'start')
 
@@ -111,7 +122,7 @@ fi
 #
 # Check that all of the client configuration files exist
 #
-
+generate_csdb
 for file in /usr/vice/etc/afsd /usr/vice/etc/cacheinfo \
           /usr/vice/etc/ThisCell /usr/vice/etc/CellServDB
 do

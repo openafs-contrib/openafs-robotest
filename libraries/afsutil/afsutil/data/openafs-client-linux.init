@@ -258,6 +258,16 @@ generate_cacheinfo() {
     fi
 }
 
+generate_csdb() {
+    if [ -f /usr/vice/etc/CellServDB.local -a -f /usr/vice/etc/CellServDB.dist ]; then
+        if [ -h /usr/vice/etc/CellServDB ]; then
+            rm -f /usr/vice/etc/CellServDB
+        fi
+        cat /usr/vice/etc/CellServDB.local /usr/vice/etc/CellServDB.dist >/usr/vice/etc/CellServDB
+        chmod 644 /usr/vice/etc/CellServDB
+    fi
+}
+
 case "$1" in
   start)
     if [ ! "$afs_rh" -o ! -f /var/lock/subsys/openafs-client ]; then
@@ -273,6 +283,7 @@ case "$1" in
 
 	echo "Starting AFS services..... "
 	generate_cacheinfo
+	generate_csdb
 	${AFSD} ${AFSD_OPTIONS}
 	test "$afs_rh" && touch /var/lock/subsys/openafs-client
 	$AFS_POST_INIT
