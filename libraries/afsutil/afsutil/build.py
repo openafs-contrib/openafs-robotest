@@ -547,13 +547,15 @@ def package(**kwargs):
     # We run configure here just to bootstrap the process.
     clean = kwargs.get('clean', True)
     jobs = kwargs.get('jobs', 1)
+    source = kwargs.get('source', False)
     if clean:
         _clean('.')
     sh('./regen.sh', '-q')
     sh('./configure')
     sh('make', '-j', jobs, 'dist')
     srpm = _make_srpm(jobs)
-    _make_rpm(srpm)
+    if not source:
+        _make_rpm(srpm)
 
 
 #

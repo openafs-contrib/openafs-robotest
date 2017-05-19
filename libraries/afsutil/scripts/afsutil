@@ -292,6 +292,7 @@ def main():
     p = subparsers.add_parser('package', help='build packages')
     _common_opts(p)
     p.add_argument('--chdir', help='change to directory', default=None)
+    p.add_argument('--source', help='build source package only', action='store_true')
     p.add_argument('--no-clean', dest='clean', help='do not run git clean', action='store_false')
     p.set_defaults(fn=package, must_be_root=False)
 
