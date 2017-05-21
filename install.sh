@@ -49,15 +49,6 @@ run() {
     fi
 }
 
-install_library() {
-    info "Installing $1"
-    if [ "$OPT_VERBOSE" = "yes" ]; then
-        (cd libraries/$1 && ./install.sh)
-    else
-        (cd libraries/$1 && ./install.sh >/dev/null)
-    fi
-}
-
 gopt() {
     if [ -z "$2" ]; then
         echo "Option --$1 requires an argument." >&2
@@ -128,9 +119,10 @@ fi
 
 # Install.
 if [ $OPT_INSTALL_LIBS = "yes" ]; then
-    install_library afsutil
-    install_library afsrobot
-    install_library OpenAFSLibrary
+    info "Installing libraries"
+    run pip install libraries/afsutil
+    run pip install libraries/afsrobot
+    run pip install libraries/OpenAFSLibrary
 fi
 if [ $OPT_INSTALL_TESTS = "yes" ]; then
     info "Installing test suites"
@@ -150,8 +142,18 @@ if [ $OPT_INSTALL_DOCS = "yes" ]; then
     run $PYTHON -m robot.libdoc --format HTML --pythonpath $pypath $input $DIR_DOC/OpenAFSLibary.html
 fi
 
-# Post install check.
+# Post install checks.
 if [ $OPT_INSTALL_LIBS = "yes" ]; then
+    # Work-around for OpenCSW pip on Solaris 10 to avoid the need to
+    # mess with the PATH.
+    for cli in afsutil afsrobot; do
+        if [ -x /opt/csw/bin/$cli ]; then
+            test -h /usr/bin/$cli && rm -f /usr/bin/$cli
+            test -f /usr/bin/$cli || ln -s /opt/csw/bin/$cli /usr/bin/$cli
+        fi
+    done
+
+    # Verify system setup.
     afsutil check || echo "Try: sudo afsutil check --fix-hosts"
 fi
 

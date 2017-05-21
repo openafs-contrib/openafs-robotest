@@ -10,7 +10,7 @@ VERBOSE="no"
 for package in $PACKAGES
 do
     if pip show --quiet $package; then
-        libraries/$package/uninstall.sh || exit 1
+        pip uninstall -y $package || exit 1
     fi
 done
 
