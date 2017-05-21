@@ -10,5 +10,6 @@ setup(name='afsrobot',
       license='BSD',
       packages=['afsrobot'],
       scripts=['scripts/afsrobot', 'scripts/afs-robotest'],
+      test_suite='test',
       zip_safe=False)
 
