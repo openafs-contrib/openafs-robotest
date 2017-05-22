@@ -7,6 +7,8 @@ Utility classes and command-line tool to build, install, and setup OpenAFS.
 Classes
 -------
 
+::
+
     build     build and package OpenAFS from source
     cell      setup a new OpenAFS cell
     cli       basic OpenAFS command wrappers
@@ -19,6 +21,8 @@ Classes
 
 Command line interface
 ----------------------
+
+::
 
     usage: afsutil <command> ...
     where command is:
@@ -41,11 +45,11 @@ Command line interface
 Examples
 --------
 
-To build OpenAFS from sources:
+To build OpenAFS from sources::
 
     afsutil build
 
-To install legacy "Transarc-style" binaries:
+To install legacy "Transarc-style" binaries::
 
     sudo afsutil install \
       --force \
@@ -59,20 +63,20 @@ To install legacy "Transarc-style" binaries:
       -o "afsd=-dynroot -fakestat -afsdb" \
       -o "bosserver=-pidfiles"
 
-To setup the OpenAFS service key from a Kerberos 5 keytab file:
+To setup the OpenAFS service key from a Kerberos 5 keytab file::
 
     sudo afsutil setkey
       --cell example.com \
       --realm EXAMPLE.COM \
       --keytab /root/fake.keytab
 
-To start the OpenAFS servers and client:
+To start the OpenAFS servers and client::
 
     sudo afsutil start server
     sudo afsutil start client
 
 To setup a new OpenAFS cell on 3 servers (after 'afsutil install' has been run
-on each):
+on each)::
 
     sudo afsutil newcell \
       --cell example.com \
@@ -87,5 +91,4 @@ on each):
       -o "dafs=yes" \
       -o "afsd=-dynroot -fakestat -afsdb" \
       -o "bosserver=-pidfiles" \
-      -o "dafileserver=L" \
-
+      -o "dafileserver=L"
