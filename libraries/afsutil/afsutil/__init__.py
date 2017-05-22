@@ -1,3 +1,3 @@
-"""Utility to install and setup OpenAFS for development and testing."""
+"""Utility classes to build, install, and setup OpenAFS."""
 
-__version__ = '0.6.4'
+__version__ = '0.6.5'
