@@ -146,7 +146,7 @@ fi
 if [ $OPT_INSTALL_LIBS = "yes" ]; then
     # Work-around for OpenCSW pip on Solaris 10 to avoid the need to
     # mess with the PATH.
-    for cli in afsutil afsrobot; do
+    for cli in afsutil afsrobot afs-robotest; do
         if [ -x /opt/csw/bin/$cli ]; then
             test -h /usr/bin/$cli && rm -f /usr/bin/$cli
             test -f /usr/bin/$cli || ln -s /opt/csw/bin/$cli /usr/bin/$cli
