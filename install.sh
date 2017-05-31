@@ -20,9 +20,13 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
 
+DEFAULT_PREFIX="/usr/local"
+test -d $DEFAULT_PREFIX || DEFAULT_PREFIX="/opt"
+test -d $DEFAULT_PREFIX || DEFAULT_PREFIX=""
+
 OPT_QUIET="no"
 OPT_VERBOSE="no"
-OPT_PREFIX="/usr/local"
+OPT_PREFIX=$DEFAULT_PREFIX
 OPT_INSTALL_LIBS="no"
 OPT_INSTALL_TESTS="no"
 OPT_INSTALL_DOCS="no"
@@ -65,7 +69,7 @@ where:
    --help        display help then exit
    --quiet       no progress messages
    --verbose     more verbose output
-   --prefix      installation path (default: /usr/local)
+   --prefix      installation path (default: $DEFAULT_PREFIX)
    <component>   valid components: libs, tests, docs (default: all)
 EOF
 }
@@ -81,6 +85,10 @@ while :; do
     *)            break;;
     esac
 done
+if [ -z "$OPT_PREFIX" ]; then
+    echo "Please specify an installation path with --prefix <path>." >&2
+    exit 1
+fi
 if [ $# -eq 0 ]; then
     OPT_INSTALL_LIBS="yes"
     OPT_INSTALL_TESTS="yes"
