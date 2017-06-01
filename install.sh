@@ -32,7 +32,7 @@ OPT_INSTALL_TESTS="no"
 OPT_INSTALL_DOCS="no"
 
 # Turn off annoying pip version warnings.
-PIP_DISABLE_PIP_VERSION_CHECK=1
+export PIP_DISABLE_PIP_VERSION_CHECK=1
 
 die() {
     echo "$1" >&2
@@ -85,10 +85,6 @@ while :; do
     *)            break;;
     esac
 done
-if [ -z "$OPT_PREFIX" ]; then
-    echo "Please specify an installation path with --prefix <path>." >&2
-    exit 1
-fi
 if [ $# -eq 0 ]; then
     OPT_INSTALL_LIBS="yes"
     OPT_INSTALL_TESTS="yes"
@@ -104,21 +100,27 @@ else
     done
 fi
 
-# Installation directories.
-DIR_ROOT="$OPT_PREFIX/afsrobotest"
-DIR_HTML="$DIR_ROOT/html"
-DIR_DOC="$DIR_HTML/doc"
-DIR_LOG="$DIR_HTML/log"
-DIR_OUTPUT="$DIR_HTML/output"
+# Pre install check.
+if [ $UID -ne 0 ]; then
+    die "Please run as root."
+fi
 
 # Get paths to python and pip. Use the OpenCSW version if installed.
 PYTHON=`PATH=/opt/csw/bin:$PATH which python`
 PIP=`PATH=/opt/csw/bin:$PATH which pip`
 
-# Pre install check.
-if [ $UID -ne 0 ]; then
-    die "Please run as root."
+# Installation directories.
+if [ -z "$OPT_PREFIX" ]; then
+    echo "Please specify an installation path with --prefix <path>." >&2
+    exit 1
 fi
+AFSROBOTEST_ROOT="$OPT_PREFIX/afsrobotest"
+
+# Save our paths for regular users and the uninstall.
+cat <<__EOF__ >/etc/afsrobotest.rc
+AFSROBOTEST_ROOT="$AFSROBOTEST_ROOT"
+__EOF__
+
 test -d $OPT_PREFIX || die "--prefix $OPT_PREFIX does not exist."
 test -x $PYTHON || die "python not found in PATH."
 if [ $OPT_INSTALL_LIBS = "yes" ]; then
@@ -128,26 +130,23 @@ fi
 # Install.
 if [ $OPT_INSTALL_LIBS = "yes" ]; then
     info "Installing libraries"
-    run pip install libraries/afsutil
-    run pip install libraries/afsrobot
-    run pip install libraries/OpenAFSLibrary
+    run pip install --upgrade libraries/afsutil
+    run pip install --upgrade libraries/afsrobot
+    run pip install --upgrade libraries/OpenAFSLibrary
 fi
 if [ $OPT_INSTALL_TESTS = "yes" ]; then
     info "Installing test suites"
-    run mkdir -p $DIR_ROOT
-    run cp -r tests/ $DIR_ROOT
-    run cp -r resources/ $DIR_ROOT
-    info "Making output directories"
-    run mkdir -p $DIR_LOG
-    run mkdir -p $DIR_OUTPUT
+    run mkdir -p $AFSROBOTEST_ROOT
+    run cp -r tests/ $AFSROBOTEST_ROOT
+    run cp -r resources/ $AFSROBOTEST_ROOT
 fi
 if [ $OPT_INSTALL_DOCS = "yes" ]; then
     info "Generating documentation"
     pypath=libraries/OpenAFSLibrary/OpenAFSLibrary
     input="$pypath"
-    output="$DIR_DOC/OpenAFSLibary.html"
-    run mkdir -p $DIR_DOC
-    run $PYTHON -m robot.libdoc --format HTML --pythonpath $pypath $input $DIR_DOC/OpenAFSLibary.html
+    output="$AFSROBOTEST_ROOT/doc/OpenAFSLibary.html"
+    run mkdir -p $(dirname $output)
+    run $PYTHON -m robot.libdoc --format HTML --pythonpath $pypath $input $output
 fi
 
 # Post install checks.

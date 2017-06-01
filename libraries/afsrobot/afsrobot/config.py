@@ -1,4 +1,4 @@
-# Copyright (c) 2015-2016 Sine Nomine Associates
+# Copyright (c) 2015-2017 Sine Nomine Associates
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -28,16 +28,13 @@ import afsutil.system
 # Configuration defaults.
 DEFAULT_CONFIG_DATA = """
 [paths]
-root = /usr/local/afsrobotest
-tests = %(root)s/tests
-libraries = %(root)s/libraries
-resources = %(root)s/resources
-doc = %(root)s/doc
-dist = %(root)s/dist
-userdir = <HOME>/.afsrobotestrc
-html = %(userdir)s
-log = %(userdir)s/log
-output = %(userdir)s/output
+doc = <AFSROBOTEST_ROOT>/doc
+tests = <AFSROBOTEST_ROOT>/tests
+libraries = <AFSROBOTEST_ROOT>/libraries
+resources = <AFSROBOTEST_ROOT>/resources
+html = <AFSROBOTEST_DATA>
+log = <AFSROBOTEST_DATA>/log
+output = <AFSROBOTEST_DATA>/output
 
 [run]
 exclude_tags = todo,bug,slow
@@ -56,9 +53,9 @@ admin = robotest.admin
 [kerberos]
 akimpersonate = yes
 realm = ROBOTEST
-fake_keytab = <HOME>/.afsrobotestrc/fake.keytab
-afs_keytab = <HOME>/.afsrobotestrc/afs.keytab
-user_keytab = <HOME>/.afsrobotestrc/user.keytab
+fake_keytab = <AFSROBOTEST_DATA>/fake.keytab
+afs_keytab = <AFSROBOTEST_DATA>/afs.keytab
+user_keytab = <AFSROBOTEST_DATA>/user.keytab
 
 [web]
 port = 8000
@@ -106,15 +103,42 @@ class Config(ConfigParser.SafeConfigParser):
         fp = StringIO.StringIO(string)
         self.readfp(fp)
 
+    def _get_defaults(self):
+        """Determine default values for new configs."""
+        defaults = {
+            'AFSROBOTEST_ROOT': '/usr/local/afsrobotest',
+            'AFSROBOTEST_DATA': os.path.join(os.environ['HOME'], '.afsrobotestrc'),
+            'HOME': os.environ['HOME'],
+            'HOSTNAME': socket.gethostname(),
+            'GFIND': '',
+        }
+        # Attempt to detect path to gnu/find, if one.
+        gfind = afsutil.system.detect_gfind()
+        if gfind:
+            defaults['GFIND'] = gfind
+        # Read global settings saved during install.
+        settings = '/etc/afsrobotest.rc'
+        if os.path.exists(settings):
+            with open(settings) as f:
+                for line in f.read().splitlines():
+                    line = line.strip()
+                    if len(line) == 0:
+                        continue
+                    if line.startswith('#'):
+                        continue
+                    if not '=' in line:
+                        continue
+                    k,v = line.split('=',1)
+                    v = v.strip('"')
+                    defaults[k] = v
+        return defaults
+
     def load_defaults(self):
         """Load default values."""
-        gfind = afsutil.system.detect_gfind()
-        if not gfind:
-            gfind = ''
         text = DEFAULT_CONFIG_DATA
-        text = text.replace('<HOME>', os.environ['HOME'])
-        text = text.replace('<HOSTNAME>', socket.gethostname())
-        text = text.replace('<GFIND>', gfind)
+        defaults = self._get_defaults()
+        for key in defaults.keys():
+            text = text.replace("<{0}>".format(key), defaults[key])
         self.load_from_string(text)
 
     def load_from_file(self, filename):
