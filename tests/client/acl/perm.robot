@@ -116,7 +116,8 @@ Lookup Permissions as User1
 Delete Permissions as Anyuser
     User1 Create File
     Create File                   ${PUB_PATH}/pubfile
-    Command Should Fail           rm ${PRIV_PATH}/privfile
+    Run Keyword and Expect Error    *
+    ...    Remove File    ${PRIV_PATH}/privfile
     Remove File                   ${PUB_PATH}/pubfile
     User1 Remove File
 

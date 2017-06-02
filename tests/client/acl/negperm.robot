@@ -43,7 +43,7 @@ Setup Test Directory
 
 Teardown Test Directory
     Login  ${AFS_ADMIN}
-    Command Should Succeed          rm -rf ${PATH}
+    Remove Directory    ${PATH}    recursive=True
     Logout
 
 List PUB and PRIV ACLs
@@ -113,14 +113,32 @@ Lookup Permissions for Anyuser
 
 Delete Permissions for User1
     Create PRIV File
+    # HACK: The user needs l access to attempt to unlink the file.
+    Login    ${AFS_ADMIN}
+    Command Should Succeed    ${FS} sa ${PRIV_PATH} user1 l
+    Logout
     User1
-    Command Should Fail           rm ${PRIV_PATH}/privfile
+    Run Keyword and Expect Error    *
+    ...    Remove File    ${PRIV_PATH}/privfile
+    Logout
+    # HACK: we need proper setup and teardowns!
+    Login    ${AFS_ADMIN}
+    Command Should Succeed    ${FS} sa ${PRIV_PATH} user1 none
     Logout
     Remove PRIV File
 
 Delete Permissions for Anyuser
     Create PRIV File
-    Command Should Fail           rm ${PRIV_PATH}/privfile
+    # HACK: The user needs l access to attempt to unlink the file.
+    Login    ${AFS_ADMIN}
+    Command Should Succeed    ${FS} sa ${PRIV_PATH} system:anyuser l
+    Logout
+    Run Keyword and Expect Error    *
+    ...    Remove File    ${PRIV_PATH}/privfile
+    # HACK: we need proper setup and teardowns!
+    Login    ${AFS_ADMIN}
+    Command Should Succeed    ${FS} sa ${PRIV_PATH} user1 none
+    Logout
     Remove PRIV File
 
 New Directory for User1
