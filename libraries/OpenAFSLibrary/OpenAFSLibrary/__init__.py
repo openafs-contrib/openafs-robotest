@@ -128,14 +128,6 @@ class OpenAFSLibrary(
     | UDEBUG  |   `/usr/afs/bin/udebug` |
     | UNLOG   |   `/usr/afsws/bin/unlog` |
     | VOS     |   `/usr/afs/bin/vos` |
-
-    === Startup options ===
-
-    | BOSSERVER_OPTIONS |  "-pidfiles" |
-    | AFSD_OPTIONS      |  "-dynroot -fakestat" |
-    | AFSD_DYNROOT      |  Try if dynroot is set |
-
-
     """
     ROBOT_LIBRARY_SCOPE = 'GLOBAL'
     ROBOT_LIBRARY_VERSION = __version__

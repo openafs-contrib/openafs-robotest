@@ -37,15 +37,3 @@ TOKENS = "/usr/afsws/bin/tokens"
 UDEBUG = "/usr/afs/bin/udebug"
 UNLOG = "/usr/afsws/bin/unlog"
 VOS = "/usr/afs/bin/vos"
-
-#
-# bosserver options
-#
-BOSSERVER_OPTIONS = "-pidfiles"
-
-#
-# afsd options
-#
-AFSD_OPTIONS = "-dynroot -fakestat"
-AFSD_DYNROOT = True
-

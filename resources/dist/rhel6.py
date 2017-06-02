@@ -39,11 +39,6 @@ UNLOG = "/usr/bin/unlog"
 VOS = "/usr/sbin/vos"
 
 #
-# afsd options
-#
-AFSD_DYNROOT = True
-
-#
 # RPM package names
 #
 RPM_COMMON_PACKAGES = "openafs,openafs-krb5,openafs-docs"
