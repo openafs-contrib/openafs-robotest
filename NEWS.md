@@ -10,6 +10,8 @@
 * Add client find tests
 * Add client dir tests
 * Add client huge file tests
+* Add client acl tests
+* Add 'bug' tag to exclude tests of known bugs
 
 ### Library
 
@@ -22,7 +24,7 @@
 * Add setup scripts for various linux distros and solaris
 * Add bootstrap.sh script to quickly setup a single system test
 * User documentation added
-* Renamed afs-robotest to afsrobot (and provided a compat wrapper)
+* Rename afs-robotest to afsrobot (and provide a compat wrapper)
 * Add --user option to install.sh to avoid accidental local installs
 * Add --srcdir option to 'afsutil build' to support out-of-tree builds
 * Modernize afsutil getdeps on solaris 11
@@ -31,6 +33,11 @@
 * Add fedora support in install
 * Fix afsutil getdeps on ubuntu
 * Carry on if we cannot delete the temporary keytab during teardown
+* Remove the afsrobot --user and --root options and related env vars
+* Save the installation path for afsrobot init and uninstall
+* Install to /opt/afsrobotest on Solaris
+* Add afsutil package --source option to build SRPM only
+
 
 ## [v0.5.0]
 
