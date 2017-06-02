@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2014-2015, Sine Nomine Associates
+# Copyright (c) 2014-2017, Sine Nomine Associates
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -54,6 +54,10 @@ start() {
         if test -x $BOSSERVER ; then
             echo "Starting AFS servers..... "
             $BOSSERVER $BOSSERVER_OPTIONS
+            if [ $? -ne 0 ]; then
+                echo "Failed to start bosserver!"
+                exit 1
+            fi
             test "$afs_rh" && touch /var/lock/subsys/openafs-server
             if is_on $WAIT_FOR_SALVAGE; then
                 sleep 10
