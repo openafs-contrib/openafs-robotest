@@ -178,7 +178,7 @@ class ConfigTest(unittest.TestCase):
     def test_optinstall(self):
         hostname = socket.gethostname()
         expect = '--dist none --components server client --cell robotest --hosts %s ' \
-                 '--realm ROBOTEST --force -o afsd=-dynroot -fakestat -afsdb -o bosserver=-pidfiles' \
+                 '--realm ROBOTEST --force -o afsd=-dynroot -fakestat -afsdb -o bosserver=' \
                  % (hostname,)
         c = afsrobot.config.Config()
         c.load_defaults()
@@ -212,7 +212,7 @@ class ConfigTest(unittest.TestCase):
                  '--fs %s --db %s ' \
                  '-o dafs=yes ' \
                  '-o afsd=-dynroot -fakestat -afsdb ' \
-                 '-o bosserver=-pidfiles ' \
+                 '-o bosserver= ' \
                  '-o dafileserver=-d 1 -L ' \
                  '-o davolserver=-d 1' \
                  % (home, hostname, hostname)
@@ -229,7 +229,7 @@ class ConfigTest(unittest.TestCase):
                  '--fs %s --db %s ' \
                  '-o dafs=yes ' \
                  '-o afsd=-dynroot -fakestat -afsdb ' \
-                 '-o bosserver=-pidfiles ' \
+                 '-o bosserver= ' \
                  '-o dafileserver=-d 1 -L ' \
                  '-o davolserver=-d 1' \
                  % (home, hostname, hostname)

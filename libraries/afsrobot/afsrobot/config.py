@@ -64,7 +64,7 @@ foreground = no
 [options]
 dafs = yes
 afsd = -dynroot -fakestat -afsdb
-bosserver = -pidfiles
+bosserver =
 dafileserver = -d 1 -L
 davolserver = -d 1
 
