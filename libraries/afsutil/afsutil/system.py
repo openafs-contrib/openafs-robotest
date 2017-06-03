@@ -304,9 +304,6 @@ def _linux_unload_module():
     for kmod in kmods:
         run('rmmod', args=[kmod])
 
-def _linux_load_module(kmod):
-    run('insmod', args=[kmod])
-
 def _linux_detect_gfind():
     return which('find')
 
@@ -424,13 +421,6 @@ def _solaris_unload_module():
     if module_id != 0:
         run('modunload', args=["-i", module_id])
 
-def _solaris_load_module(kmod):
-    # Adpapted from the solaris openafs-client init script.
-    afs = '/kernel/drv/amd64/afs' # modern path
-    sh('cp', kmod, afs)
-    logger.info("Loading AFS kernel extensions.")
-    sh('modload', afs)
-
 def check_hosts_file():
     """Check for loopback addresses in the /etc/hosts file.
 
@@ -489,7 +479,6 @@ if _uname == "Linux":
     is_loaded = _linux_is_loaded
     configure_dynamic_linker = _linux_configure_dynamic_linker
     unload_module = _linux_unload_module
-    load_module = _linux_load_module
     detect_gfind = _linux_detect_gfind
 elif _uname == "SunOS":
     if _osrel == "5.10":
@@ -499,7 +488,6 @@ elif _uname == "SunOS":
     is_loaded = _solaris_is_loaded
     configure_dynamic_linker = _solaris_configure_dynamic_linker
     unload_module = _solaris_unload_module
-    load_module = _solaris_load_module
     detect_gfind = _solaris_detect_gfind
 else:
     raise AssertionError("Unsupported operating system: %s" % (_uname))
