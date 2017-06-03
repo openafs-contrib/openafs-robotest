@@ -113,14 +113,6 @@ Lookup Permissions as User1
     Command Should Succeed        ls ${PRIV_PATH}
     Logout
 
-Delete Permissions as Anyuser
-    User1 Create File
-    Create File                   ${PUB_PATH}/pubfile
-    Run Keyword and Expect Error    *
-    ...    Remove File    ${PRIV_PATH}/privfile
-    Remove File                   ${PUB_PATH}/pubfile
-    User1 Remove File
-
 Delete Permissions as User1
     Login  user1
     Create File                   ${PRIV_PATH}/privfile
