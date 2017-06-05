@@ -99,7 +99,7 @@ def release_parent(path):
     parent = get_volume_entry(info['vid'])
     if 'ro' in parent:
        vos('release', parent['name'], '-verbose')
-       fs("checkvol") # HACK ALERT!
+       fs("checkvolumes")
 
 class VolumeDump(object):
     """Helper class to create and check volume dumps."""
@@ -179,11 +179,9 @@ class _VolumeKeywords(object):
             vos('release', name, '-verbose')
         if path:
             release_parent(path)
-        fs("flushall") # HACK ALERT!
-        fs("checkvol") # HACK ALERT!
         return vid
 
-    def remove_volume(self, name, path=None):
+    def remove_volume(self, name, path=None, flush=False):
         """Remove a volume.
 
         Remove the volume and any clones. Optionally remove the given mount point.
@@ -200,6 +198,8 @@ class _VolumeKeywords(object):
                 raise AssertionError("Path not found: %s" % (path))
             if not path.startswith('/afs'):
                 raise AssertionError("Path not in '/afs': %s" % (path))
+            if flush:
+                fs("flush", path)
             fs('rmmount', '-dir', path)
             removed_mtpt = True
         if volume:
@@ -209,8 +209,7 @@ class _VolumeKeywords(object):
             vos('remove', '-id', name)
         if removed_mtpt:
             release_parent(path)
-        fs("flushall") # HACK ALERT!
-        fs("checkvol") # HACK ALERT!
+        fs("checkvolumes")
 
     def mount_volume(self, path, vol, *options):
         """Mount an AFS volume."""
@@ -218,7 +217,7 @@ class _VolumeKeywords(object):
 
     def release_volume(self, name):
         vos('release', '-id', name, '-verbose')
-        fs("checkvol") # HACK ALERT!
+        fs("checkvolumes")
 
     def volume_should_exist(self, name_or_id):
         """Verify the existence of a read-write volume.
