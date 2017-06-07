@@ -28,7 +28,7 @@ import time
 import logging
 import shutil
 
-from afsutil.system import CommandFailed
+from afsutil.system import CommandFailed, mkdirp
 from afsutil.transarc import AFS_CONF_DIR
 from afsutil.cli import asetkey, aklog
 
@@ -332,7 +332,8 @@ class Keytab(object):
         return self
 
     def write(self, path):
-        with open(path, "w") as f:
+        mkdirp(os.path.dirname(path))
+        with open(path, 'w') as f:
             self._write(f, '!h', self._KRB_KEYTAB_MAGIC)
             for k in self.entries:
                 self._write_entry(f, k)
