@@ -1,4 +1,4 @@
-# Copyright (c) 2015-2016 Sine Nomine Associates
+# Copyright (c) 2015-2017 Sine Nomine Associates
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -33,6 +33,16 @@ import robot.run
 
 logger = logging.getLogger(__name__)
 
+class NoMessage(object):
+    def __init__(self, msg):
+        pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        return False
+
 class SimpleMessage(object):
     def __init__(self, msg):
         self.msg = msg
@@ -40,6 +50,7 @@ class SimpleMessage(object):
     def __enter__(self):
         sys.stdout.write(self.msg)
         sys.stdout.write("\n")
+        return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_type is None:
@@ -73,7 +84,25 @@ class Runner(object):
             config.load_defaults()
         self.config = config
         self.hostname = socket.gethostname()
+        self.quiet = False
         self.verbose = False
+        self.dryrun = False
+        self.showcmds = False
+
+    def _set_options(self, **kwargs):
+        self.quiet = kwargs.get('quiet', False)
+        self.verbose = kwargs.get('verbose', False)
+        self.dryrun = kwargs.get('dryrun', False)
+        self.showcmds = kwargs.get('showcmds', False)
+
+    def progress_factory(self):
+        if self.quiet:
+            progress = NoMessage
+        elif self.verbose or self.showcmds:
+            progress = SimpleMessage
+        else:
+            progress = ProgressMessage
+        return progress
 
     def _aklog_workaround_check(self):
         # Sadly, akimpersonate is broken on the master branch at this time. To
@@ -103,7 +132,10 @@ class Runner(object):
                  args.append(keyfile)
             args.append(hostname)
             args.append(command)
-        afsutil.system.sh(*args, quiet=False, output=False, prefix=hostname)
+        if self.showcmds:
+            sys.stdout.write("{0}\n".format(subprocess.list2cmdline(args)))
+        if not self.dryrun:
+            afsutil.system.sh(*args, quiet=False, output=False, prefix=hostname)
 
     def _afsutil(self, hostname, command, args, sudo=True):
         args.insert(0, 'afsutil')
@@ -116,8 +148,9 @@ class Runner(object):
         """Setup OpenAFS client and servers and create a test cell."""
         logger.info("setup starting")
 
-        verbose = kwargs.get('verbose', False)
-        progress = SimpleMessage if verbose else ProgressMessage
+        self._set_options(**kwargs)
+        progress = self.progress_factory()
+
         self._aklog_workaround_check()
 
         # Be sure to use the same secret value on each host.
@@ -169,8 +202,9 @@ class Runner(object):
         tests, but this sub-command is a useful short cut to get a token for
         the configured admin user.
         """
-        verbose = kwargs.get('verbose', False)
-        progress = SimpleMessage if verbose else ProgressMessage
+        self._set_options(**kwargs)
+        progress = self.progress_factory()
+
         user = kwargs.get('user')
         if user is None:
             user = self.config.optstr('cell', 'admin', 'admin')
@@ -249,8 +283,9 @@ class Runner(object):
         """Uninstall and purge files."""
         logger.info("teardown starting")
 
-        verbose = kwargs.get('verbose', False)
-        progress = SimpleMessage if verbose else ProgressMessage
+        self._set_options(**kwargs)
+        progress = self.progress_factory()
+
         for hostname in self.config.opthostnames():
             section = "host:%s" % (hostname)
             installer = self.config.optstr(section, 'installer', default='none')

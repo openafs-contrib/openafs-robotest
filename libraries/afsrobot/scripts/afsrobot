@@ -206,7 +206,8 @@ class SubCommandContext(object):
             if not os.path.isdir(logdir):
                 os.makedirs(logdir)
             self._logfile = os.path.join(logdir, logname)
-            sys.stdout.write("Writing to log file %s\n" % (self._logfile))
+            if not self.args.quiet:
+                sys.stdout.write("Writing to log file %s\n" % (self._logfile))
             fmt = '%(asctime)s %(levelname)s %(message)s'
             logging.basicConfig(level=loglevel, filename=self._logfile, format=fmt)
         else:
@@ -253,12 +254,13 @@ class CommandLineParser(argparse.ArgumentParser):
         self.exit(2, gettext.gettext('\n%s: error: %s\n') % (self.prog, message))
 
 def main():
-    """Command line handling for the afs-robotest tool."""
+    """Command line handling for the afsrobot tool."""
 
     def common_options(p):
         p.add_argument('-c', '--config', metavar='<filename>',
                        help="config file (default: %s)" % AFS_ROBOTEST_CONF,
                        default=AFS_ROBOTEST_CONF)
+        p.add_argument('-q', '--quiet', help="less messages", default=False, action='store_true')
         p.add_argument('-v', '--verbose', help="show log messages", default=False, action='store_true')
         p.add_argument('--debug', help="debug log level", default=False, action='store_true')
 
@@ -272,7 +274,7 @@ def main():
     subparsers = parser.add_subparsers(title="commands", metavar="<command>")
 
     #
-    # afs-robotest version
+    # afsrobot version
     #
     p = subparsers.add_parser('version', help="print version information")
     common_options(p)
@@ -283,7 +285,7 @@ def main():
     p.set_defaults(_cmd=cmd_init, _defer_config=True)
 
     #
-    # afs-robotest config
+    # afsrobot config
     #
     p = subparsers.add_parser('config', help="get or set configuration")
     ssp = p.add_subparsers(title="actions", metavar="<action>")
@@ -317,7 +319,7 @@ def main():
     p.set_defaults(_cmd=cmd_config_unset)
 
     #
-    # afs-robotest ssh
+    # afsrobot ssh
     #
     p = subparsers.add_parser('ssh', help="manage ssh keys and run commands")
     ssp = p.add_subparsers(title="actions", metavar="<action>")
@@ -340,13 +342,12 @@ def main():
     p = ssp.add_parser('exec', help="execute a command on each remote host")
     common_options(p)
     p.add_argument('-s', '--sudo', action='store_true', help="run remote command as root")
-    p.add_argument('-q', '--quiet', action='store_true', help="do not print hostnames")
     p.add_argument('-x', '--exclude', metavar='<hosts>', help="hosts to exclude (comma separated)", default='')
     p.add_argument('command', help='command line')
     p.set_defaults(_cmd=cmd_ssh_exec)
 
     #
-    # afs-robotest web
+    # afsrobot web
     #
     p = subparsers.add_parser('web', help="run the test report web server")
     ssp = p.add_subparsers(title="actions", metavar="<action>")
@@ -364,14 +365,16 @@ def main():
     p.set_defaults(_cmd=cmd_web_status)
 
     #
-    # afs-robotest setup
+    # afsrobot setup
     #
     p = subparsers.add_parser('setup', help='install and setup OpenAFS')
     common_options(p)
+    p.add_argument('-n', '--dry-run', dest='dryrun', help="Do not run commands", default=False, action='store_true')
+    p.add_argument('-s', '--show-commands', dest='showcmds', help="Show commands", default=False, action='store_true')
     p.set_defaults(_cmd=cmd_setup, _logname='setup.log')
 
     #
-    # afs-robotest run
+    # afsrobot test
     #
     p = subparsers.add_parser('test', help="run the tests")
     common_options(p)
@@ -383,18 +386,22 @@ def main():
         sys.argv[1] = 'test'
 
     #
-    # afs-robotest login
+    # afsrobot login
     #
     p = subparsers.add_parser('login', help="obtain a token")
     common_options(p)
     p.add_argument('-u', '--user', help="user name (default: admin)", default=None)
+    p.add_argument('-n', '--dry-run', dest='dryrun', help="Do not run commands", default=False, action='store_true')
+    p.add_argument('-s', '--show-commands', dest='showcmds', help="Show commands", default=False, action='store_true')
     p.set_defaults(_cmd=cmd_login, _logname='login.log')
 
     #
-    # afs-robotest teardown
+    # afsrobot teardown
     #
     p = subparsers.add_parser('teardown', help="remove OpenAFS")
     common_options(p)
+    p.add_argument('-n', '--dry-run', dest='dryrun', help="Do not run commands", default=False, action='store_true')
+    p.add_argument('-s', '--show-commands', dest='showcmds', help="Show commands", default=False, action='store_true')
     p.set_defaults(_cmd=cmd_teardown, _logname='teardown.log')
 
     rc = 0
