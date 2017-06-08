@@ -468,6 +468,7 @@ class Keytab(object):
         if self.filename is None:
             raise AssertionError("Must read or write keytab file first.""")
 
+        dryrun = kwargs.get('dryrun', False)
         principal = self._get_service_principal(cell, realm)
         logger.debug("Using service principal '%s'.", principal)
         kvno = self.get_kvno(principal)
@@ -480,15 +481,22 @@ class Keytab(object):
         if kformat == 'detect':
             kformat = self._guess_key_format(principal)
 
-        logger.info("Setting key with keytab '%s', principal '%s', kvno '%s', enctypes '%s', format '%s'",
-                    self.filename, principal, kvno, ", ".join(enctypes), kformat)
+        if not dryrun:
+            msg = "Setting key"
+        else:
+            msg = "Skipping set key for dryrun"
+        logger.info("%s; keytab '%s', principal '%s', kvno '%s', enctypes '%s', format '%s'",
+                    msg, self.filename, principal, kvno, ", ".join(enctypes), kformat)
 
         if kformat == 'transarc':
-            self._set_service_key_transarc(principal)
+            if not dryrun:
+                self._set_service_key_transarc(principal)
         elif kformat == 'rxkad-k5':
-            self._set_service_key_rxkad_k5(confdir, principal)
+            if not dryrun:
+                self._set_service_key_rxkad_k5(confdir, principal)
         elif kformat == 'extended':
-            self._set_service_key_extended(principal)
+            if not dryrun:
+                self._set_service_key_extended(principal)
         else:
             raise ValueError("Unknown key file format name: %s" % (kformat))
 

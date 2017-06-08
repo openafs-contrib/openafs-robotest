@@ -350,6 +350,7 @@ def main():
     p.add_argument('--confdir', help="server config directory (default: /usr/afs/etc)", default="/usr/afs/etc")
     p.add_argument('--format', dest='kformat', help="key file format (default: detect)",
                    choices=['detect', 'transarc', 'rxkad-k5', 'extended'], default='detect')
+    p.add_argument('-n', '--dry-run', dest='dryrun', help="do not make changes", default=False, action='store_true')
     p.set_defaults(fn=setkey, must_be_root=True)
 
     p = subparsers.add_parser('newcell', help='setup a new cell')
