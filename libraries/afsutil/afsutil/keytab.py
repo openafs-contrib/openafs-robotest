@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2015 Sine Nomine Associates
+# Copyright (c) 2014-2017 Sine Nomine Associates
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -475,7 +475,9 @@ class Keytab(object):
             raise ValueError("Principal '%s' not found in keytab %s" % (principal, self.filename))
         enctypes = [e['enctype'] for e in self.get_entries(principal)]
 
-        if kformat == None:
+        if not kformat:
+            kformat = 'detect'
+        if kformat == 'detect':
             kformat = self._guess_key_format(principal)
 
         logger.info("Setting key with keytab '%s', principal '%s', kvno '%s', enctypes '%s', format '%s'",
