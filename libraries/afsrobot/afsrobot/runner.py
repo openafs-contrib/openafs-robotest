@@ -171,10 +171,10 @@ class Runner(object):
                     if self.config.optbool('kerberos', 'akimpersonate'):
                         self._afsutil(hostname, 'fakekey', self.config.optfakekey())
                     self._afsutil(hostname, 'install', self.config.optinstall(hostname))
-                with progress("Setting key on %s" % (hostname)):
-                    self._afsutil(hostname, 'setkey', self.config.optsetkey(hostname))
                 if self.config.optbool(section, "isfileserver") or \
                    self.config.optbool(section, "isdbserver"):
+                    with progress("Setting key on %s" % (hostname)):
+                        self._afsutil(hostname, 'setkey', self.config.optsetkey(hostname))
                     with progress("Starting servers on %s" % (hostname)):
                         self._afsutil(hostname, 'start', ['server'])
                 if self.config.optbool(section, "isclient") and \
