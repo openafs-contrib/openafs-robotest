@@ -77,6 +77,7 @@ installer = none
 isfileserver = yes
 isdbserver = yes
 isclient = yes
+keyformat = detect
 
 """
 
@@ -362,6 +363,7 @@ class Config(ConfigParser.SafeConfigParser):
         return args
 
     def optsetkey(self, hostname):
+        section = "host:%s" % (hostname)
         args = []
         cell = self.optstr('cell', 'name')
         if cell:
@@ -379,6 +381,10 @@ class Config(ConfigParser.SafeConfigParser):
         if keytab:
             args.append('--keytab')
             args.append(keytab)
+        keyformat = self.optstr(section, 'keyformat')
+        if keyformat:
+            args.append('--format')
+            args.append(keyformat)
         return args
 
     def optnewcell(self):
