@@ -36,6 +36,7 @@ import afsutil.build
 import afsutil.service
 import afsutil.transarc
 import afsutil.rpm
+import afsutil.keytab
 from afsutil.keytab import Keytab
 from afsutil.cell import Cell
 
@@ -138,26 +139,6 @@ def start(**kwargs):
 
 def stop(**kwargs):
     afsutil.service.stop(**kwargs)
-
-def fakekey(**kwargs):
-    cell = kwargs['cell']
-    realm = kwargs['realm']
-    keytab = kwargs['keytab']
-    enctype = kwargs['enctype']
-    secret = kwargs['secret']
-    if realm is None:
-        realm = cell.upper()
-    principal = "afs/%s@%s" % (cell, realm)
-    k = Keytab()
-    logger.info("Adding fake key for principal '%s', enctype='%s'.", principal, enctype)
-    k.add_fake_key(principal, enctype=enctype, secret=secret)
-    logger.info("Writing keytab %s.", keytab)
-    k.write(keytab)
-
-def setkey(**kwargs):
-    keytab = kwargs['keytab']
-    k = Keytab.load(keytab)
-    k.set_service_key(**kwargs)
 
 def newcell(**kwargs):
     akimpersonate = kwargs.get('akimpersonate', False)
@@ -333,16 +314,25 @@ def main():
                    default=afsutil.service.COMPONENTS)
     p.set_defaults(fn=stop, must_be_root=True)
 
-    p = subparsers.add_parser('fakekey', help='generate a keytab file for testing')
+    p = subparsers.add_parser('keytab', help='manage keytabs')
+    ssp = p.add_subparsers(title="actions", metavar="<action>")
+
+    p = ssp.add_parser('create', help="create a fake keytab")
     _common_opts(p)
     p.add_argument('--keytab', help='keytab file to be created (default: /tmp/afs.keytab)', default='/tmp/afs.keytab')
     p.add_argument('--cell', help='cell name (default: localcell)', default='localcell')
     p.add_argument('--realm', help='realm name (default: LOCALCELL)', default=None)
     p.add_argument('--enctype', help='encryption type (default: aes256-cts-hmac-sha1-96)', default='aes256-cts-hmac-sha1-96')
     p.add_argument('--secret', help='passphrase (default: random)', default=None)
-    p.set_defaults(fn=fakekey, must_be_root=False)
+    p.set_defaults(fn=afsutil.keytab.create, must_be_root=False)
 
-    p = subparsers.add_parser('setkey', help='add a service key from a keytab file')
+    p = ssp.add_parser('destroy', help="destroy a keytab")
+    _common_opts(p)
+    p.add_argument('--keytab', help='keytab file to be destroyed (default: /tmp/afs.keytab)', default='/tmp/afs.keytab')
+    p.add_argument('--force', help='ignore errors', action='store_true', default=False)
+    p.set_defaults(fn=afsutil.keytab.destroy, must_be_root=False)
+
+    p = ssp.add_parser('setkey', help='add a service key from a keytab file')
     _common_opts(p)
     p.add_argument('--keytab', help="keytab file (default: /tmp/afs.keytab)", default="/tmp/afs.keytab")
     p.add_argument('--cell', help="cell name (default: detect)", default=None)
@@ -351,7 +341,7 @@ def main():
     p.add_argument('--format', dest='kformat', help="key file format (default: detect)",
                    choices=['detect', 'transarc', 'rxkad-k5', 'extended'], default='detect')
     p.add_argument('-n', '--dry-run', dest='dryrun', help="do not make changes", default=False, action='store_true')
-    p.set_defaults(fn=setkey, must_be_root=True)
+    p.set_defaults(fn=afsutil.keytab.setkey, must_be_root=True)
 
     p = subparsers.add_parser('newcell', help='setup a new cell')
     _common_opts(p)

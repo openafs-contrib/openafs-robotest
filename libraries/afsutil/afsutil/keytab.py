@@ -111,6 +111,15 @@ def _check_for_extended_keyfile_support():
         logger.info("asetkey does not support extended key format.")
     return new_asetkey
 
+class KeytabException(Exception):
+    pass
+
+class InvalidKeytab(KeytabException):
+    pass
+
+class NotFoundKeytab(KeytabException):
+    pass
+
 class Keytab(object):
     """Utility to support testing with keytabs and akimpersonate.
 
@@ -283,14 +292,21 @@ class Keytab(object):
         the external klist utility on systems where akimpersonate is
         used instead of kinit.
         """
+        logger.debug("reading keytab %s", path)
         self.filename = path
-        stat = os.stat(path)
+        try:
+            stat = os.stat(path)
+        except OSError as e:
+            if e.errno == os.errno.ENOENT:
+                raise NotFoundKeytab("File {0} not found.".format(path))
+            else:
+                raise e
         file_size = stat.st_size
         with open(path, 'r') as f:
             offset = struct.calcsize("!h")
             version, = self._read(f, "!h")
             if version != 0x0502 and version != 0x051:  # magic
-                raise IOError("Not a keytab file: '%s'" % path)
+                raise InvalidKeytab("File {0} is not keytab.".format(path))
             while offset < file_size:
                 f.seek(offset)
                 size, = self._read(f, "!l") # record size, not including this field
@@ -303,6 +319,7 @@ class Keytab(object):
 
     def add_fake_key(self, principal, enctype='aes256-cts-hmac-sha1-96', secret=None):
         """Create a synthetic key for testing with akimpersonate."""
+        logger.debug("Adding fake key for principal '%s', enctype='%s'.", principal, enctype)
         timestamp = int(time.time())
         kvno = 1
         comps,realm = _split_principal(principal)
@@ -332,6 +349,7 @@ class Keytab(object):
         return self
 
     def write(self, path):
+        logger.debug("Writing keytab %s", path)
         mkdirp(os.path.dirname(path))
         with open(path, 'w') as f:
             self._write(f, '!h', self._KRB_KEYTAB_MAGIC)
@@ -463,12 +481,11 @@ class Keytab(object):
                 raise AssertionError("Internal error")
         return principal
 
-    def set_service_key(self, cell=None, realm=None, kformat=None, confdir=AFS_CONF_DIR, **kwargs):
+    def set_service_key(self, cell, realm, kformat, confdir, dryrun=False, **kwargs):
         """Set the service key given in a keytab file."""
         if self.filename is None:
             raise AssertionError("Must read or write keytab file first.""")
 
-        dryrun = kwargs.get('dryrun', False)
         principal = self._get_service_principal(cell, realm)
         logger.debug("Using service principal '%s'.", principal)
         kvno = self.get_kvno(principal)
@@ -516,3 +533,45 @@ class Keytab(object):
         for line in output.splitlines():
             logger.info(line)
 
+def create(cell='robotest', realm=None, keytab='/tmp/afs.keytab',
+           enctype=None, secret=None, **kwargs):
+    """Create a fake keytab file.
+
+    cell: afs cell name
+    realm: kerberos realm name
+    keytab: destination file path
+    enctype: encyption type
+    secret: key data
+    """
+    if realm is None:
+        realm = cell.upper()
+    principal = "afs/{0}@{1}".format(cell, realm)
+    k = Keytab()
+    k.add_fake_key(principal, enctype=enctype, secret=secret)
+    k.write(keytab)
+
+def destroy(keytab='/tmp/afs.keytab', force=False, **kwargs):
+    """Destroy a keyab file.
+
+    keytab: path of the keytab file to be removed
+    force: warn on common errors instead of failing
+    """
+    try:
+        k = Keytab().load(keytab)
+        os.remove(k.filename)
+    except KeytabException as e:
+        if not force:
+            raise e
+
+def setkey(keytab='/tmp/afs.keytab', cell=None, realm=None,
+        kformat=None, confdir=AFS_CONF_DIR, **kwargs):
+    """Set a service key from a keytab file.
+
+    keytab: path of the keytab file
+    cell: cellname
+    realm: kerberos realm name
+    kformat: keyfile format
+    confdir: server config file path
+    """
+    k = Keytab.load(keytab)
+    k.set_service_key(cell, realm, kformat, confdir, **kwargs)
