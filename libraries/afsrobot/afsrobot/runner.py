@@ -150,9 +150,13 @@ class Runner(object):
         if not self.dryrun:
             afsutil.system.sh(*args, quiet=False, output=False, prefix=hostname)
 
-    def _afsutil(self, hostname, command, args, sudo=True):
+    def _afsutil(self, hostname, command, subcmd=None, args=None, sudo=True):
+        if args is None:
+           args = []
         args.insert(0, 'afsutil')
         args.insert(1, command)
+        if subcmd:
+            args.insert(2, subcmd)
         if logger.getEffectiveLevel() == logging.DEBUG:
             args.append('--verbose')
         self._run(hostname, args, sudo=sudo)
@@ -189,35 +193,35 @@ class Runner(object):
         if hosts['install']:
             with progress("Installing OpenAFS"):
                 for host in hosts['install']:
-                    self._afsutil(host.name, 'install', c.optinstall(host.name))
+                    self._afsutil(host.name, 'install', args=c.optinstall(host.name))
 
         if c.optbool('kerberos', 'akimpersonate'):
             with progress("Creating test key"):
                 for host in hosts['all']:
-                    self._afsutil(host.name, 'fakekey', c.optfakekey())
+                    self._afsutil(host.name, 'keytab', subcmd='create', args=c.optfakekey())
 
         if hosts['servers']:
             with progress("Setting service key"):
                 for host in hosts['servers']:
-                    self._afsutil(host.name, 'setkey', c.optsetkey(host.name))
+                    self._afsutil(host.name, 'keytab', subcmd='setkey', args=c.optsetkey(host.name))
 
         if hosts['servers']:
             with progress("Starting servers"):
                 for host in hosts['servers']:
-                    self._afsutil(host.name, 'start', ['server'])
+                    self._afsutil(host.name, 'start', subcmd='server')
 
         if hosts['clients1']:
             with progress("Starting dynroot mode clients"):
                 for host in hosts['clients1']:
-                    self._afsutil(host.name, 'start', ['client'])
+                    self._afsutil(host.name, 'start', subcmd='client')
 
         with progress("Creating new cell"):
-            self._afsutil(self.hostname, 'newcell', c.optnewcell())
+            self._afsutil(self.hostname, 'newcell', args=c.optnewcell())
 
         if hosts['clients2']:
             with progress("Starting non-dynroot mode clients"):
                 for host in hosts['clients2']:
-                    self._afsutil(host.name, 'start', ['client'])
+                    self._afsutil(host.name, 'start', subcmd='client')
 
         logger.info("setup done")
 
@@ -236,7 +240,7 @@ class Runner(object):
             user = self.config.optstr('cell', 'admin', 'admin')
         args = self.config.optlogin(user=user)
         with progress("Obtaining token for %s" % (user)):
-            self._afsutil(self.hostname, 'login', args, sudo=False)
+            self._afsutil(self.hostname, 'login', args=args, sudo=False)
 
     def test(self, **kwargs):
         """Run the Robotframework test suites."""
@@ -312,10 +316,6 @@ class Runner(object):
         c = self.config # alias
         self._set_options(**kwargs)
         progress = self.progress_factory()
-        if c.optbool('kerberos', 'akimpersonate'):
-            keytab = c.optkeytab('fake')
-        else:
-            keyab = None
 
         # Gather list of hosts.
         allhosts = [Host(n,c) for n in self.config.opthostnames()]
@@ -329,26 +329,22 @@ class Runner(object):
         if hosts['clients']:
             with progress("Stopping clients"):
                 for host in hosts['clients']:
-                    self._afsutil(host.name, 'stop', ['client'])
+                    self._afsutil(host.name, 'stop', subcmd='client')
 
         if hosts['servers']:
             with progress("Stopping servers"):
                 for host in hosts['servers']:
-                    self._afsutil(host.name, 'stop', ['server'])
+                    self._afsutil(host.name, 'stop', subcmd='server')
 
         if hosts['install']:
             with progress("Removing OpenAFS"):
                 for host in hosts['install']:
-                    self._afsutil(host.name, 'remove', ['--purge'])
+                    self._afsutil(host.name, 'remove', args=['--purge'])
 
-        if keytab:
+        if c.optbool('kerberos', 'akimpersonate'):
             with progress("Removing test key"):
                 for hosts in hosts['all']:
-                    try:
-                        # TODO: This needs to be an afsutil command for sudo!
-                        self._run(host.name, ['rm', '-f', keytab])
-                    except afsutil.system.CommandFailed as e:
-                        logger.warning("Unable to remove keytab; code=%d" % (e.code))
+                    self._afsutil(host.name, 'keytab', subcmd='destroy', args=c.optremovekey())
 
         logger.info("teardown done")
 

@@ -274,6 +274,18 @@ class Config(ConfigParser.SafeConfigParser):
             args.append(secret)
         return args
 
+    def optremovekey(self):
+        """Command line options for afsutil keytab remove."""
+        if not self.optbool('kerberos', 'akimpersonate'):
+            raise AssertionError('Trying to get fakekey options without akimpersonate.')
+        keytab = self.optkeytab('fake')
+        args = []
+        if keytab:
+            args.append('--keytab')
+            args.append(keytab)
+        args.append('--force')
+        return args
+
     def optlogin(self, user=None):
         """Command line options for afsutil login."""
         if not user:
