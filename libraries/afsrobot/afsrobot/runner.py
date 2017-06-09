@@ -48,15 +48,14 @@ class SimpleMessage(object):
         self.msg = msg
 
     def __enter__(self):
-        sys.stdout.write(self.msg)
-        sys.stdout.write("\n")
+        sys.stdout.write("# {0}\n".format(self.msg))
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_type is None:
-            sys.stdout.write("ok: %s\n" % (self.msg))
+            sys.stdout.write("# ok: %s\n" % (self.msg))
         else:
-            sys.stdout.write("fail: %s\n" % (self.msg))
+            sys.stdout.write("# fail: %s\n" % (self.msg))
         return False
 
 class ProgressMessage(object):
@@ -75,6 +74,20 @@ class ProgressMessage(object):
         else:
             sys.stdout.write(" fail\n")
         return False
+
+class Host(object):
+    def __init__(self, hostname, config):
+        section = "host:{0}".format(hostname)
+        self.name = hostname
+        self.install = config.optstr(section, 'installer', default='none') != 'none'
+        self.is_server = config.optbool(section, "isfileserver") or \
+                         config.optbool(section, "isdbserver")
+        self.is_client = config.optbool(section, "isclient")
+        self.has_dynroot = self.is_client and config.optdynroot()
+    def __repr__(self):
+        return "Host<name={0}, install={1}, is_server={2}, is_client={3}, "\
+               "has_dynroot={4}>".format(self.name, self.install,
+               self.is_server, self.is_client, self.has_dynroot)
 
 class Runner(object):
 
@@ -146,53 +159,66 @@ class Runner(object):
 
     def setup(self, **kwargs):
         """Setup OpenAFS client and servers and create a test cell."""
+        self._aklog_workaround_check()
         logger.info("setup starting")
-
         self._set_options(**kwargs)
+        c = self.config # alias
         progress = self.progress_factory()
 
-        self._aklog_workaround_check()
-
         # Be sure to use the same secret value on each host.
-        if self.config.optbool('kerberos', 'akimpersonate'):
-            secret = self.config.optstr('kerberos', 'secret')
+        if c.optbool('kerberos', 'akimpersonate'):
+            secret = c.optstr('kerberos', 'secret')
             if secret is None:
                 random = base64.b64encode(os.urandom(32))
-                self.config.set_value('kerberos', 'secret', random)
+                c.set_value('kerberos', 'secret', random)
 
-        # Installation.
-        for hostname in self.config.opthostnames():
-            section = "host:%s" % (hostname)
-            installer = self.config.optstr(section, 'installer', default='none')
-            if installer == 'none':
-                logger.info("Skipping install on hostname %s; installer is 'none'." % (hostname))
-            elif installer == 'transarc' or installer == 'rpm':
-                with progress("Installing on %s" % (hostname)):
-                    if self.config.optbool('kerberos', 'akimpersonate'):
-                        self._afsutil(hostname, 'fakekey', self.config.optfakekey())
-                    self._afsutil(hostname, 'install', self.config.optinstall(hostname))
-                if self.config.optbool(section, "isfileserver") or \
-                   self.config.optbool(section, "isdbserver"):
-                    with progress("Setting key on %s" % (hostname)):
-                        self._afsutil(hostname, 'setkey', self.config.optsetkey(hostname))
-                    with progress("Starting servers on %s" % (hostname)):
-                        self._afsutil(hostname, 'start', ['server'])
-                if self.config.optbool(section, "isclient") and \
-                   self.config.optdynroot():
-                    with progress("Starting client on %s" % (hostname)):
-                        self._afsutil(hostname, 'start', ['client'])
-            else:
-                raise ValueError("Invalid installer option for hostname %s!; installer='%s'." % (hostname, installer))
-        # Setup new cell.
-        with progress("Setting up new cell"):
-            self._afsutil(self.hostname, 'newcell', self.config.optnewcell())
-        # Now that the root volumes are ready, start any non-dynroot clients.
-        for hostname in self.config.opthostnames():
-            section = "host:%s" % (hostname)
-            if self.config.optbool(section, "isclient") and \
-               not self.config.optdynroot():
-                with progress("Starting non-dynroot client on %s" % (hostname)):
-                    self._afsutil(hostname, 'start', ['client'])
+        # Gather list of hosts for this setup.
+        allhosts = [Host(n,c) for n in self.config.opthostnames()]
+        hosts = {
+            'all': allhosts,
+            'install': [h for h in allhosts if h.install],
+            'servers': [h for h in allhosts if h.is_server],
+            'clients1': [h for h in allhosts if h.is_client and h.has_dynroot],
+            'clients2': [h for h in allhosts if h.is_client and not h.has_dynroot],
+        }
+
+        if not hosts['all']:
+            logger.error("No hosts configured!")
+            return
+
+        if hosts['install']:
+            with progress("Installing OpenAFS"):
+                for host in hosts['install']:
+                    self._afsutil(host.name, 'install', c.optinstall(host.name))
+
+        if c.optbool('kerberos', 'akimpersonate'):
+            with progress("Creating test key"):
+                for host in hosts['all']:
+                    self._afsutil(host.name, 'fakekey', c.optfakekey())
+
+        if hosts['servers']:
+            with progress("Setting service key"):
+                for host in hosts['servers']:
+                    self._afsutil(host.name, 'setkey', c.optsetkey(host.name))
+
+        if hosts['servers']:
+            with progress("Starting servers"):
+                for host in hosts['servers']:
+                    self._afsutil(host.name, 'start', ['server'])
+
+        if hosts['clients1']:
+            with progress("Starting dynroot mode clients"):
+                for host in hosts['clients1']:
+                    self._afsutil(host.name, 'start', ['client'])
+
+        with progress("Creating new cell"):
+            self._afsutil(self.hostname, 'newcell', c.optnewcell())
+
+        if hosts['clients2']:
+            with progress("Starting non-dynroot mode clients"):
+                for host in hosts['clients2']:
+                    self._afsutil(host.name, 'start', ['client'])
+
         logger.info("setup done")
 
     def login(self, **kwargs):
@@ -283,27 +309,47 @@ class Runner(object):
         """Uninstall and purge files."""
         logger.info("teardown starting")
 
+        c = self.config # alias
         self._set_options(**kwargs)
         progress = self.progress_factory()
+        if c.optbool('kerberos', 'akimpersonate'):
+            keytab = c.optkeytab('fake')
+        else:
+            keyab = None
 
-        for hostname in self.config.opthostnames():
-            section = "host:%s" % (hostname)
-            installer = self.config.optstr(section, 'installer', default='none')
-            if installer == 'none':
-                logger.info("Skipping remove on hostname %s; installer is 'none'." % (hostname))
-            elif installer == 'transarc' or installer == 'rpm':
-                with progress("Removing clients and servers on %s" % (hostname)):
-                    self._afsutil(hostname, 'stop', self.config.optcomponents(hostname))
-                    self._afsutil(hostname, 'remove', ['--purge'])
-                    if self.config.optbool('kerberos', 'akimpersonate'):
-                        keytab = self.config.optkeytab('fake')
-                        if keytab:
-                            try:
-                                self._run(hostname, ['rm', '-f', keytab])
-                            except afsutil.system.CommandFailed as e:
-                                logger.warning("Unable to remove keytab; code=%d" % (e.code))
-            else:
-                logger.info("Invalid installer option for hostname %s!; installer='%s'." % (hostname, installer))
+        # Gather list of hosts.
+        allhosts = [Host(n,c) for n in self.config.opthostnames()]
+        hosts = {
+            'all': allhosts,
+            'install': [h for h in allhosts if h.install],
+            'servers': [h for h in allhosts if h.is_server],
+            'clients': [h for h in allhosts if h.is_client],
+        }
+
+        if hosts['clients']:
+            with progress("Stopping clients"):
+                for host in hosts['clients']:
+                    self._afsutil(host.name, 'stop', ['client'])
+
+        if hosts['servers']:
+            with progress("Stopping servers"):
+                for host in hosts['servers']:
+                    self._afsutil(host.name, 'stop', ['server'])
+
+        if hosts['install']:
+            with progress("Removing OpenAFS"):
+                for host in hosts['install']:
+                    self._afsutil(host.name, 'remove', ['--purge'])
+
+        if keytab:
+            with progress("Removing test key"):
+                for hosts in hosts['all']:
+                    try:
+                        # TODO: This needs to be an afsutil command for sudo!
+                        self._run(host.name, ['rm', '-f', keytab])
+                    except afsutil.system.CommandFailed as e:
+                        logger.warning("Unable to remove keytab; code=%d" % (e.code))
+
         logger.info("teardown done")
 
 
