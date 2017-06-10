@@ -492,3 +492,15 @@ elif _uname == "SunOS":
 else:
     raise AssertionError("Unsupported operating system: %s" % (_uname))
 
+def check(**kwargs):
+    result = 0
+    if not check_hosts_file():
+        if kwargs['fix_hosts']:
+            sys.stdout.write("Attempting to fix /etc/hosts file.\n")
+            fix_hosts_file()
+        else:
+            result = 1
+    if not check_host_address():
+        result = 2
+    return result
+

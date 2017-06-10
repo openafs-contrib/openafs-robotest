@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (c) 2014-2016 Sine Nomine Associates
+# Copyright (c) 2014-2017 Sine Nomine Associates
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -89,56 +89,6 @@ def _optlists2dict(options):
 
 def version(**kwargs):
     sys.stdout.write("Version %s\n" % (afsutil.__version__))
-
-def getdeps(**kwargs):
-    afsutil.build.getdeps(**kwargs)
-
-def check(**kwargs):
-    result = 0
-    if not afsutil.system.check_hosts_file():
-        if kwargs['fix_hosts']:
-            sys.stdout.write("Attempting to fix /etc/hosts file.\n")
-            afsutil.system.fix_hosts_file()
-        else:
-            result = 1
-    if not afsutil.system.check_host_address():
-        result = 2
-    return result
-
-def build(**kwargs):
-    afsutil.build.build(**kwargs)
-
-def package(**kwargs):
-    afsutil.build.package(**kwargs)
-
-def modreload(**kwargs):
-    afsutil.build.modreload(**kwargs)
-
-def install(**kwargs):
-    dist = kwargs['dist']
-    if dist == 'transarc':
-        installer = afsutil.transarc.TransarcInstaller(**kwargs)
-    elif dist == 'rpm':
-        installer = afsutil.rpm.RpmInstaller(**kwargs)
-    else:
-        raise AssertionError("Unsupported 'dist' option")
-    installer.install()
-
-def remove(**kwargs):
-    dist = kwargs['dist']
-    if dist == 'transarc':
-        installer = afsutil.transarc.TransarcInstaller(**kwargs)
-    elif dist == 'rpm':
-        installer = afsutil.rpm.RpmInstaller(**kwargs)
-    else:
-        raise AssertionError("Unsupported 'dist' option")
-    installer.remove()
-
-def start(**kwargs):
-    afsutil.service.start(**kwargs)
-
-def stop(**kwargs):
-    afsutil.service.stop(**kwargs)
 
 def newcell(**kwargs):
     akimpersonate = kwargs.get('akimpersonate', False)
@@ -244,12 +194,12 @@ def main():
     p = subparsers.add_parser('getdeps', help='install build dependencies')
     _common_opts(p)
     p.add_argument('--creds', help='location of repo creds (maybe url)', default='/root/creds')
-    p.set_defaults(fn=getdeps, must_be_root=True)
+    p.set_defaults(fn=afsutil.build.getdeps, must_be_root=True)
 
     p = subparsers.add_parser('check', help='check system')
     _common_opts(p)
     p.add_argument('--fix-hosts', help='fix /etc/hosts file by replacing loopback entry.', action='store_true')
-    p.set_defaults(fn=check, must_be_root=False)
+    p.set_defaults(fn=afsutil.system.check, must_be_root=False)
 
     p = subparsers.add_parser('build', help='build binaries')
     _common_opts(p)
@@ -263,19 +213,19 @@ def main():
     p.add_argument('-j', '--jobs', help='parallel build jobs (default: %d)' % nproc, default=nproc)
     p.add_argument('--srcdir', help='source code directory (default: .)', default='.')
     p.add_argument('--tarball', help='path and file name of dest tarball (default: openafs-<sysname>.tar.gz)', default=None)
-    p.set_defaults(fn=build, must_be_root=False)
+    p.set_defaults(fn=afsutil.build.build, must_be_root=False)
 
     p = subparsers.add_parser('reload', help='reload the kernel module after a build')
     _common_opts(p)
     p.add_argument('--chdir', help='change to directory', default=None)
-    p.set_defaults(fn=modreload, must_be_root=True)
+    p.set_defaults(fn=afsutil.build.modreload, must_be_root=True)
 
     p = subparsers.add_parser('package', help='build packages')
     _common_opts(p)
     p.add_argument('--chdir', help='change to directory', default=None)
     p.add_argument('--source', help='build source package only', action='store_true')
     p.add_argument('--no-clean', dest='clean', help='do not run git clean', action='store_false')
-    p.set_defaults(fn=package, must_be_root=False)
+    p.set_defaults(fn=afsutil.build.package, must_be_root=False)
 
     p = subparsers.add_parser('install', help='install binaries')
     _common_opts(p)
@@ -290,7 +240,7 @@ def main():
     p.add_argument('--csdb', help='path to CellServDB.dist file for client (default: none)', default=None)
     p.add_argument('--force', action='store_true', help='overwrite existing files')
     p.add_argument('-o', '--options', nargs='+', help="command line args: <name>=<value>", action='append')
-    p.set_defaults(fn=install, must_be_root=True)
+    p.set_defaults(fn=afsutil.install.install, must_be_root=True)
 
     p = subparsers.add_parser('remove', help="remove binaries")
     _common_opts(p)
@@ -298,21 +248,21 @@ def main():
     p.add_argument('--components', metavar='<name>', nargs='+', choices=['client', 'server'],
                    help='components to remove', default=['client', 'server']),
     p.add_argument('--purge', action='store_true', help='remove config and data too')
-    p.set_defaults(fn=remove, must_be_root=True)
+    p.set_defaults(fn=afsutil.install.remove, must_be_root=True)
 
     p = subparsers.add_parser('start', help="start afs services")
     _common_opts(p)
     p.add_argument('components', metavar='<name>', nargs='*',
                    help='values: server, client (default: all)',
                    default=afsutil.service.COMPONENTS)
-    p.set_defaults(fn=start, must_be_root=True)
+    p.set_defaults(fn=afsutil.service.start, must_be_root=True)
 
     p = subparsers.add_parser('stop', help="stop afs services")
     _common_opts(p)
     p.add_argument('components', metavar='<name>', nargs='*',
                    help='values: server, client (default: all)',
                    default=afsutil.service.COMPONENTS)
-    p.set_defaults(fn=stop, must_be_root=True)
+    p.set_defaults(fn=afsutil.service.stop, must_be_root=True)
 
     p = subparsers.add_parser('keytab', help='manage keytabs')
     ssp = p.add_subparsers(title="actions", metavar="<action>")

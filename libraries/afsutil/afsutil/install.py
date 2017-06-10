@@ -321,6 +321,22 @@ class Installer(object):
             if self.do_client:
                 self._purge_cache()
 
+def installer(dist='transarc', **kwargs):
+    if dist == 'transarc':
+        from afsutil.transarc import TransarcInstaller
+        return TransarcInstaller(**kwargs)
+    elif dist == 'rpm':
+        from afsutil.rpm import RpmInstaller
+        return RpmInstaller(**kwargs)
+    else:
+        raise ValueError("Unsupported 'dist' option: {0}".format(dist))
+
+def install(dist='transarc', **kwargs):
+    installer(dist, **kwargs).install()
+
+def remove(dist='transarc', **kwargs):
+    installer(dist, **kwargs).remove()
+
 #
 # Test Driver
 #
