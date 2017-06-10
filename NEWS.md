@@ -1,4 +1,4 @@
-## [unreleased]
+## [v0.6.0]
 
 ### Tests
 
@@ -18,6 +18,7 @@
 * Add PAG keywords for the pagsh test
 * Add Link, Symlink, Unlink keywords
 * Add cache parameter keywords
+* Remove fs flushall when creating test volumes
 
 ### Other
 
