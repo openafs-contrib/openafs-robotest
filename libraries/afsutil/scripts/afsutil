@@ -43,7 +43,7 @@ from afsutil.cell import Cell
 logger = logging.getLogger('afsutil')
 
 def _cd(chdir):
-    """Change directory if given and returning the old directory."""
+    """Change working directory and return the previous working directory."""
     savedir = None
     if chdir is not None:
         logger.info("Changing to directory %s", chdir)
@@ -76,96 +76,6 @@ def _log_options(args):
     options['format'] = fmt
     return options
 
-def _optlists2dict(options):
-    """Covert the option list of lists to a dict."""
-    names = {}
-    if not options:
-        return names
-    for optlist in options:
-        for o in optlist:
-            name,value = o.split('=', 1)
-            names[name.strip()] = value.strip()
-    return names
-
-def version(**kwargs):
-    sys.stdout.write("Version %s\n" % (afsutil.__version__))
-
-def newcell(**kwargs):
-    akimpersonate = kwargs.get('akimpersonate', False)
-    aklog = kwargs.get('aklog', None)
-    if aklog:
-        afsutil.cli.AKLOG = aklog
-    kwargs['admins'] = [kwargs['admin']] # for Cell()
-    kwargs['user'] = kwargs['admin']     # for akimpersonate
-
-    if not afsutil.system.is_running('bosserver'):
-        logger.warning("bosserver is not running! trying to start it.")
-        start(components=['server'])
-        time.sleep(2) # Give the server a chance to start.
-    cell = Cell(**kwargs)
-    cell.newcell()
-    # A cache manager is required to setup the root and top level volumes!
-    if kwargs['noclient']:
-        logger.warning("Skipping root volume setup; --no-client was given.")
-        return
-    if not os.path.isfile(kwargs['keytab']):
-        logger.error("Skipping root volume setup; keytab %s not found" % (kwargs['keytab']))
-        return
-    if afsutil.system.afs_mountpoint() is None:
-        logger.warning("afs is not running! trying to start it.")
-        start(components=['client'])
-    k = Keytab.load(kwargs['keytab'])
-    if akimpersonate:
-        k.akimpersonate(**kwargs)
-    else:
-        _kinit_aklog(**kwargs)
-    options = _optlists2dict(kwargs['options'])
-    afsd_options = options.get('afsd', '')
-    dynroot = '-dynroot' in afsd_options
-    cell.mount_root_volumes(dynroot)
-    cell.create_top_volumes(kwargs['top'])
-
-def addfs(**kwargs):
-    cell = Cell.current(**kwargs)
-    cell.add_fileserver(kwargs['hostname'])
-
-def _akimpersonate(**kwargs):
-    keytab = kwargs['keytab']
-    k = Keytab.load(keytab)
-    k.akimpersonate(**kwargs)
-
-def _kinit_aklog(**kwargs):
-    user = kwargs['user']
-    cell = kwargs['cell']
-    realm = kwargs['realm']
-    keytab = kwargs['keytab']
-    if not keytab:
-        keytab = "/tmp/afs.keytab"
-    if not os.path.exists(keytab):
-        raise ValueError("Keytab file not found. Please specify --keytab")
-    if not realm:
-        realm = cell.upper()
-    output = afsutil.cli.kinit('-V', '-k', '-t', keytab, user.replace('.','/'))
-    for line in output.splitlines():
-        logger.info(line)
-    output = afsutil.cli.aklog('-d', '-c', cell, '-k', realm)
-    for line in output.splitlines():
-        logger.info(line)
-
-def login(**kwargs):
-    if os.geteuid() == 0:
-        logger.warning("Running afsutil login as root! Your regular user will not have a token.")
-    akimpersonate = kwargs['akimpersonate']
-    aklog = kwargs['aklog']
-    kinit = kwargs['kinit']
-    if aklog:
-        afsutil.cli.AKLOG = aklog
-    if kinit:
-        afsutil.cli.KINIT = kinit
-    if akimpersonate:
-        _akimpersonate(**kwargs)
-    else:
-        _kinit_aklog(**kwargs)
 
 # Customize the argument parser to display the full help instead
 # of the abbreviated usage message on errors. Perhaps overkill,
@@ -177,32 +87,33 @@ class ArgParser(argparse.ArgumentParser):
         self.print_help(sys.stderr)
         self.exit(2, gettext.gettext('\n%s: error: %s\n') % (self.prog, message))
 
+def _add_common_arguments(p):
+    p.add_argument('-v', '--verbose', action='store_true', help='print debug messages')
+    p.add_argument('-q', '--quiet', action='store_true', help='do not print info messages')
+    p.add_argument('-l', '--log', help='log file location (default: stderr)', default=None)
+    p.add_argument('--log-format', help='logging format: see pydoc logging.Formatter', default=None)
+
 def main():
     nproc = afsutil.system.nproc() # default --jobs
     parser = ArgParser()
     subparsers = parser.add_subparsers(title="sub-commands", metavar="<command>")
 
-    def _common_opts(p):
-        p.add_argument('-v', '--verbose', action='store_true', help='print debug messages')
-        p.add_argument('-q', '--quiet', action='store_true', help='do not print info messages')
-        p.add_argument('-l', '--log', help='log file location (default: stderr)', default=None)
-        p.add_argument('--log-format', help='logging format: see pydoc logging.Formatter', default=None)
-
     p = subparsers.add_parser('version', help='print version information')
-    p.set_defaults(fn=version, must_be_root=False)
+    p.set_defaults(fn=afsutil.print_version, must_be_root=False)
 
     p = subparsers.add_parser('getdeps', help='install build dependencies')
-    _common_opts(p)
-    p.add_argument('--creds', help='location of repo creds (maybe url)', default='/root/creds')
     p.set_defaults(fn=afsutil.build.getdeps, must_be_root=True)
+    _add_common_arguments(p)
+    p.add_argument('--creds', help='location of repo creds (maybe url)', default='/root/creds')
 
     p = subparsers.add_parser('check', help='check system')
-    _common_opts(p)
-    p.add_argument('--fix-hosts', help='fix /etc/hosts file by replacing loopback entry.', action='store_true')
     p.set_defaults(fn=afsutil.system.check, must_be_root=False)
+    _add_common_arguments(p)
+    p.add_argument('--fix-hosts', help='fix /etc/hosts file by replacing loopback entry.', action='store_true')
 
     p = subparsers.add_parser('build', help='build binaries')
-    _common_opts(p)
+    p.set_defaults(fn=afsutil.build.build, must_be_root=False)
+    _add_common_arguments(p)
     p.add_argument('--chdir', help='change to directory', default=None)
     p.add_argument('--cf', help='configure options, e.g., --cf="--enable-debug"', default=None)
     p.add_argument('--target', help='make target (default: all)', default='all')
@@ -213,22 +124,22 @@ def main():
     p.add_argument('-j', '--jobs', help='parallel build jobs (default: %d)' % nproc, default=nproc)
     p.add_argument('--srcdir', help='source code directory (default: .)', default='.')
     p.add_argument('--tarball', help='path and file name of dest tarball (default: openafs-<sysname>.tar.gz)', default=None)
-    p.set_defaults(fn=afsutil.build.build, must_be_root=False)
 
     p = subparsers.add_parser('reload', help='reload the kernel module after a build')
-    _common_opts(p)
-    p.add_argument('--chdir', help='change to directory', default=None)
     p.set_defaults(fn=afsutil.build.modreload, must_be_root=True)
+    _add_common_arguments(p)
+    p.add_argument('--chdir', help='change to directory', default=None)
 
     p = subparsers.add_parser('package', help='build packages')
-    _common_opts(p)
+    p.set_defaults(fn=afsutil.build.package, must_be_root=False)
+    _add_common_arguments(p)
     p.add_argument('--chdir', help='change to directory', default=None)
     p.add_argument('--source', help='build source package only', action='store_true')
     p.add_argument('--no-clean', dest='clean', help='do not run git clean', action='store_false')
-    p.set_defaults(fn=afsutil.build.package, must_be_root=False)
 
     p = subparsers.add_parser('install', help='install binaries')
-    _common_opts(p)
+    p.set_defaults(fn=afsutil.install.install, must_be_root=True)
+    _add_common_arguments(p)
     p.add_argument('--chdir', help='change to directory', default=None)
     p.add_argument('--dist', choices=['transarc', 'rpm'], help='distribution type', default='transarc')
     p.add_argument('--dir', help='distribution directory', default=None)
@@ -240,50 +151,50 @@ def main():
     p.add_argument('--csdb', help='path to CellServDB.dist file for client (default: none)', default=None)
     p.add_argument('--force', action='store_true', help='overwrite existing files')
     p.add_argument('-o', '--options', nargs='+', help="command line args: <name>=<value>", action='append')
-    p.set_defaults(fn=afsutil.install.install, must_be_root=True)
 
     p = subparsers.add_parser('remove', help="remove binaries")
-    _common_opts(p)
+    p.set_defaults(fn=afsutil.install.remove, must_be_root=True)
+    _add_common_arguments(p)
     p.add_argument('--dist', choices=['transarc', 'rpm'], help='distribution type', default='transarc')
     p.add_argument('--components', metavar='<name>', nargs='+', choices=['client', 'server'],
                    help='components to remove', default=['client', 'server']),
     p.add_argument('--purge', action='store_true', help='remove config and data too')
-    p.set_defaults(fn=afsutil.install.remove, must_be_root=True)
 
     p = subparsers.add_parser('start', help="start afs services")
-    _common_opts(p)
+    p.set_defaults(fn=afsutil.service.start, must_be_root=True)
+    _add_common_arguments(p)
     p.add_argument('components', metavar='<name>', nargs='*',
                    help='values: server, client (default: all)',
                    default=afsutil.service.COMPONENTS)
-    p.set_defaults(fn=afsutil.service.start, must_be_root=True)
 
     p = subparsers.add_parser('stop', help="stop afs services")
-    _common_opts(p)
+    p.set_defaults(fn=afsutil.service.stop, must_be_root=True)
+    _add_common_arguments(p)
     p.add_argument('components', metavar='<name>', nargs='*',
                    help='values: server, client (default: all)',
                    default=afsutil.service.COMPONENTS)
-    p.set_defaults(fn=afsutil.service.stop, must_be_root=True)
 
     p = subparsers.add_parser('keytab', help='manage keytabs')
     ssp = p.add_subparsers(title="actions", metavar="<action>")
 
     p = ssp.add_parser('create', help="create a fake keytab")
-    _common_opts(p)
+    p.set_defaults(fn=afsutil.keytab.create, must_be_root=False)
+    _add_common_arguments(p)
     p.add_argument('--keytab', help='keytab file to be created (default: /tmp/afs.keytab)', default='/tmp/afs.keytab')
     p.add_argument('--cell', help='cell name (default: localcell)', default='localcell')
     p.add_argument('--realm', help='realm name (default: LOCALCELL)', default=None)
     p.add_argument('--enctype', help='encryption type (default: aes256-cts-hmac-sha1-96)', default='aes256-cts-hmac-sha1-96')
     p.add_argument('--secret', help='passphrase (default: random)', default=None)
-    p.set_defaults(fn=afsutil.keytab.create, must_be_root=False)
 
     p = ssp.add_parser('destroy', help="destroy a keytab")
-    _common_opts(p)
+    p.set_defaults(fn=afsutil.keytab.destroy, must_be_root=False)
+    _add_common_arguments(p)
     p.add_argument('--keytab', help='keytab file to be destroyed (default: /tmp/afs.keytab)', default='/tmp/afs.keytab')
     p.add_argument('--force', help='ignore errors', action='store_true', default=False)
-    p.set_defaults(fn=afsutil.keytab.destroy, must_be_root=False)
 
     p = ssp.add_parser('setkey', help='add a service key from a keytab file')
-    _common_opts(p)
+    p.set_defaults(fn=afsutil.keytab.setkey, must_be_root=True)
+    _add_common_arguments(p)
     p.add_argument('--keytab', help="keytab file (default: /tmp/afs.keytab)", default="/tmp/afs.keytab")
     p.add_argument('--cell', help="cell name (default: detect)", default=None)
     p.add_argument('--realm', help="realm name (default: detect)", default=None)
@@ -291,10 +202,10 @@ def main():
     p.add_argument('--format', dest='kformat', help="key file format (default: detect)",
                    choices=['detect', 'transarc', 'rxkad-k5', 'extended'], default='detect')
     p.add_argument('-n', '--dry-run', dest='dryrun', help="do not make changes", default=False, action='store_true')
-    p.set_defaults(fn=afsutil.keytab.setkey, must_be_root=True)
 
     p = subparsers.add_parser('newcell', help='setup a new cell')
-    _common_opts(p)
+    p.set_defaults(fn=afsutil.cell.newcell, must_be_root=True)
+    _add_common_arguments(p)
     p.add_argument('--akimpersonate', help="print a ticket for admin user", action='store_true')
     p.add_argument('--keytab', help="keytab file (default: /tmp/afs.keytab)", default="/tmp/afs.keytab")
     p.add_argument('--cell', help="cell name (default: localcell)", default='localcell')
@@ -306,17 +217,17 @@ def main():
     p.add_argument('--no-client', dest='noclient', help='do not mount root and top level volumes', action='store_true')
     p.add_argument('--aklog', help="path to aklog program (default: detect)", default=None)
     p.add_argument('-o', '--options', nargs='+', help="command line args: <name>=<value>", action='append')
-    p.set_defaults(fn=newcell, must_be_root=True)
 
     p = subparsers.add_parser('addfs', help='add a new fileserver to the cell')
-    _common_opts(p)
+    p.set_defaults(fn=afsutil.cell.addfs, must_be_root=True)
+    _add_common_arguments(p)
     p.add_argument('hostname', help="fileserver hostname")
     p.add_argument('--keytab', help="keytab file (default: /tmp/afs.keytab)", default="/tmp/afs.keytab")
     p.add_argument('-o', '--options', nargs='+', help="command line args; <name>=<value>", action='append')
-    p.set_defaults(fn=addfs, must_be_root=True)
 
     p = subparsers.add_parser('login', help='obtain token with a keytab')
-    _common_opts(p)
+    p.set_defaults(fn=afsutil.cell.login, must_be_root=False)
+    _add_common_arguments(p)
     p.add_argument('--akimpersonate', help="print a ticket for the service key in the keytab", action='store_true')
     p.add_argument('--keytab', help="keytab file (default: /tmp/afs.keytab)", default="/tmp/afs.keytab")
     p.add_argument('--user', help="user name (default: admin)", default="admin")
@@ -324,7 +235,6 @@ def main():
     p.add_argument('--realm', help="realm name (default: detect with --akimpersonate)", default="LOCALCELL")
     p.add_argument('--aklog', help="path to the aklog program (default: detect)", default=None)
     p.add_argument('--kinit', help="path to the kinit program (default: detect)", default=None)
-    p.set_defaults(fn=login, must_be_root=False)
 
     if argcomplete:
         argcomplete.autocomplete(parser)

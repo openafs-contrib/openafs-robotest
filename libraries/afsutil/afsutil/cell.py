@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2016 Sine Nomine Associates
+# Copyright (c) 2014-2017 Sine Nomine Associates
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -30,6 +30,8 @@ import os
 import re
 import socket
 
+import afsutil.system
+import afsutil.keytab
 from afsutil.cli import bos, vos, pts, fs, udebug, rxdebug
 from afsutil.system import CommandFailed, afs_mountpoint
 from afsutil.transarc import AFS_SRV_LIBEXEC_DIR
@@ -44,6 +46,15 @@ PORT = {
     'volserver':  '7005',
     'bosserver':  '7007',
 }
+
+def _optlists2dict(options):
+    """ Helper to covert a list of lists to a dict."""
+    names = {}
+    for optlist in options:
+        for o in optlist:
+            name,value = o.split('=', 1)
+            names[name] = value
+    return names
 
 def _optfsbnode(options):
     """Helper to get the fs bnode type."""
@@ -288,7 +299,6 @@ class Host(object):
             logger.info("Creating volume %s on host %s, partition %s.", name, self.hostname, partition)
             vos('create', '-server', self.hostname, '-partition', partition, '-name', name, retry=60, wait=10)
 
-
 class Cell(object):
 
     def __init__(self, cell='localcell', db=None, fs=None, admins=None, options=None, **kwargs):
@@ -304,16 +314,7 @@ class Cell(object):
         assert admins is None or not isinstance(admins, basestring) # expect a list or tuple
         assert options is None or not isinstance(options, basestring) # expect a list or tuple
 
-        # Covert the option list of lists to a dict.
-        def optlists2dict(options):
-            names = {}
-            for optlist in options:
-                for o in optlist:
-                    name,value = o.split('=', 1)
-                    names[name] = value
-            return names
-        if options is None: options = [[]]
-        self.options = optlists2dict(options)
+        self.options = options
 
         # Defaults.
         hostname = socket.gethostname()
@@ -637,4 +638,88 @@ class Cell(object):
             self._create_replica(name)
         vos('release', '-id', 'root.cell')
         fs('checkvolumes')
+
+
+def newcell(cell='localcell', db=None, fs=None, admins=None, options=None,
+            akimpersonate=False, keytab='/tmp/afs.keytab', aklog=None, **kwargs):
+    # This function ended up being a junk drawer of work arounds.
+    # ?!
+    if not 'admins' in kwargs:
+        kwargs['admins'] = [kwargs['admin']] # for Cell()
+    kwargs['user'] = kwargs['admin']     # for akimpersonate
+
+    if options is None:
+        options = [[]]
+    options = _optlists2dict(options)
+
+    # Why is this not part of Cell.newcell()?
+    # Should we assume the "primary host" is the localhost?
+    #  YES: because we need -localauth
+    #       and we dont want the key to be on a non-server.
+    if not afsutil.system.is_running('bosserver'):
+        logger.warning("bosserver is not running! trying to start it.")
+        start(components=['server'])
+        time.sleep(2) # Give the server a chance to start. HACK!
+
+    cell = Cell(cell=cell, db=db, fs=fs, options=options, **kwargs)
+    cell.newcell()
+
+    # A cache manager is required to setup the root and top level volumes.
+    # what a mess!
+    if aklog:
+        afsutil.cli.AKLOG = aklog
+
+    if kwargs['noclient']:
+        logger.warning("Skipping root volume setup; --no-client was given.")
+        return
+    if not os.path.isfile(keytab):
+        logger.error("Skipping root volume setup; keytab %s not found" % (keytab))
+        return
+    if afsutil.system.afs_mountpoint() is None:
+        logger.warning("afs is not running! trying to start it.")
+        start(components=['client'])
+    k = afsutil.keytab.Keytab.load(keytab)
+    if akimpersonate:
+        k.akimpersonate(**kwargs)
+    else:
+        _kinit_aklog(**kwargs)
+    afsd_options = options.get('afsd', '')
+    dynroot = '-dynroot' in afsd_options
+    # ok
+    cell.mount_root_volumes(dynroot)
+    cell.create_top_volumes(kwargs['top'])
+
+def addfs(hostname='localhost', **kwargs):
+    cell = Cell.current(**kwargs)
+    cell.add_fileserver(hostname)
+
+def _akimpersonate(keytab='/tmp/afs.keytab', **kwargs):
+    k = afsutil.keytab.Keytab.load(keytab)
+    k.akimpersonate(**kwargs)
+
+def _kinit_aklog(user='admin', cell='localcell', realm=None, keytab='/tmp/afs.keytab', **kwargs):
+    if not realm:
+        realm = cell.upper()
+    if not os.path.exists(keytab):
+        raise ValueError("Keytab file not found. Please specify --keytab")
+    if not realm:
+        realm = cell.upper()
+    output = afsutil.cli.kinit('-V', '-k', '-t', keytab, user.replace('.','/'))
+    for line in output.splitlines():
+        logger.info(line)
+    output = afsutil.cli.aklog('-d', '-c', cell, '-k', realm)
+    for line in output.splitlines():
+        logger.info(line)
+
+def login(aklog=None, kinit=None, akimpersonate=False, **kwargs):
+    if os.geteuid() == 0:
+        logger.warning("Running afsutil login as root! Your regular user will not have a token.")
+    if aklog:
+        afsutil.cli.AKLOG = aklog
+    if kinit:
+        afsutil.cli.KINIT = kinit
+    if akimpersonate:
+        _akimpersonate(**kwargs)
+    else:
+        _kinit_aklog(**kwargs)
 
