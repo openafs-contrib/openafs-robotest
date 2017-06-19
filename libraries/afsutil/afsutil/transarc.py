@@ -183,7 +183,7 @@ class SolarisClientSetup(TransarcClientSetup):
         elif osrel == '5.11':
             return self._afs_driver_511()
         else:
-            raise AssertionError("Unsupported operating system: %s" % (uname))
+            raise AssertionError("Unsupported operating system: %s" % (osrel))
 
     def _afs_driver_510(self):
         output = sh('/bin/isalist', output=True)[0]

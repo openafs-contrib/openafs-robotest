@@ -24,7 +24,6 @@ import sys
 import logging
 import argparse
 import gettext
-import time
 
 try:
     import argcomplete
@@ -37,8 +36,7 @@ import afsutil.service
 import afsutil.transarc
 import afsutil.rpm
 import afsutil.keytab
-from afsutil.keytab import Keytab
-from afsutil.cell import Cell
+import afsutil.cell
 
 logger = logging.getLogger('afsutil')
 

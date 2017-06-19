@@ -484,7 +484,7 @@ class Cell(object):
             for host in self.db:
                 if host != self.primary_db:
                     for admin in self.admins:
-		        host.adduser(admin)
+                        host.adduser(admin)
                     host.create_database(dbname, self.options)
                     host.wait_for_status(dbname, target='running')
 
@@ -658,7 +658,7 @@ def newcell(cell='localcell', db=None, fs=None, admins=None, options=None,
     #       and we dont want the key to be on a non-server.
     if not afsutil.system.is_running('bosserver'):
         logger.warning("bosserver is not running! trying to start it.")
-        start(components=['server'])
+        afsutil.service.start(components=['server'])
         time.sleep(2) # Give the server a chance to start. HACK!
 
     cell = Cell(cell=cell, db=db, fs=fs, options=options, **kwargs)
@@ -677,7 +677,7 @@ def newcell(cell='localcell', db=None, fs=None, admins=None, options=None,
         return
     if afsutil.system.afs_mountpoint() is None:
         logger.warning("afs is not running! trying to start it.")
-        start(components=['client'])
+        afsutil.service.start(components=['client'])
     k = afsutil.keytab.Keytab.load(keytab)
     if akimpersonate:
         k.akimpersonate(**kwargs)
