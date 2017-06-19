@@ -130,9 +130,9 @@ fi
 # Install.
 if [ $OPT_INSTALL_LIBS = "yes" ]; then
     info "Installing libraries"
-    run pip install --upgrade libraries/afsutil
-    run pip install --upgrade libraries/afsrobot
-    run pip install --upgrade libraries/OpenAFSLibrary
+    run pip install --upgrade --no-deps --no-index libraries/afsutil
+    run pip install --upgrade --no-deps --no-index libraries/afsrobot
+    run pip install --upgrade --no-deps --no-index libraries/OpenAFSLibrary
 fi
 if [ $OPT_INSTALL_TESTS = "yes" ]; then
     info "Installing test suites"
