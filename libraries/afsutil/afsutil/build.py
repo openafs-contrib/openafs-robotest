@@ -22,7 +22,6 @@
 
 import logging
 import os
-import sys
 import re
 import shlex
 import platform
@@ -122,46 +121,6 @@ def _setenv():
     system = platform.system()
     if system == 'SunOS':
         _setenv_solaris()
-
-def _make_srpm(jobs=1):
-    # Get the filename of the generated source rpm from the output of the
-    # script. The source rpm filename is needed to build the rpms.
-    output = sh('make', '-j', jobs, 'srpm', output=True)
-    for line in output:
-        if line.startswith('SRPM is '):
-            return line.split()[2]
-    raise CommandFailed(['make', '-j', jobs, 'srpm'], 1, '', 'Failed to get the srpm filename.')
-
-def _make_rpm(srpm):
-    # These commands should probably be moved to the OpenAFS Makefile.
-    # Note: The spec file does not support parallel builds (make -j) yet.
-    cwd = os.getcwd()
-    arch = os.uname()[4]
-    # Build kmod packages.
-    packages = sh('rpm', '-q', '-a', 'kernel-devel', output=True)
-    for package in packages:
-        kernvers = package.lstrip('kernel-devel-')
-        logger.info("Building kmod rpm for kernel version %s." % (kernvers))
-        sh('rpmbuild',
-            '--rebuild',
-            '-ba',
-            '--target=%s' % (arch),
-            '--define', '_topdir %s/packages/rpmbuild' % (cwd),
-            '--define', 'build_userspace 0',
-            '--define', 'build_modules 1',
-            '--define', 'kernvers %s' % (kernvers),
-            'packages/%s' % (srpm))
-    # Build userspace packages.
-    logger.info("Building userspace rpms.")
-    sh('rpmbuild',
-        '--rebuild',
-        '-ba',
-        '--target=%s' % (arch),
-        '--define', '_topdir %s/packages/rpmbuild' % (cwd),
-        '--define', 'build_userspace 1',
-        '--define', 'build_modules 0',
-        'packages/%s' % (srpm))
-    logger.info("Packages written to %s/packages/rpmbuild/RPMS/%s" % (cwd, arch))
 
 def _debian_getdeps():
     sh('apt-get', '-y', 'build-dep', 'openafs')
@@ -540,40 +499,3 @@ def modreload(**kwargs):
     cs.install_afsd(afsd)
     cs.install_kmod(kmod)
     afsutil.service.start(components=['client'])
-
-def package(**kwargs):
-    """Build the OpenAFS rpm packages."""
-    # The rpm spec file contains the configure options for the actual build.
-    # We run configure here just to bootstrap the process.
-    clean = kwargs.get('clean', True)
-    jobs = kwargs.get('jobs', 1)
-    source = kwargs.get('source', False)
-    if clean:
-        _clean('.')
-    sh('./regen.sh', '-q')
-    sh('./configure')
-    sh('make', '-j', jobs, 'dist')
-    srpm = _make_srpm(jobs)
-    if not source:
-        _make_rpm(srpm)
-
-
-#
-# Test driver.
-#
-if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
-    if len(sys.argv) < 2:
-        sys.stderr.write("usage: python build.py build\n")
-        sys.stderr.write("       python build.py package\n")
-        sys.stderr.write("       python build.py modreload\n")
-        sys.exit(1)
-    if sys.argv[1] == 'build':
-        build()
-    elif sys.argv[1] == 'package':
-        package()
-    else:
-        if os.geteuid() != 0:
-            sys.stderr.write("Must run as root!\n")
-            sys.exit(1)
-        modreload()

@@ -32,6 +32,7 @@ except ImportError:
 
 import afsutil.system
 import afsutil.build
+import afsutil.package
 import afsutil.service
 import afsutil.transarc
 import afsutil.rpm
@@ -129,7 +130,7 @@ def main():
     p.add_argument('--chdir', help='change to directory', default=None)
 
     p = subparsers.add_parser('package', help='build packages')
-    p.set_defaults(fn=afsutil.build.package, must_be_root=False)
+    p.set_defaults(fn=afsutil.package.package, must_be_root=False)
     _add_common_arguments(p)
     p.add_argument('--chdir', help='change to directory', default=None)
     p.add_argument('--source', help='build source package only', action='store_true')
