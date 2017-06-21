@@ -22,7 +22,6 @@ import os
 import sys
 import subprocess
 import shlex
-from afsrobot.config import islocal
 
 def ssh(hostname, args, keyfile=None, sudo=False):
     """Helper to run command on remote hosts using ssh."""
@@ -88,9 +87,6 @@ def distribute_key(keyfile, hostnames):
         return 1
     result = 0
     for hostname in hostnames:
-        if islocal(hostname):
-            sys.stdout.write("Skipping local host '%s'.\n" % (hostname))
-            continue
         sys.stdout.write("Copying ssh identities in '%s' to host '%s'.\n" % (keyfile, hostname))
         code = _copyid(key, hostname)
         if code != 0:
@@ -106,8 +102,6 @@ def check_access(keyfile, hostnames, check_sudo=True):
     sys.stdout.write("Checking ssh access...\n")
     failed = False
     for hostname in hostnames:
-        if islocal(hostname):
-            continue
         sys.stdout.write("Checking access to host %s...\n" % (hostname))
         code = ssh(hostname, ['uname', '-a'], keyfile=keyfile, sudo=False)
         if code != 0:
@@ -140,8 +134,6 @@ def execute(keyfile, hostnames, command, exclude='', quiet=False, sudo=False):
         return 1
     code = 0
     for hostname in hostnames:
-        if islocal(hostname):
-            continue
         if hostname in exclude:
             continue
         if not quiet:

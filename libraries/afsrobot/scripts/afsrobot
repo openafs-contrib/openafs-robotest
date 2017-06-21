@@ -154,7 +154,12 @@ def cmd_ssh_check(c):
 
 def cmd_ssh_exec(c):
     keyfile = c.config.optstr('ssh', 'keyfile', required=True)
-    hostnames = c.config.opthostnames()
+    if c.args.include:
+        hostnames = c.args.include
+	hostnames = hostnames.split('.')
+    else:
+    	hostnames = config.opthostnames()
+	# no split needed
     return afsrobot.ssh.execute(keyfile, hostnames, c.args.command,
                                 exclude=c.args.exclude, quiet=c.args.quiet,
                                 sudo=c.args.sudo)
@@ -341,6 +346,7 @@ def main():
     common_options(p)
     p.add_argument('-s', '--sudo', action='store_true', help="run remote command as root")
     p.add_argument('-q', '--quiet', action='store_true', help="do not print hostnames")
+    p.add_argument('-i', '--include', metavar='<hosts>', help="hosts to include (comma separated)", default='')
     p.add_argument('-x', '--exclude', metavar='<hosts>', help="hosts to exclude (comma separated)", default='')
     p.add_argument('command', help='command line')
     p.set_defaults(_cmd=cmd_ssh_exec)
