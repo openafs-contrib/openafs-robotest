@@ -132,9 +132,18 @@ def main():
     p = subparsers.add_parser('package', help='build packages')
     p.set_defaults(fn=afsutil.package.package, must_be_root=False)
     _add_common_arguments(p)
-    p.add_argument('--chdir', help='change to directory', default=None)
-    p.add_argument('--source', help='build source package only', action='store_true')
-    p.add_argument('--no-clean', dest='clean', help='do not run git clean', action='store_false')
+    p.add_argument('--chdir', metavar='<path>', help='change to directory', default=None)
+    p.add_argument('--with-mock', metavar='<chroot>', dest='chroot', help='build in mock chroot', default=None)
+    p.add_argument('--dstdir', metavar='<dstdir>', help='where to place rpms (--with-mock only)', default=None)
+    p.add_argument('--clobber', help='rebuild and overwrite existing kmods (--with-mock only)', action='store_true')
+    p.add_argument('--build', metavar='<target>',
+                   help='one of: all, srpm, userspace, kmods (default: all)',
+                   choices=['all','srpm','userspace','kmods'], default='all')
+    p.add_argument('--csdb', metavar='<csdb>', help='CellServDB file path (default: download)', default=None)
+    p.add_argument('--spec', metavar='<spec>', help='spec file path (default: in-tree spec file)', default=None)
+    p.add_argument('--arch', metavar='<arch>', help='target architecture, e.g. x86_64  (default: current arch)', default=None)
+    p.add_argument('--kversion', metavar='<kernel-version>', dest='kversions', nargs='+', action='append',
+                   help='linux kernel versions; may be given more than once (default: detect)')
 
     p = subparsers.add_parser('install', help='install binaries')
     p.set_defaults(fn=afsutil.install.install, must_be_root=True)

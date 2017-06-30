@@ -14,7 +14,9 @@ lint:
 	pyflakes afsutil/*.py test/*.py scripts/*
 
 test:
-	python -m unittest discover test
+	python -m test.test_system -v
+	python -m test.test_keytab -v
+	#python -m test.test_package -v
 
 install:
 	sudo pip install --upgrade --no-deps --no-index .
