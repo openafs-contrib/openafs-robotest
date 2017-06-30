@@ -120,6 +120,7 @@ def sh(*args, **kwargs):
     """Run the command line and write the output to the logger."""
     args = list(args)
     output = kwargs.get('output', False)
+    ofilter = kwargs.get('ofilter', None)
     quiet = kwargs.get('quiet', False)
     prefix = kwargs.get('prefix', '')
     if prefix:
@@ -141,7 +142,10 @@ def sh(*args, **kwargs):
             if not quiet:
                 logger.info("%s%s", prefix, line)
             if output:
-                output_lines.append(line)
+                if ofilter:
+                    line = ofilter(line)
+                if line:
+                    output_lines.append(line)
     code = p.wait()
     if code != 0:
         raise CommandFailed(args, code, "", "\n".join(tail.get()))
