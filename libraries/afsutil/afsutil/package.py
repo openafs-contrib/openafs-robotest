@@ -243,14 +243,17 @@ class RpmBuilder(object):
         """
         if self.dstdir is None or not os.path.exists(self.dstdir):
             return []
-        version = self.get_version()
+        logger.info("Checking for existing kmods in {0}".format(self.dstdir))
+        linux_pkgver,linux_pkgrel = self.get_package_version()
+        logger.debug("linux_pkgver={}, linux_pkgrel={}".format(linux_pkgver,linux_pkgrel))
         def get_kversion(line):
             # Extract the linux kernel version from the rpm RELEASE tag.
             # e.g. 1.3.10.0_514.10.2.el7 => 3.10.0-514.10.2.el7
             v,r = line.split(' ', 2)
-            if v != version:
-                return None
-            return re.sub(r'^[^.]+\.', '', r).replace('_', '-')
+            prefix = linux_pkgrel + '.'
+            if v == linux_pkgver and r.startswith(prefix):
+                return r.replace(prefix, '', 1).replace('_', '-')
+            return None
         kversions = sh(
             'rpm', '-q', '-p', '--queryformat=%{VERSION} %{RELEASE}\n',
             "{dstdir}/kmod-openafs*.rpm".format(dstdir=self.dstdir),
