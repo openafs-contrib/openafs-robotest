@@ -130,10 +130,11 @@ class PackageTest(unittest.TestCase):
             ('1.6.0pre1', '1.6.0', '0.pre1'),
             ('1.8.0dev', '1.8.0', '0.dev'),
             ('1.6.20-32-gabcdef', '1.6.20', '32.gabcdef'),
+            ('1.6.18.3-foo3', '1.6.18.3', '1.2.3.foo'),
         ]
         b = RpmBuilder()
         for tc in testcases:
-            (v, r) = b.get_package_version(tc[0])
+            (v, r) = b.get_package_version(version=tc[0])
             self.assertEquals(v, tc[1])
             self.assertEquals(r, tc[2])
 

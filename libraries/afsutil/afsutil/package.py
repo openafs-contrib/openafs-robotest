@@ -182,7 +182,7 @@ class RpmBuilder(object):
         logger.info("OpenAFS version is {0}".format(self.version))
         return self.version
 
-    def get_package_version(self, version):
+    def get_package_version(self, version=None):
         """Determine the packaging release info.
 
         The format of the linux packaging release and version strings depend on
@@ -193,9 +193,12 @@ class RpmBuilder(object):
         * development release; 1.8.0dev => 1.8.0, 0.dev
         * not tagged; e.g., 1.6.0-32-gabcdef => 1.6.0, .32.gabcdef
         """
+        if version is None:
+            version = self.get_version()
         m1 = re.match(r'(.*)(pre[0-9]+)', version) # prerelease
         m2 = re.match(r'(.*)dev', version) # development
         m3 = re.match(r'(.*)-([0-9]+)-(g[a-f0-9]+)$', version) # development
+        m4 = re.match(r'(.*)-([a-z]+)([0-9]+)', version) # custom
         if m1:
             linux_pkgver = m1.group(1)
             linux_pkgrel = "0.{0}".format(m1.group(2))
@@ -205,11 +208,14 @@ class RpmBuilder(object):
         elif m3:
             linux_pkgver = m3.group(1)
             linux_pkgrel = "{0}.{1}".format(m3.group(2),m3.group(3))
+        elif m4:
+            linux_pkgver = m4.group(1)
+            linux_pkgrel = "1.2.{0}.{1}".format(m4.group(3), m4.group(2))
         else:
             linux_pkgver = version # standard release
             linux_pkgrel = "1"     # increment when repackaging this version
-        logger.info("Linux release is {0}".format(linux_pkgver))
-        logger.info("Linux version is {0}".format(linux_pkgrel))
+        logger.info("Linux version is {0}".format(linux_pkgver))
+        logger.info("Linux release is {0}".format(linux_pkgrel))
         return (linux_pkgver, linux_pkgrel)
 
     def current_kversion(self):
