@@ -41,40 +41,22 @@ import afsutil.cell
 
 logger = logging.getLogger('afsutil')
 
-def _cd(chdir):
-    """Change working directory and return the previous working directory."""
-    savedir = None
-    if chdir is not None:
-        logger.info("Changing to directory %s", chdir)
-        savedir = os.getcwd()
-        os.chdir(chdir)
-    return savedir
-
-def _get_log_level(args):
-    if getattr(args, 'verbose', False):
-        level = logging.DEBUG
-    elif getattr(args, 'quiet', False):
-        level = logging.ERROR
-    else:
-        level = logging.INFO
-    return level
-
-def _log_options(args):
+def set_log_options(args):
     options = {}
-    options['level'] = _get_log_level(args)
-    log = getattr(args, 'log', None)
-    if log:
-        options['filename'] = log
-    fmt = getattr(args, 'log_format', None)
-    if fmt is None:
-        # Timestamp log records when writing to file, by default.
-        if log:
-           fmt = '%(asctime)s %(levelname)s %(message)s'
-        else:
-           fmt = '%(message)s'
-    options['format'] = fmt
-    return options
-
+    options['level'] = logging.INFO
+    if args.quiet:
+        options['level'] = logging.ERROR
+    if args.verbose:
+        options['level'] = logging.DEBUG
+    if args.log:
+        options['filename'] = args.log
+    if args.log_format:
+        options['format'] = args.log_format
+    elif args.log:
+        options['format'] = '%(asctime)s %(levelname)s %(message)s'
+    else:
+        options['format'] = '%(message)s'
+    logging.basicConfig(**options)
 
 # Customize the argument parser to display the full help instead
 # of the abbreviated usage message on errors. Perhaps overkill,
@@ -99,6 +81,7 @@ def main():
 
     p = subparsers.add_parser('version', help='print version information')
     p.set_defaults(fn=afsutil.print_version, must_be_root=False)
+    _add_common_arguments(p)
 
     p = subparsers.add_parser('getdeps', help='install build dependencies')
     p.set_defaults(fn=afsutil.build.getdeps, must_be_root=True)
@@ -248,12 +231,16 @@ def main():
     if argcomplete:
         argcomplete.autocomplete(parser)
     args = parser.parse_args()
-    logging.basicConfig(**_log_options(args))
+    set_log_options(args)
     if args.must_be_root:
         if os.geteuid() != 0:
             sys.stderr.write("afsutil: Must run as root!\n")
             sys.exit(1)
-    savedir = _cd(getattr(args, 'chdir', None))
+    chdir = getattr(args, 'chdir', None)
+    if chdir:
+        logger.info("Changing to directory %s", chdir)
+        cwd = os.getcwd()
+        os.chdir(chdir)
     try:
         kwargs = vars(args)
         code = args.fn(**kwargs)
@@ -270,7 +257,8 @@ def main():
         logger.exception(e)
         sys.stderr.write("%s\n" % (e))
     finally:
-        _cd(savedir)
+	if chdir:
+            os.chdir(cwd)
     sys.exit(code)
 
 if __name__ == "__main__":
