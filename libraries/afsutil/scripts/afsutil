@@ -136,6 +136,7 @@ def main():
     p.add_argument('--with-mock', metavar='<chroot>', dest='chroot', help='build in mock chroot', default=None)
     p.add_argument('--dstdir', metavar='<dstdir>', help='where to place rpms (--with-mock only)', default=None)
     p.add_argument('--clobber', help='rebuild and overwrite existing kmods (--with-mock only)', action='store_true')
+    p.add_argument('--no-clean', dest='autoclean', help='do not clean after build (--with-mock only)', action='store_false')
     p.add_argument('--build', metavar='<target>',
                    help='one of: all, srpm, userspace, kmods (default: all)',
                    choices=['all','srpm','userspace','kmods'], default='all')
