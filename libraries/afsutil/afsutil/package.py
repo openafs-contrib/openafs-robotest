@@ -224,7 +224,7 @@ class RpmBuilder(object):
         arch = os.uname()[4]
         return trim(version, '.'+arch)
 
-    def find_kversions(self):
+    def find_kversions_available(self):
         """Find the linux kernel versions of the kernel-devel packages."""
         kversions = sh(
             'rpm', '-q', '-a',
@@ -259,6 +259,24 @@ class RpmBuilder(object):
             "{dstdir}/kmod-openafs*.rpm".format(dstdir=self.dstdir),
             output=True, ofilter=get_kversion)
         logger.debug("Found kmods: {0}".format(", ".join(kversions)))
+        return kversions
+
+    def find_kversions(self):
+        logger.debug("clobber is {0}".format(self.clobber))
+        available = self.find_kversions_available()
+        if self.clobber:
+            kversions = available
+        else:
+            # Remove the ones we have already done, if any.
+            existing = self.find_kversions_existing()
+            kversions = list(set(available).difference(set(existing)))
+            skipping = list(set(available).intersection(set(existing)))
+            self.banner([
+                "Available linux kernel versions:", available,
+                "Found kmods for versions:", existing,
+                "Skipping kmod builds for versions:", skipping,
+                "Building kmods for versions:", kversions,
+            ])
         return kversions
 
     def generate_spec(self, src):
@@ -607,31 +625,10 @@ class RpmBuilder(object):
                    defaults to the list of versions of currently
                    installed kernel-devel packages.
         """
-        info = []
         if kversions is None:
             kversions = self.find_kversions()
-
-        logger.debug("clobber is {0}".format(self.clobber))
-        if not self.clobber:
-            # Remove the ones we have already done, if any.
-            existing = self.find_kversions_existing()
-            skipping = list(set(kversions).intersection(set(existing)))
-            kversions = list(set(kversions).difference(set(existing)))
-            logger.debug("Existing kmods: {existing}".format(existing=" ".join(existing)))
-            logger.debug("Skipping kmods: {skipping}".format(skipping=" ".join(skipping)))
-            info.append("Skipping existing modules for versions:")
-            info.extend(skipping)
-            self.skipped.extend(skipping)
-        logger.debug("Building {n} modules: {kversions}".\
-                format(n=len(kversions), kversions=" ".join(kversions)))
+        self.banner(["Building modules for versions:", kversions])
         self.total = len(kversions)
-        def s(n):
-            return "" if n == 1 else "s"
-        self.banner([
-            "Building {n} module{s}.".format(n=self.total,s=s(self.total)),
-            "Building modules for versions:", kversions,
-            info,
-        ])
         for i,kversion in enumerate(kversions):
             self.count = i + 1
             self.build_kmod(srpm=srpm, kversion=kversion)
@@ -688,7 +685,7 @@ class MockRpmBuilder(RpmBuilder):
             sh('mock', '--root', self.chroot, '--clean', '--quiet')
             self.inited = False
 
-    def find_kversions(self):
+    def find_kversions_available(self):
         """List the linux kernel versions of the available kernel header packages in the chroot."""
         self.init_chroot()
         sh('mock', '--root', self.chroot, '--install', 'yum-utils', '--quiet') # for repoquery
