@@ -246,7 +246,8 @@ def main():
         code = args.fn(**kwargs)
     except afsutil.system.CommandFailed as e:
         code = 1
-        logger.exception(e)
+        if args.log or args.verbose:
+            logger.exception(e)
         sys.stderr.write("Command failed: %s, code %d\n" % (e.cmd, e.code))
         sys.stderr.write("output:\n")
         sys.stderr.write("%s\n" % (e.out))
@@ -254,7 +255,8 @@ def main():
         sys.stderr.write("%s\n" % (e.err))
     except Exception as e:
         code = 1
-        logger.exception(e)
+        if args.log or args.verbose:
+            logger.exception(e)
         sys.stderr.write("%s\n" % (e))
     finally:
 	if chdir:
