@@ -64,7 +64,7 @@ import urllib2
 import logging
 import shutil
 import glob
-from afsutil.system import sh, mkdirp
+from afsutil.system import sh, mkdirp, which
 
 logger = logging.getLogger(__name__)
 
@@ -636,7 +636,11 @@ class RpmBuilder(object):
     def createrepo(self):
         """Run createrepo in the destination directory."""
         if self.dstdir and os.path.exists(self.dstdir):
-            sh('createrepo', self.dstdir)
+            createrepo = which('createrepo')
+            if not createrepo:
+                logger.warning("createrepo is not installed.")
+            else:
+                sh('createrepo', self.dstdir)
 
     def banner(self, lines):
         """Print a banner."""
