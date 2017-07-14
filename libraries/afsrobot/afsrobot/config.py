@@ -205,10 +205,12 @@ class Config(ConfigParser.SafeConfigParser):
             value = self.get(section, option)
         except ConfigParser.NoSectionError:
             if required:
-                raise ValueError("Required config section is missing; section=%s, option=%s." % (section, option))
+                raise ValueError("Required config section '%s' is missing while looking for option '%s'." % (section, option))
         except ConfigParser.NoOptionError:
             if required:
-                raise ValueError("Required config option is missing; section=%s, option=%s." % (section, option))
+                raise ValueError("Required config option '%s' is missing in section '%s'." % (option, section))
+        if required and len(value) == 0:
+            raise ValueError("Required config option '%s' is empty in section '%s'." % (option, section))
         return value
 
     def optbool(self, section, option, default=False, required=False):

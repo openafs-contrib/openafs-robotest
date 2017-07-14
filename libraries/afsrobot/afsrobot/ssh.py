@@ -100,6 +100,9 @@ def distribute_key(keyfile, hostnames):
 
 def check_access(keyfile, hostnames, check_sudo=True):
     """Check ssh access to the remote hosts."""
+    if not keyfile:
+        sys.stderr.write("Missing value for keyfile.\n")
+        return 1
     if not os.access(keyfile, os.F_OK):
         sys.stderr.write("Cannot access keyfile %s.\n" % (keyfile))
         return 1
@@ -135,6 +138,9 @@ def execute(keyfile, hostnames, command, exclude='', quiet=False, sudo=False):
         return 1
     exclude = exclude.split(',')
     cargs = shlex.split(command)  # Note: shlex handles quoting properly.
+    if not keyfile:
+        sys.stderr.write("Missing value for keyfile.\n")
+        return 1
     if not os.access(keyfile, os.F_OK):
         sys.stderr.write("Cannot access keyfile %s.\n" % (keyfile))
         return 1
