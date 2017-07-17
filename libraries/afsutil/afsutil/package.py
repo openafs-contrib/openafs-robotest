@@ -557,7 +557,7 @@ class RpmBuilder(object):
               previous build_srpm()
         """
         if srpm is None:
-            if srpm.self is None:
+            if self.srpm is None:
                 self.build_srpm()
             srpm = self.srpm
 
