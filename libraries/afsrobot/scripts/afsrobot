@@ -378,8 +378,9 @@ def main():
     #
     p = subparsers.add_parser('test', help="run the tests")
     common_options(p)
-    p.add_argument('-s', '--suite', help="test suite to run (default: all)", default=None)
+    p.add_argument('-s', '--suite', help="test suite to run; e.g. client.basic  (default: all)", default=None)
     p.add_argument('-i', '--include', help="test tags to include (default: all)", default=None)
+    p.add_argument('-t', '--test', help="test name to run; e.g. create_a_file (default: all)", default=None)
     p.set_defaults(_cmd=cmd_test)
     # Alias for 'test' for compatibility with old versions.
     if len(sys.argv) > 1 and sys.argv[1] == 'run':

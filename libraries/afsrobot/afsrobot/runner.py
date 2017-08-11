@@ -297,11 +297,9 @@ class Runner(object):
         }
 
         # Additional options.
-        if kwargs.has_key('suite') and kwargs['suite']:
-            options['suite'] = kwargs['suite']
-
-        if kwargs.has_key('include') and kwargs['include']:
-            options['include'] = kwargs['include']
+        for key in kwargs.keys():
+            if not kwargs[key] is None:
+                options[key] = kwargs[key]
 
         # Run the RF tests.
         code = robot.run(tests, **options)
