@@ -506,8 +506,8 @@ class Cell(object):
         """Startup the file server processes and create the root volumes if needed."""
         logger.info("Setting up the first file server.")
         if self.primary_fs != self.primary_db:
-            self.primary_db.setcellname(self.cell)
-            self.primary_db.setcellhosts([self.primary_db])
+            self.primary_fs.setcellname(self.cell)
+            self.primary_fs.setcellhosts([self.primary_db])
             for admin in self.admins:
                 self.primary_fs.adduser(admin)
 
