@@ -317,6 +317,7 @@ class Cell(object):
 
         # Defaults.
         hostname = socket.gethostname()
+	self.control = Host(hostname)
         if admins is None: admins = ['admin']
         if db is None: db = [hostname]
         if fs is None: fs = [hostname]
@@ -439,7 +440,9 @@ class Cell(object):
         # Setup the cell info for a single database server so the empty db can
         # be created and quorum established.
         self.primary_db.setcellname(self.cell)
-        self.primary_db.setcellhosts([self.primary_db])
+	self.control.setcellhosts([self.primary_db])
+        if self.primary_db != self.control:
+            self.primary_db.setcellhosts([self.primary_db])
         for dbname in DBNAMES:
             self.primary_db.create_database(dbname, self.options)
             self.primary_db.wait_for_status(dbname, target='running')
@@ -474,6 +477,8 @@ class Cell(object):
         # Set the cell hosts on all the db servers, including the primary.
         # Be sure keep the order of the hosts consistent, since that is
         # the normal setup.
+	self.control.setcellhosts([self.primary_db])
+	self.control.setcellhosts(self.db)
         for host in self.db:
             host.setcellname(self.cell)
             host.setcellhosts([self.primary_db])
