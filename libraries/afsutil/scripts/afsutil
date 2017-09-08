@@ -309,6 +309,7 @@ def main():
     p.add_argument('--csdb', help='path to CellServDB.dist file for client (default: none)', default=None)
     p.add_argument('--force', action='store_true', help='overwrite existing files')
     p.add_argument('-o', '--options', nargs='+', help="command line args: <name>=<value>", action='append')
+    p.add_argument('-p', '--post', help="post installation command (default:none)", default=None)
     p.set_defaults(fn=install, must_be_root=True)
 
     p = subparsers.add_parser('remove', help="remove binaries")

@@ -27,12 +27,14 @@ import shutil
 import socket
 import glob
 import pprint
+import shlex
 
 from afsutil.system import file_should_exist, \
                            directory_should_exist, \
                            directory_should_not_exist, \
                            network_interfaces, \
-                           mkdirp, touch, cat \
+                           mkdirp, touch, cat, sh
+
 
 logger = logging.getLogger(__name__)
 
@@ -109,6 +111,7 @@ class Installer(object):
                  purge=False,
                  verbose=False,
                  options=None,
+                 post=None,
                  **kwargs):
         """
         dirs: directories for pre/post installation/removal
@@ -120,6 +123,8 @@ class Installer(object):
         force: overwrite existing files, otherwise raise an AssertionError
         purge: delete config, volumes, and cache too.
         verbose: log more information
+        options: the command options for bosserver, afsd, etc
+        post: an optional command to run during post_install
         """
         if dirs is None: # Default to transarc-style.
             dirs = {
@@ -144,6 +149,11 @@ class Installer(object):
         self.hostnames = hosts
         self.cellhosts = None # Defer to pre-install.
         self.options = _optlists2dict(options)
+        if post is None:
+            post = []
+        else:
+            post = shlex.split(post)
+        self.post = post
 
     def install(self):
         """This sould be implemented by the children."""
@@ -306,6 +316,10 @@ class Installer(object):
                 self.dirs['AFS_MOUNT_DIR'],
                 self.dirs['AFS_CACHE_DIR'],
                 cache_size)
+        if self.post:
+            logger.info("User-specified post-install command:")
+            sh(*self.post)
+
 
     def pre_remove(self):
         """Pre remove steps."""
