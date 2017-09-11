@@ -301,7 +301,12 @@ class Host(object):
 
 class Cell(object):
 
-    def __init__(self, cell='localcell', db=None, fs=None, admins=None, options=None, **kwargs):
+    def __init__(self, cell='localcell', db=None, fs=None,
+                 admins=None, admin='admin',
+                 options=None,
+                 keytab='/tmp/afs.keytab', realm=None,
+                 aklog=None, kinit=None, akimpersonate=False,
+                 **kwargs):
         """Initialize the cell object.
 
         The first list element of the db list will be the primary db server,
@@ -318,15 +323,20 @@ class Cell(object):
 
         # Defaults.
         hostname = socket.gethostname()
-        if admins is None: admins = ['admin']
+        if admins is None: admins = [admin]
         if db is None: db = [hostname]
         if fs is None: fs = [hostname]
         # In case 'localhost' is given as a hostname, convert to the real name.
         db = [hostname if x=='localhost' else x for x in db]
         fs = [hostname if x=='localhost' else x for x in fs]
 
-        # Cell name.
+        # Cell info.
         self.cell = cell
+        self.keytab = keytab
+        if realm is None:
+            self.realm = cell.upper()
+        else:
+            self.realm = realm
 
         # Super users for this cell. Convert k5 style names to k4 style for AFS.
         self.admins = [name.replace('/', '.') for name in admins]
@@ -344,16 +354,39 @@ class Cell(object):
         self.fs = [hosts[name] for name in set(fs)]
         self.hosts = hosts.values()
 
+        # Set the programs to be used by login().
+        self.akimpersonate = akimpersonate
+        if aklog:
+            afsutil.cli.AKLOG = aklog
+        if kinit:
+            afsutil.cli.KINIT = kinit
+
     @classmethod
     def current(cls, **kwargs):
         """Create a cell object from the existing cell."""
         host = Host()
-        cell = host.getcellname()
+        cell = kwargs.pop('cell', host.getcellname())
         db = host.getcellhosts()
         fs = ['localhost'] # get from vos listaddrs?
         admins = host.listusers()
         cell = cls(cell=cell, db=db, fs=fs, admins=admins, **kwargs)
         return cell
+
+    def _akimpersonate(self, user):
+        if not os.path.exists(self.keytab):
+            raise ValueError("Keytab file not found.")
+        k = afsutil.keytab.Keytab.load(self.keytab)
+        k.akimpersonate(user=user, cell=self.cell, realm=self.realm)
+
+    def _kinit_aklog(self, user):
+        if not os.path.exists(self.keytab):
+            raise ValueError("Keytab file not found.")
+        output = afsutil.cli.kinit('-V', '-k', '-t', self.keytab, user.replace('.','/'))
+        for line in output.splitlines():
+            logger.info(line)
+        output = afsutil.cli.aklog('-d', '-c', self.cell, '-k', self.realm)
+        for line in output.splitlines():
+            logger.info(line)
 
     def _wait_for_quorum(self, name, attempts=60, delay=10):
         for attempt in xrange(0, attempts+1):
@@ -516,6 +549,17 @@ class Cell(object):
         self.primary_fs.create_volume('root.afs')
         self.primary_fs.create_volume('root.cell')
 
+    def login(self, user):
+        """Obtain a token for this cell.
+
+        This function may be invoked after newcell() on a running client
+        to obtain an AFS token.
+        """
+        if self.akimpersonate:
+            self._akimpersonate(user)
+        else:
+            self._kinit_aklog(user)
+
     def newcell(self):
         """Setup a new cell."""
         logger.info("Setting up new cell.")
@@ -639,15 +683,8 @@ class Cell(object):
         vos('release', '-id', 'root.cell')
         fs('checkvolumes')
 
-
 def newcell(cell='localcell', db=None, fs=None, admins=None, options=None,
-            akimpersonate=False, keytab='/tmp/afs.keytab', aklog=None, **kwargs):
-    # This function ended up being a junk drawer of work arounds.
-    # ?!
-    if not 'admins' in kwargs:
-        kwargs['admins'] = [kwargs['admin']] # for Cell()
-    kwargs['user'] = kwargs['admin']     # for akimpersonate
-
+            akimpersonate=False, keytab='/tmp/afs.keytab', realm=None, aklog=None, kinit=None, **kwargs):
     if options is None:
         options = [[]]
     options = _optlists2dict(options)
@@ -661,14 +698,13 @@ def newcell(cell='localcell', db=None, fs=None, admins=None, options=None,
         afsutil.service.start(components=['server'])
         time.sleep(2) # Give the server a chance to start. HACK!
 
-    cell = Cell(cell=cell, db=db, fs=fs, options=options, **kwargs)
+    cell = Cell(cell=cell, db=db, fs=fs, options=options, admins=admins,
+            akimpersonate=akimpersonate, keytab=keytab, realm=realm, aklog=aklog, kinit=kinit,
+            **kwargs)
     cell.newcell()
 
     # A cache manager is required to setup the root and top level volumes.
     # what a mess!
-    if aklog:
-        afsutil.cli.AKLOG = aklog
-
     if kwargs['noclient']:
         logger.warning("Skipping root volume setup; --no-client was given.")
         return
@@ -678,11 +714,7 @@ def newcell(cell='localcell', db=None, fs=None, admins=None, options=None,
     if afsutil.system.afs_mountpoint() is None:
         logger.warning("afs is not running! trying to start it.")
         afsutil.service.start(components=['client'])
-    k = afsutil.keytab.Keytab.load(keytab)
-    if akimpersonate:
-        k.akimpersonate(**kwargs)
-    else:
-        _kinit_aklog(**kwargs)
+    cell.login(cell.admins[0])
     afsd_options = options.get('afsd', '')
     dynroot = '-dynroot' in afsd_options
     # ok
@@ -693,33 +725,9 @@ def addfs(hostname='localhost', **kwargs):
     cell = Cell.current(**kwargs)
     cell.add_fileserver(hostname)
 
-def _akimpersonate(keytab='/tmp/afs.keytab', **kwargs):
-    k = afsutil.keytab.Keytab.load(keytab)
-    k.akimpersonate(**kwargs)
-
-def _kinit_aklog(user='admin', cell='localcell', realm=None, keytab='/tmp/afs.keytab', **kwargs):
-    if not realm:
-        realm = cell.upper()
-    if not os.path.exists(keytab):
-        raise ValueError("Keytab file not found. Please specify --keytab")
-    if not realm:
-        realm = cell.upper()
-    output = afsutil.cli.kinit('-V', '-k', '-t', keytab, user.replace('.','/'))
-    for line in output.splitlines():
-        logger.info(line)
-    output = afsutil.cli.aklog('-d', '-c', cell, '-k', realm)
-    for line in output.splitlines():
-        logger.info(line)
-
-def login(aklog=None, kinit=None, akimpersonate=False, **kwargs):
+def login(**kwargs):
     if os.geteuid() == 0:
         logger.warning("Running afsutil login as root! Your regular user will not have a token.")
-    if aklog:
-        afsutil.cli.AKLOG = aklog
-    if kinit:
-        afsutil.cli.KINIT = kinit
-    if akimpersonate:
-        _akimpersonate(**kwargs)
-    else:
-        _kinit_aklog(**kwargs)
-
+    user = kwargs.pop('user', 'admin')
+    cell = Cell.current(**kwargs)
+    cell.login(user)
