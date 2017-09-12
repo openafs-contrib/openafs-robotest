@@ -359,6 +359,10 @@ class Config(ConfigParser.SafeConfigParser):
                 if k == 'afsd' or k == 'bosserver':
                     args.append('-o')
                     args.append("%s=%s" % (k,v))
+        post = self.optstr(section, 'post-install', default=None)
+        if post:
+            args.append('--post')
+            args.append(post)
         return args
 
     def optsetkey(self, hostname):
