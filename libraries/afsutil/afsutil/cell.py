@@ -370,11 +370,10 @@ class Cell(object):
         """Create a cell object from the existing cell."""
         host = Host()
         cell = kwargs.pop('cell', host.getcellname())
-        db = host.getcellhosts()
-        fs = ['localhost'] # get from vos listaddrs?
-        admins = host.listusers()
-        cell = cls(cell=cell, db=db, fs=fs, admins=admins, **kwargs)
-        return cell
+        db = kwargs.pop('db', host.getcellhosts())
+        fs = kwargs.pop('fs', ['localhost']) # get list from vos listaddrs?
+        admins = kwargs.pop('admins', host.listusers())
+        return cls(cell=cell, db=db, fs=fs, admins=admins, **kwargs)
 
     def _akimpersonate(self, user):
         if not os.path.exists(self.keytab):
@@ -680,8 +679,7 @@ class Cell(object):
         vos('release', '-id', 'root.cell')
         fs('checkvolumes')
 
-def newcell(cell='localcell', db=None, fs=None, admins=None, options=None,
-            akimpersonate=False, keytab='/tmp/afs.keytab', realm=None, aklog=None, kinit=None, **kwargs):
+def newcell(**kwargs):
 
     # Why is this not part of Cell.newcell()?
     # Should we assume the "primary host" is the localhost?
@@ -692,9 +690,7 @@ def newcell(cell='localcell', db=None, fs=None, admins=None, options=None,
         afsutil.service.start(components=['server'])
         time.sleep(2) # Give the server a chance to start. HACK!
 
-    cell = Cell(cell=cell, db=db, fs=fs, options=options, admins=admins,
-            akimpersonate=akimpersonate, keytab=keytab, realm=realm, aklog=aklog, kinit=kinit,
-            **kwargs)
+    cell = Cell(**kwargs)
     cell.newcell()
 
     # A cache manager is required to setup the root and top level volumes.
@@ -702,8 +698,8 @@ def newcell(cell='localcell', db=None, fs=None, admins=None, options=None,
     if kwargs['noclient']:
         logger.warning("Skipping root volume setup; --no-client was given.")
         return
-    if not os.path.isfile(keytab):
-        logger.error("Skipping root volume setup; keytab %s not found" % (keytab))
+    if not os.path.isfile(cell.keytab):
+        logger.error("Skipping root volume setup; keytab %s not found" % (cell.keytab))
         return
     if afsutil.system.afs_mountpoint() is None:
         logger.warning("afs is not running! trying to start it.")
@@ -713,9 +709,10 @@ def newcell(cell='localcell', db=None, fs=None, admins=None, options=None,
     dynroot = '-dynroot' in afsd_options
     # ok
     cell.mount_root_volumes(dynroot)
-    cell.create_top_volumes(kwargs['top'])
+    cell.create_top_volumes(kwargs.pop('top', []))
 
-def addfs(hostname='localhost', **kwargs):
+def addfs(**kwargs):
+    hostname = kwargs.pop('hostname', socket.gethostname())
     cell = Cell.current(**kwargs)
     cell.add_fileserver(hostname)
 
