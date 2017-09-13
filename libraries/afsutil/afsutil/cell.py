@@ -680,16 +680,6 @@ class Cell(object):
         fs('checkvolumes')
 
 def newcell(**kwargs):
-
-    # Why is this not part of Cell.newcell()?
-    # Should we assume the "primary host" is the localhost?
-    #  YES: because we need -localauth
-    #       and we dont want the key to be on a non-server.
-    if not afsutil.system.is_running('bosserver'):
-        logger.warning("bosserver is not running! trying to start it.")
-        afsutil.service.start(components=['server'])
-        time.sleep(2) # Give the server a chance to start. HACK!
-
     cell = Cell(**kwargs)
     cell.newcell()
 
@@ -701,9 +691,6 @@ def newcell(**kwargs):
     if not os.path.isfile(cell.keytab):
         logger.error("Skipping root volume setup; keytab %s not found" % (cell.keytab))
         return
-    if afsutil.system.afs_mountpoint() is None:
-        logger.warning("afs is not running! trying to start it.")
-        afsutil.service.start(components=['client'])
     cell.login(cell.admins[0])
     afsd_options = cell.options.get('afsd', '')
     dynroot = '-dynroot' in afsd_options
