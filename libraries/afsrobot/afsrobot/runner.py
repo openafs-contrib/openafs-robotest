@@ -259,7 +259,12 @@ class Runner(object):
             elif installer == 'transarc' or installer == 'rpm':
                 with progress("Removing clients and servers on %s" % (hostname)):
                     self._afsutil(hostname, 'stop', self.config.optcomponents(hostname))
-                    self._afsutil(hostname, 'remove', ['--purge'])
+                    args = ['--purge']
+                    preremove = self.config.optstr(section, 'pre-remove', default='none')
+                    if preremove != 'none':
+                        args.append('--pre-remove')
+                        args.append(preremove)
+                    self._afsutil(hostname, 'remove', args)
                     if self.config.optbool('kerberos', 'akimpersonate'):
                         keytab = self.config.optkeytab('fake')
                         if keytab:
