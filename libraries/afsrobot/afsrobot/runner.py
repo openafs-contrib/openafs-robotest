@@ -206,17 +206,17 @@ class Runner(object):
             with progress("Starting servers"):
                 for host in hosts['servers']:
                     self._afsutil(host.name, 'start', subcmd='server')
-
-        with progress("Creating new cell"):
-            self._afsutil(self.hostname, 'newcell', args=c.optnewcell())
+            with progress("Creating new cell"):
+                host = hosts['servers'][0]
+                self._afsutil(host.name, 'newcell', args=c.optnewcell())
 
         if hosts['clients']:
             with progress("Starting clients"):
                 for host in hosts['clients']:
                     self._afsutil(host.name, 'start', subcmd='client')
-
-        with progress("Mounting root volumes"):
-             self._afsutil(self.hostname, 'mtroot', args=c.optmtroot())
+            with progress("Mounting root volumes"):
+                host = hosts['clients'][0]
+                self._afsutil(host.name, 'mtroot', args=c.optmtroot())
 
         logger.info("setup done")
 
