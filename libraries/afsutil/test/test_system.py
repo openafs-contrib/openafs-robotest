@@ -45,8 +45,7 @@ class SystemTest(unittest.TestCase):
         self.assertRaises(CommandFailed, run, "false", retry=2)
 
     def test_which(self):
-        self.assertEqual(which("ls"), "/bin/ls")
-        self.assertEqual(which("asetkey", ["/usr/afs/bin"]), "/usr/afs/bin/asetkey")
+        self.assertEqual(which("sh"), "/bin/sh")
 
     def test_directory_should_exist(self):
         self.assertTrue(directory_should_exist("/tmp"))

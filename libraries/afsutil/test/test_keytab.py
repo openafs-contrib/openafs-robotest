@@ -25,9 +25,11 @@ import subprocess
 import os
 
 import afsutil.cli
+import afsutil.system
 from afsutil.keytab import Keytab, _split_principal
 from afsutil.keytab import _check_for_extended_keyfile_support
 
+have_klist = afsutil.system.which("klist")
 asetkey_new= os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "asetkey-new")
 asetkey_old= os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "asetkey-old")
 
@@ -59,6 +61,7 @@ class _KeytabTest(unittest.TestCase):
         self.assertEquals(k.entries[0]['eno'], 18)
         self.assertEquals(k.entries[0]['enctype'], 'aes256-cts-hmac-sha1-96')
 
+    @unittest.skipUnless(have_klist, "missing klist")
     def test_create_empty_file(self):
         fd,filename = tempfile.mkstemp()
         try:
@@ -74,6 +77,7 @@ class _KeytabTest(unittest.TestCase):
             os.close(fd)
             os.remove(filename)
 
+    @unittest.skipUnless(have_klist, "missing klist")
     def test_create_fake_aes_key(self):
         fd,filename = tempfile.mkstemp()
         try:
@@ -91,6 +95,7 @@ class _KeytabTest(unittest.TestCase):
             os.close(fd)
             os.remove(filename)
 
+    @unittest.skipUnless(have_klist, "missing klist")
     def test_create_fake_des_key(self):
         fd,filename = tempfile.mkstemp()
         try:
@@ -162,18 +167,22 @@ class _KeytabTest(unittest.TestCase):
         self.assertFalse(_check_for_extended_keyfile_support())
         afsutil.cli.ASETKEY = origprog
 
-    @unittest.skipIf(not os.path.exists(asetkey_new), "missing test old asetkey")
+    @unittest.skipIf(not os.path.exists(asetkey_new), "missing test new asetkey")
     def test_check_for_extended_keyfile_support(self):
         origprog = afsutil.cli.ASETKEY
         afsutil.cli.ASETKEY = asetkey_new
         self.assertTrue(_check_for_extended_keyfile_support())
         afsutil.cli.ASETKEY = origprog
 
+    @unittest.skipIf(not os.path.exists(asetkey_new), "missing test new asetkey")
     def test_guess_key_format(self):
+        origprog = afsutil.cli.ASETKEY
+        afsutil.cli.ASETKEY = asetkey_new
         k = Keytab()
         principal = "afs/xyzzy@LOCALREALM"
         k.add_fake_key(principal)
         self.assertEquals(k._guess_key_format(principal), 'extended')
+        afsutil.cli.ASETKEY = origprog
 
 if __name__ == "__main__":
      unittest.main()
