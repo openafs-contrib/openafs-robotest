@@ -406,13 +406,41 @@ class Config(ConfigParser.SafeConfigParser):
         realm = self.optstr('kerberos', 'realm')
         fs = self.opthostnames(filter='isfileserver', lookupname=True)
         db = self.opthostnames(filter='isdbserver', lookupname=True)
+        args = [
+            '--cell', self.optstr('cell', 'name', 'localcell'),
+            '--admin', self.optstr('cell', 'admin', 'admin'),
+        ]
+        if realm:
+            args.append('--realm')
+            args.append(realm)
+        if fs:
+            args.append('--fs')
+            args += fs
+        if db:
+            args.append('--db')
+            args += db
+        # Server command line options.
+        if self.has_section('options'):
+            for k,v in self.items('options'):
+                args.append('-o')
+                args.append("%s=%s" % (k,v))
+        return args
+
+    def optmtroot(self):
+        """Command line options for afsutil mtroot."""
+        realm = self.optstr('kerberos', 'realm')
+        akimpersonate = self.optbool('kerberos', 'akimpersonate')
+        fs = self.opthostnames(filter='isfileserver', lookupname=True)
         aklog = self.optstr('variables', 'aklog')
         args = [
             '--cell', self.optstr('cell', 'name', 'localcell'),
             '--admin', self.optstr('cell', 'admin', 'admin'),
             '--top', 'test',
         ]
-        if self.optbool('kerberos', 'akimpersonate'):
+        if realm:
+            args.append('--realm')
+            args.append(realm)
+        if akimpersonate:
             args.append('--akimpersonate')
             keytab = self.optkeytab('fake')
             if keytab:
@@ -423,19 +451,12 @@ class Config(ConfigParser.SafeConfigParser):
             if keytab:
                 args.append('--keytab')
                 args.append(keytab)
-        if realm:
-            args.append('--realm')
-            args.append(realm)
         if fs:
             args.append('--fs')
             args += fs
-        if db:
-            args.append('--db')
-            args += db
         if aklog:
             args.append('--aklog')
             args.append(aklog)
-        # Server command line options.
         if self.has_section('options'):
             for k,v in self.items('options'):
                 args.append('-o')

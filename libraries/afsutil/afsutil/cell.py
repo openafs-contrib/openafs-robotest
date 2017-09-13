@@ -18,10 +18,14 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-"""Setup a new AFS cell.
+"""Setup a new OpenAFS cell
 
-This module requires the server binaries must be installed, the Kerberos
-service key is set, and the bosserver running.
+Configure a new OpenAFS cell on one or more hosts and add fileservers to an
+existing OpenAFS cell.  The OpenAFS clients and servers programs must already
+be installed on the hosts. The Kerberos service key must be set and the
+bosserver should be running on each server host. An OpenAFS client is required
+to mount the volumes and set the ACLs of the top level volumes. The client may
+be running on a separate host than the server.
 """
 
 import time
@@ -562,7 +566,32 @@ class Cell(object):
             self._kinit_aklog(user)
 
     def newcell(self):
-        """Setup a new cell."""
+        """Setup a new OpenAFS cell.
+
+        This is the server side setup of the new cell.  This function should be
+        run on a new system which has the servers installed, and the bosserver
+        running. The OpenAFS commands are run with the -localauth option to
+        configure the cell. Only OpenAFS commands are used to access remote
+        systems, so any remote configuration which requires remote shell access
+        (e.g. ssh) must be done prior to running newcell().
+
+        Preconditions:
+        1. The vicep partitions must exist and be empty on each host.
+        2. The OpenAFS server programs must be installed on the localhost.
+        3. The OpenAFS server programs must be installed on the remote hosts.
+        4. The NetInfo/NetRestict configuration must be completed on each host.
+        5. The Kerberos service key must be set on each host.
+        6. The OpenAFS bosserver must be running on each host.
+        7. The OpenAFS client must be installed on the localhost.
+        8. The OpenAFS client cell config must be set (ThisCell and CellServDB)
+        9. The OpenAFS client must be already running in dynroot mode *OR*
+           must be startable with afsutil.system.start()
+
+        Postconditions:
+        1. The database servers are configured and running.
+        2. The fileservers are configured and running.
+        3. A set of admin and regular users are created.
+        """
         logger.info("Setting up new cell.")
         self.ping_hosts()
         self._setup_first_db_server()
@@ -590,38 +619,39 @@ class Cell(object):
         bnode = _optfsbnode(self.options)
         host.create_fileserver(bnode, self.options)
 
-    def mount_root_volumes(self, dynroot):
+    def mtroot(self, volumes):
         """Mount, setup acls, and replicate the root.afs and root.cell volumes.
 
-        dynroot: True if the cache manager was started with -dynroot or -dynroot-sparse.
-
-        Note: It would be nice if dynroot mode could be could be detected, but the OpenAFS
-              cache manager does not provide a way to do so at this time.
+        This function should be run on a system which has a running cache
+        manager, after the Cell.newcell() function has been invoked on the
+        server.
 
         Preconditions:
         1. The root.afs and root.cell volumes must exist.
-        2. The cache manager must be running, with or without -dynroot.
-        3. An token with admin privileges has been acquired.
+        2. The servers must be running (on the local or remote hosts).
+        3. The cache manager must be running (with or without -dynroot).
 
         Post-conditions:
         1. The root.afs.readonly and root.cell.readonly volumes exist.
         2. The path /afs/<cellname> resolves to the root.cell.readonly root vnode.
         3. The path /afs/.<cellname> resolves to the root.cell root vnode.
         4. The path /afs/.<cellname>/.afs resolves to the root.afs root vnode.
+        5. The optional list of given volumes are mounted and replicated under
+           /afs/<cellname>
 
-        If the cache manager is currently running in dynroot mode, the special
-        /afs/.<cellname>/.afs mount point is created first, in order to
-        reach the root.afs vnode to add cell mount points.
-
-        If the cache manager is not currently running in dynroot mode, the
-        special /afs/.<cellname>/.afs mount point is created first anyway
-        in case it is needed later when dynroot is turned on, on this client or
-        others.
+        The special mount point '/afs/.<cellname>/.afs' is created in order to
+        to add mount points to the root.cell volume on cache managers running
+        dynroot mode.
 
         Note: In the past, this function attempted to create the cellular mount
         point using the magic '.:mount' path when the cache manager was running
         in dynroot mode.  However we found this did not work on Solaris unless
         the -fakestat option was also given. This is arguably an OpenAFS bug.
+
+        Note: It would be nice if dynroot mode could be could be detected, but
+        the OpenAFS cache manager does not provide a nice and portable way to
+        do so at this time, so we pass the afsd options used during the cache
+        manager install to detect if dynroot is enabled.
         """
         # First, verify AFS is mounted and find the mount point to it, e.g., /afs
         afs = afs_mountpoint()
@@ -636,6 +666,17 @@ class Cell(object):
         if cell != self.cell:
             raise AssertionError("Client side ThisCell file does not match the cell name!")
 
+        # Get an admin token to mount the volumes and set the acls.
+        user = self.admins[0]
+        self.login(user)
+
+        # Replicate our root volumes.
+        self._create_replica('root.afs')
+        self._create_replica('root.cell')
+
+        # Mount the root volumes.
+        afsd_options = self.options.get('afsd', '')
+        dynroot = '-dynroot' in afsd_options
         if not dynroot:
             self._mount("%(afs)s/%(cell)s" % locals(), 'root.cell', '-cell', cell)
             self._mount("%(afs)s/.%(cell)s" % locals(), 'root.cell', '-cell', cell, '-rw')
@@ -644,6 +685,7 @@ class Cell(object):
             self._mount("%(afs)s/.%(cell)s/.afs" % locals(), 'root.afs', '-rw')
             self._mount("%(afs)s/.%(cell)s/.afs/%(cell)s" % locals(), 'root.cell', '-cell', cell)
             self._mount("%(afs)s/.%(cell)s/.afs/.%(cell)s" % locals(), 'root.cell', '-cell', cell, '-rw')
+        fs('checkvolumes')
 
         # Grant global read and list rights to the root /afs and /afs/<cell> paths.
         if not dynroot:
@@ -653,29 +695,13 @@ class Cell(object):
             fs('setacl', '-dir', "%(afs)s/.%(cell)s/.afs" % locals(), '-acl', 'system:anyuser', 'read')
             fs('setacl', '-dir', "%(afs)s/.%(cell)s" % locals(), '-acl', 'system:anyuser', 'read')
 
-        # Replicate our root volumes.
-        self._create_replica('root.afs')
-        self._create_replica('root.cell')
-        fs('checkvolumes')
-
-    def create_top_volumes(self, volumes):
-        """Create, mount, and replica one or more top-level volumes."""
-
-        afs = afs_mountpoint()
-        if afs is None:
-            raise AssertionError("Unable to mount volumes; afs is not mounted!")
-        cell = self._wscell()
-        if cell != self.cell:
-            raise AssertionError("Client side ThisCell file does not match the cell name!")
-
-        root_cell_rw = os.path.join(afs, ".%s" % (self.cell))
         # Place top level volumes on the same fileserver as the root volumes.
         for name in volumes:
             self.primary_fs.create_volume(name)
+            self._create_replica(name)
             self._mount("%(afs)s/.%(cell)s/%(name)s" % locals(), name, '-cell', cell)
             self._mount("%(afs)s/.%(cell)s/.%(name)s" % locals(), name, '-cell', cell, '-rw')
-            fs('setacl', '-dir', os.path.join(root_cell_rw, name), '-acl', 'system:anyuser', 'read')
-            self._create_replica(name)
+            fs('setacl', '-dir', "%(afs)s/.%(cell)s/.%(name)s" % locals(), '-acl', 'system:anyuser', 'read')
         vos('release', '-id', 'root.cell')
         fs('checkvolumes')
 
@@ -683,20 +709,10 @@ def newcell(**kwargs):
     cell = Cell(**kwargs)
     cell.newcell()
 
-    # A cache manager is required to setup the root and top level volumes.
-    # what a mess!
-    if kwargs['noclient']:
-        logger.warning("Skipping root volume setup; --no-client was given.")
-        return
-    if not os.path.isfile(cell.keytab):
-        logger.error("Skipping root volume setup; keytab %s not found" % (cell.keytab))
-        return
-    cell.login(cell.admins[0])
-    afsd_options = cell.options.get('afsd', '')
-    dynroot = '-dynroot' in afsd_options
-    # ok
-    cell.mount_root_volumes(dynroot)
-    cell.create_top_volumes(kwargs.pop('top', []))
+def mtroot(**kwargs):
+    top = kwargs.pop('top', [])
+    cell = Cell.current(**kwargs)
+    cell.mtroot(top)
 
 def addfs(**kwargs):
     hostname = kwargs.pop('hostname', socket.gethostname())
