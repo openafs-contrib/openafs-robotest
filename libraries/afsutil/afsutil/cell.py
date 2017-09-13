@@ -531,7 +531,7 @@ class Cell(object):
         """Add remaining file servers."""
         for server in self.fs:
             if server != self.primary_fs:
-                self.add_fileserver(server)
+                self.addfs(server)
 
     def _setup_first_fs_server(self):
         """Startup the file server processes and create the root volumes if needed."""
@@ -572,7 +572,7 @@ class Cell(object):
         if len(self.fs) > 1:
             self._add_fs_servers()
 
-    def add_fileserver(self, host):
+    def addfs(self, host):
         """Add a fileserver to this cell.
 
         The remote host must have the binaries installed, the service key
@@ -714,7 +714,7 @@ def newcell(**kwargs):
 def addfs(**kwargs):
     hostname = kwargs.pop('hostname', socket.gethostname())
     cell = Cell.current(**kwargs)
-    cell.add_fileserver(hostname)
+    cell.addfs(hostname)
 
 def login(**kwargs):
     if os.geteuid() == 0:
