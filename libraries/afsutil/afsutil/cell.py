@@ -428,13 +428,11 @@ class Cell(object):
         logger.info("Cell is %s", self.cell)
         return cell
 
-    def _mount(self, root, mtpt, volume):
-        path = os.path.join(root, mtpt)
+    def _mount(self, path, volume, *opts):
         if not os.path.exists(path):
-            fs('mkmount', '-dir', path, '-vol', volume)
-        path = os.path.join(root, ".%s" % (mtpt))
-        if not os.path.exists(path):
-            fs('mkmount', '-dir', path, '-vol', volume, '-rw')
+            msg = ' as read-write' if '-rw' in opts else ''
+            logger.info("Mounting '%s' on path '%s'%s.", volume, path, msg)
+            fs('mkmount', '-dir', path, '-vol', volume, *opts)
 
     def _create_replica(self, name):
         output = vos('listvldb', '-name', name, '-quiet')
@@ -639,20 +637,14 @@ class Cell(object):
         if cell != self.cell:
             raise AssertionError("Client side ThisCell file does not match the cell name!")
 
-        def _mount(path, volume, *opts):
-            if not os.path.exists(path):
-                msg = ' as read-write' if '-rw' in opts else ''
-                logger.info("Mounting '%s' on path '%s'%s.", volume, path, msg)
-                fs('mkmount', '-dir', path, '-vol', volume, *opts)
-
         if not dynroot:
-            _mount("%(afs)s/%(cell)s" % locals(), 'root.cell', '-cell', cell)
-            _mount("%(afs)s/.%(cell)s" % locals(), 'root.cell', '-cell', cell, '-rw')
-            _mount("%(afs)s/.%(cell)s/.afs" % locals(), 'root.afs', '-rw') # for dynroot clients
+            self._mount("%(afs)s/%(cell)s" % locals(), 'root.cell', '-cell', cell)
+            self._mount("%(afs)s/.%(cell)s" % locals(), 'root.cell', '-cell', cell, '-rw')
+            self._mount("%(afs)s/.%(cell)s/.afs" % locals(), 'root.afs', '-rw') # for dynroot clients
         else:
-            _mount("%(afs)s/.%(cell)s/.afs" % locals(), 'root.afs', '-rw')
-            _mount("%(afs)s/.%(cell)s/.afs/%(cell)s" % locals(), 'root.cell', '-cell', cell)
-            _mount("%(afs)s/.%(cell)s/.afs/.%(cell)s" % locals(), 'root.cell', '-cell', cell, '-rw')
+            self._mount("%(afs)s/.%(cell)s/.afs" % locals(), 'root.afs', '-rw')
+            self._mount("%(afs)s/.%(cell)s/.afs/%(cell)s" % locals(), 'root.cell', '-cell', cell)
+            self._mount("%(afs)s/.%(cell)s/.afs/.%(cell)s" % locals(), 'root.cell', '-cell', cell, '-rw')
 
         # Grant global read and list rights to the root /afs and /afs/<cell> paths.
         if not dynroot:
@@ -681,7 +673,8 @@ class Cell(object):
         # Place top level volumes on the same fileserver as the root volumes.
         for name in volumes:
             self.primary_fs.create_volume(name)
-            self._mount(root_cell_rw, name, name)
+            self._mount("%(afs)s/.%(cell)s/%(name)s" % locals(), name, '-cell', cell)
+            self._mount("%(afs)s/.%(cell)s/.%(name)s" % locals(), name, '-cell', cell, '-rw')
             fs('setacl', '-dir', os.path.join(root_cell_rw, name), '-acl', 'system:anyuser', 'read')
             self._create_replica(name)
         vos('release', '-id', 'root.cell')
