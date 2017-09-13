@@ -83,11 +83,9 @@ class Host(object):
         self.is_server = config.optbool(section, "isfileserver") or \
                          config.optbool(section, "isdbserver")
         self.is_client = config.optbool(section, "isclient")
-        self.has_dynroot = self.is_client and config.optdynroot()
     def __repr__(self):
-        return "Host<name={0}, install={1}, is_server={2}, is_client={3}, "\
-               "has_dynroot={4}>".format(self.name, self.install,
-               self.is_server, self.is_client, self.has_dynroot)
+        return "Host<name={0}, install={1}, is_server={2}, is_client={3}>".format(
+                self.name, self.install, self.is_server, self.is_client)
 
 class Runner(object):
 
@@ -182,8 +180,7 @@ class Runner(object):
             'all': allhosts,
             'install': [h for h in allhosts if h.install],
             'servers': [h for h in allhosts if h.is_server],
-            'clients1': [h for h in allhosts if h.is_client and h.has_dynroot],
-            'clients2': [h for h in allhosts if h.is_client and not h.has_dynroot],
+            'clients': [h for h in allhosts if h.is_client],
         }
 
         if not hosts['all']:
@@ -210,17 +207,12 @@ class Runner(object):
                 for host in hosts['servers']:
                     self._afsutil(host.name, 'start', subcmd='server')
 
-        if hosts['clients1']:
-            with progress("Starting dynroot mode clients"):
-                for host in hosts['clients1']:
-                    self._afsutil(host.name, 'start', subcmd='client')
-
         with progress("Creating new cell"):
             self._afsutil(self.hostname, 'newcell', args=c.optnewcell())
 
-        if hosts['clients2']:
-            with progress("Starting non-dynroot mode clients"):
-                for host in hosts['clients2']:
+        if hosts['clients']:
+            with progress("Starting clients"):
+                for host in hosts['clients']:
                     self._afsutil(host.name, 'start', subcmd='client')
 
         with progress("Mounting root volumes"):

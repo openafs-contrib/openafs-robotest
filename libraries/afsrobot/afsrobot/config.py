@@ -463,8 +463,3 @@ class Config(ConfigParser.SafeConfigParser):
                 args.append("%s=%s" % (k,v))
         return args
 
-    def optdynroot(self):
-        """Returns true of the client is configured to use -dynroot."""
-        afsd_opts = self.optstr('options', 'afsd', '')
-        return '-dynroot' in afsd_opts  # also catches -dynroot-sparse
-
