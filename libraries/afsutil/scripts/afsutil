@@ -318,6 +318,7 @@ def main():
     p.add_argument('--components', metavar='<name>', nargs='+', choices=['client', 'server'],
                    help='components to remove', default=['client', 'server']),
     p.add_argument('--purge', action='store_true', help='remove config and data too')
+    p.add_argument('--pre-remove', dest='preremove', help="pre remove command (default:none)", default=None)
     p.set_defaults(fn=remove, must_be_root=True)
 
     p = subparsers.add_parser('start', help="start afs services")

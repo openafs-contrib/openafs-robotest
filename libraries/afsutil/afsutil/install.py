@@ -112,6 +112,7 @@ class Installer(object):
                  verbose=False,
                  options=None,
                  post=None,
+                 preremove=None,
                  **kwargs):
         """
         dirs: directories for pre/post installation/removal
@@ -125,6 +126,7 @@ class Installer(object):
         verbose: log more information
         options: the command options for bosserver, afsd, etc
         post: an optional command to run during post_install
+        preremove: an optional command to run during pre_remove
         """
         if dirs is None: # Default to transarc-style.
             dirs = {
@@ -154,6 +156,11 @@ class Installer(object):
         else:
             post = shlex.split(post)
         self.post = post
+        if preremove is None:
+            preremove = []
+        else:
+            preremove = shlex.split(preremove)
+        self.preremove = preremove
 
     def install(self):
         """This sould be implemented by the children."""
@@ -324,6 +331,9 @@ class Installer(object):
     def pre_remove(self):
         """Pre remove steps."""
         logger.debug("pre_remove")
+        if self.preremove:
+            logger.info("User-specified preremove command:")
+            sh(*self.preremove)
 
     def post_remove(self):
         """Post remove steps."""
