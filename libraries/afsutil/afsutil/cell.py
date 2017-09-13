@@ -48,7 +48,9 @@ PORT = {
 }
 
 def _optlists2dict(options):
-    """ Helper to covert a list of lists to a dict."""
+    """ Helper to convert a list of lists to a dict."""
+    if options is None:
+        options = [[]]
     names = {}
     for optlist in options:
         for o in optlist:
@@ -317,9 +319,7 @@ class Cell(object):
         assert db is None or not isinstance(db, basestring) # expect a list or tuple
         assert fs is None or not isinstance(fs, basestring) # expect a list or tuple
         assert admins is None or not isinstance(admins, basestring) # expect a list or tuple
-        assert options is None or not isinstance(options, basestring) # expect a list or tuple
-
-        self.options = options
+        assert options is None or not isinstance(options, basestring) # expect a list or dict
 
         # Defaults.
         hostname = socket.gethostname()
@@ -337,6 +337,10 @@ class Cell(object):
             self.realm = cell.upper()
         else:
             self.realm = realm
+        if isinstance(options, dict):
+            self.options = options
+        else:
+            self.options = _optlists2dict(options)
 
         # Super users for this cell. Convert k5 style names to k4 style for AFS.
         self.admins = [name.replace('/', '.') for name in admins]
@@ -685,9 +689,6 @@ class Cell(object):
 
 def newcell(cell='localcell', db=None, fs=None, admins=None, options=None,
             akimpersonate=False, keytab='/tmp/afs.keytab', realm=None, aklog=None, kinit=None, **kwargs):
-    if options is None:
-        options = [[]]
-    options = _optlists2dict(options)
 
     # Why is this not part of Cell.newcell()?
     # Should we assume the "primary host" is the localhost?
@@ -715,7 +716,7 @@ def newcell(cell='localcell', db=None, fs=None, admins=None, options=None,
         logger.warning("afs is not running! trying to start it.")
         afsutil.service.start(components=['client'])
     cell.login(cell.admins[0])
-    afsd_options = options.get('afsd', '')
+    afsd_options = cell.options.get('afsd', '')
     dynroot = '-dynroot' in afsd_options
     # ok
     cell.mount_root_volumes(dynroot)
