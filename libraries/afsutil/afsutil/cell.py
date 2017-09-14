@@ -78,6 +78,14 @@ def _optcmdstring(options, program):
     opts = options.get(program, '').strip()
     return ' '.join(filter(None, [cmd, opts]))
 
+def _uniq(x):
+    """Remove dupes from a small list, preserving order."""
+    y = []
+    for item in x:
+        if not item in y:
+            y.append(item)
+    return y
+
 class Host(object):
     """Helper to configure an OpenAFS server using the bos command."""
 
@@ -334,8 +342,9 @@ class Cell(object):
                  **kwargs):
         """Initialize the cell object.
 
-        The first list element of the db list will be the primary db server,
-        and the first element of the fs list will be the primary fileserver.
+        The first list element of the db list will be the first db server
+        created. The first element of the fs list will be the first fileserver,
+        which will house the rw root volumes.
         """
         # Some sanity checking.
         assert cell is not None and isinstance(cell, basestring)  # expect a string
@@ -346,9 +355,12 @@ class Cell(object):
 
         # Defaults.
         hostname = socket.gethostname()
-        if admins is None: admins = [admin]
-        if db is None: db = [hostname]
-        if fs is None: fs = [hostname]
+        if admins is None:
+            admins = [admin]
+        if db is None or len(db) == 0:
+            db = [hostname]
+        if fs is None or len(fs) == 0:
+            fs = [hostname]
         # In case 'localhost' is given as a hostname, convert to the real name.
         db = [hostname if x=='localhost' else x for x in db]
         fs = [hostname if x=='localhost' else x for x in fs]
@@ -370,16 +382,14 @@ class Cell(object):
 
         # Create the set of hosts objects for this cell. A given host may
         # be a db server, a file server, or both. Avoid creating duplicate
-        # objects.  The first element in the given lists are the primary
+        # objects.  The first element in the given lists are the first
         # servers for the cell setup.
-        hosts = {}
-        for name in set(db + fs):
+        hosts = {} # tmp dict to setup db and fs lists.
+        for name in _uniq(db + fs):
             hosts[name] = Host(name)
-        self.primary_db = hosts[db[0]]
-        self.primary_fs = hosts[fs[0]]
-        self.db = [hosts[name] for name in set(db)]
-        self.fs = [hosts[name] for name in set(fs)]
-        self.hosts = hosts.values()
+        self.hosts = hosts.values() # list of Host objects for db and/or fs
+        self.db = [hosts[name] for name in _uniq(db)]
+        self.fs = [hosts[name] for name in _uniq(fs)]
 
         # Set the programs to be used by login().
         self.akimpersonate = akimpersonate
@@ -500,20 +510,21 @@ class Cell(object):
 
     def _setup_first_db_server(self):
         """Setup the initial database server and db files."""
-        logger.info("Setting up the first database server.")
+        db = self.db[0]
+        logger.info("Setting up the first database server %s." % db.hostname)
 
         # Setup the cell info for a single database server so the empty db can
         # be created and quorum established.
-        self.primary_db.setcellname(self.cell)
-        self.primary_db.setcellhosts([self.primary_db])
+        db.setcellname(self.cell)
+        db.setcellhosts([self.db[0]])
         for dbname in DBNAMES:
-            self.primary_db.create_database(dbname, self.options)
-            self.primary_db.wait_for_status(dbname, target='running')
+            db.create_database(dbname, self.options)
+            db.wait_for_status(dbname, target='running')
 
         logger.info("Waiting for quorum.")
         time.sleep(2) # Give the servers a chance to start
         for dbname in DBNAMES:
-            self._wait_for_quorum(dbname, [self.primary_db])
+            self._wait_for_quorum(dbname, [db])
 
         # The database servers create emtpy prdb and vldb databases as
         # side-effect of these queries, including the creation of the initial
@@ -524,7 +535,7 @@ class Cell(object):
         # Create the superusers and add them to this first server's userlist.
         for admin in self.admins:
             self._create_admin(admin)
-            self.primary_db.adduser(admin)
+            db.adduser(admin)
 
     def _add_db_servers(self):
         """Setup the remaining database servers."""
@@ -533,8 +544,8 @@ class Cell(object):
         # Shutdown the primary server since we are changing the
         # cell hosts on it.
         for dbname in DBNAMES:
-            self.primary_db.shutdown(dbname)
-            self.primary_db.wait_for_status(dbname, target='shutdown')
+            self.db[0].shutdown(dbname)
+            self.db[0].wait_for_status(dbname, target='shutdown')
         time.sleep(1)
 
         # Set the cell hosts on all the db servers, including the primary.
@@ -542,16 +553,16 @@ class Cell(object):
         # the normal setup.
         for host in self.db:
             host.setcellname(self.cell)
-            host.setcellhosts([self.primary_db])
+            host.setcellhosts([self.db[0]])
             host.setcellhosts(self.db)
 
         # Restart the primary and create the other database hosts.
         # Use udebug to verify quorum is established.
         for dbname in DBNAMES:
-            self.primary_db.restart(dbname)
-            self.primary_db.wait_for_status(dbname, target='running')
+            self.db[0].restart(dbname)
+            self.db[0].wait_for_status(dbname, target='running')
             for host in self.db:
-                if host != self.primary_db:
+                if host != self.db[0]:
                     for admin in self.admins:
                         host.adduser(admin)
                     host.create_database(dbname, self.options)
@@ -565,25 +576,26 @@ class Cell(object):
     def _add_fs_servers(self):
         """Add remaining file servers."""
         for server in self.fs:
-            if server != self.primary_fs:
+            if server != self.fs[0]:
                 self.addfs(server)
 
     def _setup_first_fs_server(self):
         """Startup the file server processes and create the root volumes if needed."""
-        logger.info("Setting up the first file server.")
-        if self.primary_fs != self.primary_db:
-            self.primary_fs.setcellname(self.cell)
-            self.primary_fs.setcellhosts([self.primary_db])
+        fs = self.fs[0]
+        logger.info("Setting up the first file server %s." % fs.hostname)
+        if fs != self.db[0]:
+            fs.setcellname(self.cell)
+            fs.setcellhosts([self.db[0]])
             for admin in self.admins:
-                self.primary_fs.adduser(admin)
+                fs.adduser(admin)
 
         bnode = _optfsbnode(self.options)
-        self.primary_fs.create_fileserver(bnode, self.options)
-        self.primary_fs.wait_for_status(bnode, target='running')
+        fs.create_fileserver(bnode, self.options)
+        fs.wait_for_status(bnode, target='running')
 
         # Note: root.afs must exist before non-dynroot clients are started.
-        self.primary_fs.create_volume('root.afs')
-        self.primary_fs.create_volume('root.cell')
+        fs.create_volume('root.afs')
+        fs.create_volume('root.cell')
 
     def login(self, user):
         """Obtain a token for this cell.
@@ -729,7 +741,7 @@ class Cell(object):
 
         # Place top level volumes on the same fileserver as the root volumes.
         for name in volumes:
-            self.primary_fs.create_volume(name)
+            self.fs[0].create_volume(name)
             self._create_replica(name)
             self._mount("%(afs)s/.%(cell)s/%(name)s" % locals(), name, '-cell', cell)
             self._mount("%(afs)s/.%(cell)s/.%(name)s" % locals(), name, '-cell', cell, '-rw')
