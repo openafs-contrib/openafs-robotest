@@ -29,7 +29,7 @@ import urllib2
 import tempfile
 import glob
 
-from afsutil.system import sh, CommandFailed, file_should_exist, tar
+from afsutil.system import sh, CommandFailed, file_should_exist, tar, mkdirp
 import afsutil.service
 
 logger = logging.getLogger(__name__)
@@ -344,10 +344,9 @@ def _make_tarball(tarball=None):
     if sysname is None:
         raise AssertionError("Cannot find sysname.")
     if tarball is None:
-        # Hack Alert:  Put the tarball into the afs-robotest distribution directory if present.
-        tardir = os.path.expanduser('~/.afsrobotestrc/dist')
+        tardir = 'packages'
         if not os.path.isdir(tardir):
-            tardir = '.'
+            mkdirp(tardir)
         tarball = os.path.join(tardir, "openafs-%s.tar.gz" % (sysname))
     tar(tarball, sysname)
     logger.info("Created tar file %s", tarball)
