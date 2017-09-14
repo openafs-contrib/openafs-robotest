@@ -414,11 +414,11 @@ class Cell(object):
         for line in output.splitlines():
             logger.info(line)
 
-    def _wait_for_quorum(self, name, attempts=60, delay=10):
+    def _wait_for_quorum(self, name, hosts, attempts=60, delay=10):
         for attempt in xrange(0, attempts+1):
             logger.info("Waiting for %s database quorum; attempt %d of %d.", name, (attempt+1), attempts)
             num_sync_sites = 0
-            for host in self.db:
+            for host in hosts:
                 if host.is_recovered_sync_site(name):
                     num_sync_sites += 1
             if num_sync_sites == 1:
@@ -510,10 +510,14 @@ class Cell(object):
             self.primary_db.create_database(dbname, self.options)
             self.primary_db.wait_for_status(dbname, target='running')
 
-        # Wait for for the empty db to be created and quorum established on
-        # this single db server for each database type. The database servers
-        # create emtpy prdb and vldb databases as side-effect of these queries,
-        # including the creation of the initial ubik database versions.
+        logger.info("Waiting for quorum.")
+        time.sleep(2) # Give the servers a chance to start
+        for dbname in DBNAMES:
+            self._wait_for_quorum(dbname, [self.primary_db])
+
+        # The database servers create emtpy prdb and vldb databases as
+        # side-effect of these queries, including the creation of the initial
+        # ubik database versions.
         pts('listentries', retry=10)
         vos('listvldb', retry=10)
 
@@ -556,7 +560,7 @@ class Cell(object):
         logger.info("Waiting for quorum.")
         time.sleep(15)
         for dbname in DBNAMES:
-            self._wait_for_quorum(dbname)
+            self._wait_for_quorum(dbname, self.db)
 
     def _add_fs_servers(self):
         """Add remaining file servers."""
