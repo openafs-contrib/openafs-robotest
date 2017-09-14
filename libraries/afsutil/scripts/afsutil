@@ -212,7 +212,7 @@ def main():
     p.add_argument('--aklog', help=argparse.SUPPRESS, default=None)
 
     p = subparsers.add_parser('mtroot', help='mount root volumes in a new cell')
-    p.set_defaults(fn=afsutil.cell.mtroot, must_be_root=True)
+    p.set_defaults(fn=afsutil.cell.mtroot, must_be_root=False)
     _add_common_arguments(p)
     p.add_argument('--cell', help="cell name (default: localcell)", default='localcell')
     p.add_argument('--realm', help="realm name (default: detect)", default=None)

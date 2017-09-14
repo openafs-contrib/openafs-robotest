@@ -216,7 +216,7 @@ class Runner(object):
                     self._afsutil(host.name, 'start', subcmd='client')
             with progress("Mounting root volumes"):
                 host = hosts['clients'][0]
-                self._afsutil(host.name, 'mtroot', args=c.optmtroot())
+                self._afsutil(host.name, 'mtroot', args=c.optmtroot(), sudo=False)
 
         logger.info("setup done")
 
