@@ -755,17 +755,17 @@ def newcell(**kwargs):
 
 def mtroot(**kwargs):
     top = kwargs.pop('top', [])
-    cell = Cell.current(**kwargs)
+    cell = Cell(**kwargs)
     cell.mtroot(top)
 
 def addfs(**kwargs):
     hostname = kwargs.pop('hostname', socket.gethostname())
-    cell = Cell.current(**kwargs)
+    cell = Cell(**kwargs)
     cell.addfs(hostname)
 
 def login(**kwargs):
     if os.geteuid() == 0:
         logger.warning("Running afsutil login as root! Your regular user will not have a token.")
     user = kwargs.pop('user', 'admin')
-    cell = Cell.current(**kwargs)
+    cell = Cell(**kwargs)
     cell.login(user)
