@@ -410,8 +410,11 @@ class Cell(object):
 
     def _create_admin(self, admin):
         logger.info("Creating the admin user %s.", admin)
+        # Due to a bug in some versions of OpenAFS, the db drops quorum the
+        # first time we write to it after the first election. Wait at least
+        # ubik BIGTIME and retry.
         try:
-            pts('createuser', '-name', admin)
+            pts('createuser', '-name', admin, retry=1, wait=80)
         except CommandFailed as e:
             if not "Entry for name already exists" in e.err:
                 raise
@@ -443,10 +446,10 @@ class Cell(object):
             logger.info("Skipping replication of %s; already have a read only site", name)
             return
         server,partition = re.findall(r'^\s+server (\S+) partition (\S+) RW Site', output, re.M)[0]
-        # Sometimes the db drops quorum the first time we write to it after the
-        # first election. vos fails with a uquorum error and and the volume is
-        # left locked. Use this closure to unlock the the volume before
-        # retrying the vos command.
+        # Due to a bug in some versions of OpenAFS, the db drops quorum the
+        # first time we write to it after the first election. vos fails with a
+        # uquorum error and and the volume is left locked. Use this closure to
+        # unlock the the volume before retrying the vos command.
         def _unlocker(name):
             def _unlock():
                 try:
