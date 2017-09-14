@@ -219,6 +219,7 @@ class Host(object):
         if service is not None:
             status = service['status']
             if status == 'running':
+                # XXX: Update options if needed!
                 logger.info("Skipping create database for %s; already running.", name)
                 return
             if status == 'shutdown':
@@ -232,7 +233,14 @@ class Host(object):
             '-cmd', _optcmdstring(options, name))
 
     def shutdown(self, name):
+        """Shutdown the service name."""
         bos('shutdown', '-server', self.hostname, '-instance', name, '-wait')
+
+    def shutdown_all(self):
+        """Shutdown all running services."""
+        for name,service in self.services().items():
+            if service['status'] == 'running':
+                self.shutdown(name)
 
     def restart(self, name):
         bos('restart', '-server', self.hostname, '-instance', name)
@@ -262,25 +270,36 @@ class Host(object):
              logger.debug("Host %s is sync site with recovery state %s", self.hostname, recovery_state)
         return False
 
-    def create_fileserver(self, bnode, options):
-        if bnode in self.services():
-            logger.info("Skipping create %s on %s; already exists.", bnode, self.hostname)
-            return
-        if bnode == 'dafs':
+    def create_fileserver(self, name, options):
+        """Start the fileserver (fs or dafs)."""
+        service = self.getservice(name)
+        if service is not None:
+            status = service['status']
+            if status == 'running':
+                # XXX: Update options if needed!
+                logger.info("Skipping create fileserver for %s; already running.", name)
+                return
+            if status == 'shutdown':
+                logger.info("Retarting fileserver for %s.", name)
+                self.restart(name)
+                return
+            raise AssertionError("Unexpected status '%s' while trying to create fileserver %s on host %s." % \
+                                (status, name, self.hostname))
+        if name == 'dafs':
             bos('create', '-server', self.hostname,
-                '-instance', bnode, '-type', bnode,
+                '-instance', name, '-type', name,
                 '-cmd', _optcmdstring(options, 'dafileserver'),
                 '-cmd', _optcmdstring(options, 'davolserver'),
                 '-cmd', _optcmdstring(options, 'salvageserver'),
                 '-cmd', _optcmdstring(options, 'dasalvager'))
-        elif bnode == 'fs':
+        elif name == 'fs':
             bos('create', '-server', self.hostname,
-                '-instance', bnode, '-type', bnode,
+                '-instance', name, '-type', name,
                 '-cmd', _optcmdstring(options, 'fileserver'),
                 '-cmd', _optcmdstring(options, 'volserver'),
                 '-cmd', _optcmdstring(options, 'salvager'))
         else:
-            raise AssertionError("Invalid fs bnode!")
+            raise AssertionError("Invalid fileservers instance name: %s" % name)
 
         ok = self.rxping(service='fileserver', retry=60)
         if not ok:
@@ -474,6 +493,11 @@ class Cell(object):
             f = ', '.join(failed)
             raise AssertionError("Failed to reach bosserver on host%s %s" % (s, f))
 
+    def _shutdown_hosts(self):
+        """Shutdown the services on all the hosts."""
+        for host in self.hosts:
+            host.shutdown_all()
+
     def _setup_first_db_server(self):
         """Setup the initial database server and db files."""
         logger.info("Setting up the first database server.")
@@ -596,7 +620,8 @@ class Cell(object):
         3. A set of admin and regular users are created.
         """
         logger.info("Setting up new cell.")
-        self.ping_hosts()
+        self.ping_hosts()      # bosserver must be running on each
+        self._shutdown_hosts() # before the CellServDBs are changed
         self._setup_first_db_server()
         self._setup_first_fs_server()
         if len(self.db) > 1:
