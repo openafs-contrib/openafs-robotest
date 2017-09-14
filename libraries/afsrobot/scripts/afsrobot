@@ -44,12 +44,12 @@ logger = logging.getLogger('afsrobot')
 #
 # Environment Variables
 #
-# AFS_ROBOTEST_CONF  Fully qualified filename of the configuration file.
-#                    Defaults to $AFS_ROBOTEST_DATA/afs-robotest.conf
-#                    Overridden by the --config (-c) command line option.
+# AFSROBOT_INI  Fully qualified filename of the configuration file.
+#               Defaults to $HOME/afsrobot/afsrobot.ini
+#               Overridden by the --config (-c) command line option.
 #
-AFS_ROBOTEST_CONF = os.getenv('AFS_ROBOTEST_CONF',
-    os.path.join(os.environ['HOME'], '.afsrobotestrc', 'afs-robotest.conf'))
+AFSROBOT_INI = os.getenv('AFSROBOT_INI',
+    os.path.join(os.environ['HOME'], 'afsrobot', 'afsrobot.ini'))
 
 #
 # version sub-command
@@ -63,7 +63,7 @@ def cmd_version(c):
     sys.stdout.write("OpenAFSLibrary %s\n" % (OpenAFSLibrary.__version__))
 
 def cmd_init(c):
-    userdir = os.path.join(os.environ['HOME'], '.afsrobotestrc')
+    userdir = os.path.join(os.environ['HOME'], 'afsrobot')
     if not os.path.isdir(userdir):
         sys.stdout.write("Making user directory %s\n" % (userdir))
         os.makedirs(userdir)
@@ -188,7 +188,7 @@ class SubCommandContext(object):
 
     def _read_config(self, filename):
         if not os.path.exists(filename):
-            raise ValueError("Config file '%s' not found. Run 'afs-robotest config init'." % (filename))
+            raise ValueError("Config file '%s' not found. Run 'afsrobot.iniig init'." % (filename))
         self.say("Loading config file %s." % (filename))
         self.config = afsrobot.config.Config()
         self.config.load_from_file(filename)
@@ -258,8 +258,8 @@ def main():
 
     def common_options(p):
         p.add_argument('-c', '--config', metavar='<filename>',
-                       help="config file (default: %s)" % AFS_ROBOTEST_CONF,
-                       default=AFS_ROBOTEST_CONF)
+                       help="config file (default: %s)" % AFSROBOT_INI,
+                       default=AFSROBOT_INI)
         p.add_argument('-q', '--quiet', help="less messages", default=False, action='store_true')
         p.add_argument('-v', '--verbose', help="show log messages", default=False, action='store_true')
         p.add_argument('--debug', help="debug log level", default=False, action='store_true')
@@ -326,7 +326,7 @@ def main():
 
     p = ssp.add_parser('create', help="generate a ssh key pair")
     common_options(p)
-    keyfile = os.path.join(os.environ['HOME'], '.ssh', 'afs-robotest')
+    keyfile = os.path.join(os.environ['HOME'], '.ssh', 'afsrobot')
     p.add_argument('--keyfile', help="ssh keyfile name (default: %s)" % (keyfile), default=keyfile)
     p.add_argument('-t', dest='keytype', metavar='<type>', help="ssh key type (default: rsa)", default='rsa')
     p.set_defaults(_cmd=cmd_ssh_create)

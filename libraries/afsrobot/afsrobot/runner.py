@@ -348,7 +348,7 @@ if __name__ == '__main__':
     if len(sys.argv) < 2:
         sys.stderr.write("usage: python runner.py [command]\n")
         sys.exit(1)
-    cf = os.path.join(os.getenv('HOME'), '.afsrobotestrc', 'afs-robotest.conf')
+    cf = os.path.join(os.getenv('HOME'), 'afsrobot', 'afsrobot.ini')
     c = afsrobot.config.Config()
     c.load_from_file(cf)
     r = Runner(config=c)

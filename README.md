@@ -1,6 +1,6 @@
-# AFS Robotest
+# OpenAFS robotest
 
-AFS Robotest is a [Robotframework][1] based test suite for OpenAFS. This test
+OpenAFS robotest is a [Robotframework][1] based test suite for OpenAFS. This test
 suite will install the OpenAFS binaries, setup a simple AFS cell on one or more
 systems, run a series of basic tests, and finally remove the AFS cell.  The
 tests can be run with or without an external Kerberos realm.
@@ -33,7 +33,7 @@ To setup Debian jessie:
 
 ## Installation
 
-Install the OpenAFS Robotest tests, libraries, and utilities with the provided
+Install the OpenAFS robotest tests, libraries, and utilities with the provided
 installation script:
 
     $ sudo ./install.sh
@@ -116,7 +116,7 @@ After running the tests, the AFS cell may be removed with:
 
 ## Test results
 
-The setup logs and test results are saved in `$HOME/.afsrobotestrc/` by
+The setup logs and test results are saved in `$HOME/afsrobot/` by
 default.  A minimal web server is provided as a convenience to view the test
 reports.
 
@@ -133,18 +133,14 @@ To stop the minimal web server:
 It can be useful to have more than one configuration file, instead of changing
 values in the default configuration file.
 
-Set the `AFS_ROBOTEST_CONF` environment variable to specify the fully qualified
+Set the `AFSROBOT_INI` environment variable to specify the fully qualified
 file name of the configuration file to be used by `afsrobot`.  This value
 is overridden by the `--config` command line option.
-
-Example:
-
-    $ export AFS_ROBOTEST_CONF=~/.afsrobotestrc/example.conf
 
 ## Multiple servers
 
 This test harness supports setting up multiple file and database servers.
-Install AFS Robotest on each server, as described above.  `sudo` must be
+Install OpenAFS robotest on each server, as described above.  `sudo` must be
 configured with NOPASSWD for the test user account on each host.
 
 A configuration section must be added for each test server. The name of the

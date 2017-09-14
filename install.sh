@@ -114,11 +114,11 @@ if [ -z "$OPT_PREFIX" ]; then
     echo "Please specify an installation path with --prefix <path>." >&2
     exit 1
 fi
-AFSROBOTEST_ROOT="$OPT_PREFIX/afsrobotest"
+AFSROBOT_ROOT="$OPT_PREFIX/afsrobot"
 
 # Save our paths for regular users and the uninstall.
-cat <<__EOF__ >/etc/afsrobotest.rc
-AFSROBOTEST_ROOT="$AFSROBOTEST_ROOT"
+cat <<__EOF__ >/etc/afsrobot.rc
+AFSROBOT_ROOT="$AFSROBOT_ROOT"
 __EOF__
 
 test -d $OPT_PREFIX || die "--prefix $OPT_PREFIX does not exist."
@@ -136,15 +136,15 @@ if [ $OPT_INSTALL_LIBS = "yes" ]; then
 fi
 if [ $OPT_INSTALL_TESTS = "yes" ]; then
     info "Installing test suites"
-    run mkdir -p $AFSROBOTEST_ROOT
-    run cp -r tests/ $AFSROBOTEST_ROOT
-    run cp -r resources/ $AFSROBOTEST_ROOT
+    run mkdir -p $AFSROBOT_ROOT
+    run cp -r tests/ $AFSROBOT_ROOT
+    run cp -r resources/ $AFSROBOT_ROOT
 fi
 if [ $OPT_INSTALL_DOCS = "yes" ]; then
     info "Generating documentation"
     pypath=libraries/OpenAFSLibrary/OpenAFSLibrary
     input="$pypath"
-    output="$AFSROBOTEST_ROOT/doc/OpenAFSLibary.html"
+    output="$AFSROBOT_ROOT/doc/OpenAFSLibary.html"
     run mkdir -p $(dirname $output)
     run $PYTHON -m robot.libdoc --format HTML --pythonpath $pypath $input $output
 fi
@@ -153,7 +153,7 @@ fi
 if [ $OPT_INSTALL_LIBS = "yes" ]; then
     # Work-around for OpenCSW pip on Solaris 10 to avoid the need to
     # mess with the PATH.
-    for cli in afsutil afsrobot afs-robotest; do
+    for cli in afsutil afsrobot; do
         if [ -x /opt/csw/bin/$cli ]; then
             test -h /usr/bin/$cli && rm -f /usr/bin/$cli
             test -f /usr/bin/$cli || ln -s /opt/csw/bin/$cli /usr/bin/$cli

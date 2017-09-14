@@ -28,13 +28,13 @@ import afsutil.system
 # Configuration defaults.
 DEFAULT_CONFIG_DATA = """
 [paths]
-doc = <AFSROBOTEST_ROOT>/doc
-tests = <AFSROBOTEST_ROOT>/tests
-libraries = <AFSROBOTEST_ROOT>/libraries
-resources = <AFSROBOTEST_ROOT>/resources
-html = <AFSROBOTEST_DATA>
-log = <AFSROBOTEST_DATA>/log
-output = <AFSROBOTEST_DATA>/output
+doc = <AFSROBOT_ROOT>/doc
+tests = <AFSROBOT_ROOT>/tests
+libraries = <AFSROBOT_ROOT>/libraries
+resources = <AFSROBOT_ROOT>/resources
+html = <AFSROBOT_DATA>
+log = <AFSROBOT_DATA>/log
+output = <AFSROBOT_DATA>/output
 
 [run]
 exclude_tags = todo,bug,slow
@@ -53,9 +53,9 @@ admin = robotest.admin
 [kerberos]
 akimpersonate = yes
 realm = ROBOTEST
-fake_keytab = <AFSROBOTEST_DATA>/fake.keytab
-afs_keytab = <AFSROBOTEST_DATA>/afs.keytab
-user_keytab = <AFSROBOTEST_DATA>/user.keytab
+fake_keytab = <AFSROBOT_DATA>/fake.keytab
+afs_keytab = <AFSROBOT_DATA>/afs.keytab
+user_keytab = <AFSROBOT_DATA>/user.keytab
 
 [web]
 port = 8000
@@ -107,8 +107,8 @@ class Config(ConfigParser.SafeConfigParser):
     def _get_defaults(self):
         """Determine default values for new configs."""
         defaults = {
-            'AFSROBOTEST_ROOT': '/usr/local/afsrobotest',
-            'AFSROBOTEST_DATA': os.path.join(os.environ['HOME'], '.afsrobotestrc'),
+            'AFSROBOT_ROOT': '/usr/local/afsrobot',
+            'AFSROBOT_DATA': os.path.join(os.environ['HOME'], 'afsrobot'),
             'HOME': os.environ['HOME'],
             'HOSTNAME': socket.gethostname(),
             'GFIND': '',
@@ -118,7 +118,7 @@ class Config(ConfigParser.SafeConfigParser):
         if gfind:
             defaults['GFIND'] = gfind
         # Read global settings saved during install.
-        settings = '/etc/afsrobotest.rc'
+        settings = '/etc/afsrobot.rc'
         if os.path.exists(settings):
             with open(settings) as f:
                 for line in f.read().splitlines():

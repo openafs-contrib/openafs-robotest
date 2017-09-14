@@ -114,7 +114,8 @@ it does not always show the exact line where the true error occurred.
 The OpenAFS keyword library is still growing. Adding new keywords keeps the
 number of lines in a test case to a minimum and allows for a more thorough test
 case. OpenAFS keywords can be found in this directory:
-~/openafs-robotest/libraries/OpenAFSLibrary/OpenAFSLibrary/keywords
+
+    libraries/OpenAFSLibrary/OpenAFSLibrary/keywords
 
 Writing a new keyword is like creating a test suite and writing a test. It is
 important to give the new keyword a name that describes what is happening in as

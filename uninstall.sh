@@ -22,8 +22,8 @@
 set -e
 
 # Get our installation path.
-AFSROBOTEST_ROOT=""
-test -f /etc/afsrobotest.rc && . /etc/afsrobotest.rc
+AFSROBOT_ROOT=""
+test -f /etc/afsrobot.rc && . /etc/afsrobot.rc
 
 # Turn off annoying pip version warnings.
 export PIP_DISABLE_PIP_VERSION_CHECK=1
@@ -47,5 +47,5 @@ remove_dir() {
 remove_package afsutil
 remove_package afsrobot
 remove_package OpenAFSLibrary
-remove_dir "$AFSROBOTEST_ROOT"
-rm -f /etc/afsrobotest.rc
+remove_dir "$AFSROBOT_ROOT"
+rm -f /etc/afsrobot.rc

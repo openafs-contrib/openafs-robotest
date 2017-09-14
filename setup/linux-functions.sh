@@ -11,11 +11,11 @@ create_tester() {
     getent passwd $username >/dev/null || useradd -m $username
     getent group $group >/dev/null || groupadd $group
     usermod -G $group $username || true
-    cat <<EOF >/etc/sudoers.d/openafs-robotest
+    cat <<EOF >/etc/sudoers.d/afsrobot
 # Allow testers to install and remove OpenAFS.
 %${group} ALL=(root) NOPASSWD: /bin/afsutil,/usr/bin/afsutil,/usr/local/bin/afsutil
 EOF
-    chmod 0440 /etc/sudoers.d/openafs-robotest
+    chmod 0440 /etc/sudoers.d/afsrobot
 }
 
 #------------------------------------------------------------------------------

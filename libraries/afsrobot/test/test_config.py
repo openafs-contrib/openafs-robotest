@@ -152,7 +152,7 @@ class ConfigTest(unittest.TestCase):
 
     def test_optfakekey(self):
         home = os.environ['HOME']
-        expect = '--cell robotest --keytab %s/.afsrobotestrc/fake.keytab --realm ROBOTEST' % (home)
+        expect = '--cell robotest --keytab %s/afsrobot/fake.keytab --realm ROBOTEST' % (home)
         c = afsrobot.config.Config()
         c.load_defaults()
         args = c.optfakekey()
@@ -161,7 +161,7 @@ class ConfigTest(unittest.TestCase):
     def test_optlogin(self):
         home = os.environ['HOME']
         expect = '--user robotest.admin --cell robotest --realm ROBOTEST ' \
-                 '--akimpersonate --keytab %s/.afsrobotestrc/fake.keytab' % (home)
+                 '--akimpersonate --keytab %s/afsrobot/fake.keytab' % (home)
         c = afsrobot.config.Config()
         c.load_defaults()
         args = c.optlogin()
@@ -188,7 +188,7 @@ class ConfigTest(unittest.TestCase):
     def test_optsetkey(self):
         hostname = socket.gethostname()
         home = os.environ['HOME']
-        expect = '--cell robotest --realm ROBOTEST --keytab %s/.afsrobotestrc/fake.keytab' % (home)
+        expect = '--cell robotest --realm ROBOTEST --keytab %s/afsrobot/fake.keytab' % (home)
         c = afsrobot.config.Config()
         c.load_defaults()
         args = c.optsetkey(hostname)
@@ -197,7 +197,7 @@ class ConfigTest(unittest.TestCase):
     def test_optsetkey_noakimp(self):
         hostname = socket.gethostname()
         home = os.environ['HOME']
-        expect = '--cell robotest --realm ROBOTEST --keytab %s/.afsrobotestrc/afs.keytab' % (home)
+        expect = '--cell robotest --realm ROBOTEST --keytab %s/afsrobot/afs.keytab' % (home)
         c = afsrobot.config.Config()
         c.load_defaults()
         c.set_value('kerberos', 'akimpersonate', 'no')
@@ -208,7 +208,7 @@ class ConfigTest(unittest.TestCase):
         hostname = socket.gethostname()
         home = os.environ['HOME']
         expect = '--cell robotest --admin robotest.admin ' \
-                 '--top test --akimpersonate --keytab %s/.afsrobotestrc/fake.keytab --realm ROBOTEST ' \
+                 '--top test --akimpersonate --keytab %s/afsrobot/fake.keytab --realm ROBOTEST ' \
                  '--fs %s --db %s ' \
                  '-o dafs=yes ' \
                  '-o afsd=-dynroot -fakestat -afsdb ' \
@@ -225,7 +225,7 @@ class ConfigTest(unittest.TestCase):
         hostname = socket.gethostname()
         home = os.environ['HOME']
         expect = '--cell robotest --admin robotest.admin ' \
-                 '--top test --keytab %s/.afsrobotestrc/user.keytab --realm ROBOTEST ' \
+                 '--top test --keytab %s/afsrobot/user.keytab --realm ROBOTEST ' \
                  '--fs %s --db %s ' \
                  '-o dafs=yes ' \
                  '-o afsd=-dynroot -fakestat -afsdb ' \

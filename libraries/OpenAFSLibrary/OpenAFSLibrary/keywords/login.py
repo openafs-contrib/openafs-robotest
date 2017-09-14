@@ -64,7 +64,7 @@ def login_with_keytab(user):
     logger.info("keytab: " + keytab)
     if not os.path.exists(keytab):
         raise AssertionError("Keytab file '%s' is missing." % keytab)
-    krb5cc = "/tmp/krb5cc-afs-robotest"
+    krb5cc = "/tmp/afsrobot.krb5cc"
     cmd = "KRB5CCNAME=%s %s -5 -k -t %s %s" % (krb5cc, kinit, keytab, principal)
     rc,out,err = run_program(cmd)
     if rc:
@@ -89,7 +89,7 @@ class _LoginKeywords(object):
         """Release the AFS token."""
         if not get_bool('AFS_AKIMPERSONATE'):
             kdestroy = get_var('KDESTROY')
-            krb5cc = "/tmp/krb5cc-afs-robotest"
+            krb5cc = "/tmp/afsrobot.krb5cc"
             cmd = "KRB5CCNAME=%s %s" % (krb5cc, kdestroy)
             rc,out,err = run_program(cmd)
             if rc:

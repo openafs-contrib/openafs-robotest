@@ -13,7 +13,7 @@ setup(name='afsrobot',
           'afsutil>=0.6.6',
           'robotframework'
       ],
-      scripts=['scripts/afsrobot', 'scripts/afs-robotest'],
+      scripts=['scripts/afsrobot'],
       test_suite='test',
       zip_safe=False)
 
