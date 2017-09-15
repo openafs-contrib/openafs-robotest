@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/bin/bash
 set -e
-PATH=.:./setup:$PATH source linux-functions.sh
+source ./setup/linux-functions.sh
 
 # System setup
 create_tester "$AFSROBOT_USERNAME" "$SETUP_GROUP"
@@ -13,3 +13,4 @@ fixup_etc_hosts "$AFSROBOT_IFDEVICE"
 export PIP_DISABLE_PIP_VERSION_CHECK=1
 dnf install -q -y python python-pip
 pip install --upgrade robotframework
+pip install --upgrade --no-deps --no-index ./libraries/afsutil

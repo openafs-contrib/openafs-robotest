@@ -32,3 +32,5 @@ fi
 
 export PIP_DISABLE_PIP_VERSION_CHECK=1
 pip install --upgrade robotframework
+pip install --upgrade --no-deps --no-index ./libraries/afsutil
+

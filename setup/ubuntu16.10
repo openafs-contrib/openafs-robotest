@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-PATH=.:./setup:$PATH source linux-functions.sh
+source ./setup/linux-functions.sh
 
 # System setup
 create_tester "$AFSROBOT_USERNAME" "$SETUP_GROUP"
@@ -9,7 +9,9 @@ sed -i 's/^# deb-src/deb-src/' /etc/apt/sources.list
 
 # Install prereqs
 export DEBIAN_FRONTEND=noninteractive
-export PIP_DISABLE_PIP_VERSION_CHECK=1
 apt-get update -q
 apt-get install -q -y python python-pip
+
+export PIP_DISABLE_PIP_VERSION_CHECK=1
 pip install --upgrade robotframework
+pip install --upgrade --no-deps --no-index ./libraries/afsutil
