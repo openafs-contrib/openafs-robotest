@@ -20,13 +20,20 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
 
-DEFAULT_PREFIX="/usr/local"
-test -d $DEFAULT_PREFIX || DEFAULT_PREFIX="/opt"
-test -d $DEFAULT_PREFIX || DEFAULT_PREFIX=""
+# Determine default value of --prefix
+if [ $UID -ne 0 ]; then
+    DEFAULT_PREFIX=$HOME
+elif [ -d "/usr/local" ]; then
+    DEFAULT_PREFIX="/usr/local"
+elif [ -d "/opt" ]; then
+    DEFAULT_PREFIX="/opt"
+else
+    DEFAULT_PREFIX="" # must be specified.
+fi
 
 OPT_QUIET="no"
 OPT_VERBOSE="no"
-OPT_PREFIX=$DEFAULT_PREFIX
+OPT_PREFIX="$DEFAULT_PREFIX"
 OPT_INSTALL_LIBS="no"
 OPT_INSTALL_TESTS="no"
 OPT_INSTALL_DOCS="no"
@@ -100,39 +107,35 @@ else
     done
 fi
 
-# Pre install check.
-if [ $UID -ne 0 ]; then
-    die "Please run as root."
+# Installation directories.
+if [ -z "$OPT_PREFIX" ]; then
+    die "Please specify an installation path with --prefix <path>."
+fi
+if [ ! -d "$OPT_PREFIX" ]; then
+    mkdir -p "$OPT_PREFIX" || die "Cannot make --prefix directory $OPT_PREFIX."
 fi
 
 # Get paths to python and pip. Use the OpenCSW version if installed.
 PYTHON=`PATH=/opt/csw/bin:$PATH which python`
 PIP=`PATH=/opt/csw/bin:$PATH which pip`
-
-# Installation directories.
-if [ -z "$OPT_PREFIX" ]; then
-    echo "Please specify an installation path with --prefix <path>." >&2
-    exit 1
-fi
-AFSROBOT_ROOT="$OPT_PREFIX/afsrobot"
-
-# Save our paths for regular users and the uninstall.
-cat <<__EOF__ >/etc/afsrobot.rc
-AFSROBOT_ROOT="$AFSROBOT_ROOT"
-__EOF__
-
-test -d $OPT_PREFIX || die "--prefix $OPT_PREFIX does not exist."
 test -x $PYTHON || die "python not found in PATH."
 if [ $OPT_INSTALL_LIBS = "yes" ]; then
     test -x $PIP || die "pip not found in PATH."
 fi
 
 # Install.
+AFSROBOT_ROOT="$OPT_PREFIX/afsrobot"
 if [ $OPT_INSTALL_LIBS = "yes" ]; then
     info "Installing libraries"
-    run pip install --upgrade --no-deps --no-index libraries/afsutil
-    run pip install --upgrade --no-deps --no-index libraries/afsrobot
-    run pip install --upgrade --no-deps --no-index libraries/OpenAFSLibrary
+    OPT_PIP="--upgrade --no-deps --no-index"
+    if [ $UID -ne 0 ]; then
+        OPT_PIP="$OPT_PIP --user"
+    fi
+    # xxx: afsutil needs to be run as root, so a --user install will not work.
+    #      move to setup? use pypi?
+    # run pip install $OPT_PIP libraries/afsutil
+    run pip install $OPT_PIP libraries/afsrobot
+    run pip install $OPT_PIP libraries/OpenAFSLibrary
 fi
 if [ $OPT_INSTALL_TESTS = "yes" ]; then
     info "Installing test suites"

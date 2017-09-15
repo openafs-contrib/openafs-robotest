@@ -19,11 +19,14 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 import ConfigParser
+import logging
 import os
 import socket
 import StringIO
 import sys
 import afsutil.system
+
+logger = logging.getLogger(__name__)
 
 # Configuration defaults.
 DEFAULT_CONFIG_DATA = """
@@ -104,34 +107,58 @@ class Config(ConfigParser.SafeConfigParser):
         fp = StringIO.StringIO(string)
         self.readfp(fp)
 
+    def _afsrobot_root(self):
+        """Return path to afsrobot installation.
+
+        Note: AFSROBOT_ROOT env var must be set if installed to a custom path.
+        """
+        logger.debug("looking for afsrobot root directory")
+        afsrobot_root = os.getenv('AFSROBOT_ROOT')
+        if not afsrobot_root is None:
+            logger.debug("found AFSROBOT_ROOT=%s", afsrobot_root)
+            if not os.path.exists(afsrobot_root):
+                raise AssertionError("AFSROBOT_ROOT dir %s is missing" % afsrobot_root)
+            logger.debug("afsrobot_root=%s", afsrobot_root)
+            return afsrobot_root
+        afsrobot_root = '/usr/local/afsrobot'
+        logger.debug("trying %s", afsrobot_root)
+        if os.path.exists(afsrobot_root):
+            logger.debug("afsrobot_root=%s", afsrobot_root)
+            return afsrobot_root
+        afsrobot_root = '/opt/afsrobot'
+        logger.debug("trying %s", afsrobot_root)
+        if os.path.exists(afsrobot_root):
+            logger.debug("afsrobot_root=%s", afsrobot_root)
+            return afsrobot_root
+        afsrobot_root = os.path.expanduser("~/afsrobot")
+        logger.debug("trying %s", afsrobot_root)
+        if os.path.exists(afsrobot_root):
+            logger.debug("afsrobot_root=%s", afsrobot_root)
+            return afsrobot_root
+        raise AssertionError("afsrobot directory not found.")
+
+    def _afsrobot_data(self):
+        """Return path to afsrobot data and logs."""
+        afsrobot_data = os.path.expanduser("~/afsrobot");
+        logger.debug("afsrobot_data=%s" % afsrobot_data)
+        return afsrobot_data
+
+    def _gfind(self):
+        """Attempt to detect path to gnu/find, if one."""
+        gfind = afsutil.system.detect_gfind()
+        if gfind is None:
+            gfind = '' # Convert None to empty string.
+        return gfind
+
     def _get_defaults(self):
         """Determine default values for new configs."""
         defaults = {
-            'AFSROBOT_ROOT': '/usr/local/afsrobot',
-            'AFSROBOT_DATA': os.path.join(os.environ['HOME'], 'afsrobot'),
+            'AFSROBOT_ROOT': self._afsrobot_root(),
+            'AFSROBOT_DATA': self._afsrobot_data(),
             'HOME': os.environ['HOME'],
             'HOSTNAME': socket.gethostname(),
-            'GFIND': '',
+            'GFIND': self._gfind(),
         }
-        # Attempt to detect path to gnu/find, if one.
-        gfind = afsutil.system.detect_gfind()
-        if gfind:
-            defaults['GFIND'] = gfind
-        # Read global settings saved during install.
-        settings = '/etc/afsrobot.rc'
-        if os.path.exists(settings):
-            with open(settings) as f:
-                for line in f.read().splitlines():
-                    line = line.strip()
-                    if len(line) == 0:
-                        continue
-                    if line.startswith('#'):
-                        continue
-                    if not '=' in line:
-                        continue
-                    k,v = line.split('=',1)
-                    v = v.strip('"')
-                    defaults[k] = v
         return defaults
 
     def load_defaults(self):
