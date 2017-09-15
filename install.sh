@@ -131,9 +131,7 @@ if [ $OPT_INSTALL_LIBS = "yes" ]; then
     if [ $UID -ne 0 ]; then
         OPT_PIP="$OPT_PIP --user"
     fi
-    # xxx: afsutil needs to be run as root, so a --user install will not work.
-    #      move to setup? use pypi?
-    # run pip install $OPT_PIP libraries/afsutil
+    # Note: afsutil is a prereq.
     run pip install $OPT_PIP libraries/afsrobot
     run pip install $OPT_PIP libraries/OpenAFSLibrary
 fi
