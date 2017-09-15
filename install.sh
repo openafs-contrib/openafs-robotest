@@ -153,9 +153,5 @@ if [ $OPT_INSTALL_DOCS = "yes" ]; then
 fi
 
 # Post install checks.
-if [ $OPT_INSTALL_LIBS = "yes" ]; then
-    # Verify system setup.
-    afsutil check || echo "Try: sudo afsutil check --fix-hosts"
-fi
 
 info "Done"
