@@ -1,0 +1,15 @@
+#!/bin/bash
+set -e
+source ./preq/linux-functions.sh
+
+# System-wide prereqs
+create_tester "$AFSROBOT_USERNAME" "$SETUP_GROUP"
+fixup_etc_hosts "$AFSROBOT_IFDEVICE"
+
+# Install prereqs
+export DEBIAN_FRONTEND=noninteractive
+export PIP_DISABLE_PIP_VERSION_CHECK=1
+apt-get install -q -y python python-pip
+pip install --upgrade robotframework
+pip install --upgrade --no-deps --no-index ./libraries/afsutil
+afsutil check || echo "Try: sudo afsutil check --fix-hosts"
