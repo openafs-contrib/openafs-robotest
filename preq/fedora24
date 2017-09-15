@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
-source ./setup/linux-functions.sh
+source ./preq/linux-functions.sh
 
-# System setup
+# System-wide prereqs
 create_tester "$AFSROBOT_USERNAME" "$SETUP_GROUP"
 if hostnamectl --no-ask-password --static status | grep -q '^localhost'; then
     hostnamectl --no-ask-password set-hostname ${AFSROBOT_HOSTNAME:-"afsrobot"}
