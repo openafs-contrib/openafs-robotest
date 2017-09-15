@@ -20,31 +20,29 @@ OpenAFS and run the tests.
 * Robotframework 2.7+
 * OpenAFS installation packages or binaries built from source
 
-## System Setup
+## System Prereqs
 
-Scripts are provided for supported platforms in the `setup` directory to
-install the needed software prerequisites and perform any required system
-setup.
+Scripts are provided for supported platforms in the `preq` directory to install
+the needed software prerequisites and perform any required system setup. To run
+the preq script for the current system:
 
-To setup Debian jessie:
-
-    $ sudo setup/debian8
-
+    $ sudo ./preq.sh
 
 ## Installation
 
-Install the OpenAFS robotest tests, libraries, and utilities with the provided
-installation script:
+Install the OpenAFS robotest tests, libraries, and the frontend `afsrobot` tool
+with the installation script as a regular user.
 
-    $ sudo ./install.sh
+    $ ./install.sh
 
+Install will create the `afsrobot` directory in your home directory. The tests,
+resources, and a default configuration file called `afsrobot.ini` will be
+placed in this directory.
 
 ## Configure
 
-As the regular test user (not-root), run the `afsrobot init` command to create
-the initial configuration file.
-
-    $ afsrobot init
+The `afsrobot config` subcommand may be use to display and update the
+configuration file.
 
 To show the current configuration:
 
@@ -108,7 +106,7 @@ To install the OpenAFS binaries and create the test cell:
 
 To run the tests:
 
-    $ afsrobot run
+    $ afsrobot test
 
 After running the tests, the AFS cell may be removed with:
 
@@ -127,15 +125,6 @@ To start the minimal web server:
 To stop the minimal web server:
 
     $ afsrobot web stop
-
-## Multiple configuration files
-
-It can be useful to have more than one configuration file, instead of changing
-values in the default configuration file.
-
-Set the `AFSROBOT_INI` environment variable to specify the fully qualified
-file name of the configuration file to be used by `afsrobot`.  This value
-is overridden by the `--config` command line option.
 
 ## Multiple servers
 
