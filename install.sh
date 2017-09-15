@@ -152,6 +152,9 @@ if [ $OPT_INSTALL_DOCS = "yes" ]; then
     run $PYTHON -m robot.libdoc --format HTML --pythonpath $pypath $input $output
 fi
 
-# Post install checks.
+if [ $UID -ne 0 ]; then
+    # Create/update user configuration.
+    afsrobot init
+fi
 
 info "Done"
