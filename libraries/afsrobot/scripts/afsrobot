@@ -160,20 +160,24 @@ def cmd_ssh_exec(c):
                                 sudo=c.args.sudo)
 
 def cmd_setup(c):
-    r = afsrobot.runner.Runner(c.config)
-    r.setup(**vars(c.args))
+    config = c.config
+    kwargs = vars(c.args)
+    afsrobot.runner.setup(config, **kwargs)
 
 def cmd_login(c):
-    r = afsrobot.runner.Runner(c.config)
-    r.login(**vars(c.args))
+    config = c.config
+    kwargs = vars(c.args)
+    afsrobot.runner.login(config, **kwargs)
 
 def cmd_test(c):
-    r = afsrobot.runner.Runner(c.config)
-    r.test(**vars(c.args))
+    config = c.config
+    kwargs = vars(c.args)
+    afsrobot.runner.test(config, **kwargs)
 
 def cmd_teardown(c):
-    r = afsrobot.runner.Runner(c.config)
-    r.teardown(**vars(c.args))
+    config = c.config
+    kwargs = vars(c.args)
+    afsrobot.runner.teardown(config, **kwargs)
 
 
 class SubCommandContext(object):

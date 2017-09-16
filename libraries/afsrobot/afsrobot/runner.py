@@ -99,9 +99,9 @@ def _ssh(hostname, ident, args):
     return ssh
 
 class Node(object):
-    """A node (host) to be configured; maybe the local host or a remote host."""
+    """A node (host) to be configured; may be the local host or a remote host."""
 
-    def __init__(self, name, c, showcmds=False, **kwargs):
+    def __init__(self, name, config, showcmds=False, **kwargs):
         """Initialize this node.
 
         name: the hostname for this node
@@ -110,12 +110,12 @@ class Node(object):
         """
         section = "host:{0}".format(name)
         self.name = name
-        self.config = c
+        self.config = config
         self.name = name
-        self.installer = c.optstr(section, 'installer', default='none') != 'none'
-        self.is_server = c.optbool(section, "isfileserver") or c.optbool(section, "isdbserver")
-        self.is_client = c.optbool(section, "isclient")
-        self.ident = c.optstr('ssh', 'keyfile')
+        self.installer = config.optstr(section, 'installer', default='none') != 'none'
+        self.is_server = config.optbool(section, "isfileserver") or config.optbool(section, "isdbserver")
+        self.is_client = config.optbool(section, "isclient")
+        self.ident = config.optstr('ssh', 'keyfile')
         self.islocal = islocal(name)
         self.showcmds = showcmds
 
@@ -366,214 +366,206 @@ class Node(object):
         args = ['--purge']
         self.run(_sudo(_afsutil('remove', None, args)))
 
+def _get_progress(**kwargs):
+    quiet = kwargs.get('quiet', False)
+    verbose = kwargs.get('verbose', False)
+    showcmds = kwargs.get('showcmds', False)
+    if quiet:
+        progress = NoMessage
+    elif verbose or showcmds:
+        progress = SimpleMessage
+    else:
+        progress = ProgressMessage
+    return progress
 
-class Runner(object):
+def _aklog_workaround_check(config):
+    # Sadly, akimpersonate is broken on the master branch at this time. To
+    # workaround this users must setup an aklog 1.6.10+ in some directory
+    # and then set a option to specify the location. Since this is easy to
+    # get wrong, do a sanity check up front, at least until aklog is fixed.
+    aklog = config.optstr('variables', 'aklog')
+    if aklog is None:
+        sys.stderr.write("Warning: The akimpersonate feature is enabled but the aklog option\n")
+        sys.stderr.write("         is not set. See the README.md for more information about\n")
+        sys.stderr.write("         testing without Kerberos.\n")
 
-    def __init__(self, config):
-        self.config = config
+def _get_nodes(config, **kwargs):
+    """Get nodes for setup and teardown."""
+    nodes = {
+        'all': [],
+        'install': [],
+        'servers': [],
+        'clients': [],
+    }
+    for name in config.opthostnames():
+        node = Node(name, config, **kwargs)
+        nodes['all'].append(node)
+        if node.installer:
+            nodes['install'].append(node)
+        if node.is_server:
+            nodes['servers'].append(node)
+        if node.is_client:
+            nodes['clients'].append(node)
+    return nodes
 
-    def progress_factory(self, **kwargs):
-        quiet = kwargs.get('quiet', False)
-        verbose = kwargs.get('verbose', False)
-        showcmds = kwargs.get('showcmds', False)
-        if quiet:
-            progress = NoMessage
-        elif verbose or showcmds:
-            progress = SimpleMessage
-        else:
-            progress = ProgressMessage
-        return progress
+def setup(config, **kwargs):
+    """Setup OpenAFS client and servers and create a test cell."""
+    logger.info("setup starting")
 
-    def _aklog_workaround_check(self):
-        # Sadly, akimpersonate is broken on the master branch at this time. To
-        # workaround this users must setup an aklog 1.6.10+ in some directory
-        # and then set a option to specify the location. Since this is easy to
-        # get wrong, do a sanity check up front, at least until aklog is fixed.
-        c = self.config
-        if c.optbool('kerberos', 'akimpersonate'):
-            aklog = c.optstr('variables', 'aklog')
-            if aklog is None:
-                sys.stderr.write("Warning: The akimpersonate feature is enabled but the aklog option\n")
-                sys.stderr.write("         is not set. See the README.md for more information about\n")
-                sys.stderr.write("         testing without Kerberos.\n")
+    akimpersonate = config.optbool('kerberos', 'akimpersonate')
+    # Be sure to use the same secret value on every node.
+    if akimpersonate:
+        _aklog_workaround_check(config)
+        secret = config.optstr('kerberos', 'secret')
+        if secret is None:
+            random = base64.b64encode(os.urandom(32))
+            config.set_value('kerberos', 'secret', random)
 
-    def nodes(self, **kwargs):
-        """Get nodes for setup and teardown."""
-        c = self.config
-        nodes = {
-            'all': [],
-            'install': [],
-            'servers': [],
-            'clients': [],
-        }
-        for name in c.opthostnames():
-            node = Node(name, c, **kwargs)
-            nodes['all'].append(node)
-            if node.installer:
-                nodes['install'].append(node)
-            if node.is_server:
-                nodes['servers'].append(node)
-            if node.is_client:
-                nodes['clients'].append(node)
-        return nodes
+    progress = _get_progress(**kwargs)
+    nodes = _get_nodes(config, **kwargs)
 
-    def setup(self, **kwargs):
-        """Setup OpenAFS client and servers and create a test cell."""
-        self._aklog_workaround_check()
-        logger.info("setup starting")
-        c = self.config
-        progress = self.progress_factory(**kwargs)
+    if not nodes['all']:
+        logger.error("No nodes configured!")
+        return
 
-        # Be sure to use the same secret value on every node.
-        if c.optbool('kerberos', 'akimpersonate'):
-            secret = c.optstr('kerberos', 'secret')
-            if secret is None:
-                random = base64.b64encode(os.urandom(32))
-                c.set_value('kerberos', 'secret', random)
+    if nodes['install']:
+        with progress("Installing"):
+            for node in nodes['install']:
+                node.install()
 
-        nodes = self.nodes(**kwargs)
-        if not nodes['all']:
-            logger.error("No nodes configured!")
-            return
+    if akimpersonate:
+        with progress("Creating service key"):
+            for node in nodes['all']:
+                node.keytab_create()
 
-        if nodes['install']:
-            with progress("Installing"):
-                for node in nodes['install']:
-                    node.install()
+    if nodes['servers']:
+        with progress("Setting service key"):
+            for node in nodes['servers']:
+                node.keytab_setkey()
 
-        if c.optbool('kerberos', 'akimpersonate'):
-            with progress("Creating service key"):
-                for node in nodes['all']:
-                    node.keytab_create()
+    if nodes['servers']:
+        with progress("Starting servers"):
+            for node in nodes['servers']:
+                node.start('server')
+        with progress("Creating new cell"):
+            node = nodes['servers'][0]
+            node.newcell()
 
-        if nodes['servers']:
-            with progress("Setting service key"):
-                for node in nodes['servers']:
-                    node.keytab_setkey()
+    if nodes['clients']:
+        with progress("Starting clients"):
+            for node in nodes['clients']:
+                node.start('client')
+        with progress("Mounting root volumes"):
+            node = nodes['clients'][0]
+            node.mtroot()
 
-        if nodes['servers']:
-            with progress("Starting servers"):
-                for node in nodes['servers']:
-                    node.start('server')
-            with progress("Creating new cell"):
-                node = nodes['servers'][0]
-                node.newcell()
+    logger.info("setup done")
 
-        if nodes['clients']:
-            with progress("Starting clients"):
-                for node in nodes['clients']:
-                    node.start('client')
-            with progress("Mounting root volumes"):
-                node = nodes['clients'][0]
-                node.mtroot()
+def login(config, **kwargs):
+    """Obtain a token.
 
-        logger.info("setup done")
+    The test harness will obtain and remove tokens as needed for the RF
+    tests. This sub-command is a useful short cut to get a token for
+    the configured admin user.
+    """
+    user = kwargs.pop('user', config.optstr('cell', 'admin', 'admin'))
+    node = Node('localhost', config, **kwargs)
+    progress = _get_progress(**kwargs)
+    with progress("Obtaining token for %s" % (user)):
+        node.login(user)
 
-    def login(self, **kwargs):
-        """Obtain a token for manual usage.
+def test(config, **kwargs):
+    """Run the Robotframework test suites."""
+    akimpersonate = config.optbool('kerberos', 'akimpersonate')
+    if akimpersonate:
+        _aklog_workaround_check(config)
 
-        The test harness will obtain and remove tokens as needed for the RF
-        tests, but this sub-command is a useful short cut to get a token for
-        the configured admin user.
-        """
-        c = self.config
-        user = kwargs.pop('user', c.optstr('cell', 'admin', 'admin'))
-        node = Node('localhost', c, **kwargs)
-        progress = self.progress_factory(**kwargs)
-        with progress("Obtaining token for %s" % (user)):
-            node.login(user)
+    # Setup the python paths for our libs and resources.
+    sys.path.append(os.path.join(config.get('paths', 'libraries'), 'OpenAFSLibrary'))
+    sys.path.append(config.get('paths', 'resources'))
 
-    def test(self, **kwargs):
-        """Run the Robotframework test suites."""
-        self._aklog_workaround_check()
-        c = self.config
+    # Create output dir if needed.
+    output = config.optstr('paths', 'output', required=True)
+    if not os.path.isdir(output):
+        os.makedirs(output)
 
-        # Setup the python paths for our libs and resources.
-        sys.path.append(os.path.join(c.get('paths', 'libraries'), 'OpenAFSLibrary'))
-        sys.path.append(c.get('paths', 'resources'))
+    # Verify we have a afs service keytab.
+    if config.optbool('kerberos', 'akimpersonate'):
+        keytab = config.optkeytab('fake')
+    else:
+        keytab = config.optkeytab('afs')
+    if not os.path.isfile(keytab):
+        raise ValueError("Cannot find keytab file '%s'!\n" % keytab)
 
-        # Create output dir if needed.
-        output = c.optstr('paths', 'output', required=True)
-        if not os.path.isdir(output):
-            os.makedirs(output)
+    # Additional variables.
+    variable = [
+        'RESOURCES:%s' % config.get('paths', 'resources'),
+        'AFS_CELL:%s' % config.get('cell', 'name'),
+        'AFS_ADMIN:%s' % config.get('cell', 'admin'),
+        'AFS_AKIMPERSONATE:%s' % akimpersonate,
+        'KRB_REALM:%s' % config.get('kerberos', 'realm'),
+        'KRB_AFS_KEYTAB:%s' % keytab,
+    ]
+    if config.has_section('variables'):
+        for o,v in config.items('variables'):
+            variable.append("%s:%s" % (o.upper(), v))
 
-        # Verify we have a afs service keytab.
-        if c.optbool('kerberos', 'akimpersonate'):
-            keytab = c.optkeytab('fake')
-        else:
-            keytab = c.optkeytab('afs')
-        if not os.path.isfile(keytab):
-            raise ValueError("Cannot find keytab file '%s'!\n" % keytab)
+    # Determine tests to exclude.
+    exclude = config.get('run', 'exclude_tags').split(',')
+    gfind = config.optstr('variables', 'gfind')
+    if not gfind:
+        sys.stderr.write("Excluding 'requires-gfind'; variables.gfind is not set in config.\n")
+        exclude.append('requires-gfind')
 
-        # Additional variables.
-        variable = [
-            'RESOURCES:%s' % c.get('paths', 'resources'),
-            'AFS_CELL:%s' % c.get('cell', 'name'),
-            'AFS_ADMIN:%s' % c.get('cell', 'admin'),
-            'AFS_AKIMPERSONATE:%s' % c.getboolean('kerberos', 'akimpersonate'),
-            'KRB_REALM:%s' % c.get('kerberos', 'realm'),
-            'KRB_AFS_KEYTAB:%s' % keytab,
-        ]
-        if c.has_section('variables'):
-            for o,v in c.items('variables'):
-                variable.append("%s:%s" % (o.upper(), v))
+    # Setup the rf options.
+    tests = config.get('paths', 'tests') # path to our tests
+    options = {
+        'report': 'index.html',
+        'outputdir': output,
+        'loglevel': config.get('run', 'log_level'),
+        'variable': variable,
+        'exclude': exclude,
+        'runemptysuite': True,
+        'exitonfailure': False,
+    }
 
-        # Determine tests to exclude.
-        exclude = c.get('run', 'exclude_tags').split(',')
-        gfind = c.optstr('variables', 'gfind')
-        if not gfind:
-            sys.stderr.write("Excluding 'requires-gfind'; variables.gfind is not set in config.\n")
-            exclude.append('requires-gfind')
+    # Additional options.
+    for key in kwargs.keys():
+        if not kwargs[key] is None:
+            options[key] = kwargs[key]
 
-        # Setup the rf options.
-        tests = c.get('paths', 'tests') # path to our tests
-        options = {
-            'report': 'index.html',
-            'outputdir': output,
-            'loglevel': c.get('run', 'log_level'),
-            'variable': variable,
-            'exclude': exclude,
-            'runemptysuite': True,
-            'exitonfailure': False,
-        }
+    # Run the RF tests.
+    code = robot.run(tests, **options)
+    if code != 0:
+        sys.stderr.write("Tests failed.\n")
+    return code
 
-        # Additional options.
-        for key in kwargs.keys():
-            if not kwargs[key] is None:
-                options[key] = kwargs[key]
+def teardown(config, **kwargs):
+    """Uninstall and purge files."""
+    logger.info("teardown starting")
+    akimpersonate = config.optbool('kerberos', 'akimpersonate')
+    progress = _get_progress(**kwargs)
+    nodes = _get_nodes(config, **kwargs)
 
-        # Run the RF tests.
-        code = robot.run(tests, **options)
-        if code != 0:
-            sys.stderr.write("Tests failed.\n")
-        return code
+    if nodes['clients']:
+        with progress("Stopping clients"):
+            for node in nodes['clients']:
+                node.stop('client')
 
-    def teardown(self, **kwargs):
-        """Uninstall and purge files."""
-        logger.info("teardown starting")
-        c = self.config
-        progress = self.progress_factory(**kwargs)
-        nodes = self.nodes(**kwargs)
+    if nodes['servers']:
+        with progress("Stopping servers"):
+            for node in nodes['servers']:
+                node.stop('server')
 
-        if nodes['clients']:
-            with progress("Stopping clients"):
-                for node in nodes['clients']:
-                    node.stop('client')
+    if nodes['install']:
+        with progress("Uninstalling"):
+            for node in nodes['install']:
+                node.remove()
 
-        if nodes['servers']:
-            with progress("Stopping servers"):
-                for node in nodes['servers']:
-                    node.stop('server')
+    if akimpersonate:
+        with progress("Removing service key"):
+            for nodes in nodes['all']:
+                node.keytab_destroy()
 
-        if nodes['install']:
-            with progress("Uninstalling"):
-                for node in nodes['install']:
-                    node.remove()
-
-        if c.optbool('kerberos', 'akimpersonate'):
-            with progress("Removing service key"):
-                for nodes in nodes['all']:
-                    node.keytab_destroy()
-
-        logger.info("teardown done")
+    logger.info("teardown done")
 
