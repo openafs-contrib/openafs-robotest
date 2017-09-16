@@ -67,10 +67,10 @@ def cmd_init(c):
     if not os.path.isdir(userdir):
         sys.stdout.write("Making user directory %s\n" % (userdir))
         os.makedirs(userdir)
-    if os.path.exists(c.args.config):
-        _update_config(c.args.config)
+    if os.path.exists(c.args.ini):
+        _update_config(c.args.ini)
     else:
-        _create_config(c.args.config)
+        _create_config(c.args.ini)
 
 def _update_config(filename):
     config = afsrobot.config.Config()
@@ -222,7 +222,7 @@ class SubCommandContext(object):
 
     def __enter__(self):
         if not self._defer_config:
-            self._read_config(self.args.config)
+            self._read_config(self.args.ini)
         self._setup_log(self.config, self._logname)
         return self
 
@@ -257,7 +257,7 @@ def main():
     """Command line handling for the afsrobot tool."""
 
     def common_options(p):
-        p.add_argument('-c', '--config', metavar='<filename>',
+        p.add_argument('-c', '--config', dest='ini', metavar='<filename>',
                        help="config file (default: %s)" % AFSROBOT_INI,
                        default=AFSROBOT_INI)
         p.add_argument('-q', '--quiet', help="less messages", default=False, action='store_true')
