@@ -150,93 +150,12 @@ class ConfigTest(unittest.TestCase):
         self.assertTrue(isinstance(hostnames, list))
         self.assertTrue(len(hostnames) == 3)
 
-    def test_optfakekey(self):
-        home = os.environ['HOME']
-        expect = '--cell robotest --keytab %s/afsrobot/fake.keytab --realm ROBOTEST' % (home)
-        c = afsrobot.config.Config()
-        c.load_defaults()
-        args = c.optfakekey()
-        self.assertEqual(expect, " ".join(args))
-
-    def test_optlogin(self):
-        home = os.environ['HOME']
-        expect = '--user robotest.admin --cell robotest --realm ROBOTEST ' \
-                 '--akimpersonate --keytab %s/afsrobot/fake.keytab' % (home)
-        c = afsrobot.config.Config()
-        c.load_defaults()
-        args = c.optlogin()
-        self.assertEqual(expect, " ".join(args))
-
     def test_optcomponents(self):
         hostname = socket.gethostname()
         expect = 'server client'
         c = afsrobot.config.Config()
         c.load_defaults()
         args = c.optcomponents(hostname)
-        self.assertEqual(expect, " ".join(args))
-
-    def test_optinstall(self):
-        hostname = socket.gethostname()
-        expect = '--dist none --components server client --cell robotest --hosts %s ' \
-                 '--realm ROBOTEST --force -o afsd=-dynroot -fakestat -afsdb -o bosserver=' \
-                 % (hostname,)
-        c = afsrobot.config.Config()
-        c.load_defaults()
-        args = c.optinstall(hostname)
-        self.assertEqual(expect, " ".join(args))
-
-    def test_optsetkey(self):
-        hostname = socket.gethostname()
-        home = os.environ['HOME']
-        expect = '--cell robotest --realm ROBOTEST --keytab %s/afsrobot/fake.keytab' % (home)
-        c = afsrobot.config.Config()
-        c.load_defaults()
-        args = c.optsetkey(hostname)
-        self.assertEqual(expect, " ".join(args))
-
-    def test_optsetkey_noakimp(self):
-        hostname = socket.gethostname()
-        home = os.environ['HOME']
-        expect = '--cell robotest --realm ROBOTEST --keytab %s/afsrobot/afs.keytab' % (home)
-        c = afsrobot.config.Config()
-        c.load_defaults()
-        c.set_value('kerberos', 'akimpersonate', 'no')
-        args = c.optsetkey(hostname)
-        self.assertEqual(expect, " ".join(args))
-
-    def test_optnewcell(self):
-        hostname = socket.gethostname()
-        home = os.environ['HOME']
-        expect = '--cell robotest --admin robotest.admin ' \
-                 '--top test --akimpersonate --keytab %s/afsrobot/fake.keytab --realm ROBOTEST ' \
-                 '--fs %s --db %s ' \
-                 '-o dafs=yes ' \
-                 '-o afsd=-dynroot -fakestat -afsdb ' \
-                 '-o bosserver= ' \
-                 '-o dafileserver=-d 1 -L ' \
-                 '-o davolserver=-d 1' \
-                 % (home, hostname, hostname)
-        c = afsrobot.config.Config()
-        c.load_defaults()
-        args = c.optnewcell()
-        self.assertEqual(expect, " ".join(args))
-
-    def test_optnewcell_noakimp(self):
-        hostname = socket.gethostname()
-        home = os.environ['HOME']
-        expect = '--cell robotest --admin robotest.admin ' \
-                 '--top test --keytab %s/afsrobot/user.keytab --realm ROBOTEST ' \
-                 '--fs %s --db %s ' \
-                 '-o dafs=yes ' \
-                 '-o afsd=-dynroot -fakestat -afsdb ' \
-                 '-o bosserver= ' \
-                 '-o dafileserver=-d 1 -L ' \
-                 '-o davolserver=-d 1' \
-                 % (home, hostname, hostname)
-        c = afsrobot.config.Config()
-        c.load_defaults()
-        c.set_value('kerberos', 'akimpersonate', 'no')
-        args = c.optnewcell()
         self.assertEqual(expect, " ".join(args))
 
     def test_print_values(self):

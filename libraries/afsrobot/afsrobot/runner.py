@@ -18,18 +18,16 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
+"""Run setup, tests, and teardown."""
+
 import os
 import base64
 import sys
-import socket
 import logging
 import subprocess
-import afsutil.system
-import afsrobot.config
-from afsrobot.config import islocal
-
-# Install robotframework with `sudo pip install robotframework`
 import robot.run
+from afsrobot.config import islocal
+from afsutil.system import sh
 
 logger = logging.getLogger(__name__)
 
@@ -75,41 +73,312 @@ class ProgressMessage(object):
             sys.stdout.write(" fail\n")
         return False
 
-class Host(object):
-    def __init__(self, hostname, config):
-        section = "host:{0}".format(hostname)
-        self.name = hostname
-        self.install = config.optstr(section, 'installer', default='none') != 'none'
-        self.is_server = config.optbool(section, "isfileserver") or \
-                         config.optbool(section, "isdbserver")
-        self.is_client = config.optbool(section, "isclient")
-    def __repr__(self):
-        return "Host<name={0}, install={1}, is_server={2}, is_client={3}>".format(
-                self.name, self.install, self.is_server, self.is_client)
+def _afsutil(cmd, subcmd, args):
+    """Build afsutil command line args."""
+    afsutil = ['afsutil']
+    afsutil.append(cmd)
+    if subcmd:
+        afsutil.append(subcmd)
+    if logger.getEffectiveLevel() == logging.DEBUG:
+        afsutil.append('--verbose')
+    return afsutil + args
+
+def _sudo(args):
+    """Build sudo command line args."""
+    return ['sudo', '-n'] + args
+
+def _ssh(hostname, ident, args):
+    """Build ssh command line args."""
+    cmdline = subprocess.list2cmdline(args)
+    ssh = ['ssh', '-q', '-t', '-o', 'PasswordAuthentication=no']
+    if ident:
+        ssh.append('-i')
+        ssh.append(ident)
+    ssh.append(hostname)
+    ssh.append(cmdline)
+    return ssh
+
+class Node(object):
+    """A node (host) to be configured; maybe the local host or a remote host."""
+
+    def __init__(self, name, c, showcmds=False, **kwargs):
+        """Initialize this node.
+
+        name: the hostname for this node
+        c: the config object
+        showcmds: display commands
+        """
+        section = "host:{0}".format(name)
+        self.name = name
+        self.config = c
+        self.name = name
+        self.installer = c.optstr(section, 'installer', default='none') != 'none'
+        self.is_server = c.optbool(section, "isfileserver") or c.optbool(section, "isdbserver")
+        self.is_client = c.optbool(section, "isclient")
+        self.ident = c.optstr('ssh', 'keyfile')
+        self.islocal = islocal(name)
+        self.showcmds = showcmds
+
+    def run(self, args):
+        """Run a command, with ssh if remote."""
+        if not self.islocal:
+            args = _ssh(self.name, self.ident, args)
+        if self.showcmds:
+            cmdline = subprocess.list2cmdline(args)
+            sys.stdout.write("{0}\n".format(cmdline))
+        sh(*args, prefix=self.name, quiet=False, output=False)
+
+    def install(self):
+        """Run afsutil install."""
+        c = self.config
+        section = "host:%s" % (self.name)
+        args = []
+        args.append('--components')
+        if self.is_server:
+            args.append('server')
+        if self.is_client:
+            args.append('client')
+        dist = c.optstr(section, 'installer', default='transarc')
+        args.append('--dist')
+        args.append(dist)
+        if dist == 'transarc':
+            dest = c.optstr(section, 'dest')
+            if dest:
+                args.append('--dir')
+                args.append(dest)
+        elif dist == 'rpm':
+            rpms = c.optstr(section, 'rpms')
+            if rpms:
+                args.append('--dir')
+                args.append(rpms)
+        cell = c.optstr('cell', 'name')
+        if cell:
+            args.append('--cell')
+            args.append(cell)
+        hosts = c.opthostnames(filter='isdbserver', lookupname=True)
+        if hosts:
+            args.append('--hosts')
+            args += hosts
+        realm = c.optstr('kerberos', 'realm')
+        if realm:
+            args.append('--realm')
+            args.append(realm)
+        csdb = c.optstr(section, 'csdb')
+        if csdb:
+            args.append('--csdb')
+            args.append(csdb)
+        args.append('--force')
+        if c.has_section('options'):
+            for k,v in c.items('options'):
+                if k == 'afsd' or k == 'bosserver':
+                    args.append('-o')
+                    args.append("%s=%s" % (k,v))
+        self.run(_sudo(_afsutil('install', None, args)))
+
+    def keytab_create(self):
+        """Run afsutil keytab create."""
+        c = self.config
+        if not c.optbool('kerberos', 'akimpersonate'):
+            raise AssertionError('Trying to get fakekey options without akimpersonate.')
+        args = []
+        cell = c.optstr('cell', 'name')
+        if cell:
+            args.append('--cell')
+            args.append(cell)
+        keytab = c.optkeytab('fake')
+        if keytab:
+            args.append('--keytab')
+            args.append(keytab)
+        realm = c.optstr('kerberos', 'realm')
+        if realm:
+            args.append('--realm')
+            args.append(realm)
+        enctype = c.optstr('kerberos', 'enctype')
+        if enctype:
+            args.append('--enctype')
+            args.append(enctype)
+        secret = c.optstr('kerberos', 'secret')
+        if secret:
+            args.append('--secret')
+            args.append(secret)
+        self.run(_sudo(_afsutil('keytab', 'create', args)))
+
+    def keytab_setkey(self):
+        """Run afsutil keytab setkey."""
+        c = self.config
+        section = "host:%s" % (self.name)
+        args = []
+        cell = c.optstr('cell', 'name')
+        if cell:
+            args.append('--cell')
+            args.append(cell)
+        realm = c.optstr('kerberos', 'realm')
+        if realm:
+            args.append('--realm')
+            args.append(realm)
+        if c.optbool('kerberos', 'akimpersonate'):
+            name = 'fake'
+        else:
+            name = 'afs'
+        keytab = c.optkeytab(name)
+        if keytab:
+            args.append('--keytab')
+            args.append(keytab)
+        keyformat = c.optstr(section, 'keyformat')
+        if keyformat:
+            args.append('--format')
+            args.append(keyformat)
+        self.run(_sudo(_afsutil('keytab', 'setkey', args)))
+
+    def keytab_destroy(self):
+        """Run afsutil keytab destroy."""
+        c = self.config
+        if not c.optbool('kerberos', 'akimpersonate'):
+            raise AssertionError('Trying to get fakekey options without akimpersonate.')
+        args = []
+        keytab = c.optkeytab('fake')
+        if keytab:
+            args.append('--keytab')
+            args.append(keytab)
+        args.append('--force')
+        self.run(_sudo(_afsutil('keytab', 'destroy', args)))
+
+    def start(self, comp):
+        """Run afsutil start."""
+        self.run(_sudo(_afsutil('start', comp, [])))
+
+    def stop(self, comp):
+        """Run afsutil stop."""
+        self.run(_sudo(_afsutil('stop', comp, [])))
+
+    def newcell(self):
+        """Run afsutil newcell."""
+        c = self.config
+        args = []
+        cell = c.optstr('cell', 'name', 'localcell')
+        if cell:
+            args.append('--cell')
+            args.append(cell)
+        admin = c.optstr('cell', 'admin', 'admin')
+        if admin:
+            args.append('--admin')
+            args.append(admin)
+        realm = c.optstr('kerberos', 'realm')
+        if realm:
+            args.append('--realm')
+            args.append(realm)
+        fs = c.opthostnames(filter='isfileserver', lookupname=True)
+        if fs:
+            args.append('--fs')
+            args += fs
+        db = c.opthostnames(filter='isdbserver', lookupname=True)
+        if db:
+            args.append('--db')
+            args += db
+        if c.has_section('options'):
+            for k,v in c.items('options'):
+                args.append('-o')
+                args.append("%s=%s" % (k,v))
+        self.run(_sudo(_afsutil('newcell', None, args)))
+
+    def mtroot(self):
+        """Run afsutil mtroot."""
+        c = self.config
+        args = []
+        cell = c.optstr('cell', 'name', 'localcell')
+        if cell:
+            args.append('--cell')
+            args.append(cell)
+        admin = c.optstr('cell', 'admin', 'admin')
+        if admin:
+            args.append('--admin')
+            args.append(admin)
+        top = 'test'
+        if top:
+            args.append('--top')
+            args.append(top)
+        realm = c.optstr('kerberos', 'realm')
+        if realm:
+            args.append('--realm')
+            args.append(realm)
+        akimpersonate = c.optbool('kerberos', 'akimpersonate')
+        if akimpersonate:
+            args.append('--akimpersonate')
+            keytab = c.optkeytab('fake')
+            if keytab:
+                args.append('--keytab')
+                args.append(keytab)
+        else:
+            keytab = c.optkeytab('user')
+            if keytab:
+                args.append('--keytab')
+                args.append(keytab)
+        fs = c.opthostnames(filter='isfileserver', lookupname=True)
+        if fs:
+            args.append('--fs')
+            args += fs
+        aklog = c.optstr('variables', 'aklog')
+        if aklog:
+            args.append('--aklog')
+            args.append(aklog)
+        if c.has_section('options'):
+            for k,v in c.items('options'):
+                args.append('-o')
+                args.append("%s=%s" % (k,v))
+        self.run(_afsutil('mtroot', None, args))
+
+    def login(self, user):
+        """Run afsutil login."""
+        c = self.config
+        args = []
+        if not user:
+            user = c.optstr('cell', 'admin', 'admin')
+        if user:
+            args.append('--user')
+            args.append(user)
+        cell = c.optstr('cell', 'name')
+        if cell:
+            args.append('--cell')
+            args.append(cell)
+        realm = c.optstr('kerberos', 'realm')
+        if realm:
+            args.append('--realm')
+            args.append(realm)
+        aklog = c.optstr('variables', 'aklog')
+        if aklog:
+            args.append('--aklog')
+            args.append(aklog)
+        if c.optbool('kerberos', 'akimpersonate'):
+            args.append('--akimpersonate')
+            keytab = c.optkeytab('fake')
+            if keytab:
+                args.append('--keytab')
+                args.append(keytab)
+        else:
+            keytab = c.optkeytab('user')
+            if keytab:
+                args.append('--keytab')
+                args.append(keytab)
+        self.run(_afsutil('login', None, args))
+
+    def remove(self):
+        """Run afsutil remove."""
+        args = ['--purge']
+        self.run(_sudo(_afsutil('remove', None, args)))
+
 
 class Runner(object):
 
-    def __init__(self, config=None):
-        if config is None:
-            config = afsrobot.config.Config()
-            config.load_defaults()
+    def __init__(self, config):
         self.config = config
-        self.hostname = socket.gethostname()
-        self.quiet = False
-        self.verbose = False
-        self.dryrun = False
-        self.showcmds = False
 
-    def _set_options(self, **kwargs):
-        self.quiet = kwargs.get('quiet', False)
-        self.verbose = kwargs.get('verbose', False)
-        self.dryrun = kwargs.get('dryrun', False)
-        self.showcmds = kwargs.get('showcmds', False)
-
-    def progress_factory(self):
-        if self.quiet:
+    def progress_factory(self, **kwargs):
+        quiet = kwargs.get('quiet', False)
+        verbose = kwargs.get('verbose', False)
+        showcmds = kwargs.get('showcmds', False)
+        if quiet:
             progress = NoMessage
-        elif self.verbose or self.showcmds:
+        elif verbose or showcmds:
             progress = SimpleMessage
         else:
             progress = ProgressMessage
@@ -120,103 +389,83 @@ class Runner(object):
         # workaround this users must setup an aklog 1.6.10+ in some directory
         # and then set a option to specify the location. Since this is easy to
         # get wrong, do a sanity check up front, at least until aklog is fixed.
-        if self.config.optbool('kerberos', 'akimpersonate'):
-            aklog = self.config.optstr('variables', 'aklog')
+        c = self.config
+        if c.optbool('kerberos', 'akimpersonate'):
+            aklog = c.optstr('variables', 'aklog')
             if aklog is None:
                 sys.stderr.write("Warning: The akimpersonate feature is enabled but the aklog option\n")
                 sys.stderr.write("         is not set. See the README.md for more information about\n")
                 sys.stderr.write("         testing without Kerberos.\n")
 
-    def _run(self, hostname, args, sudo=False):
-        """Run commands locally or remotely, with or without sudo."""
-        if sudo:
-            args.insert(0, 'sudo')
-            args.insert(1, '-n')
-        if not islocal(hostname):
-            command = subprocess.list2cmdline(args)
-            args = [
-                'ssh', '-q', '-t', '-o', 'PasswordAuthentication no'
-            ]
-            keyfile = self.config.optstr('ssh', 'keyfile')
-            if keyfile:
-                 args.append('-i')
-                 args.append(keyfile)
-            args.append(hostname)
-            args.append(command)
-        if self.showcmds:
-            sys.stdout.write("{0}\n".format(subprocess.list2cmdline(args)))
-        if not self.dryrun:
-            afsutil.system.sh(*args, quiet=False, output=False, prefix=hostname)
-
-    def _afsutil(self, hostname, command, subcmd=None, args=None, sudo=True):
-        if args is None:
-           args = []
-        args.insert(0, 'afsutil')
-        args.insert(1, command)
-        if subcmd:
-            args.insert(2, subcmd)
-        if logger.getEffectiveLevel() == logging.DEBUG:
-            args.append('--verbose')
-        self._run(hostname, args, sudo=sudo)
+    def nodes(self, **kwargs):
+        """Get nodes for setup and teardown."""
+        c = self.config
+        nodes = {
+            'all': [],
+            'install': [],
+            'servers': [],
+            'clients': [],
+        }
+        for name in c.opthostnames():
+            node = Node(name, c, **kwargs)
+            nodes['all'].append(node)
+            if node.installer:
+                nodes['install'].append(node)
+            if node.is_server:
+                nodes['servers'].append(node)
+            if node.is_client:
+                nodes['clients'].append(node)
+        return nodes
 
     def setup(self, **kwargs):
         """Setup OpenAFS client and servers and create a test cell."""
         self._aklog_workaround_check()
         logger.info("setup starting")
-        self._set_options(**kwargs)
-        c = self.config # alias
-        progress = self.progress_factory()
+        c = self.config
+        progress = self.progress_factory(**kwargs)
 
-        # Be sure to use the same secret value on each host.
+        # Be sure to use the same secret value on every node.
         if c.optbool('kerberos', 'akimpersonate'):
             secret = c.optstr('kerberos', 'secret')
             if secret is None:
                 random = base64.b64encode(os.urandom(32))
                 c.set_value('kerberos', 'secret', random)
 
-        # Gather list of hosts for this setup.
-        allhosts = [Host(n,c) for n in self.config.opthostnames()]
-        hosts = {
-            'all': allhosts,
-            'install': [h for h in allhosts if h.install],
-            'servers': [h for h in allhosts if h.is_server],
-            'clients': [h for h in allhosts if h.is_client],
-        }
-
-        if not hosts['all']:
-            logger.error("No hosts configured!")
+        nodes = self.nodes(**kwargs)
+        if not nodes['all']:
+            logger.error("No nodes configured!")
             return
 
-        if hosts['install']:
-            with progress("Installing OpenAFS"):
-                for host in hosts['install']:
-                    self._afsutil(host.name, 'install', args=c.optinstall(host.name))
+        if nodes['install']:
+            with progress("Installing"):
+                for node in nodes['install']:
+                    node.install()
 
         if c.optbool('kerberos', 'akimpersonate'):
-            with progress("Creating test key"):
-                for host in hosts['all']:
-                    self._afsutil(host.name, 'keytab', subcmd='create', args=c.optfakekey())
+            with progress("Creating service key"):
+                for node in nodes['all']:
+                    node.keytab_create()
 
-        if hosts['servers']:
+        if nodes['servers']:
             with progress("Setting service key"):
-                for host in hosts['servers']:
-                    self._afsutil(host.name, 'keytab', subcmd='setkey', args=c.optsetkey(host.name))
+                for node in nodes['servers']:
+                    node.keytab_setkey()
 
-        if hosts['servers']:
+        if nodes['servers']:
             with progress("Starting servers"):
-                for host in hosts['servers']:
-                    self._afsutil(host.name, 'start', subcmd='server')
+                for node in nodes['servers']:
+                    node.start('server')
             with progress("Creating new cell"):
-                host = hosts['servers'][0]
-                self._afsutil(host.name, 'newcell', args=c.optnewcell())
+                node = nodes['servers'][0]
+                node.newcell()
 
-        if hosts['clients']:
+        if nodes['clients']:
             with progress("Starting clients"):
-                for host in hosts['clients']:
-                    self._afsutil(host.name, 'start', subcmd='client')
+                for node in nodes['clients']:
+                    node.start('client')
             with progress("Mounting root volumes"):
-                host = hosts['clients'][0]
-                self._afsutil(host.name, 'mtroot', args=c.optmtroot(), sudo=False)
+                node = nodes['clients'][0]
+                node.mtroot()
 
         logger.info("setup done")
 
@@ -227,64 +476,61 @@ class Runner(object):
         tests, but this sub-command is a useful short cut to get a token for
         the configured admin user.
         """
-        self._set_options(**kwargs)
-        progress = self.progress_factory()
-
-        user = kwargs.get('user')
-        if user is None:
-            user = self.config.optstr('cell', 'admin', 'admin')
-        args = self.config.optlogin(user=user)
+        c = self.config
+        user = kwargs.pop('user', c.optstr('cell', 'admin', 'admin'))
+        node = Node('localhost', c, **kwargs)
+        progress = self.progress_factory(**kwargs)
         with progress("Obtaining token for %s" % (user)):
-            self._afsutil(self.hostname, 'login', args=args, sudo=False)
+            node.login(user)
 
     def test(self, **kwargs):
         """Run the Robotframework test suites."""
         self._aklog_workaround_check()
-        config = self.config
+        c = self.config
 
         # Setup the python paths for our libs and resources.
-        sys.path.append(os.path.join(config.get('paths', 'libraries'), 'OpenAFSLibrary'))
-        sys.path.append(config.get('paths', 'resources'))
+        sys.path.append(os.path.join(c.get('paths', 'libraries'), 'OpenAFSLibrary'))
+        sys.path.append(c.get('paths', 'resources'))
 
         # Create output dir if needed.
-        output = config.optstr('paths', 'output', required=True)
+        output = c.optstr('paths', 'output', required=True)
         if not os.path.isdir(output):
             os.makedirs(output)
 
         # Verify we have a afs service keytab.
-        if config.optbool('kerberos', 'akimpersonate'):
-            keytab = config.optkeytab('fake')
+        if c.optbool('kerberos', 'akimpersonate'):
+            keytab = c.optkeytab('fake')
         else:
-            keytab = config.optkeytab('afs')
+            keytab = c.optkeytab('afs')
         if not os.path.isfile(keytab):
             raise ValueError("Cannot find keytab file '%s'!\n" % keytab)
 
         # Additional variables.
         variable = [
-            'RESOURCES:%s' % config.get('paths', 'resources'),
-            'AFS_CELL:%s' % config.get('cell', 'name'),
-            'AFS_ADMIN:%s' % config.get('cell', 'admin'),
-            'AFS_AKIMPERSONATE:%s' % config.getboolean('kerberos', 'akimpersonate'),
-            'KRB_REALM:%s' % config.get('kerberos', 'realm'),
+            'RESOURCES:%s' % c.get('paths', 'resources'),
+            'AFS_CELL:%s' % c.get('cell', 'name'),
+            'AFS_ADMIN:%s' % c.get('cell', 'admin'),
+            'AFS_AKIMPERSONATE:%s' % c.getboolean('kerberos', 'akimpersonate'),
+            'KRB_REALM:%s' % c.get('kerberos', 'realm'),
             'KRB_AFS_KEYTAB:%s' % keytab,
         ]
-        if config.has_section('variables'):
-            for o,v in config.items('variables'):
+        if c.has_section('variables'):
+            for o,v in c.items('variables'):
                 variable.append("%s:%s" % (o.upper(), v))
 
         # Determine tests to exclude.
-        exclude = config.get('run', 'exclude_tags').split(',')
-        gfind = self.config.optstr('variables', 'gfind')
+        exclude = c.get('run', 'exclude_tags').split(',')
+        gfind = c.optstr('variables', 'gfind')
         if not gfind:
             sys.stderr.write("Excluding 'requires-gfind'; variables.gfind is not set in config.\n")
             exclude.append('requires-gfind')
 
         # Setup the rf options.
-        tests = config.get('paths', 'tests') # path to our tests
+        tests = c.get('paths', 'tests') # path to our tests
         options = {
             'report': 'index.html',
             'outputdir': output,
-            'loglevel': config.get('run', 'log_level'),
+            'loglevel': c.get('run', 'log_level'),
             'variable': variable,
             'exclude': exclude,
             'runemptysuite': True,
@@ -305,52 +551,29 @@ class Runner(object):
     def teardown(self, **kwargs):
         """Uninstall and purge files."""
         logger.info("teardown starting")
+        c = self.config
+        progress = self.progress_factory(**kwargs)
+        nodes = self.nodes(**kwargs)
 
-        c = self.config # alias
-        self._set_options(**kwargs)
-        progress = self.progress_factory()
-
-        # Gather list of hosts.
-        allhosts = [Host(n,c) for n in self.config.opthostnames()]
-        hosts = {
-            'all': allhosts,
-            'install': [h for h in allhosts if h.install],
-            'servers': [h for h in allhosts if h.is_server],
-            'clients': [h for h in allhosts if h.is_client],
-        }
-
-        if hosts['clients']:
+        if nodes['clients']:
             with progress("Stopping clients"):
-                for host in hosts['clients']:
-                    self._afsutil(host.name, 'stop', subcmd='client')
+                for node in nodes['clients']:
+                    node.stop('client')
 
-        if hosts['servers']:
+        if nodes['servers']:
             with progress("Stopping servers"):
-                for host in hosts['servers']:
-                    self._afsutil(host.name, 'stop', subcmd='server')
+                for node in nodes['servers']:
+                    node.stop('server')
 
-        if hosts['install']:
-            with progress("Removing OpenAFS"):
-                for host in hosts['install']:
-                    self._afsutil(host.name, 'remove', args=['--purge'])
+        if nodes['install']:
+            with progress("Uninstalling"):
+                for node in nodes['install']:
+                    node.remove()
 
         if c.optbool('kerberos', 'akimpersonate'):
-            with progress("Removing test key"):
-                for hosts in hosts['all']:
-                    self._afsutil(host.name, 'keytab', subcmd='destroy', args=c.optremovekey())
+            with progress("Removing service key"):
+                for nodes in nodes['all']:
+                    node.keytab_destroy()
 
         logger.info("teardown done")
 
-
-# Test driver.
-if __name__ == '__main__':
-    logging.basicConfig()
-    if len(sys.argv) < 2:
-        sys.stderr.write("usage: python runner.py [command]\n")
-        sys.exit(1)
-    cf = os.path.join(os.getenv('HOME'), 'afsrobot', 'afsrobot.ini')
-    c = afsrobot.config.Config()
-    c.load_from_file(cf)
-    r = Runner(config=c)
-    fn = getattr(r, sys.argv[1])
-    fn()
