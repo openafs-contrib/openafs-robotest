@@ -129,3 +129,16 @@ class TinyWebServer(object):
             status = "Not running."
         return status
 
+
+def start(config, **kwargs):
+    server = TinyWebServer(config)
+    server.start()
+
+def stop(config, **kwargs):
+    server = TinyWebServer(config)
+    server.stop()
+
+def status(config, **kwargs):
+    server = TinyWebServer(config)
+    sys.stdout.write("%s\n" % (server.status()))
+

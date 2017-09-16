@@ -51,134 +51,13 @@ logger = logging.getLogger('afsrobot')
 AFSROBOT_INI = os.getenv('AFSROBOT_INI',
     os.path.join(os.environ['HOME'], 'afsrobot', 'afsrobot.ini'))
 
-#
-# version sub-command
-#
-def cmd_version(c):
+def _print_version(config, **kwargs):
     import afsrobot
     import afsutil
     import OpenAFSLibrary
     sys.stdout.write("afsrobot %s\n" % (afsrobot.__version__))
     sys.stdout.write("afsutil %s\n" % (afsutil.__version__))
     sys.stdout.write("OpenAFSLibrary %s\n" % (OpenAFSLibrary.__version__))
-
-def cmd_init(c):
-    userdir = os.path.join(os.environ['HOME'], 'afsrobot')
-    if not os.path.isdir(userdir):
-        sys.stdout.write("Making user directory %s\n" % (userdir))
-        os.makedirs(userdir)
-    if os.path.exists(c.args.ini):
-        _update_config(c.args.ini)
-    else:
-        _create_config(c.args.ini)
-
-def _update_config(filename):
-    config = afsrobot.config.Config()
-    config.load_defaults()
-    config.load_from_file(filename)
-    sys.stdout.write("Updating config file %s\n" % (filename))
-    config.save_as(filename)
-
-def _create_config(filename):
-    config = afsrobot.config.Config()
-    config.load_defaults()
-    if not os.path.isdir(os.path.dirname(filename)):
-        sys.stdout.write("Making config file directory %s\n" % (os.path.dirname(filename)))
-        os.makedirs(os.path.dirname(filename))
-    sys.stdout.write("Creating config file %s\n" % (filename))
-    config.save_as(filename)
-
-#
-# config sub-commands
-#
-def cmd_config_init(c):
-    cmd_init(c) # alias
-
-def cmd_config_copy(c):
-    c.say("Copying to file %s." % (c.args.dest))
-    new_config = afsrobot.config.Config()
-    new_config.load_from_file(c.config.filename)
-    new_config.save_as(c.args.dest)
-
-def cmd_config_list(c):
-    c.config.print_values(section=c.args.section, raw=c.args.raw)
-
-def cmd_config_set(c):
-    try:
-        c.config.set_value(c.args.section, c.args.option, c.args.value)
-        c.config.save()
-    except Exception as e:
-        sys.stderr.write("Unable to set: %s\n" % (e))
-        return 1
-
-def cmd_config_unset(c):
-    try:
-        c.config.unset_value(c.args.section, c.args.option)
-        c.config.save()
-    except Exception as e:
-        sys.stderr.write("Unable to remove: %s\n" % (e))
-        return 1
-
-#
-# web sub-commands
-#
-def cmd_web_start(c):
-    afsrobot.web.TinyWebServer(c.config).start()
-
-def cmd_web_stop(c):
-    afsrobot.web.TinyWebServer(c.config).stop()
-
-def cmd_web_status(c):
-    server = afsrobot.web.TinyWebServer(c.config)
-    sys.stdout.write("%s\n" % (server.status()))
-
-#
-# ssh sub-commands
-#
-def cmd_ssh_create(c):
-    rc = afsrobot.ssh.generate_key(c.args.keyfile)
-    if rc == 0:
-        c.config.set_value('ssh', 'keyfile', c.args.keyfile)
-        c.config.save()
-    return rc
-
-def cmd_ssh_dist(c):
-    keyfile = c.config.optstr('ssh', 'keyfile', required=True)
-    hostnames = c.config.opthostnames()
-    return afsrobot.ssh.distribute_key(keyfile, hostnames)
-
-def cmd_ssh_check(c):
-    keyfile = c.config.optstr('ssh', 'keyfile', required=True)
-    hostnames = c.config.opthostnames()
-    return afsrobot.ssh.check_access(keyfile, hostnames)
-
-def cmd_ssh_exec(c):
-    keyfile = c.config.optstr('ssh', 'keyfile', required=True)
-    hostnames = c.config.opthostnames()
-    return afsrobot.ssh.execute(keyfile, hostnames, c.args.command,
-                                exclude=c.args.exclude, quiet=c.args.quiet,
-                                sudo=c.args.sudo)
-
-def cmd_setup(c):
-    config = c.config
-    kwargs = vars(c.args)
-    afsrobot.runner.setup(config, **kwargs)
-
-def cmd_login(c):
-    config = c.config
-    kwargs = vars(c.args)
-    afsrobot.runner.login(config, **kwargs)
-
-def cmd_test(c):
-    config = c.config
-    kwargs = vars(c.args)
-    afsrobot.runner.test(config, **kwargs)
-
-def cmd_teardown(c):
-    config = c.config
-    kwargs = vars(c.args)
-    afsrobot.runner.teardown(config, **kwargs)
-
 
 class SubCommandContext(object):
     """Common pre and post processing for each sub-command."""
@@ -193,7 +72,8 @@ class SubCommandContext(object):
     def _read_config(self, filename):
         if not os.path.exists(filename):
             raise ValueError("Config file '%s' not found. Run 'afsrobot.iniig init'." % (filename))
-        self.say("Loading config file %s." % (filename))
+        if self.args.verbose:
+            sys.stdout.write("Loading config file %s." % (filename))
         self.config = afsrobot.config.Config()
         self.config.load_from_file(filename)
 
@@ -244,10 +124,6 @@ class SubCommandContext(object):
                     logger.error(line.rstrip('\n'))
         return False
 
-    def say(self, msg):
-        if self.args.verbose:
-            sys.stdout.write("%s\n" % (msg))
-
 class CommandLineParser(argparse.ArgumentParser):
     """Subclass the argument parser to extend help messages."""
     def __init__(self, *args, **kwargs):
@@ -282,11 +158,14 @@ def main():
     #
     p = subparsers.add_parser('version', help="print version information")
     common_options(p)
-    p.set_defaults(_cmd=cmd_version, _defer_config=True)
+    p.set_defaults(_function=_print_version, _defer_config=True)
 
-    p = subparsers.add_parser('init', help="initialize user directory")
+    #
+    # afsrobot init
+    #
+    p = subparsers.add_parser('init', help="initialize")
     common_options(p)
-    p.set_defaults(_cmd=cmd_init, _defer_config=True)
+    p.set_defaults(_function=afsrobot.config.init, _defer_config=True)
 
     #
     # afsrobot config
@@ -296,31 +175,31 @@ def main():
 
     p = ssp.add_parser('init', help="create a config file with default values") # alias for init
     common_options(p)
-    p.set_defaults(_cmd=cmd_config_init, _defer_config=True)
+    p.set_defaults(_function=afsrobot.config.init, _defer_config=True)
 
     p = ssp.add_parser('copy', help="copy configuration values to a new file")
     common_options(p)
     p.add_argument('dest', metavar='<tofile>', help="destination filename")
-    p.set_defaults(_cmd=cmd_config_copy)
+    p.set_defaults(_function=afsrobot.config.copy)
 
     p = ssp.add_parser('list', help="show configuration values")
     common_options(p)
     p.add_argument('-r', '--raw', action='store_true', help="do not expand interpolated values")
     p.add_argument('-s', '--section', help="config section")
-    p.set_defaults(_cmd=cmd_config_list)
+    p.set_defaults(_function=afsrobot.config.list, out=sys.stdout)
 
     p = ssp.add_parser('set', help="set a configuration value")
     common_options(p)
     p.add_argument('section', metavar='<section>', help="section name")
     p.add_argument('option', metavar='<option>', help="option name")
     p.add_argument('value', metavar='<value>', help="option value")
-    p.set_defaults(_cmd=cmd_config_set)
+    p.set_defaults(_function=afsrobot.config.set)
 
     p = ssp.add_parser('unset', help="unset a configuration value")
     common_options(p)
     p.add_argument('section', metavar='<section>', help="section name")
     p.add_argument('option', metavar='<option>', help="option name")
-    p.set_defaults(_cmd=cmd_config_unset)
+    p.set_defaults(_function=afsrobot.config.unset)
 
     #
     # afsrobot ssh
@@ -333,22 +212,22 @@ def main():
     keyfile = os.path.join(os.environ['HOME'], '.ssh', 'afsrobot')
     p.add_argument('--keyfile', help="ssh keyfile name (default: %s)" % (keyfile), default=keyfile)
     p.add_argument('-t', dest='keytype', metavar='<type>', help="ssh key type (default: rsa)", default='rsa')
-    p.set_defaults(_cmd=cmd_ssh_create)
+    p.set_defaults(_function=afsrobot.ssh.create)
 
     p = ssp.add_parser('dist', help="distribute the ssh public key to remote hosts")
     common_options(p)
-    p.set_defaults(_cmd=cmd_ssh_dist)
+    p.set_defaults(_function=afsrobot.ssh.dist)
 
     p = ssp.add_parser('check', help="check passwordless ssh access to remote hosts")
     common_options(p)
-    p.set_defaults(_cmd=cmd_ssh_check)
+    p.set_defaults(_function=afsrobot.ssh.check)
 
     p = ssp.add_parser('exec', help="execute a command on each remote host")
     common_options(p)
     p.add_argument('-s', '--sudo', action='store_true', help="run remote command as root")
     p.add_argument('-x', '--exclude', metavar='<hosts>', help="hosts to exclude (comma separated)", default='')
     p.add_argument('command', help='command line')
-    p.set_defaults(_cmd=cmd_ssh_exec)
+    p.set_defaults(_function=afsrobot.ssh.execute) # exec is a keyword
 
     #
     # afsrobot web
@@ -358,15 +237,15 @@ def main():
 
     p = ssp.add_parser('start', help="start web server")
     common_options(p)
-    p.set_defaults(_cmd=cmd_web_start)
+    p.set_defaults(_function=afsrobot.web.start)
 
     p = ssp.add_parser('stop', help="stop web server")
     common_options(p)
-    p.set_defaults(_cmd=cmd_web_stop)
+    p.set_defaults(_function=afsrobot.web.stop)
 
     p = ssp.add_parser('status', help="show web server status")
     common_options(p)
-    p.set_defaults(_cmd=cmd_web_status)
+    p.set_defaults(_function=afsrobot.web.status)
 
     #
     # afsrobot setup
@@ -375,7 +254,7 @@ def main():
     common_options(p)
     p.add_argument('-n', '--dry-run', dest='dryrun', help="Do not run commands", default=False, action='store_true')
     p.add_argument('-s', '--show-commands', dest='showcmds', help="Show commands", default=False, action='store_true')
-    p.set_defaults(_cmd=cmd_setup, _logname='setup.log')
+    p.set_defaults(_function=afsrobot.runner.setup, _logname='setup.log')
 
     #
     # afsrobot test
@@ -385,10 +264,7 @@ def main():
     p.add_argument('-s', '--suite', help="test suite to run; e.g. client.basic  (default: all)", default=None)
     p.add_argument('-i', '--include', help="test tags to include (default: all)", default=None)
     p.add_argument('-t', '--test', help="test name to run; e.g. create_a_file (default: all)", default=None)
-    p.set_defaults(_cmd=cmd_test)
-    # Alias for 'test' for compatibility with old versions.
-    if len(sys.argv) > 1 and sys.argv[1] == 'run':
-        sys.argv[1] = 'test'
+    p.set_defaults(_function=afsrobot.runner.test)
 
     #
     # afsrobot login
@@ -398,7 +274,7 @@ def main():
     p.add_argument('-u', '--user', help="user name (default: admin)", default=None)
     p.add_argument('-n', '--dry-run', dest='dryrun', help="Do not run commands", default=False, action='store_true')
     p.add_argument('-s', '--show-commands', dest='showcmds', help="Show commands", default=False, action='store_true')
-    p.set_defaults(_cmd=cmd_login, _logname='login.log')
+    p.set_defaults(_function=afsrobot.runner.login, _logname='login.log')
 
     #
     # afsrobot teardown
@@ -407,13 +283,16 @@ def main():
     common_options(p)
     p.add_argument('-n', '--dry-run', dest='dryrun', help="Do not run commands", default=False, action='store_true')
     p.add_argument('-s', '--show-commands', dest='showcmds', help="Show commands", default=False, action='store_true')
-    p.set_defaults(_cmd=cmd_teardown, _logname='teardown.log')
+    p.set_defaults(_function=afsrobot.runner.teardown, _logname='teardown.log')
 
     rc = 0
     args = parser.parse_args()
     try:
         with SubCommandContext(args) as c:
-            rc = args._cmd(c)
+            config = c.config
+            kwargs = vars(c.args)
+            function = kwargs.pop('_function')
+            rc = function(config, **kwargs)
     except afsutil.system.CommandFailed as e:
         sys.stderr.write("Command failed: %s, code %d\n" % (e.cmd, e.code))
         sys.stderr.write("output:\n")

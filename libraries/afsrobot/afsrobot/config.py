@@ -94,6 +94,7 @@ def islocal(hostname):
         return True
     return False
 
+
 class Config(ConfigParser.SafeConfigParser):
     """Config parser wrapper."""
 
@@ -285,3 +286,46 @@ class Config(ConfigParser.SafeConfigParser):
         if self.optbool(section, 'isclient'):
             comp.append('client')
         return comp
+
+def init(config, ini, **kwargs):
+    afsrobot_data = os.path.expanduser("~/afsrobot");
+    if not os.path.isdir(afsrobot_data):
+        sys.stdout.write("Making data directory %s\n" % (afsrobot_data))
+        os.makedirs(afsrobot_data)
+    config = Config()
+    config.load_defaults()
+    if os.path.exists(ini):
+        msg = "Updating config file"
+        config.load_from_file(ini)
+    else:
+        msg = "Creating config file"
+        if not os.path.isdir(os.path.dirname(ini)):
+            sys.stdout.write("Making config file directory %s\n" % (os.path.dirname(ini)))
+        os.makedirs(os.path.dirname(ini))
+    sys.stdout.write("%s %s\n" % (msg, ini))
+    config.save_as(ini)
+
+def copy(config, dest, **kwargs):
+    new_config = Config()
+    new_config.load_from_file(config.filename)
+    new_config.save_as(dest)
+
+def list(config, out, section, raw, **kwargs):
+    config.print_values(out, section, raw)
+
+def set(config, section, option, value, **kwargs):
+    try:
+        config.set_value(section, option, value)
+        config.save()
+    except Exception as e:
+        sys.stderr.write("Unable to set: %s\n" % (e))
+        return 1
+
+def unset(config, section, option, **kwargs):
+    try:
+        config.unset_value(section, option)
+        config.save()
+    except Exception as e:
+        sys.stderr.write("Unable to remove: %s\n" % (e))
+        return 1
+

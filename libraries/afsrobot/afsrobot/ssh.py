@@ -24,7 +24,7 @@ import subprocess
 import shlex
 from afsrobot.config import islocal
 
-def ssh(hostname, args, keyfile=None, sudo=False):
+def _ssh(hostname, args, keyfile=None, sudo=False):
     """Helper to run command on remote hosts using ssh."""
     if sudo:
         args.insert(0, "-n")  # requires NOPASSWD in sudoers
@@ -36,7 +36,7 @@ def ssh(hostname, args, keyfile=None, sudo=False):
         args = ['ssh', '-q', hostname, command]
     return subprocess.call(args)
 
-def generate_key(keyfile, keytype='rsa'):
+def create(config, keyfile, keytype='rsa', **kwargs):
     """Create a public/private key pair.
 
     Uses ssh-keygen to create the key files."""
@@ -50,6 +50,9 @@ def generate_key(keyfile, keytype='rsa'):
     code = subprocess.call(cmd)
     if code != 0:
         sys.stderr.write("ssh-keygen failed; exit code %d\n" % (code))
+    else:
+        config.set_value('ssh', 'keyfile', keyfile)
+        config.save()
     return code
 
 def _copyid(key, hostname):
@@ -70,10 +73,12 @@ def _copyid(key, hostname):
     p.stdin.close()
     return p.wait()
 
-def distribute_key(keyfile, hostnames):
+def dist(config, **kwargs):
     """Distribute the public key files to the remote hosts.
 
     The key file should have been prevously created with ssh-keygen."""
+    keyfile = config.optstr('ssh', 'keyfile', required=True)
+    hostnames = config.opthostnames()
     if not keyfile.endswith(".pub"):
         keyfile += ".pub"
     try:
@@ -98,8 +103,11 @@ def distribute_key(keyfile, hostnames):
             result = 1
     return result
 
-def check_access(keyfile, hostnames, check_sudo=True):
+def check(config, **kwargs):
     """Check ssh access to the remote hosts."""
+    keyfile = config.optstr('ssh', 'keyfile', required=True)
+    hostnames = config.opthostnames()
+    check_sudo = kwargs.get('sudo', True)
     if not keyfile:
         sys.stderr.write("Missing value for keyfile.\n")
         return 1
@@ -112,13 +120,13 @@ def check_access(keyfile, hostnames, check_sudo=True):
         if islocal(hostname):
             continue
         sys.stdout.write("Checking access to host %s...\n" % (hostname))
-        code = ssh(hostname, ['uname', '-a'], keyfile=keyfile, sudo=False)
+        code = _ssh(hostname, ['uname', '-a'], keyfile=keyfile, sudo=False)
         if code != 0:
             sys.stderr.write("Failed to ssh to host %s.\n" % (hostname))
             failed = True
             continue
         if check_sudo:
-            code = ssh(hostname, ['uname', '-a'], keyfile=keyfile, sudo=True)
+            code = _ssh(hostname, ['uname', '-a'], keyfile=keyfile, sudo=True)
             if code != 0:
                 sys.stderr.write("Failed to run passwordless sudo on host %s.\n" % (hostname))
                 failed = True
@@ -131,8 +139,10 @@ def check_access(keyfile, hostnames, check_sudo=True):
         code = 0
     return code
 
-def execute(keyfile, hostnames, command, exclude='', quiet=False, sudo=False):
+def execute(config, command, exclude='', quiet=False, sudo=False, **kwargs):
     """Run a command on each remote host."""
+    keyfile = config.optstr('ssh', 'keyfile', required=True)
+    hostnames = config.opthostnames()
     if not command:
         sys.stderr.write("Missing command")
         return 1
@@ -152,8 +162,7 @@ def execute(keyfile, hostnames, command, exclude='', quiet=False, sudo=False):
             continue
         if not quiet:
             sys.stdout.write("%s\n" % (hostname))
-        code = ssh(hostname, cargs, keyfile=keyfile, sudo=sudo)
+        code = _ssh(hostname, cargs, keyfile=keyfile, sudo=sudo)
         if code != 0:
             sys.stderr.write("Failed to ssh to host %s.\n" % (hostname))
     return code
-
