@@ -301,7 +301,7 @@ def init(config, ini, **kwargs):
         msg = "Creating config file"
         if not os.path.isdir(os.path.dirname(ini)):
             sys.stdout.write("Making config file directory %s\n" % (os.path.dirname(ini)))
-        os.makedirs(os.path.dirname(ini))
+            os.makedirs(os.path.dirname(ini))
     sys.stdout.write("%s %s\n" % (msg, ini))
     config.save_as(ini)
 

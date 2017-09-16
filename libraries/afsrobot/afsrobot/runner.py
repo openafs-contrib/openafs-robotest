@@ -24,10 +24,10 @@ import os
 import base64
 import sys
 import logging
-import subprocess
 import robot.run
-from afsrobot.config import islocal
 from afsutil.system import sh
+from afsrobot.config import islocal
+from afsrobot.ssh import ssh
 
 logger = logging.getLogger(__name__)
 
@@ -87,27 +87,17 @@ def _sudo(args):
     """Build sudo command line args."""
     return ['sudo', '-n'] + args
 
-def _ssh(hostname, ident, args):
-    """Build ssh command line args."""
-    cmdline = subprocess.list2cmdline(args)
-    ssh = ['ssh', '-q', '-t', '-o', 'PasswordAuthentication=no']
-    if ident:
-        ssh.append('-i')
-        ssh.append(ident)
-    ssh.append(hostname)
-    ssh.append(cmdline)
-    return ssh
-
 class Node(object):
     """A node (host) to be configured; may be the local host or a remote host."""
 
-    def __init__(self, name, config, showcmds=False, **kwargs):
+    def __init__(self, name, config, **kwargs):
         """Initialize this node.
 
-        name: the hostname for this node
-        c: the config object
-        showcmds: display commands
+        name: hostname of this node
+        config: parsed configuration
         """
+        if name is None or name == '':
+            name = 'localhost'
         section = "host:{0}".format(name)
         self.name = name
         self.config = config
@@ -115,18 +105,14 @@ class Node(object):
         self.installer = config.optstr(section, 'installer', default='none') != 'none'
         self.is_server = config.optbool(section, "isfileserver") or config.optbool(section, "isdbserver")
         self.is_client = config.optbool(section, "isclient")
-        self.ident = config.optstr('ssh', 'keyfile')
-        self.islocal = islocal(name)
-        self.showcmds = showcmds
 
-    def run(self, args):
-        """Run a command, with ssh if remote."""
-        if not self.islocal:
-            args = _ssh(self.name, self.ident, args)
-        if self.showcmds:
-            cmdline = subprocess.list2cmdline(args)
-            sys.stdout.write("{0}\n".format(cmdline))
+    def execute(self, args):
+        """Run the command."""
         sh(*args, prefix=self.name, quiet=False, output=False)
+
+    def version(self):
+        """Run afsutil version."""
+        self.execute((_afsutil('version', None, [])))
 
     def install(self):
         """Run afsutil install."""
@@ -173,7 +159,7 @@ class Node(object):
                 if k == 'afsd' or k == 'bosserver':
                     args.append('-o')
                     args.append("%s=%s" % (k,v))
-        self.run(_sudo(_afsutil('install', None, args)))
+        self.execute(_sudo(_afsutil('install', None, args)))
 
     def keytab_create(self):
         """Run afsutil keytab create."""
@@ -201,7 +187,7 @@ class Node(object):
         if secret:
             args.append('--secret')
             args.append(secret)
-        self.run(_sudo(_afsutil('keytab', 'create', args)))
+        self.execute(_sudo(_afsutil('keytab', 'create', args)))
 
     def keytab_setkey(self):
         """Run afsutil keytab setkey."""
@@ -228,7 +214,7 @@ class Node(object):
         if keyformat:
             args.append('--format')
             args.append(keyformat)
-        self.run(_sudo(_afsutil('keytab', 'setkey', args)))
+        self.execute(_sudo(_afsutil('keytab', 'setkey', args)))
 
     def keytab_destroy(self):
         """Run afsutil keytab destroy."""
@@ -241,15 +227,15 @@ class Node(object):
             args.append('--keytab')
             args.append(keytab)
         args.append('--force')
-        self.run(_sudo(_afsutil('keytab', 'destroy', args)))
+        self.execute(_sudo(_afsutil('keytab', 'destroy', args)))
 
     def start(self, comp):
         """Run afsutil start."""
-        self.run(_sudo(_afsutil('start', comp, [])))
+        self.execute(_sudo(_afsutil('start', comp, [])))
 
     def stop(self, comp):
         """Run afsutil stop."""
-        self.run(_sudo(_afsutil('stop', comp, [])))
+        self.execute(_sudo(_afsutil('stop', comp, [])))
 
     def newcell(self):
         """Run afsutil newcell."""
@@ -279,7 +265,7 @@ class Node(object):
             for k,v in c.items('options'):
                 args.append('-o')
                 args.append("%s=%s" % (k,v))
-        self.run(_sudo(_afsutil('newcell', None, args)))
+        self.execute(_sudo(_afsutil('newcell', None, args)))
 
     def mtroot(self):
         """Run afsutil mtroot."""
@@ -325,7 +311,7 @@ class Node(object):
             for k,v in c.items('options'):
                 args.append('-o')
                 args.append("%s=%s" % (k,v))
-        self.run(_afsutil('mtroot', None, args))
+        self.execute(_afsutil('mtroot', None, args))
 
     def login(self, user):
         """Run afsutil login."""
@@ -359,20 +345,36 @@ class Node(object):
             if keytab:
                 args.append('--keytab')
                 args.append(keytab)
-        self.run(_afsutil('login', None, args))
+        self.execute(_afsutil('login', None, args))
 
     def remove(self):
         """Run afsutil remove."""
         args = ['--purge']
-        self.run(_sudo(_afsutil('remove', None, args)))
+        self.execute(_sudo(_afsutil('remove', None, args)))
+
+class RemoteNode(Node):
+    """Remote node (host) to be setup."""
+
+    def __init__(self, name, config, **kwargs):
+        """Initialize the remote node.
+
+        name: hostname of this remote node
+        config: parsed configuration
+        """
+        Node.__init__(self, name, config, **kwargs)
+        self.ident = config.optstr('ssh', 'keyfile')
+
+    def execute(self, args):
+        """Run the remote command."""
+        ssh(self.name, self.ident, args)
+
 
 def _get_progress(**kwargs):
     quiet = kwargs.get('quiet', False)
     verbose = kwargs.get('verbose', False)
-    showcmds = kwargs.get('showcmds', False)
     if quiet:
         progress = NoMessage
-    elif verbose or showcmds:
+    elif verbose:
         progress = SimpleMessage
     else:
         progress = ProgressMessage
@@ -398,7 +400,10 @@ def _get_nodes(config, **kwargs):
         'clients': [],
     }
     for name in config.opthostnames():
-        node = Node(name, config, **kwargs)
+        if islocal(name):
+            node = Node(name, config, **kwargs)
+        else:
+            node = RemoteNode(name, config, **kwargs)
         nodes['all'].append(node)
         if node.installer:
             nodes['install'].append(node)

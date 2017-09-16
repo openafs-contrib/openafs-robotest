@@ -23,62 +23,47 @@ import sys
 import subprocess
 import shlex
 from afsrobot.config import islocal
+from afsutil.system import sh, CommandFailed
 
-def _ssh(hostname, args, keyfile=None, sudo=False):
-    """Helper to run command on remote hosts using ssh."""
-    if sudo:
-        args.insert(0, "-n")  # requires NOPASSWD in sudoers
-        args.insert(0, "sudo")
-    command = subprocess.list2cmdline(args)
-    if keyfile:  # passwordless
-        args = ['ssh', '-q', '-t', '-i', keyfile, '-o', 'PasswordAuthentication no', hostname, command]
-    else:
-        args = ['ssh', '-q', hostname, command]
-    return subprocess.call(args)
+def _sudo(args):
+    """Build sudo command line args."""
+    return ['sudo', '-n'] + args
+
+def ssh(hostname, ident, args):
+    """Execute the remote command with ssh."""
+    cmdline = subprocess.list2cmdline(args)
+    args = ['ssh', '-q', '-t', '-o', 'PasswordAuthentication=no']
+    if ident:
+        args.append('-i')
+        args.append(ident)
+    args.append(hostname)
+    args.append(cmdline)
+    sh(*args, prefix=hostname, quiet=False, output=False)
 
 def create(config, keyfile, keytype='rsa', **kwargs):
     """Create a public/private key pair.
 
-    Uses ssh-keygen to create the key files."""
+    Run ssh-keygen to create the ssh ident files."""
     if os.access(keyfile, os.F_OK):
-        # No not clobber the existing key file. (It can confuse the
-        # ssh-agent.)
-        sys.stderr.write("Key file %s already exists.\n" % (keyfile))
+        # Do not clobber the existing key file; it will confuse
+        # the ssh-agents.
+        sys.stderr.write("Skipping ssh-keygen; file %s already exists.\n" % (keyfile))
         return 1
     sys.stdout.write("Creating ssh key file %s.\n" % (keyfile))
-    cmd = ['ssh-keygen', '-t', keytype, '-f', keyfile]
-    code = subprocess.call(cmd)
-    if code != 0:
-        sys.stderr.write("ssh-keygen failed; exit code %d\n" % (code))
-    else:
-        config.set_value('ssh', 'keyfile', keyfile)
-        config.save()
-    return code
-
-def _copyid(key, hostname):
-    """Distribute the public key files to the remote host.
-
-    Do not use ssh-copy-id, since that is not available everywhere. Instead
-    copy the file using ssh. This assumes password authentication is available.
-    """
-    copyid = \
-        "umask 077 ; " \
-        "test -d ~/.ssh || mkdir ~/.ssh ; " \
-        "cat >> ~/.ssh/authorized_keys && " \
-        "(test -x /sbin/restorecon && " \
-        "/sbin/restorecon ~/.ssh ~/.ssh/authorized_keys >/dev/null 2>&1 || " \
-        "true)"
-    p = subprocess.Popen(['ssh', hostname, copyid], stdin=subprocess.PIPE)
-    p.stdin.write(key)
-    p.stdin.close()
-    return p.wait()
+    args = ['ssh-keygen', '-t', keytype, '-f', keyfile]
+    sh(*args, quiet=False, output=False)
+    config.set_value('ssh', 'keyfile', keyfile)
+    config.save()
 
 def dist(config, **kwargs):
-    """Distribute the public key files to the remote hosts.
+    """Distribute the public key files to the configured remote hosts.
 
-    The key file should have been prevously created with ssh-keygen."""
+    The key file should have been prevously created with the create()
+    function.
+
+    Password authentication must be available for each configured host.
+    """
     keyfile = config.optstr('ssh', 'keyfile', required=True)
-    hostnames = config.opthostnames()
     if not keyfile.endswith(".pub"):
         keyfile += ".pub"
     try:
@@ -91,53 +76,60 @@ def dist(config, **kwargs):
     if len(key) == 0:
         sys.stderr.write("No identities found in '%s'.\n" % (keyfile))
         return 1
-    result = 0
+    hostnames = config.opthostnames()
     for hostname in hostnames:
         if islocal(hostname):
             sys.stdout.write("Skipping local host '%s'.\n" % (hostname))
             continue
+        # Avoid ssh-copy-id since it is not available on all platforms. Instead
+        # copy the file using a pipe over ssh and this shell script (based on
+        # ssh-copy-id).
+        script = \
+        "umask 077 ; " \
+        "test -d ~/.ssh || mkdir ~/.ssh ; " \
+        "cat >> ~/.ssh/authorized_keys && " \
+        "(test -x /sbin/restorecon && " \
+        "/sbin/restorecon ~/.ssh ~/.ssh/authorized_keys >/dev/null 2>&1 || true)"
         sys.stdout.write("Copying ssh identities in '%s' to host '%s'.\n" % (keyfile, hostname))
-        code = _copyid(key, hostname)
+        p = subprocess.Popen(['ssh', hostname, script], stdin=subprocess.PIPE)
+        p.stdin.write(key)
+        p.stdin.close()
+        code = p.wait()
         if code != 0:
             sys.stderr.write("Failed to copy ssh identities to host '%s'; exit code %d.\n" % (hostname, code))
-            result = 1
-    return result
+            return 1
+    return 0
 
-def check(config, **kwargs):
+def check(config, check_sudo=True, **kwargs):
     """Check ssh access to the remote hosts."""
+    failed = []
     keyfile = config.optstr('ssh', 'keyfile', required=True)
     hostnames = config.opthostnames()
-    check_sudo = kwargs.get('sudo', True)
     if not keyfile:
         sys.stderr.write("Missing value for keyfile.\n")
         return 1
     if not os.access(keyfile, os.F_OK):
         sys.stderr.write("Cannot access keyfile %s.\n" % (keyfile))
         return 1
-    sys.stdout.write("Checking ssh access...\n")
-    failed = False
     for hostname in hostnames:
         if islocal(hostname):
             continue
-        sys.stdout.write("Checking access to host %s...\n" % (hostname))
-        code = _ssh(hostname, ['uname', '-a'], keyfile=keyfile, sudo=False)
-        if code != 0:
-            sys.stderr.write("Failed to ssh to host %s.\n" % (hostname))
-            failed = True
+        sys.stdout.write("Checking ssh access to host %s\n" % (hostname))
+        try:
+            ssh(hostname, keyfile, ['uname', '-a'])
+        except CommandFailed:
+            failed.append(hostname)
             continue
-        if check_sudo:
-            code = _ssh(hostname, ['uname', '-a'], keyfile=keyfile, sudo=True)
-            if code != 0:
-                sys.stderr.write("Failed to run passwordless sudo on host %s.\n" % (hostname))
-                failed = True
-                continue
+        if not check_sudo:
+            continue
+        try:
+            ssh(hostname, keyfile, _sudo(['id']))
+        except CommandFailed:
+            failed.append(hostname)
     if failed:
-        sys.stderr.write("Failed to access all hosts.\n");
-        code = 1
-    else:
-        sys.stdout.write("Ok.\n");
-        code = 0
-    return code
+        sys.stderr.write("Failed to access hosts: %s\n" % (",".join(failed)))
+        return 1
+    return 0
 
 def execute(config, command, exclude='', quiet=False, sudo=False, **kwargs):
     """Run a command on each remote host."""
@@ -147,7 +139,9 @@ def execute(config, command, exclude='', quiet=False, sudo=False, **kwargs):
         sys.stderr.write("Missing command")
         return 1
     exclude = exclude.split(',')
-    cargs = shlex.split(command)  # Note: shlex handles quoting properly.
+    args = shlex.split(command)  # Note: shlex handles quoting properly.
+    if sudo:
+        args = _sudo(args)
     if not keyfile:
         sys.stderr.write("Missing value for keyfile.\n")
         return 1
@@ -160,9 +154,7 @@ def execute(config, command, exclude='', quiet=False, sudo=False, **kwargs):
             continue
         if hostname in exclude:
             continue
-        if not quiet:
-            sys.stdout.write("%s\n" % (hostname))
-        code = _ssh(hostname, cargs, keyfile=keyfile, sudo=sudo)
+        code = ssh(hostname, keyfile, args)
         if code != 0:
             sys.stderr.write("Failed to ssh to host %s.\n" % (hostname))
     return code

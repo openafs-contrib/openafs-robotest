@@ -253,7 +253,6 @@ def main():
     p = subparsers.add_parser('setup', help='install and setup OpenAFS')
     common_options(p)
     p.add_argument('-n', '--dry-run', dest='dryrun', help="Do not run commands", default=False, action='store_true')
-    p.add_argument('-s', '--show-commands', dest='showcmds', help="Show commands", default=False, action='store_true')
     p.set_defaults(_function=afsrobot.runner.setup, _logname='setup.log')
 
     #
@@ -273,7 +272,6 @@ def main():
     common_options(p)
     p.add_argument('-u', '--user', help="user name (default: admin)", default=None)
     p.add_argument('-n', '--dry-run', dest='dryrun', help="Do not run commands", default=False, action='store_true')
-    p.add_argument('-s', '--show-commands', dest='showcmds', help="Show commands", default=False, action='store_true')
     p.set_defaults(_function=afsrobot.runner.login, _logname='login.log')
 
     #
@@ -282,7 +280,6 @@ def main():
     p = subparsers.add_parser('teardown', help="remove OpenAFS")
     common_options(p)
     p.add_argument('-n', '--dry-run', dest='dryrun', help="Do not run commands", default=False, action='store_true')
-    p.add_argument('-s', '--show-commands', dest='showcmds', help="Show commands", default=False, action='store_true')
     p.set_defaults(_function=afsrobot.runner.teardown, _logname='teardown.log')
 
     rc = 0
