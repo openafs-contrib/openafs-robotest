@@ -22,10 +22,9 @@
 
 import os
 import logging
-import subprocess
 import time
 
-from afsutil.system import which, CommandFailed
+from afsutil.system import sh, which, CommandFailed
 from afsutil.transarc import AFS_SRV_BIN_DIR, AFS_SRV_SBIN_DIR, AFS_WS_DIR
 
 logger = logging.getLogger(__name__)
@@ -52,46 +51,38 @@ RXDEBUG = None
 TOKENS = None
 
 def _run(cmd, args=None, quiet=False, retry=0, wait=1, cleanup=None):
-    """Run a command and return the output.
+    """Execute a command and return the output as a string.
 
-    Raises a CommandFailed exception if the command exits with an
-    a non zero exit code."""
+    cmd:     command to be executed
+    args:    list of command line arguments
+    quiet:   do not log command and output
+    retry:   number of retry attempts, 0 for none
+    wait:    delay between retry attempts
+    cleanup: cleanup function to run before retry
+
+    Raises a CommandFailed exception if the command exits with
+    a non-zero exit code."""
+    count = 0 # retry counter
     if args is None:
         args = []
-    else:
+    elif not isinstance(args, list):
         args = list(args)
-    cmd = which(cmd, raise_errors=True)
-    args.insert(0, cmd)
-    for attempt in xrange(0, (retry + 1)):
-        if attempt > 0:
-            c = os.path.basename(cmd)
-            logger.info("Retrying %s command in %d seconds; retry %d of %d.", c, wait, attempt, retry)
-            time.sleep(wait)
-            if cleanup:
-                cleanup()  # Try to cleanup the mess from the last failure.
-        logger.debug("running: %s", subprocess.list2cmdline(args))
-        proc = subprocess.Popen(
-                   args,
-                   executable=cmd,
-                   shell=False,
-                   bufsize=-1,
-                   env=os.environ,
-                   stdout=subprocess.PIPE,
-                   stderr=subprocess.PIPE)
-        output,error = proc.communicate()
-        rc = proc.returncode
-        logger.debug("result of %s; rc=%d", cmd, rc)
-        if output:
-            logger.debug("<stdout>")
-            logger.debug(output)
-            logger.debug("</stdout>")
-        if error:
-            logger.debug("<stderr>")
-            logger.debug(error)
-            logger.debug("</stderr>")
-        if rc == 0:
-            return output
-    raise CommandFailed(args, rc, output, error);
+    args.insert(0, which(cmd, raise_errors=True))
+    while True:
+        try:
+            lines = sh(*args, output=True, quite=quiet)
+            break
+        except CommandFailed as cf:
+            if count < retry:
+                count += 1
+                logger.info("Retrying %s command in %d seconds; retry %d of %d.",
+                    cmd, wait, count, retry)
+                time.sleep(wait)
+                if cleanup:
+                    cleanup()  # Try to cleanup the mess from the last failure.
+            else:
+                raise cf
+    return "\n".join(lines)
 
 def asetkey(*args, **kwargs):
     global ASETKEY

@@ -445,12 +445,12 @@ class Cell(object):
         try:
             pts('createuser', '-name', admin, retry=1, wait=80)
         except CommandFailed as e:
-            if not "Entry for name already exists" in e.err:
+            if not "Entry for name already exists" in e.out:
                 raise
         try:
             pts('adduser', '-user', admin, '-group', 'system:administrators')
         except CommandFailed as e:
-            if not "Entry for id already exists" in e.err:
+            if not "Entry for id already exists" in e.out:
                 raise
 
     def _wscell(self):

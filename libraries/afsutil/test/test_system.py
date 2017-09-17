@@ -29,20 +29,19 @@ from afsutil.system import directory_should_not_exist
 from afsutil.system import is_loaded
 from afsutil.system import is_running
 from afsutil.system import network_interfaces
-from afsutil.system import run
+from afsutil.system import sh
 from afsutil.system import symlink
 from afsutil.system import touch
 from afsutil.system import which
 
 class SystemTest(unittest.TestCase):
 
-    def test_run(self):
-        self.assertIsNotNone(run("/bin/ls", args=["/bin"]))
-        self.assertIn("sh", run("/bin/ls", args=["/bin"]).splitlines())
+    def test_sh(self):
+        self.assertIsNotNone(sh("/bin/ls", "/bin"))
+        self.assertIn("sh", sh("/bin/ls", "/bin", output=True))
 
-    def test_run_fail(self):
-        self.assertRaises(CommandFailed, run, "false")
-        self.assertRaises(CommandFailed, run, "false", retry=2)
+    def test_sh_fail(self):
+        self.assertRaises(CommandFailed, sh, "false")
 
     def test_which(self):
         self.assertEqual(which("sh"), "/bin/sh")
@@ -98,7 +97,7 @@ class SystemTest(unittest.TestCase):
             self.assertNotRegexpMatches(addr, r'^127\.\d+\.\d+\.\d+$')
 
     def test_is_loaded(self):
-        output = run("/bin/mount")
+        output = "\n".join(sh("/bin/mount", output=True))
         if "AFS on /afs" in output:
             self.assertTrue(is_loaded('openafs'))
         else:

@@ -61,16 +61,15 @@ class RingBuffer:
 
 class CommandFailed(Exception):
     """Command exited with a non-zero exit code."""
-    def __init__(self, args, code, out, err):
+    def __init__(self, args, code, out):
         self.cmd = subprocess.list2cmdline(args)
         self.args = args
         self.code = code
         self.out = out
-        self.err = err
 
     def __str__(self):
-        msg = "Command failed! %s; code=%d, stderr='%s'" % \
-              (self.cmd, self.code, self.err.strip())
+        msg = "Command failed! %s; code=%d, out='%s'" % \
+              (self.cmd, self.code, self.out.strip())
         return repr(msg)
 
 def sh(*args, **kwargs):
@@ -78,42 +77,56 @@ def sh(*args, **kwargs):
 
     args:    command-line arguments
     output:  return output lines as a list
-    ofilter: function to filter output lines
+    ofilter: output line filter function
     quiet:   do not log command line and output
     prefix:  log message prefix
     """
-    args = list(args)
     output = kwargs.get('output', False)
     ofilter = kwargs.get('ofilter', None)
     quiet = kwargs.get('quiet', False)
     prefix = kwargs.get('prefix', '')
-    if prefix:
-        prefix = "%s: " % (prefix)
-    args[0] = which(args[0], raise_errors=True)
-    args = [arg.__str__() for arg in args]  # subprocess expects string args.
-    output_lines = []
-    tail = RingBuffer(20)  # Save the last few lines for error reporting.
 
-    # Redirect stderr to the same pipe to capture errors too.
+    # Fixup the argument list for Popen.
+    # 1. Create a list if just one arg was given.
+    # 2. Convert numeric args to strings.
+    if isinstance(args, basestring):
+        args = [args]
+    args = [arg.__str__() for arg in args]
+
+    # Be sure the first arg is actually a program, otherwise Popen
+    # will fail with a cryptic exception.
+    args[0] = which(args[0], raise_errors=True)
+
+    # Execute command and process output.
+    lines = []
+    tail = RingBuffer(20)  # Save the tail for error reporting.
     if not quiet:
         cmdline = subprocess.list2cmdline(args)
         logger.info("running: %s", cmdline)
-    p = subprocess.Popen(args, bufsize=1, env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    p = subprocess.Popen(args,
+                        bufsize=1,
+                        env=os.environ,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.STDOUT) # Redirect stderr capture errors.
     with p.stdout:
         for line in iter(p.stdout.readline, ''):
             line = line.rstrip("\n")
             tail.append(line)
             if not quiet:
-                logger.info("%s%s", prefix, line)
+                if prefix:
+                    logger.info("%s: %s", prefix, line)
+                else:
+                    logger.info("%s", line)
             if output:
                 if ofilter:
                     line = ofilter(line)
                 if line:
-                    output_lines.append(line)
+                    lines.append(line)
     code = p.wait()
     if code != 0:
-        raise CommandFailed(args, code, "", "\n".join(tail.get()))
-    return output_lines
+        lines = "\n".join(tail.get())
+        raise CommandFailed(args, code, lines)
+    return lines
 
 def which(program, extra_paths=None, raise_errors=False):
     """Find a program in the PATH."""

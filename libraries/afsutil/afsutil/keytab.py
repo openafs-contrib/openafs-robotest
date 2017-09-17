@@ -97,13 +97,10 @@ def _check_for_extended_keyfile_support():
     try:
         usage = asetkey(quiet=True)
     except CommandFailed as e:
-        if e.code == 1 and "usage" in e.err:
-            usage = e.err
-        else:
-            raise e
+        usage = e.out
+    logger.debug("asetkey usage: %s", usage)
     if usage is None or not "usage" in usage:
         raise AssertionError("Failed to get asetkey usage.")
-    logger.debug("asetkey usage: %s", usage)
     new_asetkey = "add <type> <kvno> <subtype> <keyfile> <princ>" in usage
     if new_asetkey:
         logger.info("asetkey supports extended key format.")
