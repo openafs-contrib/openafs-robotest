@@ -26,7 +26,6 @@ import re
 import socket
 import subprocess
 import sys
-import time
 
 logger = logging.getLogger(__name__)
 
@@ -74,50 +73,15 @@ class CommandFailed(Exception):
               (self.cmd, self.code, self.err.strip())
         return repr(msg)
 
-def run(cmd, args=None, quiet=False, retry=0, wait=1, cleanup=None):
-    """Run a command and return the output.
-
-    Raises a CommandFailed exception if the command exits with an
-    a non zero exit code."""
-    if args is None:
-        args = []
-    else:
-        args = list(args)
-    cmd = which(cmd, raise_errors=True)
-    args.insert(0, cmd)
-    for attempt in xrange(0, (retry + 1)):
-        if attempt > 0:
-            c = os.path.basename(cmd)
-            logger.info("Retrying %s command in %d seconds; retry %d of %d.", c, wait, attempt, retry)
-            time.sleep(wait)
-            if cleanup:
-                cleanup()  # Try to cleanup the mess from the last failure.
-        logger.debug("running: %s", subprocess.list2cmdline(args))
-        proc = subprocess.Popen(
-                   args,
-                   executable=cmd,
-                   shell=False,
-                   bufsize=-1,
-                   env=os.environ,
-                   stdout=subprocess.PIPE,
-                   stderr=subprocess.PIPE)
-        output,error = proc.communicate()
-        rc = proc.returncode
-        logger.debug("result of %s; rc=%d", cmd, rc)
-        if output:
-            logger.debug("<stdout>")
-            logger.debug(output)
-            logger.debug("</stdout>")
-        if error:
-            logger.debug("<stderr>")
-            logger.debug(error)
-            logger.debug("</stderr>")
-        if rc == 0:
-            return output
-    raise CommandFailed(args, rc, output, error);
-
 def sh(*args, **kwargs):
-    """Run the command line and write the output to the logger."""
+    """Execute the command line arguments.
+
+    args:    command-line arguments
+    output:  return output lines as a list
+    ofilter: function to filter output lines
+    quiet:   do not log command line and output
+    prefix:  log message prefix
+    """
     args = list(args)
     output = kwargs.get('output', False)
     ofilter = kwargs.get('ofilter', None)
@@ -133,7 +97,7 @@ def sh(*args, **kwargs):
     # Redirect stderr to the same pipe to capture errors too.
     if not quiet:
         cmdline = subprocess.list2cmdline(args)
-        logger.info("running %s", cmdline)
+        logger.info("running: %s", cmdline)
     p = subprocess.Popen(args, bufsize=1, env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     with p.stdout:
         for line in iter(p.stdout.readline, ''):
@@ -227,6 +191,7 @@ def is_running(program):
     return program in get_running()
 
 def afs_mountpoint():
+    mountpoint = None
     uname = os.uname()[0]
     if uname == 'Linux':
         pattern = r'^AFS on (/.\S+)'
@@ -235,12 +200,11 @@ def afs_mountpoint():
     else:
         raise AssertionError("Unsupported operating system: %s" % (uname))
     mount = which('mount', extra_paths=['/bin', '/sbin', '/usr/sbin'])
-    output = run(mount)
-    found = re.search(pattern, output, re.M)
-    if found:
-        mountpoint = found.group(1)
-    else:
-        mountpoint = None
+    output = sh(mount, output=True)
+    for line in output:
+        found = re.search(pattern, line)
+        if found:
+            mountpoint = found.group(1)
     return mountpoint
 
 def is_afs_mounted():
@@ -252,7 +216,7 @@ def afs_umount():
     afs = afs_mountpoint()
     if afs:
         umount = which('umount', extra_paths=['/bin', '/sbin', '/usr/sbin'])
-        run(umount, args=[afs])
+        sh(umount, afs)
 
 def nproc():
     """Return the number of processing units."""
@@ -264,8 +228,8 @@ def nproc():
 def _linux_network_interfaces():
     """Return list of non-loopback network interfaces."""
     addrs = []
-    out = run("/sbin/ip", args=["-oneline", "-family", "inet", "addr", "show"])
-    for line in out.splitlines():
+    output = sh('/sbin/ip', '-oneline', '-family', 'inet', 'addr', 'show', output=True)
+    for line in output:
         match = re.search(r'inet (\d+\.\d+\.\d+\.\d+)', line)
         if match:
             addr = match.group(1)
@@ -300,13 +264,14 @@ def _linux_configure_dynamic_linker(path):
         logger.debug("Writing %s", conf)
         for path in paths:
             f.write("%s\n" % path)
-    run("/sbin/ldconfig")
+    sh('/sbin/ldconfig')
 
 def _linux_unload_module():
-    output = run('/sbin/lsmod')
-    kmods = re.findall(r'^(libafs|openafs)\s', output, re.M)
-    for kmod in kmods:
-        run('rmmod', args=[kmod])
+    output = sh('/sbin/lsmod', output=True)
+    for line in output:
+        kmods = re.findall(r'^(libafs|openafs)\s', line)
+        for kmod in kmods:
+            sh('rmmod', kmod)
 
 def _linux_detect_gfind():
     return which('find')
@@ -326,8 +291,8 @@ def _solaris_network_interfaces_old():
 def _solaris_network_interfaces():
     """Return list of non-loopback network interfaces."""
     addrs = []
-    out = run("ipadm", args=["show-addr", "-p", "-o", "STATE,ADDR"])
-    for line in out.splitlines():
+    output = sh('ipadm', 'show-addr', '-p', '-o', 'STATE,ADDR', output=True)
+    for line in output:
         match = re.match(r'ok:(\d+\.\d+\.\d+\.\d+)', line)
         if match:
             addr = match.group(1)
@@ -337,8 +302,8 @@ def _solaris_network_interfaces():
 
 def _solaris_is_loaded(kmod):
     """Returns the list of currently loaded kernel modules."""
-    out = run("/usr/sbin/modinfo", args=["-w"])
-    for line in out.splitlines()[1:]: # skip header line
+    output = sh('/usr/sbin/modinfo', '-w', output=True)
+    for line in output[1:]: # skip header line
         # Fields are: Id Loadaddr Size Info Rev Module (Name)
         m = re.match(r'\s*(\d+)\s+\S+\s+\S+\s+\S+\s+\d+\s+(\S+)', line)
         if not m:
@@ -417,13 +382,13 @@ def _solaris_configure_dynamic_linker(path):
     if not os.path.isdir(path):
         raise AssertionError("Failed to configure dynamic linker: path %s not found." % (path))
     _so_symlinks(path)
-    run("/usr/bin/crle", args=["-u", "-l", path])
-    run("/usr/bin/crle", args=["-64", "-u", "-l", path])
+    sh('/usr/bin/crle', '-u', '-l', path)
+    sh('/usr/bin/crle', '-64', '-u', '-l', path)
 
 def _solaris_unload_module():
     module_id = _solaris_is_loaded('afs')
     if module_id != 0:
-        run('modunload', args=["-i", module_id])
+        sh('modunload', '-i', module_id)
 
 def check_hosts_file():
     """Check for loopback addresses in the /etc/hosts file.
