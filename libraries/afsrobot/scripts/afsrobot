@@ -293,8 +293,6 @@ def main():
         sys.stderr.write("Command failed: %s, code %d\n" % (e.cmd, e.code))
         sys.stderr.write("output:\n")
         sys.stderr.write("%s\n" % (e.out))
-        sys.stderr.write("error:\n")
-        sys.stderr.write("%s\n" % (e.err))
         if rc == 0:
             rc = 1
     except Exception as e:
