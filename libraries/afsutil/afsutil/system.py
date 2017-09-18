@@ -59,6 +59,9 @@ class RingBuffer:
         return self.data
 
 
+class CommandMissing(Exception):
+    """Command not found."""
+
 class CommandFailed(Exception):
     """Command exited with a non-zero exit code."""
     def __init__(self, args, code, out):
@@ -144,14 +147,21 @@ def sh(*args, **kwargs):
     return lines
 
 def which(program, extra_paths=None, raise_errors=False):
-    """Find a program in the PATH."""
-    dirname, basename = os.path.split(program)
+    """Find a program in the PATH.
+
+    program: program name or program full path
+    extra_paths: list of paths to search in addition to PATH
+    raise_errors: raise an exception if not found (default: False)
+    """
+    if not isinstance(program, basestring):
+        raise ValueError("which() requires a string argument")
+    dirname,basename = os.path.split(program)
     if dirname:
         # Full path was given; verify it is an executable file.
         if os.path.isfile(program) and os.access(program, os.X_OK):
             return program
         if raise_errors:
-            raise AssertionError("Program '%s' is not an executable file." % (program))
+            raise CommandMissing("Program '%s' is not an executable file." % (program))
     else:
         # Just the basename was given; search the paths.
         paths = os.environ['PATH'].split(os.pathsep)
