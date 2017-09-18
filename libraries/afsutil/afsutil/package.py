@@ -257,7 +257,7 @@ class RpmBuilder(object):
         kversions = sh(
             'rpm', '-q', '-p', '--queryformat=%{VERSION} %{RELEASE}\n',
             "{dstdir}/kmod-openafs*.rpm".format(dstdir=self.dstdir),
-            output=True, ofilter=get_kversion)
+            output=True, sed=get_kversion)
         logger.debug("Found kmods: {0}".format(", ".join(kversions)))
         return kversions
 
@@ -541,7 +541,7 @@ class RpmBuilder(object):
             '--define', 'build_userspace 1',
             '--define', 'build_modules 0',
             self.spec,
-            output=True, ofilter=name_written)
+            output=True, sed=name_written)
         if len(output) != 1:
             raise RpmBuilderError("Failed to get srpm name.")
         self.srpm = output[0]
@@ -573,7 +573,7 @@ class RpmBuilder(object):
             '--define', 'build_userspace 1',
             '--define', 'build_modules 0',
             srpm,
-            output=True, ofilter=get_wrote)
+            output=True, sed=get_wrote)
         self.built.extend(output)
 
     def build_kmod(self, srpm=None, kversion=None):
@@ -613,7 +613,7 @@ class RpmBuilder(object):
             '--define', 'build_userspace 0',
             '--define', 'build_modules 1',
             srpm,
-            output=True, ofilter=name_written)
+            output=True, sed=name_written)
         self.built.extend(output)
 
     def build_kmods(self, srpm=None, kversions=None):

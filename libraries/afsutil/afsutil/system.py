@@ -77,12 +77,12 @@ def sh(*args, **kwargs):
 
     args:    command-line arguments
     output:  return output lines as a list
-    ofilter: output line filter function
+    sed:     output line filter function
     quiet:   do not log command line and output
     prefix:  log message prefix
     """
     output = kwargs.get('output', False)
-    ofilter = kwargs.get('ofilter', None)
+    sed = kwargs.get('sed', None)
     quiet = kwargs.get('quiet', False)
     prefix = kwargs.get('prefix', '')
 
@@ -118,8 +118,8 @@ def sh(*args, **kwargs):
                 else:
                     logger.info("%s", line)
             if output:
-                if ofilter:
-                    line = ofilter(line)
+                if sed:
+                    line = sed(line)
                 if line:
                     lines.append(line)
     code = p.wait()
