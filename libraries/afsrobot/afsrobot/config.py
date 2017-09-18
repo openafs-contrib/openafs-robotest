@@ -205,10 +205,8 @@ class Config(ConfigParser.SafeConfigParser):
 
     def _print_section(self, out, section, raw):
         """Print one section to stdout."""
-        out.write("[%s]\n" % section)
         for k,v in self.items(section, raw=raw):
             out.write("%s = %s\n" % (k, v))
-        out.write("\n")
 
     def print_values(self, out=sys.stdout, section=None, raw=False):
         """Print the values to stdout.
@@ -224,7 +222,9 @@ class Config(ConfigParser.SafeConfigParser):
             self._print_section(out, section, raw)
         else:
             for section in self.sections():
+                out.write("[%s]\n" % section)
                 self._print_section(out, section, raw)
+                out.write("\n")
 
     def optstr(self, section, option, default=None, required=False):
         """Helper to lookup a configuration string option."""
@@ -305,8 +305,12 @@ def init(config, ini, **kwargs):
     sys.stdout.write("%s %s\n" % (msg, ini))
     config.save_as(ini)
 
-def list(config, out, section, raw, **kwargs):
-    config.print_values(out, section, raw)
+def list(config, out, section, raw=False, sections=False, **kwargs):
+    if sections and section is None:
+       for name in config.sections():
+           out.write("%s\n" % name)
+    else:
+        config.print_values(out, section, raw)
 
 def set(config, section, option, value, **kwargs):
     try:

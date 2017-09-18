@@ -177,8 +177,9 @@ def main():
 
     p = ssp.add_parser('list', help="show configuration values")
     common_options(p)
+    p.add_argument('section', nargs='?', metavar='<section>', help="section name", default=None)
     p.add_argument('-r', '--raw', action='store_true', help="do not expand interpolated values")
-    p.add_argument('-s', '--section', help="config section")
+    p.add_argument('-s', '--sections', action='store_true', help="list section names only")
     p.set_defaults(_function=afsrobot.config.list, out=sys.stdout)
 
     p = ssp.add_parser('set', help="set a configuration value")
