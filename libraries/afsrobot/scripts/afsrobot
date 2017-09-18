@@ -90,7 +90,7 @@ class SubCommandContext(object):
             if not os.path.isdir(logdir):
                 os.makedirs(logdir)
             self._logfile = os.path.join(logdir, logname)
-            if not self.args.quiet:
+            if not self.args.quiet and not self.args.dryrun:
                 sys.stdout.write("Writing to log file %s\n" % (self._logfile))
             fmt = '%(asctime)s %(levelname)s %(message)s'
             logging.basicConfig(level=loglevel, filename=self._logfile, format=fmt)
@@ -250,7 +250,7 @@ def main():
     #
     p = subparsers.add_parser('setup', help='install and setup OpenAFS')
     common_options(p)
-    p.add_argument('-n', '--dry-run', dest='dryrun', help="Do not run commands", default=False, action='store_true')
+    p.add_argument('-n', '--dryrun', help="print commands instead of running", default=False, action='store_true')
     p.set_defaults(_function=afsrobot.runner.setup, _logname='setup.log')
 
     #
@@ -269,7 +269,7 @@ def main():
     p = subparsers.add_parser('login', help="obtain a token")
     common_options(p)
     p.add_argument('-u', '--user', help="user name (default: admin)", default=None)
-    p.add_argument('-n', '--dry-run', dest='dryrun', help="Do not run commands", default=False, action='store_true')
+    p.add_argument('-n', '--dryrun', help="print commands instead of running", default=False, action='store_true')
     p.set_defaults(_function=afsrobot.runner.login, _logname='login.log')
 
     #
@@ -277,7 +277,7 @@ def main():
     #
     p = subparsers.add_parser('teardown', help="remove OpenAFS")
     common_options(p)
-    p.add_argument('-n', '--dry-run', dest='dryrun', help="Do not run commands", default=False, action='store_true')
+    p.add_argument('-n', '--dryrun', help="print commands instead of running", default=False, action='store_true')
     p.set_defaults(_function=afsrobot.runner.teardown, _logname='teardown.log')
 
     rc = 0

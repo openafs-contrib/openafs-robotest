@@ -111,7 +111,7 @@ def sh(*args, **kwargs):
 
     # Dryrun mode: Just print what would be run.
     if dryrun:
-        sys.stdout.write("%s\n", cmdline)
+        sys.stdout.write("%s\n" % (cmdline))
         return
 
     # Execute command and process output.

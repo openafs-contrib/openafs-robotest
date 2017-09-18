@@ -29,7 +29,7 @@ def _sudo(args):
     """Build sudo command line args."""
     return ['sudo', '-n'] + args
 
-def ssh(hostname, ident, args):
+def ssh(hostname, args, ident=None, dryrun=False):
     """Execute the remote command with ssh."""
     cmdline = subprocess.list2cmdline(args)
     args = ['ssh', '-q', '-t', '-o', 'PasswordAuthentication=no']
@@ -38,7 +38,7 @@ def ssh(hostname, ident, args):
         args.append(ident)
     args.append(hostname)
     args.append(cmdline)
-    sh(*args, prefix=hostname, quiet=False, output=False)
+    sh(*args, prefix=hostname, quiet=False, output=False, dryrun=dryrun)
 
 def create(config, keyfile, keytype='rsa', **kwargs):
     """Create a public/private key pair.
@@ -116,14 +116,14 @@ def check(config, check_sudo=True, **kwargs):
             continue
         sys.stdout.write("Checking ssh access to host %s\n" % (hostname))
         try:
-            ssh(hostname, keyfile, ['uname', '-a'])
+            ssh(hostname, ['uname', '-a'], ident=keyfile)
         except CommandFailed:
             failed.append(hostname)
             continue
         if not check_sudo:
             continue
         try:
-            ssh(hostname, keyfile, _sudo(['id']))
+            ssh(hostname, _sudo(['id']), ident=keyfile)
         except CommandFailed:
             failed.append(hostname)
     if failed:
@@ -154,7 +154,7 @@ def execute(config, command, exclude='', quiet=False, sudo=False, **kwargs):
             continue
         if hostname in exclude:
             continue
-        code = ssh(hostname, keyfile, args)
+        code = ssh(hostname, args, ident=keyfile)
         if code != 0:
             sys.stderr.write("Failed to ssh to host %s.\n" % (hostname))
     return code

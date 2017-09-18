@@ -32,6 +32,7 @@ from afsrobot.ssh import ssh
 logger = logging.getLogger(__name__)
 
 class NoMessage(object):
+    """Do not display progress messages."""
     def __init__(self, msg):
         pass
 
@@ -42,6 +43,7 @@ class NoMessage(object):
         return False
 
 class SimpleMessage(object):
+    """Display simple messages for non-progress modes."""
     def __init__(self, msg):
         self.msg = msg
 
@@ -50,10 +52,7 @@ class SimpleMessage(object):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        if exc_type is None:
-            sys.stdout.write("# ok: %s\n" % (self.msg))
-        else:
-            sys.stdout.write("# fail: %s\n" % (self.msg))
+        sys.stdout.write("\n")
         return False
 
 class ProgressMessage(object):
@@ -102,13 +101,14 @@ class Node(object):
         self.name = name
         self.config = config
         self.name = name
+        self.dryrun = kwargs.get('dryrun', False)
         self.installer = config.optstr(section, 'installer', default='none') != 'none'
         self.is_server = config.optbool(section, "isfileserver") or config.optbool(section, "isdbserver")
         self.is_client = config.optbool(section, "isclient")
 
     def execute(self, args):
         """Run the command."""
-        sh(*args, prefix=self.name, quiet=False, output=False)
+        sh(*args, prefix=self.name, quiet=False, output=False, dryrun=self.dryrun)
 
     def version(self):
         """Run afsutil version."""
@@ -366,15 +366,16 @@ class RemoteNode(Node):
 
     def execute(self, args):
         """Run the remote command."""
-        ssh(self.name, self.ident, args)
+        ssh(self.name, args, ident=self.ident, dryrun=self.dryrun)
 
 
 def _get_progress(**kwargs):
     quiet = kwargs.get('quiet', False)
     verbose = kwargs.get('verbose', False)
+    dryrun = kwargs.get('dryrun', False)
     if quiet:
         progress = NoMessage
-    elif verbose:
+    elif verbose or dryrun:
         progress = SimpleMessage
     else:
         progress = ProgressMessage
