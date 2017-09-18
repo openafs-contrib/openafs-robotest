@@ -18,7 +18,7 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-"""System utilities for setting up AFS."""
+"""System utilities."""
 
 import logging
 import os
@@ -76,15 +76,17 @@ def sh(*args, **kwargs):
     """Execute the command line arguments.
 
     args:    command-line arguments
-    output:  return output lines as a list
-    sed:     output line filter function
-    quiet:   do not log command line and output
-    prefix:  log message prefix
+    output:  return output lines as a list (default: True)
+    sed:     output line filter function (default: None)
+    quiet:   do not log command line and output (default: False)
+    prefix:  log message prefix (default: None)
+    dryrun:  print the command instead of executing it
     """
     output = kwargs.get('output', True)
     sed = kwargs.get('sed', None)
     quiet = kwargs.get('quiet', False)
-    prefix = kwargs.get('prefix', '')
+    prefix = kwargs.get('prefix', None)
+    dryrun = kwargs.get('dryrun', False)
 
     # Fixup the argument list for Popen.
     # 1. Create a list if just one arg was given.
@@ -96,13 +98,26 @@ def sh(*args, **kwargs):
     # Be sure the first arg is actually a program, otherwise Popen
     # will fail with a cryptic exception.
     args[0] = which(args[0], raise_errors=True)
+    cmdline = subprocess.list2cmdline(args)
+
+    # Dryrun mode: Just print what would be run.
+    if dryrun:
+        sys.stdout.write("%s\n", cmdline)
+        return
 
     # Execute command and process output.
     lines = []
     tail = RingBuffer(20)  # Save the tail for error reporting.
-    if not quiet:
-        cmdline = subprocess.list2cmdline(args)
-        logger.info("running: %s", cmdline)
+    if quiet:
+        if prefix:
+            logger.debug("%s: running: %s", prefix, cmdline)
+        else:
+            logger.debug("running: %s", cmdline)
+    else:
+        if prefix:
+            logger.info("%s: running: %s", prefix, cmdline)
+        else:
+            logger.info("running: %s", cmdline)
     p = subprocess.Popen(args,
                         bufsize=1,
                         env=os.environ,
