@@ -305,11 +305,6 @@ def init(config, ini, **kwargs):
     sys.stdout.write("%s %s\n" % (msg, ini))
     config.save_as(ini)
 
-def copy(config, dest, **kwargs):
-    new_config = Config()
-    new_config.load_from_file(config.filename)
-    new_config.save_as(dest)
-
 def list(config, out, section, raw, **kwargs):
     config.print_values(out, section, raw)
 

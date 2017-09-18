@@ -175,11 +175,6 @@ def main():
     common_options(p)
     p.set_defaults(_function=afsrobot.config.init, _defer_config=True)
 
-    p = ssp.add_parser('copy', help="copy configuration values to a new file")
-    common_options(p)
-    p.add_argument('dest', metavar='<tofile>', help="destination filename")
-    p.set_defaults(_function=afsrobot.config.copy)
-
     p = ssp.add_parser('list', help="show configuration values")
     common_options(p)
     p.add_argument('-r', '--raw', action='store_true', help="do not expand interpolated values")
