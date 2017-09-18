@@ -78,24 +78,30 @@ class CommandFailed(Exception):
 def sh(*args, **kwargs):
     """Execute the command line arguments.
 
-    args:    command-line arguments
-    output:  return output lines as a list (default: True)
-    sed:     output line filter function (default: None)
-    quiet:   do not log command line and output (default: False)
-    prefix:  log message prefix (default: None)
-    dryrun:  print the command instead of executing it
+    Execute the command line and optionally return the output as
+    a list of lines.  Raises a CommandFailed exception if the
+    command exits with a non-zero code.
+
+    args:     command-line arguments
+    output:   return output lines as a list (default: True)
+    quiet:    do not log command line and output (default: False)
+    prefix:   log message prefix (default: None)
+    sed:      output line filter function (default: None)
+    dryrun:   print the command instead of executing it (defualt: False)
+    tailsize: number of lines to report when output=False (default:20)
     """
     output = kwargs.get('output', True)
-    sed = kwargs.get('sed', None)
     quiet = kwargs.get('quiet', False)
     prefix = kwargs.get('prefix', None)
+    sed = kwargs.get('sed', None)
     dryrun = kwargs.get('dryrun', False)
+    tailsize = kwargs.get('tailsize', 20)
 
     # Fixup the argument list for Popen.
-    # 1. Create a list if just one arg was given.
+    # 1. Create a tuple if just one arg was given.
     # 2. Convert numeric args to strings.
     if isinstance(args, basestring):
-        args = [args]
+        args = (args)
     args = [arg.__str__() for arg in args]
 
     # Be sure the first arg is actually a program, otherwise Popen
@@ -110,7 +116,10 @@ def sh(*args, **kwargs):
 
     # Execute command and process output.
     lines = []
-    tail = RingBuffer(20)  # Save the tail for error reporting.
+    if output and not sed:
+        tail = None
+    else:
+        tail = RingBuffer(tailsize)  # Save the tail for error reporting.
     if quiet:
         if prefix:
             logger.debug("%s: running: %s", prefix, cmdline)
@@ -129,7 +138,8 @@ def sh(*args, **kwargs):
     with p.stdout:
         for line in iter(p.stdout.readline, ''):
             line = line.rstrip("\n")
-            tail.append(line)
+            if tail:
+                tail.append(line)
             if not quiet:
                 if prefix:
                     logger.info("%s: %s", prefix, line)
@@ -142,8 +152,10 @@ def sh(*args, **kwargs):
                     lines.append(line)
     code = p.wait()
     if code != 0:
-        lines = "\n".join(tail.get())
-        raise CommandFailed(args, code, lines)
+        if tail:
+            lines = tail.get()
+        out = "\n".join(lines)
+        raise CommandFailed(args, code, out)
     return lines
 
 def which(program, extra_paths=None, raise_errors=False):

@@ -60,6 +60,8 @@ def _run(cmd, args=None, quiet=False, retry=0, wait=1, cleanup=None):
     wait:    delay between retry attempts
     cleanup: cleanup function to run before retry
 
+    returns: command output as a string
+
     Raises a CommandFailed exception if the command exits with
     a non-zero exit code."""
     count = 0 # retry counter
