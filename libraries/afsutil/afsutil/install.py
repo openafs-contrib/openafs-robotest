@@ -27,12 +27,14 @@ import shutil
 import socket
 import glob
 import pprint
+import shlex
 
 from afsutil.system import file_should_exist, \
                            directory_should_exist, \
                            directory_should_not_exist, \
                            network_interfaces, \
-                           mkdirp, touch, cat \
+                           mkdirp, touch, cat, sh
+
 
 logger = logging.getLogger(__name__)
 
@@ -109,6 +111,10 @@ class Installer(object):
                  purge=False,
                  verbose=False,
                  options=None,
+                 pre_install=None,
+                 post_install=None,
+                 pre_remove=None,
+                 post_remove=None,
                  **kwargs):
         """
         dirs: directories for pre/post installation/removal
@@ -120,6 +126,11 @@ class Installer(object):
         force: overwrite existing files, otherwise raise an AssertionError
         purge: delete config, volumes, and cache too.
         verbose: log more information
+        options: the command options for bosserver, afsd, etc
+        pre_install: an optional command to run before installation
+        post_install: an optional command to run after installation
+        pre_remove: an optional command to run before removal
+        post_remove: an optional command to run after removal
         """
         if dirs is None: # Default to transarc-style.
             dirs = {
@@ -144,6 +155,12 @@ class Installer(object):
         self.hostnames = hosts
         self.cellhosts = None # Defer to pre-install.
         self.options = _optlists2dict(options)
+        self.scripts = {
+            'pre_install': pre_install,
+            'post_install': post_install,
+            'pre_remove': pre_remove,
+            'post_remove': post_remove,
+        }
 
     def install(self):
         """This sould be implemented by the children."""
@@ -267,6 +284,10 @@ class Installer(object):
         # and local interface if the cell hosts are not specified. Do this
         # before we start installing to catch errors early.
         logger.debug("pre_install")
+        if self.scripts['pre_install']:
+            logger.info("Running pre-install script.")
+            args = shlex.split(self.scripts['pre_install'])
+            sh(*args, output=False)
         if self.cellhosts is None:
             if self.hostnames:
                 self.cellhosts = self._lookup_cellhosts(self.hostnames)
@@ -306,10 +327,18 @@ class Installer(object):
                 self.dirs['AFS_MOUNT_DIR'],
                 self.dirs['AFS_CACHE_DIR'],
                 cache_size)
+        if self.scripts['post_install']:
+            logger.info("Running post-install script.")
+            args = shlex.split(self.scripts['post_install'])
+            sh(*args, output=False)
 
     def pre_remove(self):
         """Pre remove steps."""
         logger.debug("pre_remove")
+        if self.scripts['pre_remove']:
+            logger.info("Running pre-remove script.")
+            args = shlex.split(self.scripts['pre_remove'])
+            sh(*args, output=False)
 
     def post_remove(self):
         """Post remove steps."""
@@ -320,6 +349,10 @@ class Installer(object):
                 self._purge_volumes()
             if self.do_client:
                 self._purge_cache()
+        if self.scripts['post_remove']:
+            logger.info("Running post-remove script.")
+            args = shlex.split(self.scripts['post_remove'])
+            sh(*args, output=False)
 
 def installer(dist='transarc', **kwargs):
     if dist == 'transarc':

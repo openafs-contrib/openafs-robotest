@@ -143,6 +143,8 @@ def main():
     p.add_argument('--csdb', help='path to CellServDB.dist file for client (default: none)', default=None)
     p.add_argument('--force', action='store_true', help='overwrite existing files')
     p.add_argument('-o', '--options', nargs='+', help="command line args: <name>=<value>", action='append')
+    p.add_argument('--pre', dest='pre_install', help='pre-install command (default: none)', default=None)
+    p.add_argument('--post', dest='post_install', help='post-install command (default: none)', default=None)
 
     p = subparsers.add_parser('remove', help="remove binaries")
     p.set_defaults(fn=afsutil.install.remove, must_be_root=True)
@@ -151,6 +153,8 @@ def main():
     p.add_argument('--components', metavar='<name>', nargs='+', choices=['client', 'server'],
                    help='components to remove', default=['client', 'server']),
     p.add_argument('--purge', action='store_true', help='remove config and data too')
+    p.add_argument('--pre', dest='pre_remove', help='pre-remove command (default: none)', default=None)
+    p.add_argument('--post', dest='post_remove', help='post-remove command (default: none)', default=None)
 
     p = subparsers.add_parser('start', help="start afs services")
     p.set_defaults(fn=afsutil.service.start, must_be_root=True)
