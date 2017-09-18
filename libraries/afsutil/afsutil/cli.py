@@ -70,7 +70,7 @@ def _run(cmd, args=None, quiet=False, retry=0, wait=1, cleanup=None):
     args.insert(0, which(cmd, raise_errors=True))
     while True:
         try:
-            lines = sh(*args, output=True, quite=quiet)
+            lines = sh(*args, quite=quiet)
             break
         except CommandFailed as cf:
             if count < retry:

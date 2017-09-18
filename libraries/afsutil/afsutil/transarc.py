@@ -186,7 +186,7 @@ class SolarisClientSetup(TransarcClientSetup):
             raise AssertionError("Unsupported operating system: %s" % (osrel))
 
     def _afs_driver_510(self):
-        output = sh('/bin/isalist', output=True)[0]
+        output = sh('/bin/isalist')[0]
         if 'amd64' in output:
             driver = '/kernel/fs/amd64/afs'
         elif 'sparcv9' in output:
@@ -196,7 +196,7 @@ class SolarisClientSetup(TransarcClientSetup):
         return driver
 
     def _afs_driver_511(self):
-        output = sh('/bin/isalist', output=True)[0]
+        output = sh('/bin/isalist')[0]
         if 'amd64' in output:
             driver = '/kernel/drv/amd64/afs'
         elif 'sparcv9' in output:

@@ -50,12 +50,12 @@ def _rc(component, action):
     unit_file = '/usr/lib/systemd/system/%s.service' % (name)
     init_script = "/etc/init.d/%s" % (name)
     if os.path.isfile(unit_file):
-        sh('systemctl', action, name)
+        sh('systemctl', action, name, output=False)
     elif os.path.isfile(init_script):
         if logger.getEffectiveLevel() == logging.DEBUG:
-            sh('/bin/bash', '-x', init_script, action)
+            sh('/bin/bash', '-x', init_script, action, output=False)
         else:
-            sh(init_script, action)
+            sh(init_script, action, output=False)
     else:
         raise AssertionError("Init script is missing for %s!" % (name))
 

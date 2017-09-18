@@ -63,7 +63,7 @@ def _sanity_check_dir():
 def _allow_git_clean(gitdir):
     clean = False
     try:
-        output = sh('git', '--git-dir', gitdir, 'config', '--bool', '--get', 'afsutil.clean', output=True)
+        output = sh('git', '--git-dir', gitdir, 'config', '--bool', '--get', 'afsutil.clean')
         if output[0] == 'true':
             clean = True
     except CommandFailed as e:
@@ -80,10 +80,10 @@ def _clean(srcdir):
     gitdir = '%s/.git' % (srcdir)
     if os.path.isdir(gitdir):
         if _allow_git_clean(gitdir):
-            sh('git', '--git-dir', gitdir, '--work-tree', srcdir, 'clean', '-f', '-d', '-x', '-q')
+            sh('git', '--git-dir', gitdir, '--work-tree', srcdir, 'clean', '-f', '-d', '-x', '-q', output=False)
     else:
         if os.path.isfile('./Makefile'): # Maybe out of tree, not in srcdir.
-            sh('make', 'clean')
+            sh('make', 'clean', output=False)
 
 def _detect_solariscc():
     search = [
@@ -123,9 +123,9 @@ def _setenv():
         _setenv_solaris()
 
 def _debian_getdeps():
-    sh('apt-get', '-y', 'build-dep', 'openafs')
-    sh('apt-get', '-y', 'install', 'linux-headers-%s' % platform.release())
-    sh('apt-get', '-y', 'install', 'libtool')
+    sh('apt-get', '-y', 'build-dep', 'openafs', output=False)
+    sh('apt-get', '-y', 'install', 'linux-headers-%s' % platform.release(), output=False)
+    sh('apt-get', '-y', 'install', 'libtool', output=False)
 
 def _centos_getdeps():
     sh('yum', 'install', '-y',
@@ -146,7 +146,8 @@ def _centos_getdeps():
        'perl-ExtUtils-Embed',
        'wget',
        'rpm-build',
-       'redhat-rpm-config')
+       'redhat-rpm-config',
+       output=False)
 
 def _opensuse_getdeps():
     sh('zypper', 'install', '-y',
@@ -165,7 +166,7 @@ def _opensuse_getdeps():
        'kernel-devel',
        'wget',
        'rpm-build',
-    )
+       output=False)
     #'perl-devel',
     #'perl-ExtUtils-Embed',
     #'redhat-rpm-config',
@@ -194,8 +195,8 @@ def _fedora_getdeps():
        'perl-ExtUtils-Embed',
        'wget',
        'rpm-build',
-       'redhat-rpm-config')
-
+       'redhat-rpm-config',
+       output=False)
 
 def _download(baseurl, filename, path):
     url = os.path.join(baseurl, filename)
@@ -240,10 +241,11 @@ def _sol11_getdeps(**kwargs):
        	   '-k', os.path.join(path, key),
        	   '-c', os.path.join(path, cert),
        	   '-G', '*',
-           '-g', 'https://pkg.oracle.com/solarisstudio/release', 'solarisstudio')
+           '-g', 'https://pkg.oracle.com/solarisstudio/release', 'solarisstudio',
+           output=False)
 
         logger.info("Getting available solarisstudio packages.")
-        output = sh('pkg', 'list', '-H', '-a', '-v', '--no-refresh', 'pkg://solarisstudio/*', output=True, quiet=True)
+        output = sh('pkg', 'list', '-H', '-a', '-v', '--no-refresh', 'pkg://solarisstudio/*', quiet=True)
         packages = {}
         installed = False # alread installed?
         for line in output:
@@ -278,7 +280,7 @@ def _sol11_getdeps(**kwargs):
                 raise AssertionError("Unable to find a solarisstudio package to install.")
 
             logger.info("Installing solarisstudio package '%s'." % (pkg))
-            sh('pkg', 'install', '--accept', pkg)
+            sh('pkg', 'install', '--accept', pkg, output=False)
 
 
         logger.info("Installing development packages.")
@@ -296,7 +298,7 @@ def _sol11_getdeps(**kwargs):
             'make',
             'onbld',
             'text/locale',
-            )
+            output=False)
         except CommandFailed as e:
             if e.code != 4:  # 4 is means installed (not an error)
                 logger.error("pkg install failed: %s" % e)
@@ -390,9 +392,9 @@ def build(**kwargs):
         _clean(srcdir)
     _setenv()
     if not os.path.exists('%s/configure' % srcdir):
-        sh('/bin/sh', '-c', 'cd %s && ./regen.sh' % srcdir)
+        sh('/bin/sh', '-c', 'cd %s && ./regen.sh' % srcdir, output=False)
     if not os.path.exists('config.status'):
-        sh('%s/configure' % srcdir, *cf)
+        sh('%s/configure' % srcdir, *cf, output=False)
     _make(jobs, target)
     if target == 'dest':
         _make_tarball(tarball)
@@ -455,9 +457,9 @@ def _client_setup():
 def _make(jobs, target):
     uname = os.uname()[0]
     if uname == "Linux":
-        sh('make', '-j', jobs, target)
+        sh('make', '-j', jobs, target, output=False)
     elif uname == "SunOS":
-        sh('make', target)
+        sh('make', target, output=False)
     else:
         raise AssertionError("Unsupported operating system: %s" % (uname))
 

@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 def rpm(*args):
     """Helper to run the rpm command."""
-    return sh('rpm', *args, output=True, quiet=True)
+    return sh('rpm', *args, quiet=True)
 
 class RpmInstaller(Installer):
     """Helper to install and remove OpenAFS RPMs."""

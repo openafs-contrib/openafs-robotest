@@ -159,7 +159,7 @@ class RpmBuilder(object):
         if gitdir:
             args.insert(1, "--git-dir")
             args.insert(2, gitdir)
-        return sh(*args, output=True, quiet=True)
+        return sh(*args, quiet=True)
 
     def get_version(self):
         """Get the version identifier for the packaging.
@@ -229,7 +229,7 @@ class RpmBuilder(object):
         kversions = sh(
             'rpm', '-q', '-a',
             '--queryformat=%{VERSION}-%{RELEASE}\n', 'kernel-devel',
-            output=True, quiet=True)
+            quiet=True)
         logger.debug("Found kernel versions: {0}".format(", ".join(kversions)))
         return kversions
 
@@ -257,7 +257,7 @@ class RpmBuilder(object):
         kversions = sh(
             'rpm', '-q', '-p', '--queryformat=%{VERSION} %{RELEASE}\n',
             "{dstdir}/kmod-openafs*.rpm".format(dstdir=self.dstdir),
-            output=True, sed=get_kversion)
+            sed=get_kversion)
         logger.debug("Found kmods: {0}".format(", ".join(kversions)))
         return kversions
 
@@ -476,20 +476,22 @@ class RpmBuilder(object):
                  '--prefix', 'openafs-{version}/'.format(**names),
                  '--output', tarfile,
                  'HEAD')
-        sh('tar', 'xf', tarfile, '-C', os.path.dirname(tarfile))
+        sh('tar', 'xf', tarfile, '-C', os.path.dirname(tarfile), output=False)
         os.remove(tarfile)
 
         logger.info("Generating source tree and documents.")
         # Note: Overwrite the extracted version string, if one.
         writefile('{topdir}/SOURCES/openafs-{version}/.version'.format(**names), version)
         sh('/bin/sh', '-c',
-            'cd {topdir}/SOURCES/openafs-{version} && ./regen.sh'.format(**names))
+            'cd {topdir}/SOURCES/openafs-{version} && ./regen.sh'.format(**names),
+            output=False)
 
         logger.info("Creating doc tarball openafs-{version}-doc.tar.bz2".format(**names))
         sh('tar', 'cjf',
            '{topdir}/SOURCES/openafs-{version}-doc.tar.bz2'.format(**names),
            '-C', '{topdir}/SOURCES'.format(**names),
-           'openafs-{version}/doc'.format(**names))
+           'openafs-{version}/doc'.format(**names),
+           output=False)
         self.generated.append('{topdir}/SOURCES/openafs-{version}-doc.tar.bz2'.format(**names))
 
         logger.info("Creating src tarball openafs-{version}-src.tar.bz2".format(**names))
@@ -497,7 +499,8 @@ class RpmBuilder(object):
            '{topdir}/SOURCES/openafs-{version}-src.tar.bz2'.format(**names),
            '-C', '{topdir}/SOURCES'.format(**names),
            '--exclude', 'doc',
-           'openafs-{version}'.format(**names))
+           'openafs-{version}'.format(**names),
+           output=False)
         self.generated.append('{topdir}/SOURCES/openafs-{version}-src.tar.bz2'.format(**names))
         # Clean up the temporary tree.
         shutil.rmtree('{topdir}/SOURCES/openafs-{version}'.format(**names))
@@ -541,7 +544,7 @@ class RpmBuilder(object):
             '--define', 'build_userspace 1',
             '--define', 'build_modules 0',
             self.spec,
-            output=True, sed=name_written)
+            sed=name_written)
         if len(output) != 1:
             raise RpmBuilderError("Failed to get srpm name.")
         self.srpm = output[0]
@@ -573,7 +576,7 @@ class RpmBuilder(object):
             '--define', 'build_userspace 1',
             '--define', 'build_modules 0',
             srpm,
-            output=True, sed=get_wrote)
+            sed=get_wrote)
         self.built.extend(output)
 
     def build_kmod(self, srpm=None, kversion=None):
@@ -613,7 +616,7 @@ class RpmBuilder(object):
             '--define', 'build_userspace 0',
             '--define', 'build_modules 1',
             srpm,
-            output=True, sed=name_written)
+            sed=name_written)
         self.built.extend(output)
 
     def build_kmods(self, srpm=None, kversions=None):
@@ -640,7 +643,7 @@ class RpmBuilder(object):
             if not createrepo:
                 logger.warning("createrepo is not installed.")
             else:
-                sh('createrepo', self.dstdir)
+                sh('createrepo', self.dstdir, output=False)
 
     def banner(self, lines):
         """Print a banner."""
@@ -679,22 +682,22 @@ class MockRpmBuilder(RpmBuilder):
         """Initialize the chroot."""
         if not self.inited:
             logger.info("Initializing chroot {0}.".format(self.chroot))
-            sh('mock', '--root', self.chroot, '--init', '--quiet')
+            sh('mock', '--root', self.chroot, '--init', '--quiet', output=False)
             self.inited = True
 
     def __del__(self):
         """Remove the chroot."""
         if self.inited and self.autoclean:
             logger.info("Removing chroot {0}.".format(self.chroot))
-            sh('mock', '--root', self.chroot, '--clean', '--quiet')
+            sh('mock', '--root', self.chroot, '--clean', '--quiet', output=False)
             self.inited = False
 
     def find_kversions_available(self):
         """List the linux kernel versions of the available kernel header packages in the chroot."""
         self.init_chroot()
-        sh('mock', '--root', self.chroot, '--install', 'yum-utils', '--quiet') # for repoquery
+        sh('mock', '--root', self.chroot, '--install', 'yum-utils', '--quiet', output=False) # for repoquery
         cmd = "repoquery --show-dupes --queryformat='%{VERSION}-%{RELEASE}' kernel-devel"
-        output = sh('mock', '--root', self.chroot, '--quiet', '--chroot', cmd, quiet=True, output=True)
+        output = sh('mock', '--root', self.chroot, '--quiet', '--chroot', cmd, quiet=True)
         logger.debug("kernel versions: {0}".format(" ".join(output)))
         return output
 
@@ -708,7 +711,8 @@ class MockRpmBuilder(RpmBuilder):
             '--buildsrpm',
             '--resultdir', resultdir,
             '--spec', self.spec,
-            '--sources', '{topdir}/SOURCES'.format(topdir=self.topdir))
+            '--sources', '{topdir}/SOURCES'.format(topdir=self.topdir),
+            output=False)
         rpms = glob.glob("{resultdir}/*.src.rpm".format(resultdir=resultdir))
         if len(rpms) != 1:
             raise RpmBuilderError("Failed to get srpm name.")
@@ -743,7 +747,8 @@ class MockRpmBuilder(RpmBuilder):
             '--resultdir', resultdir,
             '--define', 'build_userspace 1',
             '--define', 'build_modules 0',
-            srpm)
+            srpm,
+            output=False)
         if self.dstdir:
             mkdirp(self.dstdir)
             for rpm in glob.glob("{resultdir}/*.rpm".format(resultdir=resultdir)):
@@ -784,7 +789,8 @@ class MockRpmBuilder(RpmBuilder):
             '--define', 'kernvers {0}'.format(kversion),
             '--define', 'build_userspace 0',
             '--define', 'build_modules 1',
-            srpm)
+            srpm,
+            output=False)
         if self.dstdir:
             mkdirp(self.dstdir)
             for rpm in glob.glob("{resultdir}/*.rpm".format(resultdir=resultdir)):

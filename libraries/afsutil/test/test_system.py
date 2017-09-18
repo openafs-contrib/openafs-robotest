@@ -38,7 +38,7 @@ class SystemTest(unittest.TestCase):
 
     def test_sh(self):
         self.assertIsNotNone(sh("/bin/ls", "/bin"))
-        self.assertIn("sh", sh("/bin/ls", "/bin", output=True))
+        self.assertIn("sh", sh("/bin/ls", "/bin"))
 
     def test_sh_fail(self):
         self.assertRaises(CommandFailed, sh, "false")
@@ -97,7 +97,7 @@ class SystemTest(unittest.TestCase):
             self.assertNotRegexpMatches(addr, r'^127\.\d+\.\d+\.\d+$')
 
     def test_is_loaded(self):
-        output = "\n".join(sh("/bin/mount", output=True))
+        output = "\n".join(sh("/bin/mount"))
         if "AFS on /afs" in output:
             self.assertTrue(is_loaded('openafs'))
         else:

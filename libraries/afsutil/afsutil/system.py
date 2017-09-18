@@ -81,7 +81,7 @@ def sh(*args, **kwargs):
     quiet:   do not log command line and output
     prefix:  log message prefix
     """
-    output = kwargs.get('output', False)
+    output = kwargs.get('output', True)
     sed = kwargs.get('sed', None)
     quiet = kwargs.get('quiet', False)
     prefix = kwargs.get('prefix', '')
@@ -186,7 +186,7 @@ def get_running():
         ps = which('/usr/bin/ps') # avoid the old BSD variant
     else:
         ps = which('ps')
-    lines = sh(ps, '-e', '-f', output=True, quiet=True)
+    lines = sh(ps, '-e', '-f', quiet=True)
     # The first line of the `ps' output is a header line which is
     # used to find the data field columns.
     column = lines[0].index('CMD')
@@ -213,7 +213,7 @@ def afs_mountpoint():
     else:
         raise AssertionError("Unsupported operating system: %s" % (uname))
     mount = which('mount', extra_paths=['/bin', '/sbin', '/usr/sbin'])
-    output = sh(mount, output=True)
+    output = sh(mount)
     for line in output:
         found = re.search(pattern, line)
         if found:
@@ -236,12 +236,12 @@ def nproc():
     nproc = which('nproc')
     if nproc is None:
         return 1  # default
-    return int(sh('nproc', output=True)[0])
+    return int(sh('nproc')[0])
 
 def _linux_network_interfaces():
     """Return list of non-loopback network interfaces."""
     addrs = []
-    output = sh('/sbin/ip', '-oneline', '-family', 'inet', 'addr', 'show', output=True)
+    output = sh('/sbin/ip', '-oneline', '-family', 'inet', 'addr', 'show')
     for line in output:
         match = re.search(r'inet (\d+\.\d+\.\d+\.\d+)', line)
         if match:
@@ -280,7 +280,7 @@ def _linux_configure_dynamic_linker(path):
     sh('/sbin/ldconfig')
 
 def _linux_unload_module():
-    output = sh('/sbin/lsmod', output=True)
+    output = sh('/sbin/lsmod')
     for line in output:
         kmods = re.findall(r'^(libafs|openafs)\s', line)
         for kmod in kmods:
@@ -292,7 +292,7 @@ def _linux_detect_gfind():
 def _solaris_network_interfaces_old():
     """Return a list of non-loopback networks interfaces."""
     addrs = []
-    lines = sh('/usr/sbin/ifconfig', '-a', output=True, quiet=True)
+    lines = sh('/usr/sbin/ifconfig', '-a', quiet=True)
     for line in lines:
         match = re.search(r'inet (\d+\.\d+\.\d+\.\d+)', line)
         if match:
@@ -304,7 +304,7 @@ def _solaris_network_interfaces_old():
 def _solaris_network_interfaces():
     """Return list of non-loopback network interfaces."""
     addrs = []
-    output = sh('ipadm', 'show-addr', '-p', '-o', 'STATE,ADDR', output=True)
+    output = sh('ipadm', 'show-addr', '-p', '-o', 'STATE,ADDR')
     for line in output:
         match = re.match(r'ok:(\d+\.\d+\.\d+\.\d+)', line)
         if match:
@@ -315,7 +315,7 @@ def _solaris_network_interfaces():
 
 def _solaris_is_loaded(kmod):
     """Returns the list of currently loaded kernel modules."""
-    output = sh('/usr/sbin/modinfo', '-w', output=True)
+    output = sh('/usr/sbin/modinfo', '-w')
     for line in output[1:]: # skip header line
         # Fields are: Id Loadaddr Size Info Rev Module (Name)
         m = re.match(r'\s*(\d+)\s+\S+\s+\S+\s+\S+\s+\d+\s+(\S+)', line)
