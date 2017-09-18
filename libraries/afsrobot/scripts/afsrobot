@@ -216,6 +216,15 @@ def main():
     common_options(p)
     p.set_defaults(_function=afsrobot.ssh.check)
 
+    p = ssp.add_parser('copy', help="copy a file to each remote host")
+    common_options(p)
+    p.add_argument('source', help='source filename')
+    p.add_argument('dest', help='dest filename')
+    p.add_argument('-s', '--sudo', action='store_true', help="run remote command as root")
+    p.add_argument('-x', '--exclude', metavar='<hosts>', help="hosts to exclude (comma separated)", default='')
+    p.add_argument('-l', '--local', action='store_true', help="run the command on the localhost too")
+    p.set_defaults(_function=afsrobot.ssh.copy)
+
     p = ssp.add_parser('exec', help="execute a command on each remote host")
     common_options(p)
     p.add_argument('-s', '--sudo', action='store_true', help="run remote command as root")

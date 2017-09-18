@@ -76,8 +76,7 @@ def dist(config, **kwargs):
     if len(key) == 0:
         sys.stderr.write("No identities found in '%s'.\n" % (keyfile))
         return 1
-    hostnames = config.opthostnames()
-    for hostname in hostnames:
+    for hostname in config.opthostnames():
         if islocal(hostname):
             sys.stdout.write("Skipping local host '%s'.\n" % (hostname))
             continue
@@ -104,14 +103,13 @@ def check(config, check_sudo=True, **kwargs):
     """Check ssh access to the remote hosts."""
     failed = []
     keyfile = config.optstr('ssh', 'keyfile', required=True)
-    hostnames = config.opthostnames()
     if not keyfile:
         sys.stderr.write("Missing value for keyfile.\n")
         return 1
     if not os.access(keyfile, os.F_OK):
         sys.stderr.write("Cannot access keyfile %s.\n" % (keyfile))
         return 1
-    for hostname in hostnames:
+    for hostname in config.opthostnames():
         if islocal(hostname):
             continue
         sys.stdout.write("Checking ssh access to host %s\n" % (hostname))
@@ -131,10 +129,46 @@ def check(config, check_sudo=True, **kwargs):
         return 1
     return 0
 
+def copy(config, source, dest, quiet=False, exclude='', sudo=False, local=False, **kwargs):
+    """Copy a file to the remote hosts."""
+    keyfile = config.optstr('ssh', 'keyfile', required=True)
+    script = "/bin/sh -c 'cat > %s'" % (dest)
+    if sudo:
+        script = 'sudo -n %s' % (script)
+    try:
+        with open(source, 'r') as f:
+            data = f.read()
+    except Exception as e:
+        sys.stderr.write("Cannot read file %s: %s.\n" % (source, e))
+        return 1
+    code = 0
+    for hostname in config.opthostnames():
+        if hostname in exclude:
+            continue
+        if islocal(hostname):
+            if local:
+                if not quiet:
+                    sys.stdout.write("Copying file %s to localhost:%s\n" % (source, dest))
+                if sudo:
+                    sh('sudo', '-n', 'cp', source, dest)
+                else:
+                    sh('cp', source, dest, quiet=True)
+        else:
+            if not quiet:
+                sys.stdout.write("Copying file %s to %s:%s\n" % (source, hostname, dest))
+            args = ['ssh', '-q', '-t', '-o', 'PasswordAuthentication=no', '-i', keyfile, hostname, script]
+            p = subprocess.Popen(args, stdin=subprocess.PIPE)
+            p.stdin.write(data)
+            p.stdin.close()
+            code = p.wait()
+            if code != 0:
+                sys.stderr.write("Failed to copy file to host '%s'; exit code %d.\n" % (hostname, code))
+                break
+    return code
+
 def execute(config, command, exclude='', quiet=False, sudo=False, local=False, **kwargs):
     """Run a command on each remote host."""
     keyfile = config.optstr('ssh', 'keyfile', required=True)
-    hostnames = config.opthostnames()
     if not command:
         sys.stderr.write("Missing command")
         return 1
@@ -149,7 +183,9 @@ def execute(config, command, exclude='', quiet=False, sudo=False, local=False, *
         sys.stderr.write("Cannot access keyfile %s.\n" % (keyfile))
         return 1
     code = 0
-    for hostname in hostnames:
+    for hostname in config.opthostnames():
+        if hostname in exclude:
+            continue
         if islocal(hostname):
             if local:
                 try:
@@ -159,11 +195,10 @@ def execute(config, command, exclude='', quiet=False, sudo=False, local=False, *
                     code = e.code
                     break
         else:
-            if not hostname in exclude:
-                try:
-                    ssh(hostname, args, ident=keyfile)
-                except CommandFailed as e:
-                    sys.stderr.write("remote command failed; host=%s: %s\n" % (hostname, e.out))
-                    code = e.code
-                    break
+            try:
+                ssh(hostname, args, ident=keyfile)
+            except CommandFailed as e:
+                sys.stderr.write("remote command failed; host=%s: %s\n" % (hostname, e.out))
+                code = e.code
+                break
     return code
