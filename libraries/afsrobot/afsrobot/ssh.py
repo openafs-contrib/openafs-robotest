@@ -131,7 +131,7 @@ def check(config, check_sudo=True, **kwargs):
         return 1
     return 0
 
-def execute(config, command, exclude='', quiet=False, sudo=False, **kwargs):
+def execute(config, command, exclude='', quiet=False, sudo=False, local=False, **kwargs):
     """Run a command on each remote host."""
     keyfile = config.optstr('ssh', 'keyfile', required=True)
     hostnames = config.opthostnames()
@@ -151,10 +151,19 @@ def execute(config, command, exclude='', quiet=False, sudo=False, **kwargs):
     code = 0
     for hostname in hostnames:
         if islocal(hostname):
-            continue
-        if hostname in exclude:
-            continue
-        code = ssh(hostname, args, ident=keyfile)
-        if code != 0:
-            sys.stderr.write("Failed to ssh to host %s.\n" % (hostname))
+            if local:
+                try:
+                    sh(*args, quiet=False, output=False)
+                except CommandFailed as e:
+                    sys.stderr.write("local command failed: %s\n" % (e.out))
+                    code = e.code
+                    break
+        else:
+            if not hostname in exclude:
+                try:
+                    ssh(hostname, args, ident=keyfile)
+                except CommandFailed as e:
+                    sys.stderr.write("remote command failed; host=%s: %s\n" % (hostname, e.out))
+                    code = e.code
+                    break
     return code

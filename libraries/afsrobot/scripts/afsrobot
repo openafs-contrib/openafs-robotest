@@ -224,6 +224,7 @@ def main():
     common_options(p)
     p.add_argument('-s', '--sudo', action='store_true', help="run remote command as root")
     p.add_argument('-x', '--exclude', metavar='<hosts>', help="hosts to exclude (comma separated)", default='')
+    p.add_argument('-l', '--local', action='store_true', help="run the command on the localhost too")
     p.add_argument('command', help='command line')
     p.set_defaults(_function=afsrobot.ssh.execute) # exec is a keyword
 
