@@ -159,6 +159,14 @@ class Node(object):
                 if k == 'afsd' or k == 'bosserver':
                     args.append('-o')
                     args.append("%s=%s" % (k,v))
+        pre = c.optstr(section, 'pre_install')
+        if pre:
+            args.append('--pre')
+            args.append(pre)
+        post = c.optstr(section, 'post_install')
+        if post:
+            args.append('--post')
+            args.append(post)
         self.execute(_sudo(_afsutil('install', None, args)))
 
     def keytab_create(self):
@@ -349,7 +357,17 @@ class Node(object):
 
     def remove(self):
         """Run afsutil remove."""
+        c = self.config
         args = ['--purge']
+        section = "host:%s" % (self.name)
+        pre = c.optstr(section, 'pre_remove')
+        if pre:
+            args.append('--pre')
+            args.append(pre)
+        post = c.optstr(section, 'post_remove')
+        if post:
+            args.append('--post')
+            args.append(post)
         self.execute(_sudo(_afsutil('remove', None, args)))
 
 class RemoteNode(Node):
