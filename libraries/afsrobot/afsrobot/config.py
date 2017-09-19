@@ -50,8 +50,6 @@ resources = <AFSROBOT_ROOT>/resources
 output = <AFSROBOT_DATA>/output
 exclude = todo,bug,slow
 loglevel = INFO
-
-[variables]
 afs_dist = transarc
 pag_onegroup = yes
 gfind = <GFIND>

@@ -311,7 +311,7 @@ class Node(object):
         if fs:
             args.append('--fs')
             args += fs
-        aklog = c.optstr('variables', 'aklog')
+        aklog = c.optstr('test', 'aklog')
         if aklog:
             args.append('--aklog')
             args.append(aklog)
@@ -336,7 +336,7 @@ class Node(object):
         if realm:
             args.append('--realm')
             args.append(realm)
-        aklog = c.optstr('variables', 'aklog')
+        aklog = c.optstr('test', 'aklog')
         if aklog:
             args.append('--aklog')
             args.append(aklog)
@@ -402,7 +402,7 @@ def _aklog_workaround_check(config):
     # workaround this users must setup an aklog 1.6.10+ in some directory
     # and then set a option to specify the location. Since this is easy to
     # get wrong, do a sanity check up front, at least until aklog is fixed.
-    aklog = config.optstr('variables', 'aklog')
+    aklog = config.optstr('test', 'aklog')
     if aklog is None:
         logger.warning("The akimpersonate feature is enabled but the aklog option")
         logger.warning("is not set. See the README.md for more information about")
@@ -523,22 +523,19 @@ def test(config, **kwargs):
 
     # Additional variables.
     variable = [
-        'RESOURCES:%s' % config.get('test', 'resources'),
         'AFS_CELL:%s' % config.get('cell', 'name'),
         'AFS_ADMIN:%s' % config.get('cell', 'admin'),
         'AFS_AKIMPERSONATE:%s' % akimpersonate,
         'KRB_REALM:%s' % config.get('kerberos', 'realm'),
         'KRB_AFS_KEYTAB:%s' % keytab,
     ]
-    if config.has_section('variables'):
-        for o,v in config.items('variables'):
-            variable.append("%s:%s" % (o.upper(), v))
+    for o,v in config.items('test'):
+        variable.append("%s:%s" % (o.upper(), v))
 
     # Determine tests to exclude.
     exclude = config.get('test', 'exclude').split(',')
-    gfind = config.optstr('variables', 'gfind')
-    if not gfind:
-        logger.warning("Excluding 'requires-gfind'; variables.gfind is not set in config.\n")
+    if not config.optstr('test', 'gfind'):
+        logger.warning("Excluding 'requires-gfind'; gfind is not set in config.\n")
         exclude.append('requires-gfind')
 
     # Setup the rf options.
