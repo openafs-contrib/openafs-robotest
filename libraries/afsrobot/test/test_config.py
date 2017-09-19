@@ -130,13 +130,6 @@ class ConfigTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             c.optbool('y', 'c', required=True)
 
-    def test_optkeytab(self):
-        c = afsrobot.config.Config()
-        c.load_from_string(string="[kerberos]\nafs_keytab = a\nuser_keytab = b\nfake_keytab = c")
-        self.assertEquals(c.optkeytab('afs'), 'a')
-        self.assertEquals(c.optkeytab('user'), 'b')
-        self.assertEquals(c.optkeytab('fake'), 'c')
-
     def test_opthostnames__empty(self):
         c = afsrobot.config.Config()
         hostnames = c.opthostnames()

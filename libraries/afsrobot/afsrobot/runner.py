@@ -179,7 +179,7 @@ class Node(object):
         if cell:
             args.append('--cell')
             args.append(cell)
-        keytab = c.optkeytab('fake')
+        keytab = c.optstr('kerberos', 'fake')
         if keytab:
             args.append('--keytab')
             args.append(keytab)
@@ -214,7 +214,7 @@ class Node(object):
             name = 'fake'
         else:
             name = 'afs'
-        keytab = c.optkeytab(name)
+        keytab = c.optstr('kerberos', name)
         if keytab:
             args.append('--keytab')
             args.append(keytab)
@@ -230,7 +230,7 @@ class Node(object):
         if not c.optbool('kerberos', 'akimpersonate'):
             raise AssertionError('Trying to get fakekey options without akimpersonate.')
         args = []
-        keytab = c.optkeytab('fake')
+        keytab = c.optstr('kerberos', 'fake')
         if keytab:
             args.append('--keytab')
             args.append(keytab)
@@ -298,12 +298,12 @@ class Node(object):
         akimpersonate = c.optbool('kerberos', 'akimpersonate')
         if akimpersonate:
             args.append('--akimpersonate')
-            keytab = c.optkeytab('fake')
+            keytab = c.optstr('kerberos', 'fake')
             if keytab:
                 args.append('--keytab')
                 args.append(keytab)
         else:
-            keytab = c.optkeytab('user')
+            keytab = c.optstr('kerberos', 'user')
             if keytab:
                 args.append('--keytab')
                 args.append(keytab)
@@ -344,12 +344,12 @@ class Node(object):
             args.append(aklog)
         if c.optbool('kerberos', 'akimpersonate'):
             args.append('--akimpersonate')
-            keytab = c.optkeytab('fake')
+            keytab = c.optstr('kerberos', 'fake')
             if keytab:
                 args.append('--keytab')
                 args.append(keytab)
         else:
-            keytab = c.optkeytab('user')
+            keytab = c.optstr('kerberos', 'user')
             if keytab:
                 args.append('--keytab')
                 args.append(keytab)
@@ -515,9 +515,9 @@ def test(config, **kwargs):
 
     # Verify we have a afs service keytab.
     if config.optbool('kerberos', 'akimpersonate'):
-        keytab = config.optkeytab('fake')
+        keytab = config.optstr('kerberos', 'fake')
     else:
-        keytab = config.optkeytab('afs')
+        keytab = config.optstr('kerberos', 'afs')
     if not os.path.isfile(keytab):
         raise ValueError("Cannot find keytab file '%s'!\n" % keytab)
 

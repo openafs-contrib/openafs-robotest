@@ -55,9 +55,9 @@ admin = robotest.admin
 [kerberos]
 akimpersonate = yes
 realm = ROBOTEST
-fake_keytab = <AFSROBOT_DATA>/fake.keytab
-afs_keytab = <AFSROBOT_DATA>/afs.keytab
-user_keytab = <AFSROBOT_DATA>/user.keytab
+fake = <AFSROBOT_DATA>/fake.keytab
+afs = <AFSROBOT_DATA>/afs.keytab
+user = <AFSROBOT_DATA>/user.keytab
 
 [web]
 docroot = <AFSROBOT_DATA>/output
@@ -253,10 +253,6 @@ class Config(ConfigParser.SafeConfigParser):
             if required:
                 raise ValueError("Required config option is missing; section=%s, option=%s." % (section, option))
         return value
-
-    def optkeytab(self, name):
-        """Return the named keytab file."""
-        return self.optstr('kerberos', '%s_keytab' % (name))
 
     def opthostnames(self, filter=None, lookupname=False):
         """Return a list of host sections."""
