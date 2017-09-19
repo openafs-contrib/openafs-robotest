@@ -38,11 +38,6 @@ except ImportError:
     sys.stderr.write("Cannot import argparse package.\n")
     sys.stderr.write("Install argparse with `sudo pip install argparse`.\n")
     sys.exit(1)
-
-logger = logging.getLogger('afsrobot')
-
-#
-# Environment Variables
 #
 # AFSROBOT_INI  Fully qualified filename of the configuration file.
 #               Defaults to $HOME/afsrobot/afsrobot.ini
@@ -51,6 +46,33 @@ logger = logging.getLogger('afsrobot')
 AFSROBOT_INI = os.getenv('AFSROBOT_INI',
     os.path.join(os.environ['HOME'], 'afsrobot', 'afsrobot.ini'))
 
+logger = logging.getLogger('afsrobot')
+
+def _set_logging_options(args, config):
+    options = {}
+    if args.debug:
+        options['level'] = logging.DEBUG
+    else:
+        options['level'] = logging.INFO
+    if args._logname:
+        logdir = os.path.abspath(config.optstr('test', 'log', '.'))
+        filename = os.path.join(logdir, args._logname)
+        afsutil.system.mkdirp(logdir)
+        options['filename'] = filename
+        options['format'] = '%(asctime)s %(levelname)s %(message)s'
+        if args.verbose:
+            sys.stdout.write("Writing to log file %s\n" % (filename))
+    else:
+        options['format'] = '%(message)s'
+    logging.basicConfig(**options)
+    # Also print log messages to stdout when --verbose is given.
+    if 'filename' in options and args.verbose:
+        formatter = logging.Formatter('%(message)s')
+        console = logging.StreamHandler()
+        console.setLevel(options['level'])
+        console.setFormatter(formatter)
+        logging.getLogger('').addHandler(console) # add to the root logger
+
 def _print_version(config, **kwargs):
     import afsrobot
     import afsutil
@@ -58,69 +80,6 @@ def _print_version(config, **kwargs):
     sys.stdout.write("afsrobot %s\n" % (afsrobot.__version__))
     sys.stdout.write("afsutil %s\n" % (afsutil.__version__))
     sys.stdout.write("OpenAFSLibrary %s\n" % (OpenAFSLibrary.__version__))
-
-class SubCommandContext(object):
-    """Common pre and post processing for each sub-command."""
-    def __init__(self, args):
-        self.args = args
-        # Avoid 'file not found' error when running 'config init'.
-        self._defer_config = getattr(args, '_defer_config', False)
-        self._logname = getattr(args, '_logname', None)
-        self._logfile = None
-        self.config = None
-
-    def _read_config(self, filename):
-        if not os.path.exists(filename):
-            raise ValueError("Config file '%s' not found. Run 'afsrobot.iniig init'." % (filename))
-        if self.args.verbose:
-            sys.stdout.write("Loading config file %s." % (filename))
-        self.config = afsrobot.config.Config()
-        self.config.load_from_file(filename)
-
-    def _setup_log(self, config, logname):
-        if self.args.debug:
-           loglevel = logging.DEBUG
-        else:
-           loglevel = logging.INFO
-        if logname:
-            if config:
-                logdir = os.path.abspath(self.config.optstr('test', 'log', '.'))
-            else:
-                logdir = os.getcwd()
-            if not os.path.isdir(logdir):
-                os.makedirs(logdir)
-            self._logfile = os.path.join(logdir, logname)
-            if not self.args.quiet and not self.args.dryrun:
-                sys.stdout.write("Writing to log file %s\n" % (self._logfile))
-            fmt = '%(asctime)s %(levelname)s %(message)s'
-            logging.basicConfig(level=loglevel, filename=self._logfile, format=fmt)
-        else:
-            fmt = '%(message)s'
-            logging.basicConfig(level=loglevel, format=fmt)
-        if self.args.verbose:
-           console = logging.StreamHandler()
-           console.setLevel(loglevel)
-           formatter = logging.Formatter('%(message)s')
-           console.setFormatter(formatter)
-           logging.getLogger('').addHandler(console) # add to the root logger
-
-    def __enter__(self):
-        if not self._defer_config:
-            self._read_config(self.args.ini)
-        self._setup_log(self.config, self._logname)
-        return self
-
-    def __exit__(self, exc_type, exc_value, tb):
-        if exc_type is not None and self._logfile:
-            sys.stdout.write("See log file %s\n" % (self._logfile))
-            if exc_type is afsutil.system.CommandFailed:
-                logger.error("Command failed: %s, code %d\n" % (exc_value.cmd, exc_value.code))
-                logger.error("output:\n")
-                logger.error("%s\n" % (exc_value.out))
-            else:
-                for line in traceback.format_exception(exc_type, exc_value, tb):
-                    logger.error(line.rstrip('\n'))
-        return False
 
 class CommandLineParser(argparse.ArgumentParser):
     """Subclass the argument parser to extend help messages."""
@@ -141,6 +100,7 @@ def main():
         p.add_argument('-q', '--quiet', help="less messages", default=False, action='store_true')
         p.add_argument('-v', '--verbose', help="show log messages", default=False, action='store_true')
         p.add_argument('--debug', help="debug log level", default=False, action='store_true')
+        p.set_defaults(_logname=None, _defer_config=False)
 
     # This should be run as a normal user; sudo is called for installation as needed.
     if os.geteuid() == 0:
@@ -286,26 +246,20 @@ def main():
     p.add_argument('-n', '--dryrun', help="print commands instead of running", default=False, action='store_true')
     p.set_defaults(_function=afsrobot.runner.teardown, _logname='teardown.log')
 
-    rc = 0
     args = parser.parse_args()
+    config = afsrobot.config.Config()
+    if not args._defer_config:
+        config.load_from_file(args.ini)
+    _set_logging_options(args, config)
+    kwargs = vars(args)
+    function = kwargs.pop('_function')
     try:
-        with SubCommandContext(args) as c:
-            config = c.config
-            kwargs = vars(c.args)
-            function = kwargs.pop('_function')
-            rc = function(config, **kwargs)
+        rc = function(config, **kwargs)
     except afsutil.system.CommandFailed as e:
         sys.stderr.write("Command failed: %s, code %d\n" % (e.cmd, e.code))
         sys.stderr.write("output:\n")
         sys.stderr.write("%s\n" % (e.out))
-        if rc == 0:
-            rc = 1
-    except Exception as e:
-        sys.stderr.write("%s\n" % (e))
-        if rc == 0:
-            rc = 1
-    finally:
-        pass
+        rc = e.code
     return rc
 
 if __name__ == "__main__":
