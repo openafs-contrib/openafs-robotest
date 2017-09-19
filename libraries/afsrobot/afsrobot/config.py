@@ -226,7 +226,7 @@ class Config(ConfigParser.SafeConfigParser):
         """
         if section:
             if not self.has_section(section):
-                sys.stderr.write("Section not found: %s\n" % (section))
+                logger.error("Section not found: %s" % (section))
                 return 1
             self._print_section(out, section, raw)
         else:
@@ -271,7 +271,7 @@ class Config(ConfigParser.SafeConfigParser):
                 continue
             hostname = s.replace('host:', '')
             if hostname == '':
-                sys.stderr.write("Invalid config section name: %s\n" % (s))
+                logger.error("Invalid config section name: %s" % (s))
                 sys.exit(1)
             if not self.optbool(s, 'use', default='yes'):
                 continue
@@ -295,7 +295,7 @@ class Config(ConfigParser.SafeConfigParser):
 def init(config, ini, **kwargs):
     afsrobot_data = os.path.expanduser("~/afsrobot");
     if not os.path.isdir(afsrobot_data):
-        sys.stdout.write("Making data directory %s\n" % (afsrobot_data))
+        logger.info("Making data directory %s" % (afsrobot_data))
         os.makedirs(afsrobot_data)
     config = Config()
     config.load_defaults()
@@ -305,9 +305,9 @@ def init(config, ini, **kwargs):
     else:
         msg = "Creating config file"
         if not os.path.isdir(os.path.dirname(ini)):
-            sys.stdout.write("Making config file directory %s\n" % (os.path.dirname(ini)))
+            logger.info("Making config file directory %s" % (os.path.dirname(ini)))
             os.makedirs(os.path.dirname(ini))
-    sys.stdout.write("%s %s\n" % (msg, ini))
+    logger.info("%s %s" % (msg, ini))
     config.save_as(ini)
 
 def list(config, out, section, raw=False, sections=False, **kwargs):
@@ -322,7 +322,7 @@ def set(config, section, option, value, **kwargs):
         config.set_value(section, option, value)
         config.save()
     except Exception as e:
-        sys.stderr.write("Unable to set: %s\n" % (e))
+        logger.error("Unable to set: %s" % (e))
         return 1
 
 def unset(config, section, option, **kwargs):
@@ -330,6 +330,6 @@ def unset(config, section, option, **kwargs):
         config.unset_value(section, option)
         config.save()
     except Exception as e:
-        sys.stderr.write("Unable to remove: %s\n" % (e))
+        logger.error("Unable to remove: %s" % (e))
         return 1
 

@@ -406,9 +406,9 @@ def _aklog_workaround_check(config):
     # get wrong, do a sanity check up front, at least until aklog is fixed.
     aklog = config.optstr('variables', 'aklog')
     if aklog is None:
-        sys.stderr.write("Warning: The akimpersonate feature is enabled but the aklog option\n")
-        sys.stderr.write("         is not set. See the README.md for more information about\n")
-        sys.stderr.write("         testing without Kerberos.\n")
+        logger.warning("The akimpersonate feature is enabled but the aklog option")
+        logger.warning("is not set. See the README.md for more information about")
+        logger.warning("testing without Kerberos.")
 
 def _get_nodes(config, **kwargs):
     """Get nodes for setup and teardown."""
@@ -538,7 +538,7 @@ def test(config, **kwargs):
     exclude = config.get('test', 'exclude').split(',')
     gfind = config.optstr('variables', 'gfind')
     if not gfind:
-        sys.stderr.write("Excluding 'requires-gfind'; variables.gfind is not set in config.\n")
+        logger.warning("Excluding 'requires-gfind'; variables.gfind is not set in config.\n")
         exclude.append('requires-gfind')
 
     # Setup the rf options.
@@ -561,7 +561,7 @@ def test(config, **kwargs):
     # Run the RF tests.
     code = robot.run(tests, **options)
     if code != 0:
-        sys.stderr.write("Tests failed.\n")
+        logger.error("Tests failed.")
     return code
 
 def teardown(config, **kwargs):

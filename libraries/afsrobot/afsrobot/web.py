@@ -20,12 +20,14 @@
 
 import atexit
 import os
+import logging
 import signal
 import SimpleHTTPServer
 import SocketServer
 import sys
 import time
 
+logger = logging.getLogger(__name__)
 
 class SilentRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
     """Handle requests without printing messages."""
@@ -67,7 +69,7 @@ class TinyWebServer(object):
         """Simplified daemonize to run the server in the background."""
         pid = os.fork()
         if pid < 0:
-            raise AssertionError("Failed to fork!\n")
+            raise AssertionError("Failed to fork!")
         if pid != 0:
             sys.exit(0) # Parent process
         # Child process
@@ -80,12 +82,12 @@ class TinyWebServer(object):
         """Start the miminal web server."""
         pid = self._getpid()
         if pid:
-            sys.stderr.write("Already running (pid %d).\n" % (pid))
+            logger.error("Already running (pid %d)." % (pid))
             return
         if not os.path.isdir(self.docroot):
             os.makedirs(self.docroot)
         os.chdir(self.docroot)
-        sys.stdout.write("Listening at http://%s:%d\n" % (os.uname()[1], self.port))
+        logger.info("Listening at http://%s:%d" % (os.uname()[1], self.port))
         if not self.foreground:
             self._daemonize()
         address = ('', self.port)
@@ -101,26 +103,25 @@ class TinyWebServer(object):
     def stop(self):
         """Stop the miminal web server."""
         if self.foreground:
-            sys.stderr.write("Skipping stop; foreground mode.\n")
+            logger.error("Skipping stop; foreground mode.")
             return
         pid = self._getpid()
         if pid == 0:
-            sys.stdout.write("Not running.\n")
+            logger.info("Not running.")
         else:
-            sys.stdout.write("Stopping process %d... " % (pid))
-            sys.stdout.flush()
+            logger.info("Stopping process %d" % (pid))
             os.kill(pid, signal.SIGINT)
             for _ in xrange(0,10):
                 time.sleep(1)
                 if self._getpid() == 0:
-                    sys.stdout.write("ok.\n")
+                    logger.info("ok.")
                     return
-            sys.stdout.write("failed.\n")
+            logger.info("failed.")
 
     def status(self):
         """Get the status of the miminal web server."""
         if self.foreground:
-            sys.stderr.write("Skipping status; foreground mode.\n")
+            logger.error("Skipping status; foreground mode.")
             return ""
         pid = self._getpid()
         if pid:
@@ -140,5 +141,5 @@ def stop(config, **kwargs):
 
 def status(config, **kwargs):
     server = TinyWebServer(config)
-    sys.stdout.write("%s\n" % (server.status()))
+    logger.info("%s" % (server.status()))
 
