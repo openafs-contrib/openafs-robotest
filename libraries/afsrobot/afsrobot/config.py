@@ -37,8 +37,8 @@ libraries = <AFSROBOT_ROOT>/libraries
 resources = <AFSROBOT_ROOT>/resources
 log = <AFSROBOT_DATA>/log
 output = <AFSROBOT_DATA>/output
-exclude_tags = todo,bug,slow
-log_level = INFO
+exclude = todo,bug,slow
+loglevel = INFO
 
 [variables]
 afs_dist = transarc
