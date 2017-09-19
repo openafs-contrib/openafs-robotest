@@ -325,8 +325,6 @@ class Node(object):
         """Run afsutil login."""
         c = self.config
         args = []
-        if not user:
-            user = c.optstr('cell', 'admin', 'admin')
         if user:
             args.append('--user')
             args.append(user)
@@ -492,7 +490,9 @@ def login(config, **kwargs):
     tests. This sub-command is a useful short cut to get a token for
     the configured admin user.
     """
-    user = kwargs.pop('user', config.optstr('cell', 'admin', 'admin'))
+    user = kwargs.pop('user')
+    if not user:
+        user = config.optstr('cell', 'admin', 'admin')
     node = Node('localhost', config, **kwargs)
     progress = _get_progress(**kwargs)
     with progress("Obtaining token for %s" % (user)):
