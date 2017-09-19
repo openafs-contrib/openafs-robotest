@@ -38,7 +38,7 @@ resources = <AFSROBOT_ROOT>/resources
 log = <AFSROBOT_DATA>/log
 output = <AFSROBOT_DATA>/output
 
-[run]
+[test]
 exclude_tags = todo,bug,slow
 log_level = INFO
 

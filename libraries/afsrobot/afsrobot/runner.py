@@ -535,7 +535,7 @@ def test(config, **kwargs):
             variable.append("%s:%s" % (o.upper(), v))
 
     # Determine tests to exclude.
-    exclude = config.get('run', 'exclude_tags').split(',')
+    exclude = config.get('test', 'exclude_tags').split(',')
     gfind = config.optstr('variables', 'gfind')
     if not gfind:
         sys.stderr.write("Excluding 'requires-gfind'; variables.gfind is not set in config.\n")
@@ -546,7 +546,7 @@ def test(config, **kwargs):
     options = {
         'report': 'index.html',
         'outputdir': output,
-        'loglevel': config.get('run', 'log_level'),
+        'loglevel': config.get('test', 'log_level'),
         'variable': variable,
         'exclude': exclude,
         'runemptysuite': True,
