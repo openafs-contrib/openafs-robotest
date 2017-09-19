@@ -505,11 +505,11 @@ def test(config, **kwargs):
         _aklog_workaround_check(config)
 
     # Setup the python paths for our libs and resources.
-    sys.path.append(os.path.join(config.get('paths', 'libraries'), 'OpenAFSLibrary'))
-    sys.path.append(config.get('paths', 'resources'))
+    sys.path.append(os.path.join(config.get('test', 'libraries'), 'OpenAFSLibrary'))
+    sys.path.append(config.get('test', 'resources'))
 
     # Create output dir if needed.
-    output = config.optstr('paths', 'output', required=True)
+    output = config.optstr('test', 'output', required=True)
     if not os.path.isdir(output):
         os.makedirs(output)
 
@@ -523,7 +523,7 @@ def test(config, **kwargs):
 
     # Additional variables.
     variable = [
-        'RESOURCES:%s' % config.get('paths', 'resources'),
+        'RESOURCES:%s' % config.get('test', 'resources'),
         'AFS_CELL:%s' % config.get('cell', 'name'),
         'AFS_ADMIN:%s' % config.get('cell', 'admin'),
         'AFS_AKIMPERSONATE:%s' % akimpersonate,
@@ -542,7 +542,7 @@ def test(config, **kwargs):
         exclude.append('requires-gfind')
 
     # Setup the rf options.
-    tests = config.get('paths', 'tests') # path to our tests
+    tests = config.get('test', 'tests') # path to our tests
     options = {
         'report': 'index.html',
         'outputdir': output,

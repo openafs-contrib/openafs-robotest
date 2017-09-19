@@ -84,7 +84,7 @@ class SubCommandContext(object):
            loglevel = logging.INFO
         if logname:
             if config:
-                logdir = os.path.abspath(self.config.optstr('paths', 'log', '.'))
+                logdir = os.path.abspath(self.config.optstr('test', 'log', '.'))
             else:
                 logdir = os.getcwd()
             if not os.path.isdir(logdir):

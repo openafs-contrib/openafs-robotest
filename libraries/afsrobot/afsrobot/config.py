@@ -30,15 +30,13 @@ logger = logging.getLogger(__name__)
 
 # Configuration defaults.
 DEFAULT_CONFIG_DATA = """
-[paths]
+[test]
 doc = <AFSROBOT_ROOT>/doc
 tests = <AFSROBOT_ROOT>/tests
 libraries = <AFSROBOT_ROOT>/libraries
 resources = <AFSROBOT_ROOT>/resources
 log = <AFSROBOT_DATA>/log
 output = <AFSROBOT_DATA>/output
-
-[test]
 exclude_tags = todo,bug,slow
 log_level = INFO
 
