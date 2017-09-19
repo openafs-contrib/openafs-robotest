@@ -42,6 +42,14 @@ loglevel = INFO
 log = <AFSROBOT_DATA>/log/login.log
 loglevel = INFO
 
+[ssh]
+keyfile = <HOME>/.ssh/afsrobot
+
+[web]
+docroot = <AFSROBOT_DATA>/output
+port = 8000
+foreground = no
+
 [test]
 doc = <AFSROBOT_ROOT>/doc
 tests = <AFSROBOT_ROOT>/tests
@@ -66,20 +74,12 @@ fake = <AFSROBOT_DATA>/fake.keytab
 afs = <AFSROBOT_DATA>/afs.keytab
 user = <AFSROBOT_DATA>/user.keytab
 
-[web]
-docroot = <AFSROBOT_DATA>/output
-port = 8000
-foreground = no
-
 [options]
 dafs = yes
 afsd = -dynroot -fakestat -afsdb
 bosserver =
 dafileserver = -d 1 -L
 davolserver = -d 1
-
-[ssh]
-keyfile =
 
 [host:<HOSTNAME>]
 use = yes
