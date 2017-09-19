@@ -35,7 +35,6 @@ doc = <AFSROBOT_ROOT>/doc
 tests = <AFSROBOT_ROOT>/tests
 libraries = <AFSROBOT_ROOT>/libraries
 resources = <AFSROBOT_ROOT>/resources
-html = <AFSROBOT_DATA>
 log = <AFSROBOT_DATA>/log
 output = <AFSROBOT_DATA>/output
 
@@ -61,6 +60,7 @@ afs_keytab = <AFSROBOT_DATA>/afs.keytab
 user_keytab = <AFSROBOT_DATA>/user.keytab
 
 [web]
+docroot = <AFSROBOT_DATA>/output
 port = 8000
 foreground = no
 

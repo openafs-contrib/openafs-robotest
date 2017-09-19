@@ -43,7 +43,7 @@ class TinyWebServer(object):
         pidfile = "afsrobot-%d.pid" % (os.getuid())
         self.pidfile = os.path.join(run, pidfile)
         self.port = config.getint('web', 'port')
-        self.docroot = config.get('paths', 'html')
+        self.docroot = config.get('web', 'docroot')
         self.foreground = config.getboolean('web', 'foreground')
 
     def _exit(self):
