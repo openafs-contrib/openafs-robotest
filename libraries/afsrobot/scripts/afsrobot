@@ -23,7 +23,6 @@ import logging
 import gettext
 import os
 import sys
-import traceback
 
 import afsrobot.config
 import afsrobot.ssh
@@ -49,22 +48,44 @@ AFSROBOT_INI = os.getenv('AFSROBOT_INI',
 logger = logging.getLogger('afsrobot')
 
 def _set_logging_options(args, config):
-    options = {}
+    options = {
+        'level': logging.INFO,   # default
+        'format': '%(message)s', # default
+    }
+
     if args.debug:
         options['level'] = logging.DEBUG
-    else:
-        options['level'] = logging.INFO
-    if args._logname:
-        logdir = os.path.abspath(config.optstr('test', 'log', '.'))
-        filename = os.path.join(logdir, args._logname)
-        afsutil.system.mkdirp(logdir)
+    elif args._section:
+        levels = {
+            'CRITICAL': logging.CRITICAL,
+            'DEBUG': logging.DEBUG,
+            'ERROR': logging.ERROR,
+            'FATAL': logging.FATAL,
+            'INFO': logging.INFO,
+            'WARN': logging.WARN,
+            'WARNING': logging.WARNING,
+        }
+        level = config.optstr(args._section, 'loglevel', '').upper()
+        if level in levels:
+            options['level'] = levels[level]
+
+    # Optional log file (log to stdout if no log file given)
+    filename = None
+    if args.logfile:
+        filename = args.logfile
+    elif args._section:
+        filename = config.optstr(args._section, 'log')
+    if filename:
+        filename = os.path.abspath(filename)
+        logdir = os.path.dirname(filename)
         options['filename'] = filename
         options['format'] = '%(asctime)s %(levelname)s %(message)s'
+        afsutil.system.mkdirp(logdir)
         if args.verbose:
             sys.stdout.write("Writing to log file %s\n" % (filename))
-    else:
-        options['format'] = '%(message)s'
+
     logging.basicConfig(**options)
+
     # Also print log messages to stdout when --verbose is given.
     if 'filename' in options and args.verbose:
         formatter = logging.Formatter('%(message)s')
@@ -100,7 +121,8 @@ def main():
         p.add_argument('-q', '--quiet', help="less messages", default=False, action='store_true')
         p.add_argument('-v', '--verbose', help="show log messages", default=False, action='store_true')
         p.add_argument('--debug', help="debug log level", default=False, action='store_true')
-        p.set_defaults(_logname=None, _defer_config=False)
+        p.add_argument('--logfile', help="log file name", default=None)
+        p.set_defaults(_section=None, _defer_config=False)
 
     # This should be run as a normal user; sudo is called for installation as needed.
     if os.geteuid() == 0:
@@ -217,7 +239,7 @@ def main():
     p = subparsers.add_parser('setup', help='install and setup OpenAFS')
     common_options(p)
     p.add_argument('-n', '--dryrun', help="print commands instead of running", default=False, action='store_true')
-    p.set_defaults(_function=afsrobot.runner.setup, _logname='setup.log')
+    p.set_defaults(_function=afsrobot.runner.setup, _section='setup')
 
     #
     # afsrobot test
@@ -227,7 +249,7 @@ def main():
     p.add_argument('-s', '--suite', help="test suite to run; e.g. client.basic  (default: all)", default=None)
     p.add_argument('-i', '--include', help="test tags to include (default: all)", default=None)
     p.add_argument('-t', '--test', help="test name to run; e.g. create_a_file (default: all)", default=None)
-    p.set_defaults(_function=afsrobot.runner.test)
+    p.set_defaults(_function=afsrobot.runner.test, _section='test')
 
     #
     # afsrobot login
@@ -236,7 +258,7 @@ def main():
     common_options(p)
     p.add_argument('-u', '--user', help="user name (default: admin)", default=None)
     p.add_argument('-n', '--dryrun', help="print commands instead of running", default=False, action='store_true')
-    p.set_defaults(_function=afsrobot.runner.login, _logname='login.log')
+    p.set_defaults(_function=afsrobot.runner.login, _section='login')
 
     #
     # afsrobot teardown
@@ -244,7 +266,7 @@ def main():
     p = subparsers.add_parser('teardown', help="remove OpenAFS")
     common_options(p)
     p.add_argument('-n', '--dryrun', help="print commands instead of running", default=False, action='store_true')
-    p.set_defaults(_function=afsrobot.runner.teardown, _logname='teardown.log')
+    p.set_defaults(_function=afsrobot.runner.teardown, _section='teardown')
 
     args = parser.parse_args()
     config = afsrobot.config.Config()

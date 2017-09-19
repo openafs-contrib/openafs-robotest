@@ -30,12 +30,23 @@ logger = logging.getLogger(__name__)
 
 # Configuration defaults.
 DEFAULT_CONFIG_DATA = """
+[setup]
+log = <AFSROBOT_DATA>/log/setup.log
+loglevel = INFO
+
+[teardown]
+log = <AFSROBOT_DATA>/log/teardown.log
+loglevel = INFO
+
+[login]
+log = <AFSROBOT_DATA>/log/login.log
+loglevel = INFO
+
 [test]
 doc = <AFSROBOT_ROOT>/doc
 tests = <AFSROBOT_ROOT>/tests
 libraries = <AFSROBOT_ROOT>/libraries
 resources = <AFSROBOT_ROOT>/resources
-log = <AFSROBOT_DATA>/log
 output = <AFSROBOT_DATA>/output
 exclude = todo,bug,slow
 loglevel = INFO
