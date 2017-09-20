@@ -111,11 +111,19 @@ class Node(object):
         """
         if name is None or name == '':
             name = 'localhost'
-        self.section = "host:{0}".format(name)
         self.name = name
         self.config = config
         self.name = name
         self.dryrun = kwargs.get('dryrun', False)
+        # Get the config section for this node.
+        self.section = None
+        for section in config.sections():
+            if section.startswith('host.'):
+                if config.optstr(section, 'name') == name:
+                    self.section = section
+                    break
+        if self.section is None:
+            raise ValueError("Missing config section for host %s" % name)
         self.installer = config.optstr(self.section, 'installer', default='none') != 'none'
         self.is_server = config.optbool(self.section, "isfileserver") or config.optbool(self.section, "isdbserver")
         self.is_client = config.optbool(self.section, "isclient")
@@ -381,7 +389,6 @@ class Node(object):
 
     def remove(self):
         """Run afsutil remove."""
-        c = self.config
         args = ['--purge']
         pre = self.opt('pre_remove')
         if pre:

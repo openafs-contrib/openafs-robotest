@@ -78,7 +78,8 @@ fake = <AFSROBOT_DATA>/fake.keytab
 afs = <AFSROBOT_DATA>/afs.keytab
 user = <AFSROBOT_DATA>/user.keytab
 
-[host:<HOSTNAME>]
+[host.0]
+name = <HOSTNAME>
 use = yes
 installer = none
 isfileserver = yes
@@ -263,16 +264,14 @@ class Config(ConfigParser.SafeConfigParser):
     def opthostnames(self, filter=None, lookupname=False):
         """Return a list of host sections."""
         hostnames = []
-        for s in self.sections():
-            if not s.startswith('host:'):
+        for section in self.sections():
+            if not section.startswith('host.'):
                 continue
-            hostname = s.replace('host:', '')
+            hostname = self.optstr(section, 'name')
             if hostname == '':
-                logger.error("Invalid config section name: %s" % (s))
-                sys.exit(1)
-            if not self.optbool(s, 'use', default='yes'):
+                logger.error("Missing hostname in section %s" % (section))
                 continue
-            if filter is not None and not self.optbool(s, filter):
+            if filter is not None and not self.optbool(section, filter):
                 continue
             if lookupname and islocal(hostname):
                 hostname = socket.gethostname()
