@@ -32,13 +32,12 @@ from afsrobot.ssh import ssh
 logger = logging.getLogger(__name__)
 
 PROGRAMS = (
-    'afsd',
     'bosserver',
     'ptserver',
     'vlserver',
     'fileserver',
     'volserver',
-    'salvager'
+    'salvager',
     'dafileserver',
     'davolserver',
     'salvageserver',
@@ -125,8 +124,9 @@ class Node(object):
         if self.section is None:
             raise ValueError("Missing config section for host %s" % name)
         self.installer = config.optstr(self.section, 'installer', default='none') != 'none'
-        self.is_server = config.optbool(self.section, "isfileserver") or config.optbool(self.section, "isdbserver")
-        self.is_client = config.optbool(self.section, "isclient")
+        self.is_database = name in config.optstr('cell', 'db').split(',')
+        self.is_fileserver = name in config.optstr('cell', 'fs').split(',')
+        self.is_client = name in config.optstr('cell', 'cm').split(',')
 
     def opt(self, name, default=None):
         return self.config.optstr(self.section, name, default=default)
@@ -144,7 +144,7 @@ class Node(object):
         c = self.config
         args = []
         args.append('--components')
-        if self.is_server:
+        if self.is_database or self.is_fileserver:
             args.append('server')
         if self.is_client:
             args.append('client')
@@ -165,7 +165,7 @@ class Node(object):
         if cell:
             args.append('--cell')
             args.append(cell)
-        hosts = c.opthostnames(filter='isdbserver', lookupname=True)
+        hosts = c.optstr('cell', 'db').split(',')
         if hosts:
             args.append('--hosts')
             args += hosts
@@ -286,11 +286,11 @@ class Node(object):
         if realm:
             args.append('--realm')
             args.append(realm)
-        fs = c.opthostnames(filter='isfileserver', lookupname=True)
+        fs = c.optstr('cell', 'fs').split(',')
         if fs:
             args.append('--fs')
             args += fs
-        db = c.opthostnames(filter='isdbserver', lookupname=True)
+        db = c.optstr('cell', 'db').split(',')
         if db:
             args.append('--db')
             args += db
@@ -299,9 +299,10 @@ class Node(object):
             if options is not None:
                 args.append('-o')
                 args.append("%s=%s" % (program, options))
-        for hostname in c.opthostnames(lookupname=True):
+        for hostname in set(fs + db):
+            section = c.get_host_section(hostname)
             for program in PROGRAMS:
-                options = self.opt(program)
+                options = c.optstr(section, program)
                 if options is not None:
                     args.append('-o')
                     args.append("%s:%s=%s" % (hostname, program, options))
@@ -339,7 +340,7 @@ class Node(object):
             if keytab:
                 args.append('--keytab')
                 args.append(keytab)
-        fs = c.opthostnames(filter='isfileserver', lookupname=True)
+        fs = c.optstr('cell', 'fs').split(',')
         if fs:
             args.append('--fs')
             args += fs
@@ -448,7 +449,12 @@ def _get_nodes(config, **kwargs):
         'servers': [],
         'clients': [],
     }
+    db = config.optstr('cell', 'db').split(',')
+    fs = config.optstr('cell', 'fs').split(',')
+    cm = config.optstr('cell', 'cm').split(',')
     for name in config.opthostnames():
+        if name in nodes['all']:
+            continue
         if islocal(name):
             node = Node(name, config, **kwargs)
         else:
@@ -456,9 +462,9 @@ def _get_nodes(config, **kwargs):
         nodes['all'].append(node)
         if node.installer:
             nodes['install'].append(node)
-        if node.is_server:
+        if name in db or name in fs:
             nodes['servers'].append(node)
-        if node.is_client:
+        if name in cm:
             nodes['clients'].append(node)
     return nodes
 
@@ -496,8 +502,6 @@ def setup(config, **kwargs):
         with progress("Setting service key"):
             for node in nodes['servers']:
                 node.keytab_setkey()
-
-    if nodes['servers']:
         with progress("Starting servers"):
             for node in nodes['servers']:
                 node.start('server')

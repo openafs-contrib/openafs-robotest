@@ -66,6 +66,9 @@ gfind = <GFIND>
 name = robotest
 user = robotest
 admin = robotest.admin
+db = <HOSTNAME>
+fs = <HOSTNAME>
+cm = <HOSTNAME>
 afsd = -dynroot -fakestat -afsdb
 bosserver =
 dafileserver =
@@ -80,11 +83,7 @@ user = <AFSROBOT_DATA>/user.keytab
 
 [host.0]
 name = <HOSTNAME>
-use = yes
 installer = none
-isfileserver = yes
-isdbserver = yes
-isclient = yes
 keyformat = detect
 dafileserver = -d 1 -L
 davolserver = -d 1
@@ -261,32 +260,23 @@ class Config(ConfigParser.SafeConfigParser):
                 raise ValueError("Required config option is missing; section=%s, option=%s." % (section, option))
         return value
 
-    def opthostnames(self, filter=None, lookupname=False):
-        """Return a list of host sections."""
+    def opthostnames(self):
+        """Return a list of active hostnames."""
         hostnames = []
+        for cat in ('db', 'fs', 'cm'):
+            for name in self.optstr('cell', cat).split(','):
+                if name not in hostnames:
+                    hostnames.append(name)
+        return hostnames
+
+    def get_host_section(self, hostname):
         for section in self.sections():
             if not section.startswith('host.'):
                 continue
-            hostname = self.optstr(section, 'name')
-            if hostname == '':
-                logger.error("Missing hostname in section %s" % (section))
-                continue
-            if filter is not None and not self.optbool(section, filter):
-                continue
-            if lookupname and islocal(hostname):
-                hostname = socket.gethostname()
-            hostnames.append(hostname)
-        return hostnames
+            if hostname == self.optstr(section, 'name'):
+                return section
+        raise ValueError("Host section not found for hostname %s" % (hostname))
 
-    def optcomponents(self, hostname):
-        """List of components for install, start, and stop for this host.."""
-        section = "host:%s" % (hostname)
-        comp = []
-        if self.optbool(section, 'isfileserver') or self.optbool(section, 'isdbserver'):
-            comp.append('server')
-        if self.optbool(section, 'isclient'):
-            comp.append('client')
-        return comp
 
 def init(config, ini, **kwargs):
     afsrobot_data = os.path.expanduser("~/afsrobot");

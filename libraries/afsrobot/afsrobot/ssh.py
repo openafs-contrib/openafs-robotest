@@ -112,7 +112,9 @@ def check(config, check_sudo=True, **kwargs):
         logger.error("Cannot access keyfile %s." % (keyfile))
         return 1
     for hostname in config.opthostnames():
+        logger.debug("hostname=%s", hostname)
         if islocal(hostname):
+            logger.debug("skipping local host %s", hostname)
             continue
         logger.info("Checking ssh access to host %s" % (hostname))
         try:
