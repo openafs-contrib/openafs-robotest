@@ -81,28 +81,54 @@ class Host(object):
         """
         if hostname is None or hostname == 'localhost':
             hostname = socket.gethostname()
-        if options is None:
-            options = {}
+        hostname = hostname.strip()
         self.hostname = hostname
         # The following are retrieved with bos as needed.
         self.cellname = None
         self.cellhosts = None
         self.users = None
         # Server program options.
+        if options is None:
+            options = {}
         self.options = options
-        # Assume dafs unless one of the legacy command
-        # options is given (even if empty).
-        self.dafs = True
-        for cmd in ('fileserver', 'volserver' 'salvager'):
-            if cmd in self.options:
-                self.dafs = False
-                break
+        # Determine if this host is using dafs based on the given server
+        # options. First check the host specific options, then check the host
+        # independent options, finally, default to dafs.
+        self.dafs = None
+        if self.dafs is None:
+            for program in ('dafileserver', 'davolserver', 'salvageserver', 'dasalvager'):
+                flags = options.get(hostname + ":" + program, None)
+                if not flags is None:
+                    self.dafs = True
+                    break
+        if self.dafs is None:
+            for program in ('fileserver', 'volserver' 'salvager'):
+                flags = options.get(hostname + ":" + program, None)
+                if not flags is None:
+                    self.dafs = False
+                    break
+        if self.dafs is None:
+            for program in ('dafileserver', 'davolserver', 'salvageserver', 'dasalvager'):
+                flags = options.get(program, None)
+                if not flags is None:
+                    self.dafs = True
+                    break
+        if self.dafs is None:
+            for program in ('fileserver', 'volserver' 'salvager'):
+                flags = options.get(program, None)
+                if not flags is None:
+                    self.dafs = False
+                    break
+        if self.dafs is None:
+            self.dafs = True
 
     def cmd(self, program):
         """Get the bos create -cmd argument."""
         # Use the canonical path; bosserver will convert it to the actual path.
         cmd = os.path.join(AFS_SRV_LIBEXEC_DIR, program)
-        flags = self.options.get(program, None)
+        flags = self.options.get(self.hostname + ":" + program, None)
+        if flags is None:
+            flags = self.options.get(program, None)
         if flags:
             cmd += ' ' + flags
         return cmd

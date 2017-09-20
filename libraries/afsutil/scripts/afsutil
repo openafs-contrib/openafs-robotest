@@ -207,7 +207,7 @@ def main():
     p.add_argument('--admin', help="admin username (default: 'admin')", default='admin')
     p.add_argument('--db', nargs='+', help="cell database hosts (default: local hostname)", default=None)
     p.add_argument('--fs', nargs='+', help="cell fileserver hosts (default: local hostname)", default=None)
-    p.add_argument('-o', '--options', nargs='+', help="command line args: <name>=<value>", action='append')
+    p.add_argument('-o', '--options', nargs='+', help="command line args: <[hostname:]name>=<value>", action='append')
     # Hidden arguments; moved to mtroot.
     p.add_argument('--no-client', dest='noclient', help=argparse.SUPPRESS, action='store_true')
     p.add_argument('--akimpersonate', help=argparse.SUPPRESS, action='store_true')
