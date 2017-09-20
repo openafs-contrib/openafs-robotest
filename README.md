@@ -51,12 +51,13 @@ To show the current configuration:
 To install Transarc-style binaries:
 
     $ afsrobot config set variables afs_dist transarc
-    $ afsrobot config set host:$HOSTNAME installer transarc
+    $ afsrobot config set host.0 installer transarc
+    $ afsrobot config set host.0 dest <path-to-dest-dir>
 
 To install RPM packages:
 
     $ afsrobot config set variables afs_dist rhel6
-    $ afsrobot config set host:$HOSTNAME installer rpm
+    $ afsrobot config set host.0 installer rpm
 
 ### akimpersonate notes
 
@@ -132,32 +133,26 @@ This test harness supports setting up multiple file and database servers.
 Install OpenAFS robotest on each server, as described above.  `sudo` must be
 configured with NOPASSWD for the test user account on each host.
 
-A configuration section must be added for each test server. The name of the
-test section is `[host:<hostname>]`, in addition to the `[host:myhost]` for
-the "primary" server.  For example:
+A configuration section must be added for each test server.
 
-    [host:myhost]
-    use = yes
+    [cell]
+    db = afs1,afs2,afs3
+    fs = afs3
+    cm = afs2
+
+    [host.0]
+    name = afs1
     installer = transarc
-    isfileserver = yes
-    isdbserver = yes
-    isclient = yes
     dest = /usr/local/src/openafs-test/amd64_linux26/dest
 
-    [host:mytesta]
-    use = yes
+    [host.1]
+    name = afs2
     installer = transarc
-    isfileserver = yes
-    isdbserver = no
-    isclient = yes
     dest = /usr/local/src/openafs-test/amd64_linux26/dest
 
-    [host:mytestb]
-    use = yes
+    [host.2]
+    name = afs3
     installer = transarc
-    isfileserver = yes
-    isdbserver = no
-    isclient = no
     dest = /home/example/src/openafs/amd64_linux26/dest
 
 The OpenAFS installation and setup is done using ssh with keyfiles. The
