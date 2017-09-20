@@ -111,14 +111,17 @@ class Node(object):
         """
         if name is None or name == '':
             name = 'localhost'
-        section = "host:{0}".format(name)
+        self.section = "host:{0}".format(name)
         self.name = name
         self.config = config
         self.name = name
         self.dryrun = kwargs.get('dryrun', False)
-        self.installer = config.optstr(section, 'installer', default='none') != 'none'
-        self.is_server = config.optbool(section, "isfileserver") or config.optbool(section, "isdbserver")
-        self.is_client = config.optbool(section, "isclient")
+        self.installer = config.optstr(self.section, 'installer', default='none') != 'none'
+        self.is_server = config.optbool(self.section, "isfileserver") or config.optbool(self.section, "isdbserver")
+        self.is_client = config.optbool(self.section, "isclient")
+
+    def opt(self, name, default=None):
+        return self.config.optstr(self.section, name, default=default)
 
     def execute(self, args):
         """Run the command."""
@@ -131,23 +134,22 @@ class Node(object):
     def install(self):
         """Run afsutil install."""
         c = self.config
-        section = "host:%s" % (self.name)
         args = []
         args.append('--components')
         if self.is_server:
             args.append('server')
         if self.is_client:
             args.append('client')
-        dist = c.optstr(section, 'installer', default='transarc')
+        dist = self.opt('installer', default='transarc')
         args.append('--dist')
         args.append(dist)
         if dist == 'transarc':
-            dest = c.optstr(section, 'dest')
+            dest = self.opt('dest')
             if dest:
                 args.append('--dir')
                 args.append(dest)
         elif dist == 'rpm':
-            rpms = c.optstr(section, 'rpms')
+            rpms = self.opt('rpms')
             if rpms:
                 args.append('--dir')
                 args.append(rpms)
@@ -163,23 +165,23 @@ class Node(object):
         if realm:
             args.append('--realm')
             args.append(realm)
-        csdb = c.optstr(section, 'csdb')
+        csdb = self.opt('csdb')
         if csdb:
             args.append('--csdb')
             args.append(csdb)
         args.append('--force')
         for program in ('afsd', 'bosserver'):
-            options = c.optstr(section, program)
+            options = self.opt(program)
             if options is None:
                 options = c.optstr('cell', program)
             if options is not None:
                 args.append('-o')
                 args.append("%s=%s" % (program, options))
-        pre = c.optstr(section, 'pre_install')
+        pre = self.opt('pre_install')
         if pre:
             args.append('--pre')
             args.append(pre)
-        post = c.optstr(section, 'post_install')
+        post = self.opt('post_install')
         if post:
             args.append('--post')
             args.append(post)
@@ -216,7 +218,6 @@ class Node(object):
     def keytab_setkey(self):
         """Run afsutil keytab setkey."""
         c = self.config
-        section = "host:%s" % (self.name)
         args = []
         cell = c.optstr('cell', 'name')
         if cell:
@@ -234,7 +235,7 @@ class Node(object):
         if keytab:
             args.append('--keytab')
             args.append(keytab)
-        keyformat = c.optstr(section, 'keyformat')
+        keyformat = self.opt('keyformat')
         if keyformat:
             args.append('--format')
             args.append(keyformat)
@@ -291,9 +292,8 @@ class Node(object):
                 args.append('-o')
                 args.append("%s=%s" % (program, options))
         for hostname in c.opthostnames(lookupname=True):
-            section = "host:%s" % (hostname)
             for program in PROGRAMS:
-                options = c.optstr(section, program)
+                options = self.opt(program)
                 if options is not None:
                     args.append('-o')
                     args.append("%s:%s=%s" % (hostname, program, options))
@@ -339,8 +339,7 @@ class Node(object):
         if aklog:
             args.append('--aklog')
             args.append(aklog)
-        section = "host:%s" % (self.name)
-        options = c.optstr(section, 'afsd')
+        options = self.opt('afsd')
         if options is None:
             options = c.optstr('cell', 'afsd')
         if options is not None:
@@ -384,12 +383,11 @@ class Node(object):
         """Run afsutil remove."""
         c = self.config
         args = ['--purge']
-        section = "host:%s" % (self.name)
-        pre = c.optstr(section, 'pre_remove')
+        pre = self.opt('pre_remove')
         if pre:
             args.append('--pre')
             args.append(pre)
-        post = c.optstr(section, 'post_remove')
+        post = self.opt('post_remove')
         if post:
             args.append('--post')
             args.append(post)
