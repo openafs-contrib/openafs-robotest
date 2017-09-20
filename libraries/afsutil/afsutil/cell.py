@@ -59,24 +59,8 @@ def _optlists2dict(options):
     for optlist in options:
         for o in optlist:
             name,value = o.split('=', 1)
-            names[name] = value
+            names[name.strip()] = value.strip()
     return names
-
-def _optfsbnode(options):
-    """Helper to get the fs bnode type."""
-    dafs = options.get('dafs', 'yes').strip() # dafs by default.
-    if dafs == 'no' or dafs == 'false' or dafs == '0':
-        bnode = 'fs'
-    else:
-        bnode = 'dafs'
-    return bnode
-
-def _optcmdstring(options, program):
-    """Helper to get the server cmd line string for bos create."""
-    # Use the canonical path, bosserver will convert to the actual path.
-    cmd = os.path.join(AFS_SRV_LIBEXEC_DIR, program)
-    opts = options.get(program, '').strip()
-    return ' '.join(filter(None, [cmd, opts]))
 
 def _uniq(x):
     """Remove dupes from a small list, preserving order."""
@@ -89,15 +73,39 @@ def _uniq(x):
 class Host(object):
     """Helper to configure an OpenAFS server using the bos command."""
 
-    def __init__(self, hostname='localhost', **kwargs):
-        """Initialize the afs host object."""
+    def __init__(self, hostname='localhost', options=None, **kwargs):
+        """Initialize the afs host object.
+
+        hostname: hostname
+        options:  dict of server options
+        """
         if hostname is None or hostname == 'localhost':
             hostname = socket.gethostname()
+        if options is None:
+            options = {}
         self.hostname = hostname
         # The following are retrieved with bos as needed.
         self.cellname = None
         self.cellhosts = None
         self.users = None
+        # Server program options.
+        self.options = options
+        # Assume dafs unless one of the legacy command
+        # options is given (even if empty).
+        self.dafs = True
+        for cmd in ('fileserver', 'volserver' 'salvager'):
+            if cmd in self.options:
+                self.dafs = False
+                break
+
+    def cmd(self, program):
+        """Get the bos create -cmd argument."""
+        # Use the canonical path; bosserver will convert it to the actual path.
+        cmd = os.path.join(AFS_SRV_LIBEXEC_DIR, program)
+        flags = self.options.get(program, None)
+        if flags:
+            cmd += ' ' + flags
+        return cmd
 
     def rxping(self, service='bosserver', retry=10):
         try:
@@ -221,7 +229,7 @@ class Host(object):
             logger.info("Adding %s to the superuser list on %s.", name, self.hostname)
             bos('adduser', '-server', self.hostname, '-user', name)
 
-    def create_database(self, name, options):
+    def create_database(self, name):
         """Start the database server."""
         service = self.getservice(name)
         if service is not None:
@@ -238,7 +246,7 @@ class Host(object):
                                 (status, name, self.hostname))
         bos('create', '-server', self.hostname,
             '-instance', name, '-type', 'simple',
-            '-cmd', _optcmdstring(options, name))
+            '-cmd', self.cmd(name))
 
     def shutdown(self, name):
         """Shutdown the service name."""
@@ -278,36 +286,35 @@ class Host(object):
              logger.debug("Host %s is sync site with recovery state %s", self.hostname, recovery_state)
         return False
 
-    def create_fileserver(self, name, options):
+    def create_fileserver(self):
         """Start the fileserver (fs or dafs)."""
-        service = self.getservice(name)
+        bnode = 'dafs' if self.dafs else 'fs'
+        service = self.getservice(bnode)
         if service is not None:
             status = service['status']
             if status == 'running':
                 # XXX: Update options if needed!
-                logger.info("Skipping create fileserver for %s; already running.", name)
+                logger.info("Skipping create fileserver; already running.")
                 return
             if status == 'shutdown':
-                logger.info("Retarting fileserver for %s.", name)
-                self.restart(name)
+                logger.info("Retarting fileserver.")
+                self.restart(bnode)
                 return
-            raise AssertionError("Unexpected status '%s' while trying to create fileserver %s on host %s." % \
-                                (status, name, self.hostname))
-        if name == 'dafs':
+            raise AssertionError("Unexpected status '%s' while trying to create fileserver on host %s." % \
+                                (status, self.hostname))
+        if self.dafs:
             bos('create', '-server', self.hostname,
-                '-instance', name, '-type', name,
-                '-cmd', _optcmdstring(options, 'dafileserver'),
-                '-cmd', _optcmdstring(options, 'davolserver'),
-                '-cmd', _optcmdstring(options, 'salvageserver'),
-                '-cmd', _optcmdstring(options, 'dasalvager'))
-        elif name == 'fs':
-            bos('create', '-server', self.hostname,
-                '-instance', name, '-type', name,
-                '-cmd', _optcmdstring(options, 'fileserver'),
-                '-cmd', _optcmdstring(options, 'volserver'),
-                '-cmd', _optcmdstring(options, 'salvager'))
+                '-instance', 'dafs', '-type', 'dafs',
+                '-cmd', self.cmd('dafileserver'),
+                '-cmd', self.cmd('davolserver'),
+                '-cmd', self.cmd('salvageserver'),
+                '-cmd', self.cmd('dasalvager'))
         else:
-            raise AssertionError("Invalid fileservers instance name: %s" % name)
+            bos('create', '-server', self.hostname,
+                '-instance', 'fs', '-type', 'fs',
+                '-cmd', self.cmd('fileserver'),
+                '-cmd', self.cmd('volserver'),
+                '-cmd', self.cmd('salvager'))
 
         ok = self.rxping(service='fileserver', retry=60)
         if not ok:
@@ -386,7 +393,7 @@ class Cell(object):
         # servers for the cell setup.
         hosts = {} # tmp dict to setup db and fs lists.
         for name in _uniq(db + fs):
-            hosts[name] = Host(name)
+            hosts[name] = Host(name, options=self.options)
         self.hosts = hosts.values() # list of Host objects for db and/or fs
         self.db = [hosts[name] for name in _uniq(db)]
         self.fs = [hosts[name] for name in _uniq(fs)]
@@ -518,7 +525,7 @@ class Cell(object):
         db.setcellname(self.cell)
         db.setcellhosts([self.db[0]])
         for dbname in DBNAMES:
-            db.create_database(dbname, self.options)
+            db.create_database(dbname)
             db.wait_for_status(dbname, target='running')
 
         logger.info("Waiting for quorum.")
@@ -565,7 +572,7 @@ class Cell(object):
                 if host != self.db[0]:
                     for admin in self.admins:
                         host.adduser(admin)
-                    host.create_database(dbname, self.options)
+                    host.create_database(dbname)
                     host.wait_for_status(dbname, target='running')
 
         logger.info("Waiting for quorum.")
@@ -588,9 +595,8 @@ class Cell(object):
             fs.setcellhosts([self.db[0]])
             for admin in self.admins:
                 fs.adduser(admin)
-
-        bnode = _optfsbnode(self.options)
-        fs.create_fileserver(bnode, self.options)
+        fs.create_fileserver()
+        bnode = 'dafs' if fs.dafs else 'fs'
         fs.wait_for_status(bnode, target='running')
 
         # Note: root.afs must exist before non-dynroot clients are started.
@@ -654,14 +660,13 @@ class Cell(object):
         and then create the bosserver configuration to run the fileserver.
         """
         if isinstance(host, basestring):
-            host = Host(host)
+            host = Host(host, options=self.options)
         logger.info("Adding fileserver %s", host.hostname)
         host.setcellname(self.cell)
         host.setcellhosts(self.db)
         for admin in self.admins:
             host.adduser(admin)
-        bnode = _optfsbnode(self.options)
-        host.create_fileserver(bnode, self.options)
+        host.create_fileserver()
 
     def mtroot(self, volumes):
         """Mount, setup acls, and replicate the root.afs and root.cell volumes.
