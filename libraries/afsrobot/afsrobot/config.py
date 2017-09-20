@@ -66,6 +66,10 @@ gfind = <GFIND>
 name = robotest
 user = robotest
 admin = robotest.admin
+afsd = -dynroot -fakestat -afsdb
+bosserver =
+dafileserver =
+davolserver =
 
 [kerberos]
 akimpersonate = yes
@@ -74,13 +78,6 @@ fake = <AFSROBOT_DATA>/fake.keytab
 afs = <AFSROBOT_DATA>/afs.keytab
 user = <AFSROBOT_DATA>/user.keytab
 
-[options]
-dafs = yes
-afsd = -dynroot -fakestat -afsdb
-bosserver =
-dafileserver = -d 1 -L
-davolserver = -d 1
-
 [host:<HOSTNAME>]
 use = yes
 installer = none
@@ -88,6 +85,8 @@ isfileserver = yes
 isdbserver = yes
 isclient = yes
 keyformat = detect
+dafileserver = -d 1 -L
+davolserver = -d 1
 
 """
 

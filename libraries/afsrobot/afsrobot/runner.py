@@ -31,6 +31,20 @@ from afsrobot.ssh import ssh
 
 logger = logging.getLogger(__name__)
 
+PROGRAMS = (
+    'afsd',
+    'bosserver',
+    'ptserver',
+    'vlserver',
+    'fileserver',
+    'volserver',
+    'salvager'
+    'dafileserver',
+    'davolserver',
+    'salvageserver',
+    'dasalvager',
+)
+
 class NoMessage(object):
     """Do not display progress messages."""
     def __init__(self, msg):
@@ -154,11 +168,13 @@ class Node(object):
             args.append('--csdb')
             args.append(csdb)
         args.append('--force')
-        if c.has_section('options'):
-            for k,v in c.items('options'):
-                if k == 'afsd' or k == 'bosserver':
-                    args.append('-o')
-                    args.append("%s=%s" % (k,v))
+        for program in ('afsd', 'bosserver'):
+            options = c.optstr(section, program)
+            if options is None:
+                options = c.optstr('cell', program)
+            if options is not None:
+                args.append('-o')
+                args.append("%s=%s" % (program, options))
         pre = c.optstr(section, 'pre_install')
         if pre:
             args.append('--pre')
@@ -269,10 +285,18 @@ class Node(object):
         if db:
             args.append('--db')
             args += db
-        if c.has_section('options'):
-            for k,v in c.items('options'):
+        for program in PROGRAMS:
+            options = c.optstr('cell', program)
+            if options is not None:
                 args.append('-o')
-                args.append("%s=%s" % (k,v))
+                args.append("%s=%s" % (program, options))
+        for hostname in c.opthostnames(lookupname=True):
+            section = "host:%s" % (hostname)
+            for program in PROGRAMS:
+                options = c.optstr(section, program)
+                if options is not None:
+                    args.append('-o')
+                    args.append("%s:%s=%s" % (hostname, program, options))
         self.execute(_sudo(_afsutil('newcell', None, args)))
 
     def mtroot(self):
@@ -315,10 +339,13 @@ class Node(object):
         if aklog:
             args.append('--aklog')
             args.append(aklog)
-        if c.has_section('options'):
-            for k,v in c.items('options'):
-                args.append('-o')
-                args.append("%s=%s" % (k,v))
+        section = "host:%s" % (self.name)
+        options = c.optstr(section, 'afsd')
+        if options is None:
+            options = c.optstr('cell', 'afsd')
+        if options is not None:
+            args.append('-o')
+            args.append("afsd=%s" % (options))
         self.execute(_afsutil('mtroot', None, args))
 
     def login(self, user):
