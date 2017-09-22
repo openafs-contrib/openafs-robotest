@@ -24,6 +24,7 @@ import os
 import base64
 import sys
 import logging
+import socket
 import robot.run
 from afsutil.system import sh
 from afsrobot.config import islocal
@@ -108,8 +109,8 @@ class Node(object):
         name: hostname of this node
         config: parsed configuration
         """
-        if name is None or name == '':
-            name = 'localhost'
+        if name is None or name == '' or name == 'localhost':
+            name = socket.gethostname()
         self.name = name
         self.config = config
         self.name = name
