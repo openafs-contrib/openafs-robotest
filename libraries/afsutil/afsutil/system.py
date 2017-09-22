@@ -250,7 +250,7 @@ def afs_mountpoint():
     else:
         raise AssertionError("Unsupported operating system: %s" % (uname))
     mount = which('mount', extra_paths=['/bin', '/sbin', '/usr/sbin'])
-    output = sh(mount)
+    output = sh(mount, quiet=True)
     for line in output:
         found = re.search(pattern, line)
         if found:
