@@ -450,12 +450,14 @@ def _get_nodes(config, **kwargs):
         'servers': [],
         'clients': [],
     }
+    names = set()
     db = config.optstr('cell', 'db').split(',')
     fs = config.optstr('cell', 'fs').split(',')
     cm = config.optstr('cell', 'cm').split(',')
     for name in config.opthostnames():
-        if name in nodes['all']:
-            continue
+        if name in names:
+            continue  # avoid dupes
+        names.add(name)
         if islocal(name):
             node = Node(name, config, **kwargs)
         else:
