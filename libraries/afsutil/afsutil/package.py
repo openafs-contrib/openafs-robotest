@@ -545,7 +545,7 @@ class RpmBuilder(object):
             '--define', 'build_modules 0',
             self.spec,
             sed=name_written)
-        if len(output) != 1:
+        if len(output) < 1:
             raise RpmBuilderError("Failed to get srpm name.")
         self.srpm = output[0]
         self.built.append(self.srpm)
@@ -714,7 +714,7 @@ class MockRpmBuilder(RpmBuilder):
             '--sources', '{topdir}/SOURCES'.format(topdir=self.topdir),
             output=False)
         rpms = glob.glob("{resultdir}/*.src.rpm".format(resultdir=resultdir))
-        if len(rpms) != 1:
+        if len(rpms) < 1:
             raise RpmBuilderError("Failed to get srpm name.")
         src = rpms[0]
         v = dict(
