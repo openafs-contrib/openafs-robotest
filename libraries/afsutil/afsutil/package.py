@@ -747,6 +747,7 @@ class MockRpmBuilder(RpmBuilder):
             '--resultdir', resultdir,
             '--define', 'build_userspace 1',
             '--define', 'build_modules 0',
+            '--with', 'kauth',
             srpm,
             output=False)
         if self.dstdir:
@@ -789,6 +790,7 @@ class MockRpmBuilder(RpmBuilder):
             '--define', 'kernvers {0}'.format(kversion),
             '--define', 'build_userspace 0',
             '--define', 'build_modules 1',
+            '--with', 'kauth',
             srpm,
             output=False)
         if self.dstdir:
