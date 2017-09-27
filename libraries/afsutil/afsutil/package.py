@@ -708,6 +708,7 @@ class MockRpmBuilder(RpmBuilder):
         self.banner(["Building srpm"])
         resultdir = "/var/lib/mock/{chroot}/result".format(chroot=self.chroot)
         sh('mock',
+            '--root', self.chroot,
             '--buildsrpm',
             '--resultdir', resultdir,
             '--spec', self.spec,
