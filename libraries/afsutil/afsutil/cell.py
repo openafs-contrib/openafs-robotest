@@ -440,7 +440,7 @@ class Cell(object):
         # Setup the cell info for a single database server so the empty db can
         # be created and quorum established.
         self.primary_db.setcellname(self.cell)
-	self.control.setcellhosts([self.primary_db])
+        self.control.setcellhosts([self.primary_db])
         if self.primary_db != self.control:
             self.primary_db.setcellhosts([self.primary_db])
         for dbname in DBNAMES:
@@ -456,7 +456,8 @@ class Cell(object):
         # side-effect of these queries, including the creation of the initial
         # ubik database versions.
         pts('listentries', retry=10)
-        vos('listvldb', retry=10)
+        # avoid listvldb, since test vldb may be quite large.
+        vos('listaddrs', retry=10)
 
         # Create the superusers and add them to this first server's userlist.
         for admin in self.admins:
