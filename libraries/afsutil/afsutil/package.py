@@ -543,6 +543,7 @@ class RpmBuilder(object):
             '--define', '_topdir {0}'.format(self.topdir),
             '--define', 'build_userspace 1',
             '--define', 'build_modules 0',
+            '--with', 'kauth',
             self.spec,
             sed=name_written)
         if len(output) < 1:
@@ -575,6 +576,7 @@ class RpmBuilder(object):
             '--define', '_topdir {0}'.format(self.topdir),
             '--define', 'build_userspace 1',
             '--define', 'build_modules 0',
+            '--with', 'kauth',
             srpm,
             sed=get_wrote)
         self.built.extend(output)
