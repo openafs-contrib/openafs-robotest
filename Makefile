@@ -21,10 +21,10 @@ test:
 	(cd libraries/OpenAFSLibrary && $(MAKE) test)
 
 install:
-	sudo ./install.sh
+	./install.sh
 
 remove:
-	sudo ./uninstall.sh
+	./uninstall.sh
 
 clean:
 	(cd libraries/afsutil && $(MAKE) clean)
