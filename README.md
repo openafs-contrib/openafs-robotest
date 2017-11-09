@@ -74,7 +74,7 @@ better) version of `aklog`.  Build a recent version of 1.6.x, and copy the
 section of the configuration file to specify which `aklog` program is to be
 used during the setup and tests. For example:
 
-    $ afsrobot config set variables aklog /usr/local/bin/aklog-1.6
+    $ afsrobot config set test aklog /usr/local/bin/aklog-1.6
 
 ## Building OpenAFS
 
