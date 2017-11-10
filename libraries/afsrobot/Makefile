@@ -1,4 +1,5 @@
-.PHONY: help lint test package sdist wheel install install-user remove clean
+PACKAGE=afsrobot
+.PHONY: help lint test package version sdist wheel install install-user remove clean
 
 help:
 	@echo "usage: make <target> [<target> ...]"
@@ -16,33 +17,36 @@ help:
 	@echo "  clean        - remove generated files"
 
 lint:
-	pyflakes afsrobot/*.py test/*.py scripts/*
+	pyflakes $(PACKAGE)/*.py test/*.py scripts/*
 
 test:
 	python -m unittest discover test
 
 package: sdist wheel
 
-sdist:
+version:
+	echo "VERSION = '$$(git describe --tags | sed 's/^v//')'" > $(PACKAGE)/__version__.py
+
+sdist: version
 	python setup.py sdist
 
-wheel:
+wheel: version
 	python setup.py bdist_wheel
 
-install:
+install: version
 	pip install --upgrade --no-deps --no-index .
 
-install-user:
+install-user: version
 	pip install --user --upgrade --no-deps --no-index .
 
-install-dev: lint
+install-dev: version lint
 	pip install --user --no-deps --no-index --editable .
 
 remove:
-	pip uninstall -y afsrobot
+	pip uninstall -y $(PACKAGE)
 
 clean:
 	-rm -f *.pyc
 	-rm -f test/*.pyc
-	-rm -f afsrobot/*.pyc
-	-rm -fr afsrobot.egg-info/ build/ dist/
+	-rm -f $(PACKAGE)/*.pyc
+	-rm -fr $(PACKAGE).egg-info/ build/ dist/

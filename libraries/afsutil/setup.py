@@ -1,9 +1,9 @@
 from setuptools import setup
-from afsutil import __version__
+exec(open('afsutil/__version__.py').read())
 
 setup(
     name='afsutil',
-    version=__version__,
+    version=VERSION,
     description='Utilities to setup OpenAFS clients and servers',
     author='Michael Meffie',
     author_email='mmeffie@sinenomine.net',

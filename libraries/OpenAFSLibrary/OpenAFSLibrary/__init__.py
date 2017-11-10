@@ -19,7 +19,9 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
 
-from OpenAFSLibrary.version import VERSION
+"""Robotframe keyword library for OpenAFS tests"""
+
+from OpenAFSLibrary.__version__ import VERSION as __version__
 
 from OpenAFSLibrary.keywords import _CommandKeywords
 from OpenAFSLibrary.keywords import _LoginKeywords
@@ -30,8 +32,6 @@ from OpenAFSLibrary.keywords import _RxKeywords
 from OpenAFSLibrary.keywords import _PagKeywords
 from OpenAFSLibrary.keywords import _CacheKeywords
 from OpenAFSLibrary.keywords import _DumpKeywords
-
-__version__ = VERSION
 
 class OpenAFSLibrary(
     _CommandKeywords,

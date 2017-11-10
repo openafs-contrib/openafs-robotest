@@ -1,4 +1,5 @@
-.PHONY: help lint test package sdist wheel install install-user remove clean
+PACKAGE=afsutil
+.PHONY: help lint test package version sdist wheel install install-user remove clean
 
 help:
 	@echo "usage: make <target> [<target> ...]"
@@ -15,8 +16,9 @@ help:
 	@echo "  remove       - uninstall package"
 	@echo "  clean        - remove generated files"
 
+
 lint:
-	pyflakes afsutil/*.py test/*.py scripts/*
+	pyflakes $(PACKAGE)/*.py test/*.py scripts/*
 
 test:
 	python -m test.test_system -v
@@ -25,26 +27,29 @@ test:
 
 package: sdist wheel
 
-sdist:
+version:
+	echo "VERSION = '$$(git describe --tags | sed 's/^v//')'" > $(PACKAGE)/__version__.py
+
+sdist: version
 	python setup.py sdist
 
-wheel:
+wheel: version
 	python setup.py bdist_wheel
 
-install:
+install: version
 	pip install --upgrade --no-deps --no-index .
 
-install-user:
+install-user: version
 	pip install --user --upgrade --no-deps --no-index .
 
-install-dev: lint
+install-dev: version lint
 	pip install --user --no-deps --no-index --editable .
 
 remove:
-	pip uninstall -y afsutil
+	pip uninstall -y $(PACKAGE)
 
 clean:
 	-rm -f *.pyc
 	-rm -f test/*.pyc
-	-rm -f afsutil/*.pyc
-	-rm -fr afsutil.egg-info/ build/ dist/
+	-rm -f $(PACKAGE)/*.pyc
+	-rm -fr $(PACKAGE).egg-info/ build/ dist/

@@ -3,3 +3,4 @@
 afsrobot.egg-info/
 dist/
 build/
+__version__.py

@@ -1,8 +1,8 @@
 from setuptools import setup
-from afsrobot import __version__
+exec(open('afsrobot/__version__.py').read())
 
 setup(name='afsrobot',
-      version=__version__,
+      version=VERSION,
       description='OpenAFS Robotest Runner',
       author='Michael Meffie',
       author_email='mmeffie@sinenomine.net',
@@ -10,7 +10,7 @@ setup(name='afsrobot',
       license='BSD',
       packages=['afsrobot'],
       install_requires=[
-          'afsutil>=0.6.6',
+          'afsutil',
           'robotframework'
       ],
       scripts=['scripts/afsrobot'],

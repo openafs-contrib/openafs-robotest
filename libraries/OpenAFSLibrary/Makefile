@@ -1,4 +1,5 @@
-.PHONY: help lint test package sdist wheel install install-user remove clean
+PACKAGE=OpenAFSLibrary
+.PHONY: help lint test package version sdist wheel install install-user remove clean
 
 help:
 	@echo "usage: make <target> [<target> ...]"
@@ -15,35 +16,37 @@ help:
 	@echo "  remove       - uninstall package"
 	@echo "  clean        - remove generated files"
 
-
 lint:
-	pyflakes OpenAFSLibrary/*.py OpenAFSLibrary/keywords/*.py
+	pyflakes $(PACKAGE)/*.py $(PACKAGE)/keywords/*.py
 
 test:
 	@echo todo
 
 package: sdist wheel
 
-sdist:
+version:
+	echo "VERSION = '$$(git describe --tags | sed 's/^v//')'" > $(PACKAGE)/__version__.py
+
+sdist: version
 	python setup.py sdist
 
-wheel:
+wheel: version
 	python setup.py bdist_wheel
 
-install:
+install: version
 	pip install --upgrade --no-deps --no-index .
 
-install-user:
+install-user: version
 	pip install --user --upgrade --no-deps --no-index .
 
-install-dev: lint
+install-dev: version lint
 	pip install --user --no-deps --no-index --editable .
 
 remove:
-	pip uninstall -y OpenAFSLibrary
+	pip uninstall -y $(PACKAGE)
 
 clean:
 	-rm -f *.pyc
-	-rm -f OpenAFSLibrary/*.pyc
-	-rm -f OpenAFSLibrary/keywords/*.pyc
-	-rm -fr OpenAFSLibrary.egg-info/ build/ dist/
+	-rm -f $(PACKAGE)/*.pyc
+	-rm -f $(PACKAGE)/keywords/*.pyc
+	-rm -fr $(PACKAGE).egg-info/ build/ dist/

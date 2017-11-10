@@ -1,6 +1,6 @@
 """Utility classes to build, install, and setup OpenAFS."""
 
-__version__ = '0.7.0'
+from afsutil.__version__ import VERSION as __version__
 
 def print_version(**kwargs):
     import sys
