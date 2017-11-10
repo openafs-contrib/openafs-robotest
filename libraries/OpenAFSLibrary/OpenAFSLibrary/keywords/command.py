@@ -19,9 +19,7 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
 
-import socket
 from robot.api import logger
-from robot.libraries.BuiltIn import BuiltIn
 from OpenAFSLibrary.command import run_program
 
 class _CommandKeywords(object):
