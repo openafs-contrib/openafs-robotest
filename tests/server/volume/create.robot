@@ -9,7 +9,7 @@ Suite Setup       Login  ${AFS_ADMIN}
 Suite Teardown    Logout
 
 *** Variables ***
-${SERVER}      ${HOSTNAME}
+${SERVER}      ${FILESERVER}
 ${VOLID}       0
 
 *** Test Cases ***

@@ -7,7 +7,7 @@ Suite Teardown    Logout
 *** Variables ***
 ${VOLUME}      test.find
 ${PARTITION}   a
-${SERVER}      ${HOSTNAME}
+${SERVER}      ${FILESERVER}
 ${TESTPATH}    /afs/.${AFS_CELL}/test/${VOLUME}
 
 *** Keywords ***

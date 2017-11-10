@@ -9,7 +9,7 @@ Suite Teardown     Logout
 *** Variables ***
 ${volume}      test.dump
 ${part}        a
-${server}      ${HOSTNAME}
+${server}      ${FILESERVER}
 ${dump}        /tmp/test.dump
 
 *** Test Cases ***

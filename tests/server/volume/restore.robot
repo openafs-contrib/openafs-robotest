@@ -16,7 +16,7 @@ Test Teardown       Run keywords
 *** Variables ***
 ${volume}           test.restore
 ${part}             a
-${server}           ${HOSTNAME}
+${server}           ${FILESERVER}
 ${dump}             /tmp/restore.dump
 
 *** Test Cases ***

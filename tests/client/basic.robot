@@ -12,7 +12,7 @@ Variables         ${RESOURCES}/errorcodes.py
 *** Variables ***
 ${VOLUME}     test.basic
 ${PARTITION}  a
-${SERVER}     ${HOSTNAME}
+${SERVER}     ${FILESERVER}
 ${TESTPATH}   /afs/.${AFS_CELL}/test/${VOLUME}
 ${DIR2}       ${TESTPATH}/dir2
 ${DIR}        ${TESTPATH}/dir

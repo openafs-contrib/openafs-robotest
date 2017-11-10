@@ -9,7 +9,7 @@ Resource          openafs.robot
 *** Variables ***
 ${VOLUME}      test.stress
 ${PARTITION}   a
-${SERVER}      ${HOSTNAME}
+${SERVER}      ${FILESERVER}
 ${RWPATH}      /afs/.${AFS_CELL}/test/stress
 
 *** Keywords ***

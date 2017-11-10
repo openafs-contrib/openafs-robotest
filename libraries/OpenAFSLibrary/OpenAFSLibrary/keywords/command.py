@@ -24,14 +24,6 @@ from robot.api import logger
 from robot.libraries.BuiltIn import BuiltIn
 from OpenAFSLibrary.command import run_program
 
-def set_global_variables():
-    # Save this hostname as a global variable.
-    try:
-        hostname = socket.gethostname()
-        BuiltIn().set_global_variable("${HOSTNAME}", hostname)
-    except AttributeError:
-        pass # allow to load outside of RF
-
 class _CommandKeywords(object):
     def command_should_succeed(self, cmd, msg=None):
         """Fails if command does not exit with a zero status code."""
@@ -51,6 +43,4 @@ class _CommandKeywords(object):
         logger.info("Code: %d" % rc)
         if rc == 0:
             raise AssertionError("Command should have failed: %s" % cmd)
-
-set_global_variables()
 

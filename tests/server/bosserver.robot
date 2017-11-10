@@ -11,7 +11,7 @@ Suite Teardown    Teardown Users and Groups
 *** Variables ***
 ${VOLUME}      test.basic
 ${PARTITION}   a
-${SERVER}      ${HOSTNAME}
+${SERVER}      ${FILESERVER}
 ${TESTPATH}    /afs/.${AFS_CELL}/test/${VOLUME}
 
 *** Keywords ***
@@ -30,19 +30,19 @@ Teardown Users and Groups
     Logout
 
 Superusers Exclude User1
-    ${output}=  Run           ${BOS} listusers ${HOSTNAME}
+    ${output}=  Run           ${BOS} listusers ${FILESERVER}
     Should Not Contain        ${output}  user1
 
 Superusers Include User1
-    ${output}=  Run           ${BOS} listusers ${HOSTNAME}
+    ${output}=  Run           ${BOS} listusers ${FILESERVER}
     Should Contain            ${output}  user1
 
 Add Superuser
     Superusers Exclude User1
-    Command Should Succeed    ${BOS} adduser ${HOSTNAME} user1
+    Command Should Succeed    ${BOS} adduser ${FILESERVER} user1
 
 Remove Superuser
-    Command Should Succeed    ${BOS} removeuser ${HOSTNAME} user1
+    Command Should Succeed    ${BOS} removeuser ${FILESERVER} user1
     Superusers Exclude User1
 
 *** Test Cases ***
@@ -52,7 +52,7 @@ Add a Bosserver Host
 
 List Server Hosts
     [Tags]  #(bostlisthosts)
-    ${output}=  Run       ${BOS} listhosts ${HOSTNAME}
+    ${output}=  Run       ${BOS} listhosts ${FILESERVER}
     Should Contain        ${output}  ${AFS_CELL}
 
 Remove a Server Host
@@ -62,20 +62,20 @@ Remove a Server Host
 Add a Superuser
     [Tags]  #(bosadduser)
     [Setup]      Superusers Exclude User1
-    Command Should Succeed    ${BOS} adduser ${HOSTNAME} user1
+    Command Should Succeed    ${BOS} adduser ${FILESERVER} user1
     Superusers Include User1
     [Teardown]   Remove Superuser
 
 List Superusers
     [Tags]  #(boslistusers)
-    ${output}=  Run           ${BOS} listusers ${HOSTNAME}
+    ${output}=  Run           ${BOS} listusers ${FILESERVER}
     Should Not Contain        ${output}  user1
 
 Remove a Superuser
     [Tags]  #(bosremoveuser)
     [Setup]      Add Superuser
     Superusers Include User1
-    Command Should Succeed    ${BOS} removeuser ${HOSTNAME} user1
+    Command Should Succeed    ${BOS} removeuser ${FILESERVER} user1
     [Teardown]   Superusers Exclude User1
 
 Install an Executable Shell Script
@@ -96,7 +96,7 @@ Delete a Running bnode
 
 Get a bnode Status
     [Tags]  #(bosstatus)
-    ${output}=  Run            ${BOS} status ${HOSTNAME}
+    ${output}=  Run            ${BOS} status ${FILESERVER}
     Should Contain             ${output}  ptserver
     Should Contain             ${output}  vlserver
     Should Contain             ${output}  dafs
@@ -107,8 +107,8 @@ Stop a bos bnode
 
 Restart a bos bnode
     [Tags]  todo  #(bosrestartstopped)
-    Command Should Succeed     ${BOS} restart ${HOSTNAME} -instance ptserver vlserver
-    ${output}=  Run            ${BOS} status ${HOSTNAME}
+    Command Should Succeed     ${BOS} restart ${FILESERVER} -instance ptserver vlserver
+    ${output}=  Run            ${BOS} status ${FILESERVER}
     Should Contain             ${output}  ptserver
     Should Contain             ${output}  vlserver
 
