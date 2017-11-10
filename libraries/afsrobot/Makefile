@@ -11,6 +11,7 @@ help:
 	@echo "  wheel        - create wheel distribution file"
 	@echo "  install      - install package, global (requires root)"
 	@echo "  install-user - install package, user"
+	@echo "  install-dev  - install package, development"
 	@echo "  remove       - uninstall package"
 	@echo "  clean        - remove generated files"
 
@@ -33,6 +34,9 @@ install:
 
 install-user:
 	pip install --user --upgrade --no-deps --no-index .
+
+install-dev: lint
+	pip install --user --no-deps --no-index --editable .
 
 remove:
 	pip uninstall -y afsrobot

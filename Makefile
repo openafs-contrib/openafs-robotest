@@ -1,5 +1,10 @@
 .PHONY: help lint test install remove clean
 
+LIBS=\
+	libraries/afsutil \
+	libraries/afsrobot \
+	libraries/OpenAFSLibrary
+
 help:
 	@echo "usage: make <target> [<target> ...]"
 	@echo "targets:"
@@ -11,14 +16,15 @@ help:
 	@echo "  clean   - remove generated files"
 
 lint:
-	(cd libraries/afsutil && $(MAKE) lint)
-	(cd libraries/afsrobot && $(MAKE) lint)
-	(cd libraries/OpenAFSLibrary && $(MAKE) lint)
+	for lib in $(LIBS); do $(MAKE) -C $$lib lint; done
+	@echo ok
 
 test:
-	(cd libraries/afsutil && $(MAKE) test)
-	(cd libraries/afsrobot && $(MAKE) test)
-	(cd libraries/OpenAFSLibrary && $(MAKE) test)
+	for lib in $(LIBS); do $(MAKE) -C $$lib test; done
+	@echo ok
+
+install-dev:
+	for lib in $(LIBS); do $(MAKE) -C $$lib install-dev; done
 
 install:
 	./install.sh
@@ -27,6 +33,4 @@ remove:
 	./uninstall.sh
 
 clean:
-	(cd libraries/afsutil && $(MAKE) clean)
-	(cd libraries/afsrobot && $(MAKE) clean)
-	(cd libraries/OpenAFSLibrary && $(MAKE) clean)
+	for lib in $(LIBS); do $(MAKE) -C $$lib clean; done
