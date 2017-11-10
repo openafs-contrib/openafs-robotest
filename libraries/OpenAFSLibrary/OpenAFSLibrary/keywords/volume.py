@@ -20,10 +20,8 @@
 #
 
 import os
-import struct
 import socket
 import re
-import tempfile
 import unittest
 
 from robot.api import logger
@@ -100,51 +98,6 @@ def release_parent(path):
     if 'ro' in parent:
        vos('release', parent['name'], '-verbose')
        fs("checkvolumes")
-
-class VolumeDump(object):
-    """Helper class to create and check volume dumps."""
-
-    DUMPBEGINMAGIC = 0xB3A11322
-    DUMPENDMAGIC = 0x3A214B6E
-    DUMPVERSION = 1
-
-    D_DUMPHEADER = 1
-    D_VOLUMEHEADER = 2
-    D_VNODE = 3
-    D_DUMPEND = 4
-
-    @staticmethod
-    def check_header(filename):
-        """Verify filename is a dump file."""
-        file = open(filename, "r")
-        size = struct.calcsize("!BLL")
-        packed = file.read(size)
-        file.close()
-        if len(packed) != size:
-            raise AssertionError("Not a dump file: file is too short.")
-        (tag, magic, version) = struct.unpack("!BLL", packed)
-        if tag != VolumeDump.D_DUMPHEADER:
-            raise AssertionError("Not a dump file: wrong tag")
-        if magic != VolumeDump.DUMPBEGINMAGIC:
-            raise AssertionError("Not a dump file: wrong magic")
-        if version != VolumeDump.DUMPVERSION:
-            raise AssertionError("Not a dump file: wrong version")
-
-    def __init__(self, filename):
-        """Create a new volume dump file."""
-        self.file = open(filename, "w")
-        self.write(self.D_DUMPHEADER, "LL", self.DUMPBEGINMAGIC, self.DUMPVERSION)
-
-    def write(self, tag, fmt, *args):
-        """Write a tag and values to the dump file."""
-        packed = struct.pack("!B"+fmt, tag, *args)
-        self.file.write(packed)
-
-    def close(self):
-        """Write the end of dump tag and close the dump file."""
-        self.write(self.D_DUMPEND, "L", self.DUMPENDMAGIC) # vos requires the end tag
-        self.file.close()
-        self.file = None
 
 class _VolumeKeywords(object):
     """Volume keywords."""
@@ -283,33 +236,6 @@ class _VolumeKeywords(object):
         if volume['locked']:
             raise AssertionError("Volume '%s' is locked." % (name))
 
-    def should_be_a_dump_file(self, filename):
-        """Fails if filename is not an AFS dump file."""
-        VolumeDump.check_header(filename)
-
-    def create_empty_dump(self, filename):
-        """Create the smallest possible valid dump file."""
-        volid = 536870999 # random, but valid, volume id
-        dump = VolumeDump(filename)
-        dump.write(ord('v'), "L", volid)
-        dump.write(ord('t'), "HLL", 2, 0, 0)
-        dump.write(VolumeDump.D_VOLUMEHEADER, "")
-        dump.close()
-
-    def create_dump_with_bogus_acl(self, filename):
-        """Create a minimal dump file with bogus ACL record.
-
-        The bogus ACL would crash the volume server before gerrit 11702."""
-        volid = 536870999 # random, but valid, volume id
-        size, version, total, positive, negative = (0, 0, 0, 1000, 0) # positive is out of range.
-        dump = VolumeDump(filename)
-        dump.write(ord('v'), "L", volid)
-        dump.write(ord('t'), "HLL", 2, 0, 0)
-        dump.write(VolumeDump.D_VOLUMEHEADER, "")
-        dump.write(VolumeDump.D_VNODE, "LL", 3, 999)
-        dump.write(ord('A'), "LLLLL", size, version, total, positive, negative)
-        dump.close()
-
 #
 # Unit Tests
 #
@@ -339,20 +265,6 @@ class VolumeKeywordTest(unittest.TestCase):
 
     def test_unlocked(self):
         self.v.volume_should_be_unlocked('root.cell')
-
-    def test_create_empty_dump(self):
-        filename = tempfile.mktemp()
-        self.v.create_empty_dump(filename)
-        self.failUnless(os.path.exists(filename))
-        self.v.should_be_a_dump_file(filename)
-        os.remove(filename)
-
-    def test_create_bogus_dump(self):
-        filename = tempfile.mktemp()
-        self.v.create_dump_with_bogus_acl(filename)
-        self.failUnless(os.path.exists(filename))
-        self.v.should_be_a_dump_file(filename)
-        os.remove(filename)
 
 # usage: PYTHONPATH=libraries python -m OpenAFSLibrary.keywords.volume
 if __name__ == '__main__':

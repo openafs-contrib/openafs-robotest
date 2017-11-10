@@ -21,7 +21,7 @@
 
 from OpenAFSLibrary.version import VERSION
 
-from OpenAFSLibrary.keywords import _SystemKeywords
+from OpenAFSLibrary.keywords import _CommandKeywords
 from OpenAFSLibrary.keywords import _LoginKeywords
 from OpenAFSLibrary.keywords import _PathKeywords
 from OpenAFSLibrary.keywords import _ACLKeywords
@@ -29,11 +29,12 @@ from OpenAFSLibrary.keywords import _VolumeKeywords
 from OpenAFSLibrary.keywords import _RxKeywords
 from OpenAFSLibrary.keywords import _PagKeywords
 from OpenAFSLibrary.keywords import _CacheKeywords
+from OpenAFSLibrary.keywords import _DumpKeywords
 
 __version__ = VERSION
 
 class OpenAFSLibrary(
-    _SystemKeywords,
+    _CommandKeywords,
     _LoginKeywords,
     _PathKeywords,
     _ACLKeywords,
@@ -41,6 +42,7 @@ class OpenAFSLibrary(
     _RxKeywords,
     _PagKeywords,
     _CacheKeywords,
+    _DumpKeywords,
     ):
     """Robot Framework test library for OpenAFS (preliminary).
 

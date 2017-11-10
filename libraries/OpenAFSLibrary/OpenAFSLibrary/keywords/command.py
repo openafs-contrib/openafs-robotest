@@ -22,7 +22,6 @@
 import socket
 from robot.api import logger
 from robot.libraries.BuiltIn import BuiltIn
-from OpenAFSLibrary.variable import get_var
 from OpenAFSLibrary.command import run_program
 
 def set_global_variables():
@@ -33,7 +32,7 @@ def set_global_variables():
     except AttributeError:
         pass # allow to load outside of RF
 
-class _SystemKeywords(object):
+class _CommandKeywords(object):
     def command_should_succeed(self, cmd, msg=None):
         """Fails if command does not exit with a zero status code."""
         rc,out,err = run_program(cmd)

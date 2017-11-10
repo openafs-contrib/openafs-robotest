@@ -19,7 +19,7 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
 
-from OpenAFSLibrary.keywords.system import _SystemKeywords
+from OpenAFSLibrary.keywords.command import _CommandKeywords
 from OpenAFSLibrary.keywords.login import _LoginKeywords
 from OpenAFSLibrary.keywords.path import _PathKeywords
 from OpenAFSLibrary.keywords.acl import _ACLKeywords
@@ -27,9 +27,10 @@ from OpenAFSLibrary.keywords.volume import _VolumeKeywords
 from OpenAFSLibrary.keywords.rx import _RxKeywords
 from OpenAFSLibrary.keywords.pag import _PagKeywords
 from OpenAFSLibrary.keywords.cache import _CacheKeywords
+from OpenAFSLibrary.keywords.dump import _DumpKeywords
 
 __all__ = [
-    '_SystemKeywords',
+    '_CommandKeywords',
     '_LoginKeywords',
     '_PathKeywords',
     '_ACLKeywords',
@@ -37,5 +38,6 @@ __all__ = [
     '_RxKeywords',
     '_PagKeywords',
     '_CacheKeywords',
+    '_DumpKeywords',
 ]
 
