@@ -13,8 +13,3 @@ yum install -q -y python python-pip
 if ! python -c 'import argparse' >/dev/null 2>/dev/null; then
     yum install -q -y python-argparse
 fi
-
-export PIP_DISABLE_PIP_VERSION_CHECK=1
-pip install --upgrade robotframework
-pip install --upgrade --no-deps --no-index ./libraries/afsutil
-afsutil check || echo "Try: sudo afsutil check --fix-hosts"

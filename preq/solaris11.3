@@ -69,8 +69,3 @@ create_tester "$AFSROBOT_USERNAME" "$SETUP_GROUP"
 pkg_install 'pkg://solaris/runtime/python-27'
 pkg_install 'pkg://solaris/library/python/pip'
 patch_libtool
-
-export PIP_DISABLE_PIP_VERSION_CHECK=1
-pip install --upgrade robotframework
-pip install --upgrade --no-deps --no-index ./libraries/afsutil
-afsutil check || echo "Try: sudo afsutil check --fix-hosts"

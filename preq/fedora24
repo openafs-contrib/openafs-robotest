@@ -8,10 +8,3 @@ if hostnamectl --no-ask-password --static status | grep -q '^localhost'; then
     hostnamectl --no-ask-password set-hostname ${AFSROBOT_HOSTNAME:-"afsrobot"}
 fi
 fixup_etc_hosts "$AFSROBOT_IFDEVICE"
-
-# Install prereqs
-export PIP_DISABLE_PIP_VERSION_CHECK=1
-dnf install -q -y python python-pip
-pip install --upgrade robotframework
-pip install --upgrade --no-deps --no-index ./libraries/afsutil
-afsutil check || echo "Try: sudo afsutil check --fix-hosts"

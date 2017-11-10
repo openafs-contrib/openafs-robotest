@@ -12,8 +12,3 @@ fixup_etc_hosts "$AFSROBOT_IFDEVICE"
 # Install prereqs
 yum install -q -y epel-release
 yum install -q -y python python-pip
-
-export PIP_DISABLE_PIP_VERSION_CHECK=1
-pip install --upgrade robotframework
-pip install --upgrade --no-deps --no-index ./libraries/afsutil
-afsutil check || echo "Try: sudo afsutil check --fix-hosts"

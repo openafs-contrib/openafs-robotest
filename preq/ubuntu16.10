@@ -11,8 +11,3 @@ sed -i 's/^# deb-src/deb-src/' /etc/apt/sources.list
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -q
 apt-get install -q -y python python-pip
-
-export PIP_DISABLE_PIP_VERSION_CHECK=1
-pip install --upgrade robotframework
-pip install --upgrade --no-deps --no-index ./libraries/afsutil
-afsutil check || echo "Try: sudo afsutil check --fix-hosts"

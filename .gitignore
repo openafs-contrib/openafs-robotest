@@ -4,3 +4,4 @@
 *.ini
 MANIFEST
 /html
+Makefile.config

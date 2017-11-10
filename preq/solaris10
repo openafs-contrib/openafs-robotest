@@ -30,16 +30,12 @@ fi
 /opt/csw/bin/pkgutil -y -i py_pip
 /opt/csw/bin/pkgutil -y -i py_argparse
 
-export PIP_DISABLE_PIP_VERSION_CHECK=1
-pip install --upgrade robotframework
-pip install --upgrade --no-deps --no-index ./libraries/afsutil
-afsutil check || echo "Try: sudo afsutil check --fix-hosts"
-
-# Work-around for OpenCSW pip on Solaris 10 to avoid the need to
-# mess with the PATH.
-for cli in afsutil; do
-    if [ -x /opt/csw/bin/$cli ]; then
-        test -h /usr/bin/$cli && rm -f /usr/bin/$cli
-        test -f /usr/bin/$cli || ln -s /opt/csw/bin/$cli /usr/bin/$cli
-    fi
-done
+# TODO: move to 'make install'
+## Work-around for OpenCSW pip on Solaris 10 to avoid the need to
+## mess with the PATH.
+#for cli in afsutil; do
+#    if [ -x /opt/csw/bin/$cli ]; then
+#        test -h /usr/bin/$cli && rm -f /usr/bin/$cli
+#        test -f /usr/bin/$cli || ln -s /opt/csw/bin/$cli /usr/bin/$cli
+#    fi
+#done

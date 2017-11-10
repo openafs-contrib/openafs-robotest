@@ -1,5 +1,5 @@
 PACKAGE=OpenAFSLibrary
-.PHONY: help lint test package version sdist wheel install install-user remove clean
+.PHONY: help lint test package version sdist wheel install install-user uninstall clean
 
 help:
 	@echo "usage: make <target> [<target> ...]"
@@ -13,7 +13,7 @@ help:
 	@echo "  install      - install package, global (requires root)"
 	@echo "  install-user - install package, user"
 	@echo "  install-dev  - install package, development"
-	@echo "  remove       - uninstall package"
+	@echo "  uninstall    - uninstall package"
 	@echo "  clean        - remove generated files"
 
 lint:
@@ -34,15 +34,15 @@ wheel: version
 	python setup.py bdist_wheel
 
 install: version
-	pip install --upgrade --no-deps --no-index .
+	pip install --upgrade .
 
 install-user: version
-	pip install --user --upgrade --no-deps --no-index .
+	pip install --user --upgrade .
 
 install-dev: version lint
-	pip install --user --no-deps --no-index --editable .
+	pip install --user --editable .
 
-remove:
+uninstall:
 	pip uninstall -y $(PACKAGE)
 
 clean:
