@@ -33,18 +33,6 @@ def set_global_variables():
     except AttributeError:
         pass # allow to load outside of RF
 
-def get_crash_count():
-    count = 0
-    last = ""
-    filename = "%s/BosLog" % get_var('AFS_LOGS_DIR')
-    log = open(filename, "r")
-    for line in log.readlines():
-        if 'core dumped' in line:
-            last = line
-            count += 1
-    log.close()
-    return (count, last)
-
 class _SystemKeywords(object):
     def command_should_succeed(self, cmd, msg=None):
         """Fails if command does not exit with a zero status code."""
@@ -64,19 +52,6 @@ class _SystemKeywords(object):
         logger.info("Code: %d" % rc)
         if rc == 0:
             raise AssertionError("Command should have failed: %s" % cmd)
-
-    def init_crash_check(self):
-        """Initialize the crash check counter."""
-        (count, last) = get_crash_count()
-        BuiltIn().set_suite_variable('${CRASH_COUNT}', count)
-        BuiltIn().set_suite_variable('${CRASH_LAST}', last)
-
-    def crash_check(self):
-        """Fails if a server process crash was detected."""
-        before = get_var('CRASH_COUNT')
-        (after, last) = get_crash_count()
-        if after != before:
-            raise AssertionError("Server crash detected! %s" % last)
 
 set_global_variables()
 
