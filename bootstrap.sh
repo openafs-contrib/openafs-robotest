@@ -81,15 +81,10 @@ export AFSROBOT_GROUP
 export AFSROBOT_IFDEVICE
 export AFSROBOT_CREDS
 
-. preq/functions.sh
+make preinstall  || die "preinstall failed"
+make install     || die "install failed"
+make postinstall || die "postintall failed"
 
-test $UID -eq 0 || die "Please run as root."
-OS_ID=`detect_os`
-test -f ./preq/$OS_ID || die "Sorry, no preq file found for '$OS_ID'."
-echo "Running $OS_ID preq..."
-./preq/$OS_ID || die "Failed to preq $OS_ID."
-echo "Installing openafs-robotest..."
-./install.sh || die "Failed to install openafs-robotest."
 echo "Installing build tools..."
 afsutil getdeps --creds $AFSROBOT_CREDS || die "Failed to install build tools."
 

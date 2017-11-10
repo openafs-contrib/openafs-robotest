@@ -1,14 +1,15 @@
 #!/bin/bash
 set -e
-source ./preq/linux-functions.sh
+source ./install/linux-functions.sh
 
 # System-wide prereqs
 create_tester "$AFSROBOT_USERNAME" "$SETUP_GROUP"
-if hostnamectl --no-ask-password --static status | grep -q '^localhost'; then
-    hostnamectl --no-ask-password set-hostname ${AFSROBOT_HOSTNAME:-"afsrobot"}
-fi
 fixup_etc_hosts "$AFSROBOT_IFDEVICE"
 
 # Install prereqs
 yum install -q -y epel-release
 yum install -q -y python python-pip
+
+if ! python -c 'import argparse' >/dev/null 2>/dev/null; then
+    yum install -q -y python-argparse
+fi

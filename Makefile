@@ -1,5 +1,5 @@
-.PHONY: help lint test install install-user install-dev \
-		uninstall uninstall-user uninstall-dev clean
+.PHONY: help lint test preinstall postinstall install install-user \
+		install-dev uninstall uninstall-user uninstall-dev clean
 
 include Makefile.config
 
@@ -39,6 +39,18 @@ test:
 	for lib in $(LIBS); do $(MAKE) -C $$lib test; done
 	@echo ok
 
+preinstall:
+	os_id=`/bin/sh -c '. install/functions.sh; detect_os'`; \
+	preinstall=install/preinstall.$$os_id; \
+	if [ -f $$preinstall ]; then $$preinstall; \
+	else echo "error: $$os_id not supported"; exit 1; fi
+
+postinstall:
+	os_id=`/bin/sh -c '. install/functions.sh; detect_os'`; \
+	postinstall=install/postinstall.$$os_id; \
+	if [ -f $$postinstall ]; then $$postinstall; \
+	else echo "error: $$os_id not supported"; exit 1; fi
+
 install:
 	for lib in $(LIBS); do $(MAKE) -C $$lib install; done
 	mkdir -p $(PREFIX)/afsrobot
@@ -49,8 +61,6 @@ install:
 	mkdir -p $(PREFIX)/afsrobot/doc && \
 	python -m robot.libdoc --format HTML --pythonpath $$input $$input $$output
 	@afsutil check --quiet || echo "Try: sudo afsutil check --fix-hosts"
-	os_id=`/bin/sh -c '. preq/functions.sh; detect_os'`; \
-	if [ -f preq/postinstall.$$os_id ]; then preq/postinstall.$$os_id; fi
 
 install-user:
 	for lib in $(LIBS); do $(MAKE) -C $$lib install-user; done

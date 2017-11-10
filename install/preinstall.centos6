@@ -1,14 +1,15 @@
 #!/bin/bash
 set -e
-source ./preq/linux-functions.sh
+source ./install/linux-functions.sh
 
 # System-wide prereqs
 create_tester "$AFSROBOT_USERNAME" "$SETUP_GROUP"
 fixup_etc_hosts "$AFSROBOT_IFDEVICE"
 
 # Install prereqs
-export DEBIAN_FRONTEND=noninteractive
-apt-get install -q -y python python-pip
+yum install -q -y epel-release
+yum install -q -y python python-pip
+
 if ! python -c 'import argparse' >/dev/null 2>/dev/null; then
-    apt-get install -q -y python-argparse
+    yum install -q -y python-argparse
 fi

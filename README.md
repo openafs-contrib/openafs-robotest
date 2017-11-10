@@ -20,26 +20,26 @@ OpenAFS and run the tests.
 * Robotframework 2.7+
 * OpenAFS installation packages or binaries built from source
 
-## System Prereqs
+## System prerequesists
 
-Scripts are provided for supported platforms in the `preq` directory to install
-the needed software prerequisites and perform any required system setup. To run
-the preq script for the current system:
+Scripts are provided for supported platforms in the `install` directory to
+install required software prerequisites and perform any required system setup.
+To run the preinstall script for the current system:
 
-    $ sudo ./preq.sh
+    $ sudo make preinstall
 
 ## Installation
 
 Install the OpenAFS robotest tests, libraries, and the frontend `afsrobot` tool
-with the installation script as a regular user.
+as a regular user.
 
-    $ ./install.sh
+    $ make install-user
 
-Install will create the `afsrobot` directory in your home directory. The tests,
-resources, and a default configuration file called `afsrobot.ini` will be
-placed in this directory.
+or install globally with,
 
-## Configure
+    $ sudo make install
+
+## Configuration
 
 The `afsrobot config` subcommand may be use to display and update the
 configuration file.

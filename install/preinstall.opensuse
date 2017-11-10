@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-source ./preq/linux-functions.sh
+source ./install/linux-functions.sh
 
 # System-wide prereqs
 create_tester "$AFSROBOT_USERNAME" "$SETUP_GROUP"
