@@ -17,9 +17,4 @@ Dump an empty volume
     [Setup]     Create volume   ${volume}
     [Teardown]  Remove volume   ${volume}
     Command should succeed  ${VOS} dump -id ${volume} -file ${dump}
-    Dump successful
-
-*** Keywords ***
-Dump successful
-    Log     todo
 

@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Sine Nomine Associates
+# Copyright (c) 2014-2017 Sine Nomine Associates
 # See LICENSE
 
 *** Settings ***
@@ -7,9 +7,3 @@ Library           OperatingSystem
 Library           String
 Library           OpenAFSLibrary
 Variables         ${RESOURCES}/dist/${AFS_DIST}.py
-
-*** Keywords ***
-TODO
-    [Arguments]  ${msg}=Not implemented
-    Fail  TODO: ${msg}
-

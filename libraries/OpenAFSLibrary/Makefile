@@ -6,7 +6,6 @@ help:
 	@echo "targets:"
 	@echo "  help         - display targets"
 	@echo "  lint         - run python linter"
-	@echo "  test         - run unit tests"
 	@echo "  package      - build distribution files"
 	@echo "  sdist        - create source distribution file"
 	@echo "  wheel        - create wheel distribution file"
@@ -18,9 +17,6 @@ help:
 
 lint:
 	pyflakes $(PACKAGE)/*.py $(PACKAGE)/keywords/*.py
-
-test:
-	@echo todo
 
 package: sdist wheel
 
