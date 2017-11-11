@@ -76,9 +76,3 @@ Get a bnode Status
     Should Contain             ${output}  ptserver
     Should Contain             ${output}  vlserver
     Should Contain             ${output}  dafs
-
-Restart a bos bnode
-    Command Should Succeed     ${BOS} restart ${FILESERVER} -instance ptserver vlserver
-    ${output}=  Run            ${BOS} status ${FILESERVER}
-    Should Contain             ${output}  ptserver
-    Should Contain             ${output}  vlserver
