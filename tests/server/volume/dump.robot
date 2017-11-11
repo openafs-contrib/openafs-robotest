@@ -2,7 +2,7 @@
 # See LICENSE
 
 *** Settings ***
-Resource           openafs.robot
+Resource           common.robot
 Suite Setup        Login  ${AFS_ADMIN}
 Suite Teardown     Logout
 

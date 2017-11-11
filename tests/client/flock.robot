@@ -4,7 +4,7 @@
 
 *** Settings ***
 Documentation     Filesystem Lock Semantics tests
-Resource          openafs.robot
+Resource          common.robot
 
 *** Test Cases ***
 Test pine Lockfile Semantics

@@ -2,5 +2,5 @@
 # See LICENSE
 
 *** Settings ***
-Resource          openafs.robot
+Resource          common.robot
 

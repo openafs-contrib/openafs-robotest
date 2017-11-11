@@ -4,7 +4,7 @@
 
 *** Settings ***
 Documentation     Remote operation tests
-Resource          openafs.robot
+Resource          common.robot
 
 *** Test Cases ***
 Write a File Locally and Read it in a Foreign Cache Manager

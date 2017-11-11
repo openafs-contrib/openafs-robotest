@@ -4,7 +4,7 @@
 
 *** Settings ***
 Documentation     Bosserver tests
-Resource          openafs.robot
+Resource          common.robot
 Suite Setup       Setup Users and Groups
 Suite Teardown    Teardown Users and Groups
 

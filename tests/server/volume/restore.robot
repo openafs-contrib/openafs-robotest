@@ -6,7 +6,7 @@ Documentation       Tests to verify volume restore operations with the
 ...                 various of the restore options and to test the volume
 ...                 server robustness while attempting to restore invalid
 ...                 volume dump streams.
-Resource            openafs.robot
+Resource            common.robot
 Suite Setup         Login  ${AFS_ADMIN}
 Suite Teardown      Logout
 Test Teardown       Run keywords

@@ -4,7 +4,7 @@
 
 *** Settings ***
 Documentation     Volume salvaging tests
-Resource          openafs.robot
+Resource          common.robot
 
 *** Test Cases ***
 Restore Volume with a Bad Uniquifier in it, salvage, check

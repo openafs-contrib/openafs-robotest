@@ -4,7 +4,7 @@
 
 *** Settings ***
 Documentation     Basic Functional Tests
-Resource          openafs.robot
+Resource          common.robot
 Suite Setup       Setup
 Suite Teardown    Teardown
 Variables         ${RESOURCES}/errorcodes.py

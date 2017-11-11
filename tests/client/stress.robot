@@ -4,7 +4,7 @@
 
 *** Settings ***
 Documentation     Client stess tests
-Resource          openafs.robot
+Resource          common.robot
 
 *** Variables ***
 ${VOLUME}      test.stress

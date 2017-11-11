@@ -4,7 +4,7 @@
 
 *** Settings ***
 Documentation     mmap tests
-Resource          openafs.robot
+Resource          common.robot
 
 *** Test Cases ***
 Append over a mapped page

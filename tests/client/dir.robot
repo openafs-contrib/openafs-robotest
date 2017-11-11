@@ -4,7 +4,7 @@
 
 *** Settings ***
 Documentation     Directory Object tests
-Resource          openafs.robot
+Resource          common.robot
 Suite Setup       Setup
 Suite Teardown    Teardown
 

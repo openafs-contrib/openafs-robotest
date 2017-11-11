@@ -1,6 +1,6 @@
 *** Settings ***
 Documentation     Read-only tests
-Resource          openafs.robot
+Resource          common.robot
 Suite Setup       Setup Test Suite
 Suite Teardown    Teardown Test Suite
 
