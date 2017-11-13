@@ -69,11 +69,12 @@ def bos(*args):
 def vos(*args):
     rc,out,err = run_program([get_var('VOS')] + list(args))
     if rc != 0:
-        lines = err.splitlines()
-        if len(lines) > 0 and lines[0] == "VLDB: no such entry":
-            raise NoSuchEntryError(args)
-        else:
-            raise CommandFailed('vos', args, err)
+        for line in err.splitlines():
+            if "VLDB: no such entry" in line:
+                raise NoSuchEntryError(args)
+            if "does not exist" in line:
+                raise NoSuchEntryError(args)
+        raise CommandFailed('vos', args, err)
     return out
 
 def fs(*args):

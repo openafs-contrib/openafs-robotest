@@ -9,35 +9,50 @@ Documentation       Tests to verify volume restore operations with the
 Resource            common.robot
 Suite Setup         Login  ${AFS_ADMIN}
 Suite Teardown      Logout
-Test Teardown       Run keywords
-...                 Remove volume   ${volume}   AND
-...                 Remove file     ${dump}
+Test Teardown       Cleanup
 
 *** Variables ***
-${volume}           test.restore
-${part}             a
-${server}           ${FILESERVER}
-${dump}             /tmp/restore.dump
+${VOLUME}           test.restore
+${PART}             a
+${SERVER}           ${FILESERVER}
+${DUMP}             /tmp/test.dump
 
 *** Test Cases ***
-Restore to a new volume name
-    [Setup]     Run keywords
-    ...         Create dump  ${dump}            AND
-    ...         Volume should not exist  ${volume}
-    Command should succeed   ${VOS} restore ${server} ${part} ${volume} -file ${dump} -overwrite full
-    Volume should exist      ${volume}
-    Volume location matches  ${volume}  ${server}  ${part}  vtype=rw
+Restore a volume
+    Volume should not exist  ${VOLUME}
+    Create dump              ${DUMP}    size=small
+    Command should succeed   ${VOS} restore ${SERVER} ${PART} ${VOLUME} -file ${DUMP} -overwrite full
+    Volume should exist      ${VOLUME}
+    Volume location matches  ${VOLUME}  ${SERVER}  ${PART}  vtype=rw
 
 Restore an empty volume
-    [Setup]     Run keywords
-    ...         Create empty dump  ${dump}      AND
-    ...         Volume should not exist  ${volume}
-    Command should succeed   ${VOS} restore ${server} ${part} ${volume} -file ${dump} -overwrite full
-    Volume should exist      ${volume}
-    Volume location matches  ${volume}  ${server}  ${part}  vtype=rw
+    Volume should not exist  ${VOLUME}
+    Create dump              ${DUMP}    size=empty
+    Command should succeed   ${VOS} restore ${SERVER} ${PART} ${VOLUME} -file ${DUMP} -overwrite full
+    Volume should exist      ${VOLUME}
+    Volume location matches  ${VOLUME}  ${SERVER}  ${PART}  vtype=rw
+
+Restore a Volume Containing a Bogus ACL
+    Volume should not exist  ${VOLUME}
+    Create dump              ${DUMP}    size=small      contains=bogus-acl
+    Command Should Fail      ${VOS} restore ${SERVER} ${PART} ${VOLUME} -FILE ${DUMP} -overwrite full
+
+Avoid creating a rogue volume during restore
+    [Tags]         rogue-avoidance
+    [Teardown]     Cleanup Rogue    ${vid}
+    Set test variable    ${vid}    0
+    ${vid}=        Create volume    ${VOLUME}    ${SERVER}    a    orphan=True
+    Create dump    ${DUMP}    size=small
+    Command should fail
+    ...    ${VOS} restore -server ${SERVER} -part b -name ${VOLUME} -id ${vid} -file ${DUMP} -overwrite full
 
 *** Keywords ***
-Create dump
-    [Arguments]  ${dumpfile}
-    Command should succeed    ${VOS} dump test -file ${dumpfile}
+Cleanup
+    Remove volume   ${VOLUME}
+    Remove file     ${DUMP}
 
+Cleanup Rogue
+    [Arguments]     ${vid}
+    Remove volume   ${vid}    server=${SERVER}
+    Remove volume   ${vid}    server=${SERVER}    zap=True
+    Remove file     ${DUMP}

@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2015 Sine Nomine Associates
+# Copyright (c) 2014-2017 Sine Nomine Associates
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -22,7 +22,6 @@
 import os
 import socket
 import re
-import unittest
 
 from robot.api import logger
 from OpenAFSLibrary.command import vos, fs, NoSuchEntryError
@@ -91,6 +90,19 @@ def get_volume_entry(name_or_id):
             info['op'] = m.group(1)
     return info
 
+def get_parts(server):
+    """Get the server partitions."""
+    parts = []
+    for line in vos('listpart', server).splitlines():
+        line = line.strip()
+        if line.startswith("The partitions"):
+            continue
+        if line.startswith("Total"):
+            continue
+        for part in line.split():
+            parts.append(part.replace("/vicep", ""))
+    return parts
+
 def release_parent(path):
     ppath = os.path.dirname(path)
     info = examine_path(ppath)
@@ -99,10 +111,16 @@ def release_parent(path):
        vos('release', parent['name'], '-verbose')
        fs("checkvolumes")
 
+def _zap_volume(name_or_id, server, part):
+    try:
+        vos('zap', '-id', name_or_id, '-server', server, '-part', part);
+    except NoSuchEntryError:
+        logger.info("No such volume to zap")
+
 class _VolumeKeywords(object):
     """Volume keywords."""
 
-    def create_volume(self, name, server=None, part='a', path=None, quota='0', ro=False, acl=None):
+    def create_volume(self, name, server=None, part='a', path=None, quota='0', ro=False, acl=None, orphan=False):
         """Create and mount a volume.
 
         Create a volume and optionally mount the volume. Also optionally create
@@ -123,6 +141,9 @@ class _VolumeKeywords(object):
             m = re.match(r'Volume (\d+) created on partition', line)
             if m:
                 vid = m.group(1)
+                break
+        if vid is None:
+            raise AssertionError("Created volume id not found!")
         if path:
             fs('mkmount', '-dir', path, '-vol', name)
             if acl:
@@ -132,19 +153,20 @@ class _VolumeKeywords(object):
             vos('release', name, '-verbose')
         if path:
             release_parent(path)
+        if orphan:
+            # Intentionally remove the vldb entry for testing!
+            vos('delent', '-id', vid)
         return vid
 
-    def remove_volume(self, name, path=None, flush=False):
+    def remove_volume(self, name_or_id, path=None, flush=False, server=None, part=None, zap=False):
         """Remove a volume.
 
         Remove the volume and any clones. Optionally remove the given mount point.
         """
-        removed_mtpt = False
-        try:
-            volume = get_volume_entry(name)
-        except NoSuchEntryError:
-            logger.info("No vldb entry found for volume '%s'" % name)
-            volume = None
+        if name_or_id == '0':
+            logger.info("Skipping remove for volume id 0")
+            return
+        volume = None
         if path:
             path = os.path.abspath(path)
             if not os.path.exists(path):
@@ -154,15 +176,31 @@ class _VolumeKeywords(object):
             if flush:
                 fs("flush", path)
             fs('rmmount', '-dir', path)
-            removed_mtpt = True
+            release_parent(path)
+        try:
+            volume = get_volume_entry(name_or_id)
+        except NoSuchEntryError:
+            logger.info("No vldb entry found for volume '%s'" % name_or_id)
         if volume:
             if 'rosites' in volume:
                 for server,part in volume['rosites']:
-                    vos('remove', '-server', server, '-part', part, '-id', "%s.readonly" % name)
-            vos('remove', '-id', name)
-        if removed_mtpt:
-            release_parent(path)
-        fs("checkvolumes")
+                    vos('remove', '-server', server, '-part', part, '-id', "%s.readonly" % name_or_id)
+            vos('remove', '-id', name_or_id)
+            fs("checkvolumes")
+        elif zap:
+            if not server:
+                server = socket.gethostname()
+            if part:
+                try:
+                    vos('zap', '-id', name_or_id, '-server', server, '-part', part);
+                except NoSuchEntryError:
+                    logger.info("No volume {name_or_id} to zap on server {server} part {part}".format(**locals()))
+            else:
+                for part in get_parts(server):
+                    try:
+                        vos('zap', '-id', name_or_id, '-server', server, '-part', part);
+                    except NoSuchEntryError:
+                        logger.info("No volume {name_or_id} to zap on server {server} part {part}".format(**locals()))
 
     def mount_volume(self, path, vol, *options):
         """Mount an AFS volume."""
@@ -236,37 +274,6 @@ class _VolumeKeywords(object):
         if volume['locked']:
             raise AssertionError("Volume '%s' is locked." % (name))
 
-#
-# Unit Tests
-#
-class VolumeKeywordTest(unittest.TestCase):
-
-    def __init__(self, *args, **kwargs):
-        unittest.TestCase.__init__(self, *args, **kwargs)
-        self.v = _VolumeKeywords()
-
-    def test_create(self):
-        name = 'unittest.xyzzy'
-        path = "/afs/.robotest/test/%s" % name
-        self.v.create_volume(name, path=path, ro=True)
-        self.v.remove_volume(name, path=path)
-
-    def test_should_exist(self):
-        self.v.volume_should_exist('root.cell')
-
-    def test_should_not_exist(self):
-        self.v.volume_should_not_exist('does.not.exist')
-
-    def test_location(self):
-        name_or_id = 'root.cell'
-        server = socket.gethostname()
-        part = 'a'
-        self.v.volume_location_matches(name_or_id, server, part, vtype='rw')
-
-    def test_unlocked(self):
-        self.v.volume_should_be_unlocked('root.cell')
-
-# usage: PYTHONPATH=libraries python -m OpenAFSLibrary.keywords.volume
-if __name__ == '__main__':
-    unittest.main()
-
+    def get_volume_id(self, name):
+        volume = get_volume_entry(name)
+        return volume['rw']
