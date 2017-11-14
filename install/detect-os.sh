@@ -1,6 +1,4 @@
-#
-# Common shell functions for os specific setup scripts.
-#
+#!/bin/sh
 
 detect_linux_distro() {
     if [ -f /etc/os-release ]; then
@@ -23,11 +21,8 @@ detect_solaris_release() {
     echo "solaris$version"
 }
 
-detect_os() {
-    case `uname` in
-        Linux) detect_linux_distro ;;
-        SunOS) detect_solaris_release ;;
-        *) echo "unknown" ;;
-    esac
-}
-
+case `uname` in
+    Linux) detect_linux_distro ;;
+    SunOS) detect_solaris_release ;;
+    *) echo "unknown" ;;
+esac
