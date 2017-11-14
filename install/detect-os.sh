@@ -8,6 +8,7 @@ detect_linux_distro() {
         case `cat /etc/redhat-release` in
             'CentOS release 5.'*) echo "centos5" ;;
             'CentOS release 6.'*) echo "centos6" ;;
+            'CentOS release 7.'*) echo "centos7" ;;
             'Red Hat Enterprise Linux Server release 5'*) echo "rhel5" ;;
             *) "rhel" ;;
         esac
