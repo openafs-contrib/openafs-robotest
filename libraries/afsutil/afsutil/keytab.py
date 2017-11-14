@@ -301,7 +301,10 @@ class Keytab(object):
         file_size = stat.st_size
         with open(path, 'r') as f:
             offset = struct.calcsize("!h")
-            version, = self._read(f, "!h")
+            try:
+                version, = self._read(f, "!h")
+            except IOError:
+                raise InvalidKeytab("File {0} is not keytab.".format(path))
             if version != 0x0502 and version != 0x051:  # magic
                 raise InvalidKeytab("File {0} is not keytab.".format(path))
             while offset < file_size:
@@ -548,17 +551,23 @@ def create(cell='robotest', realm=None, keytab='/tmp/afs.keytab',
     k.write(keytab)
 
 def destroy(keytab='/tmp/afs.keytab', force=False, **kwargs):
-    """Destroy a keyab file.
+    """Remove a keytab file.
 
     keytab: path of the keytab file to be removed
-    force: warn on common errors instead of failing
+    force:  delete even if the file is not a valid keytab
     """
     try:
         k = Keytab().load(keytab)
+        logger.debug("removing keytab file %s", k.filename)
         os.remove(k.filename)
-    except KeytabException as e:
+    except NotFoundKeytab:
+        logger.debug("keytab not found %s", keytab)
+    except InvalidKeytab:
         if not force:
-            raise e
+            logger.info("skipping removal of non-keytab file %s", keytab)
+        else:
+            logger.debug("removing invalid keytab file %s (forced)", keytab)
+            os.remove(keytab)
 
 def setkey(keytab='/tmp/afs.keytab', cell=None, realm=None,
         kformat=None, confdir=AFS_CONF_DIR, **kwargs):
