@@ -20,43 +20,29 @@ OpenAFS and run the tests.
 * Robotframework 2.7+
 * OpenAFS installation packages or binaries built from source
 
-## System prerequesists
-
-Scripts are provided for supported platforms in the `install` directory to
-install required software prerequisites and perform any required system setup.
-To run the preinstall script for the current system:
-
-    $ sudo make preinstall
-
 ## Installation
 
 Install the OpenAFS robotest tests, libraries, and the frontend `afsrobot` tool
-as a regular user.
-
-    $ make install-user
-
-or install globally with,
 
     $ sudo make install
 
-## Configuration
+Add the users to run tests to the 'testers' group.
 
-The `afsrobot config` subcommand may be use to display and update the
-configuration file.
+    $ sudo usermod -a -G testers <username>
+
+Create the configuration file and output directories:
+
+    $ afsrobot init
 
 To show the current configuration:
 
     $ afsrobot config list
 
-To install Transarc-style binaries:
+By default, the configuration will install binaries built from source using the
+legacy Transarc-style.  Update the configuration to install RPM packages during
+the setup phase.
 
-    $ afsrobot config set variables afs_dist transarc
-    $ afsrobot config set host.0 installer transarc
-    $ afsrobot config set host.0 dest <path-to-dest-dir>
-
-To install RPM packages:
-
-    $ afsrobot config set variables afs_dist rhel6
+    $ afsrobot config set test afs_dist rhel6
     $ afsrobot config set host.0 installer rpm
 
 ### akimpersonate notes
