@@ -33,11 +33,11 @@ Makefile.config:
 	echo "OSID=`install/detect-os.sh`" >>Makefile.config
 
 lint:
-	for lib in $(LIBS); do $(MAKE) -C $$lib lint; done
+	for lib in $(LIBS); do (cd $$lib && $(MAKE) lint) || exit 1; done
 	@echo ok
 
 test:
-	for lib in $(LIBS); do $(MAKE) -C $$lib test; done
+	for lib in $(LIBS); do (cd $$lib && $(MAKE) test) || exit 1; done
 	@echo ok
 
 preinstall:
