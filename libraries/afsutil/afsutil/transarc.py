@@ -23,7 +23,6 @@
 import logging
 import os
 import shutil
-import sys
 import glob
 import pkg_resources
 import tempfile
@@ -461,17 +460,3 @@ class _Test(object):
         self.test_install_client()
         self.test_remove_server() # leaves common packages
         self.test_remove_client() # removes common packages
-
-def main():
-    if len(sys.argv) != 2:
-        sys.stderr.write("usage: python transarc.py <dest>\n")
-        sys.exit(1)
-    if os.geteuid() != 0:
-        sys.stderr.write("Must run as root!\n")
-        sys.exit(1)
-    t = _Test(sys.argv[1])
-    t.test()
-
-if __name__ == '__main__':
-    main()
-

@@ -22,9 +22,7 @@
 
 import logging
 import os
-import sys
 import glob
-import pprint
 
 from afsutil.system import sh
 from afsutil.install import Installer
@@ -182,86 +180,3 @@ class RpmInstaller(Installer):
             logger.info("removing %s" % " ".join(packages))
             rpm('-v', '--erase', *packages)
         self.post_remove()
-
-#
-# Test driver.
-#
-class _Test(object):
-    def __init__(self, pkgdir):
-        self.pkgdir = pkgdir
-
-    def test_find_installed(self):
-        i = RpmInstaller()
-        installed = i.find_installed()
-        print "installed:"
-        pprint.pprint(installed)
-
-    def test_find_packages(self):
-        i = RpmInstaller(pkgdir=self.pkgdir)
-        packages = i.find_packages()
-        print "packages:"
-        pprint.pprint(packages)
-
-    def test_find_package(self):
-        i = RpmInstaller(pkgdir=self.pkgdir)
-        package = i.find_package('openafs')
-        print "openafs package:"
-        pprint.pprint(package)
-
-    def test_find_kmod(self):
-        i = RpmInstaller(pkgdir=self.pkgdir)
-        package = i.find_kmod()
-        print "kmod package:"
-        pprint.pprint(package)
-
-    def test_install(self):
-        i = RpmInstaller(pkgdir=self.pkgdir)
-        i.install()
-
-    def test_remove(self):
-        i = RpmInstaller(pkgdir=self.pkgdir)
-        i.remove()
-
-    def test_install_server(self):
-        i = RpmInstaller(pkgdir=self.pkgdir, components=['server'])
-        i.install()
-
-    def test_remove_server(self):
-        i = RpmInstaller(pkgdir=self.pkgdir, components=['server'])
-        i.remove()
-
-    def test_install_client(self):
-        i = RpmInstaller(pkgdir=self.pkgdir, components=['client'])
-        i.install()
-
-    def test_remove_client(self):
-        i = RpmInstaller(pkgdir=self.pkgdir, components=['client'])
-        i.remove()
-
-    def test(self):
-        logging.basicConfig(level=logging.DEBUG)
-        self.test_find_installed()
-        self.test_find_packages()
-        self.test_find_package()
-        self.test_find_kmod()
-        self.test_install()
-        self.test_remove()
-        self.test_install_server()
-        self.test_install_client()
-        self.test_remove_server() # leaves common packages
-        self.test_find_installed()
-        self.test_remove_client() # removes common packages
-        self.test_find_installed()
-
-def main():
-    if len(sys.argv) != 2:
-        sys.stderr.write("usage: python rpm.py <pkgdir>\n")
-        sys.exit(1)
-    if os.geteuid() != 0:
-        sys.stderr.write("Must run as root!\n")
-        sys.exit(1)
-    t = _Test(sys.argv[1])
-    t.test()
-
-if __name__ == '__main__':
-    main()

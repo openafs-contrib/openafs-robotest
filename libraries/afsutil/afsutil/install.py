@@ -369,31 +369,3 @@ def install(dist='transarc', **kwargs):
 
 def remove(dist='transarc', **kwargs):
     installer(dist, **kwargs).remove()
-
-#
-# Test Driver
-#
-class _Test(object):
-    def test_detect_cellhosts(self):
-        i = Installer()
-        cellhosts = i._detect_cellhosts()
-        pprint.pprint(cellhosts)
-
-    def test_lookup_cellhosts(self):
-        i = Installer()
-        #cellhosts = i._lookup_cellhosts(['localhost'])
-        #pprint.pprint(cellhosts)
-        cellhosts = i._lookup_cellhosts(['mantis'])
-        pprint.pprint(cellhosts)
-        cellhosts = i._lookup_cellhosts(['mantis', 'wasp'])
-        pprint.pprint(cellhosts)
-
-    def test(self):
-        logging.basicConfig(level=logging.DEBUG)
-        self.test_detect_cellhosts()
-        self.test_lookup_cellhosts()
-
-if __name__ == '__main__':
-    t = _Test()
-    t.test()
-
