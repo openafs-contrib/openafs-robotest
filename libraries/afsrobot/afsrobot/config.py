@@ -84,7 +84,7 @@ user = <AFSROBOT_DATA>/user.keytab
 
 [host.0]
 name = <HOSTNAME>
-installer = none
+installer = transarc
 keyformat = detect
 dafileserver = -d 1 -L
 davolserver = -d 1
