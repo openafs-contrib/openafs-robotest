@@ -244,30 +244,22 @@ class TransarcInstaller(Installer):
             raise AssertionError("Unsupported operating system: %s" % (uname))
         self.installed = {'libs':False, 'client':False, 'server':False, 'ws':False}
 
-    def _detect_sysname(self):
-        """Try to detect the sysname from the previous build output."""
-        sysname = None
-        try:
-            with open("src/config/Makefile.config", "r") as f:
-                for line in f.readlines():
-                    match = re.match(r'SYS_NAME\s*=\s*(\S+)', line)
-                    if match:
-                        sysname = match.group(1)
-                        break
-        except IOError:
-            pass
-        return sysname
-
     def _detect_dest(self):
-        """Try to detect the dest directory from the previous build.
-        This is used to install bins after building binaries."""
-        dest = None
-        sysname = self._detect_sysname()
-        if sysname:
-            dest = "%s/dest" % (sysname)
-        else:
-            raise ValueError("Unable to find dest directory.")
-        return dest
+        user = os.getenv('SUDO_USER') # The user who invoked sudo.
+        patterns = ["./*/dest"]
+        if user:
+            patterns.append("/home/{user}/openafs/*/dest".format(**locals()))
+            patterns.append("/home/{user}/src/openafs/*/dest".format(**locals()))
+        for pattern in patterns:
+            logger.debug("Searching for dest in '%s'", pattern)
+            paths = glob.glob(pattern)
+            if len(paths) > 1:
+                raise AssertionError("Unable to find dest directory: too many sysnames in '%s'!" % (pattern))
+            if len(paths) == 1:
+                path = os.path.abspath(paths[0])
+                logger.debug("Found dest: '%s'", path)
+                return path
+        raise AssertionError("Unable to find dest directory.")
 
     def _check_dest(self, dest):
         """Verify the dest directory looks sane."""
