@@ -265,9 +265,11 @@ class Config(ConfigParser.SafeConfigParser):
         """Return a list of active hostnames."""
         hostnames = []
         for cat in ('db', 'fs', 'cm'):
-            for name in self.optstr('cell', cat).split(','):
-                if name not in hostnames:
-                    hostnames.append(name)
+            names = self.optstr('cell', cat)
+            if names:
+                for name in names.split(','):
+                    if name not in hostnames:
+                        hostnames.append(name)
         return hostnames
 
     def get_host_section(self, hostname):

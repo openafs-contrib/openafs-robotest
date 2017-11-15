@@ -23,7 +23,6 @@ import os
 import unittest
 import StringIO
 import tempfile
-import socket
 
 sys.path.insert(0, "..")
 sys.path.insert(0, ".")
@@ -138,18 +137,10 @@ class ConfigTest(unittest.TestCase):
 
     def test_opthostnames__not_empty(self):
         c = afsrobot.config.Config()
-        c.load_from_string(string="[host:a]\na = b\n[host:b]\na = b\n[host:c]\na = b")
+        c.load_from_string(string="[cell]\nfs = a\ndb = b\ncm = c")
         hostnames = c.opthostnames()
         self.assertTrue(isinstance(hostnames, list))
         self.assertTrue(len(hostnames) == 3)
-
-    def test_optcomponents(self):
-        hostname = socket.gethostname()
-        expect = 'server client'
-        c = afsrobot.config.Config()
-        c.load_defaults()
-        args = c.optcomponents(hostname)
-        self.assertEqual(expect, " ".join(args))
 
     def test_print_values(self):
         c = afsrobot.config.Config()
@@ -180,17 +171,17 @@ class ConfigTest(unittest.TestCase):
         c.load_from_string(string="[x]\na = s\nb = %(a)s")
         out = StringIO.StringIO()
         c.print_values(out=out, section="x")
-        self.assertEqual(out.getvalue().strip(), "[x]\na = s\nb = s")
+        self.assertEqual(out.getvalue().strip(), "a = s\nb = s")
         out = StringIO.StringIO()
         c.print_values(out=out, section="x", raw=False)
-        self.assertEqual(out.getvalue().strip(), "[x]\na = s\nb = s")
+        self.assertEqual(out.getvalue().strip(), "a = s\nb = s")
 
     def test_print_values__by_section_raw(self):
         c = afsrobot.config.Config()
         c.load_from_string(string="[x]\na = s\nb = %(a)s")
         out = StringIO.StringIO()
         c.print_values(out=out, section="x", raw=True)
-        self.assertEqual(out.getvalue().strip(), "[x]\na = s\nb = %(a)s")
+        self.assertEqual(out.getvalue().strip(), "a = s\nb = %(a)s")
 
     def test_load_from_file(self):
         fd,filename = tempfile.mkstemp()
