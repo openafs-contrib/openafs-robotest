@@ -43,9 +43,6 @@ class SystemTest(unittest.TestCase):
     def test_sh_fail(self):
         self.assertRaises(CommandFailed, sh, "false")
 
-    def test_which(self):
-        self.assertEqual(which("sh"), "/bin/sh")
-
     def test_directory_should_exist(self):
         self.assertTrue(directory_should_exist("/tmp"))
         self.assertRaises(AssertionError, directory_should_exist, "/bogus")
@@ -97,7 +94,8 @@ class SystemTest(unittest.TestCase):
             self.assertNotRegexpMatches(addr, r'^127\.\d+\.\d+\.\d+$')
 
     def test_is_loaded(self):
-        output = "\n".join(sh("/bin/mount"))
+        mount = which('mount', extra_paths=['/usr/sbin'])
+        output = "\n".join(sh(mount))
         if "AFS on /afs" in output:
             self.assertTrue(is_loaded('openafs'))
         else:

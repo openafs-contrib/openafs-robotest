@@ -49,6 +49,7 @@ uninstall:
 	pip uninstall -y $(PACKAGE)
 
 clean:
+	-rm -f $(PACKAGE)/__version__.py
 	-rm -f *.pyc
 	-rm -f test/*.pyc
 	-rm -f $(PACKAGE)/*.pyc
