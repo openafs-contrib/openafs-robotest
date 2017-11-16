@@ -18,7 +18,7 @@ help:
 
 
 lint:
-	pyflakes $(PACKAGE)/*.py test/*.py scripts/*
+	pyflakes $(PACKAGE)/*.py $(PACKAGE)/system/*.py test/*.py scripts/*
 
 test: version
 	python -m test.test_system -v
@@ -52,4 +52,5 @@ clean:
 	-rm -f *.pyc
 	-rm -f test/*.pyc
 	-rm -f $(PACKAGE)/*.pyc
+	-rm -f $(PACKAGE)/system/*.pyc
 	-rm -fr $(PACKAGE).egg-info/ build/ dist/

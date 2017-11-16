@@ -9,7 +9,10 @@ setup(
     author_email='mmeffie@sinenomine.net',
     url='http://www.sinenomine.net',
     license='BSD',
-    packages=['afsutil'],
+    packages=[
+        'afsutil',
+        'afsutil.system',
+    ],
     scripts=['scripts/afsutil'],
     package_data={'afsutil':['data/*.init']},
     include_package_data=True,

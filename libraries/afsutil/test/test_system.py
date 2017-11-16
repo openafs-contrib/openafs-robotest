@@ -78,7 +78,7 @@ class SystemTest(unittest.TestCase):
             shutil.rmtree(tdir)
 
     def test_so_symlinks(self):
-        from afsutil.system import _so_symlinks
+        from afsutil.system.sunos import _so_symlinks
         tdir = tempfile.mkdtemp()
         src = os.path.join(tdir, "xyzzy.so.1.0.0")
         try:

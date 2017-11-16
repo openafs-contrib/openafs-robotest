@@ -18,11 +18,10 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-"""System utilities."""
+"""Common system utilities."""
 
 import logging
 import os
-import re
 import subprocess
 import sys
 
@@ -216,152 +215,12 @@ def path_join(a, *p):
     p = [x.lstrip('/') for x in p]
     return os.path.join(a, *p)
 
-def get_running():
-    """Get a set of running processes."""
-    if os.uname()[0] == 'SunOS':
-        ps = which('/usr/bin/ps') # avoid the old BSD variant
-    else:
-        ps = which('ps')
-    lines = sh(ps, '-e', '-f', quiet=True)
-    # The first line of the `ps' output is a header line which is
-    # used to find the data field columns.
-    column = lines[0].index('CMD')
-    procs = set()
-    for line in lines[1:]:
-        cmd_line = line[column:]
-        if cmd_line[0] == '[':  # skip linux threads
-            continue
-        command = cmd_line.split()[0]
-        procs.add(os.path.basename(command))
-    return procs
-
-def is_running(program):
-    """Returns true if program is running."""
-    return program in get_running()
-
-def afs_mountpoint():
-    mountpoint = None
-    uname = os.uname()[0]
-    if uname == 'Linux':
-        pattern = r'^AFS on (/.\S+)'
-    elif uname == 'SunOS':
-        pattern = r'(/.\S+) on AFS'
-    else:
-        raise AssertionError("Unsupported operating system: %s" % (uname))
-    mount = which('mount', extra_paths=['/bin', '/sbin', '/usr/sbin'])
-    output = sh(mount, quiet=True)
-    for line in output:
-        found = re.search(pattern, line)
-        if found:
-            mountpoint = found.group(1)
-    return mountpoint
-
-def is_afs_mounted():
-    """Returns true if afs is mounted."""
-    return afs_mountpoint() is not None
-
-def afs_umount():
-    """Attempt to unmount afs, if mounted."""
-    afs = afs_mountpoint()
-    if afs:
-        umount = which('umount', extra_paths=['/bin', '/sbin', '/usr/sbin'])
-        sh(umount, afs)
-
 def nproc():
     """Return the number of processing units."""
     nproc = which('nproc')
     if nproc is None:
         return 1  # default
     return int(sh('nproc')[0])
-
-def _linux_network_interfaces():
-    """Return list of non-loopback network interfaces."""
-    addrs = []
-    output = sh('/sbin/ip', '-oneline', '-family', 'inet', 'addr', 'show')
-    for line in output:
-        match = re.search(r'inet (\d+\.\d+\.\d+\.\d+)', line)
-        if match:
-            addr = match.group(1)
-            if not addr.startswith("127."):
-                addrs.append(addr)
-    logger.debug("Found network interfaces: %s", ",".join(addrs))
-    return addrs
-
-def _linux_is_loaded(kmod):
-    with open("/proc/modules", "r") as f:
-        for line in f.readlines():
-            if kmod == line.split()[0]:
-                return True
-    return False
-
-def _linux_configure_dynamic_linker(path):
-    """Configure the dynamic linker with ldconfig.
-
-    Add a path to the ld configuration file for the OpenAFS shared
-    libraries and run ldconfig to update the dynamic linker."""
-    conf = '/etc/ld.so.conf.d/openafs.conf'
-    paths = set()
-    paths.add(path)
-    if os.path.exists(conf):
-        with open(conf, 'r') as f:
-            for line in f.readlines():
-                line = line.strip()
-                if line.startswith("#") or line == "":
-                    continue
-                paths.add(line)
-    with open(conf, 'w') as f:
-        logger.debug("Writing %s", conf)
-        for path in paths:
-            f.write("%s\n" % path)
-    sh('/sbin/ldconfig')
-
-def _linux_unload_module():
-    output = sh('/sbin/lsmod')
-    for line in output:
-        kmods = re.findall(r'^(libafs|openafs)\s', line)
-        for kmod in kmods:
-            sh('rmmod', kmod)
-
-def _linux_detect_gfind():
-    return which('find')
-
-def _solaris_network_interfaces():
-    """Return list of non-loopback network interfaces."""
-    try:
-        command = which('ipadm')
-        args = ('show-addr', '-p', '-o', 'STATE,ADDR')
-        pattern = r'ok:(\d+\.\d+\.\d+\.\d+)'
-    except CommandMissing:
-        # Fall back to old command on old solaris releases.
-        command = which('/usr/sbin/ifconfig')
-        args = ('-a')
-        pattern = r'inet (\d+\.\d+\.\d+\.\d+)'
-    addrs = []
-    output = sh(command, *args)
-    for line in output:
-        match = re.match(pattern, line)
-        if match:
-            addr = match.group(1)
-            if not addr.startswith("127."):
-                addrs.append(addr)
-    return addrs
-
-def _solaris_is_loaded(kmod):
-    """Returns the list of currently loaded kernel modules."""
-    output = sh('/usr/sbin/modinfo', '-w')
-    for line in output[1:]: # skip header line
-        # Fields are: Id Loadaddr Size Info Rev Module (Name)
-        m = re.match(r'\s*(\d+)\s+\S+\s+\S+\s+\S+\s+\d+\s+(\S+)', line)
-        if not m:
-            raise AssertionError("Unexpected modinfo output: %s" % (line))
-        mid = m.group(1)  # We will need the id to remove the module.
-        mname = m.group(2)
-        if kmod == mname:
-            return mid
-    return 0
-
-def _solaris_detect_gfind():
-    return which('gfind', extra_paths=['/opt/csw/bin'])
 
 def mkdirp(path):
     """Make a directory with parents."""
@@ -392,62 +251,3 @@ def symlink(src, dst):
     if os.path.islink(dst):
         os.remove(dst)
     os.symlink(src, dst)
-
-def tar(tarball, source_path):
-    tar = 'gtar' if os.uname()[0] == "SunOS" else 'tar'
-    sh(tar, 'czf', tarball, source_path, quiet=True)
-
-def untar(tarball, chdir=None):
-    savedir = None
-    if chdir:
-        savedir = os.getcwd()
-        os.chdir(chdir)
-    tar = 'gtar' if os.uname()[0] == "SunOS" else 'tar'
-    try:
-        sh(tar, 'xzf', tarball, quiet=True)
-    finally:
-        if savedir:
-            os.chdir(savedir)
-
-def _so_symlinks(path):
-    """Create shared lib symlinks."""
-    if not os.path.isdir(path):
-        assert AssertionError("Failed to make so symlinks: path '%s' is not a directory.", path)
-    for dirent in os.listdir(path):
-        fname = os.path.join(path, dirent)
-        if os.path.isdir(fname) or os.path.islink(fname):
-            continue
-        m = re.match(r'(.+\.so)\.(\d+)\.(\d+)\.(\d+)$', fname)
-        if m:
-            so,x,y,z = m.groups()
-            symlink(fname, "%s.%s.%s" % (so, x, y))
-            symlink(fname, "%s.%s" % (so, x))
-            symlink(fname, so)
-
-def _solaris_configure_dynamic_linker(path):
-    if not os.path.isdir(path):
-        raise AssertionError("Failed to configure dynamic linker: path %s not found." % (path))
-    _so_symlinks(path)
-    sh('/usr/bin/crle', '-u', '-l', path)
-    sh('/usr/bin/crle', '-64', '-u', '-l', path)
-
-def _solaris_unload_module():
-    module_id = _solaris_is_loaded('afs')
-    if module_id != 0:
-        sh('modunload', '-i', module_id)
-
-_uname = os.uname()[0]
-if _uname == "Linux":
-    network_interfaces = _linux_network_interfaces
-    is_loaded = _linux_is_loaded
-    configure_dynamic_linker = _linux_configure_dynamic_linker
-    unload_module = _linux_unload_module
-    detect_gfind = _linux_detect_gfind
-elif _uname == "SunOS":
-    network_interfaces = _solaris_network_interfaces
-    is_loaded = _solaris_is_loaded
-    configure_dynamic_linker = _solaris_configure_dynamic_linker
-    unload_module = _solaris_unload_module
-    detect_gfind = _solaris_detect_gfind
-else:
-    raise AssertionError("Unsupported operating system: %s" % (_uname))
