@@ -184,7 +184,7 @@ def which(program, extra_paths=None, raise_errors=False):
             if os.path.isfile(fpath) and os.access(fpath, os.X_OK):
                 return fpath
         if raise_errors:
-            raise AssertionError("Could not find '%s' in paths %s" % (program, ":".join(paths)))
+            raise CommandMissing("Could not find '%s' in paths %s" % (program, ":".join(paths)))
     return None
 
 def file_should_exist(path, description=None):
@@ -325,24 +325,21 @@ def _linux_unload_module():
 def _linux_detect_gfind():
     return which('find')
 
-def _solaris_network_interfaces_old():
-    """Return a list of non-loopback networks interfaces."""
-    addrs = []
-    lines = sh('/usr/sbin/ifconfig', '-a', quiet=True)
-    for line in lines:
-        match = re.search(r'inet (\d+\.\d+\.\d+\.\d+)', line)
-        if match:
-            addr = match.group(1)
-            if not addr.startswith("127."):
-                addrs.append(addr)
-    return addrs
-
 def _solaris_network_interfaces():
     """Return list of non-loopback network interfaces."""
+    try:
+        command = which('ipadm')
+        args = ('show-addr', '-p', '-o', 'STATE,ADDR')
+        pattern = r'ok:(\d+\.\d+\.\d+\.\d+)'
+    except CommandMissing:
+        # Fall back to old command on old solaris releases.
+        command = which('/usr/sbin/ifconfig')
+        args = ('-a')
+        pattern = r'inet (\d+\.\d+\.\d+\.\d+)'
     addrs = []
-    output = sh('ipadm', 'show-addr', '-p', '-o', 'STATE,ADDR')
+    output = sh(command, *args)
     for line in output:
-        match = re.match(r'ok:(\d+\.\d+\.\d+\.\d+)', line)
+        match = re.match(pattern, line)
         if match:
             addr = match.group(1)
             if not addr.startswith("127."):
@@ -440,7 +437,6 @@ def _solaris_unload_module():
         sh('modunload', '-i', module_id)
 
 _uname = os.uname()[0]
-_osrel = os.uname()[2]
 if _uname == "Linux":
     network_interfaces = _linux_network_interfaces
     is_loaded = _linux_is_loaded
@@ -448,10 +444,7 @@ if _uname == "Linux":
     unload_module = _linux_unload_module
     detect_gfind = _linux_detect_gfind
 elif _uname == "SunOS":
-    if _osrel == "5.10":
-        network_interfaces = _solaris_network_interfaces_old
-    else:
-        network_interfaces = _solaris_network_interfaces
+    network_interfaces = _solaris_network_interfaces
     is_loaded = _solaris_is_loaded
     configure_dynamic_linker = _solaris_configure_dynamic_linker
     unload_module = _solaris_unload_module
