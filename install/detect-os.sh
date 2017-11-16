@@ -18,8 +18,7 @@ detect_linux_distro() {
 }
 
 detect_solaris_release() {
-    local version=`uname -v`
-    echo "solaris$version"
+    echo "solaris`uname -v`"
 }
 
 case `uname` in
