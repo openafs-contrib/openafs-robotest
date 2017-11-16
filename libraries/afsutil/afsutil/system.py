@@ -23,7 +23,6 @@
 import logging
 import os
 import re
-import socket
 import subprocess
 import sys
 
@@ -440,57 +439,6 @@ def _solaris_unload_module():
     if module_id != 0:
         sh('modunload', '-i', module_id)
 
-def check_hosts_file():
-    """Check for loopback addresses in the /etc/hosts file.
-
-    Modern linux distros assign a loopback address to the hostname. While not
-    strictly incorrect, this can confuse OpenAFS which gets our IP address from
-    gethostbyname()."""
-    result = True
-    nr = 0
-    hostname = socket.gethostname()
-    with open('/etc/hosts', 'r') as f:
-        for line in f.readlines():
-            nr += 1
-            if line.startswith('127.'):
-                if hostname in line.split()[1:]:
-                    sys.stderr.write(
-                        "Warning: loopback address '%s' assigned to our hostname '%s' on line %d of /etc/hosts.\n" % \
-                        (line.split()[0], hostname, nr))
-                    result = False
-    return result
-
-def fix_hosts_file():
-    hostname = socket.gethostname()
-    ips = network_interfaces()
-    if len(ips) == 0:
-        raise AssertionError("Unable to detect any non-loopback network interfaces.")
-    ip = ips[0]
-
-    with open('/etc/hosts', 'r') as f:
-        hosts = f.read()
-
-    with open('/etc/hosts', 'w') as f:
-        for line in hosts.splitlines():
-            line = line.strip()
-            if not re.search(r'\b%s\b' % (hostname), line):
-                f.write("%s\n" % line)
-        f.write("%s\t%s\n" % (ip, hostname))
-
-def check_host_address():
-    """Verify our hostname resolves to a useable address."""
-    hostname = socket.gethostname()
-    ip = socket.gethostbyname(hostname)
-    ips = network_interfaces()
-    if len(ips) == 0:
-        sys.stderr.write("Warning: Unable to detect any non-loopback network interfaces.\n")
-        return False
-    if not ip in ips:
-        sys.stderr.write("Warning: hostname '%s' resolves to '%s', not found in network interfaces: '%s'.\n" % \
-                         (hostname, ip, " ".join(ips)))
-        return False
-    return True
-
 _uname = os.uname()[0]
 _osrel = os.uname()[2]
 if _uname == "Linux":
@@ -510,16 +458,3 @@ elif _uname == "SunOS":
     detect_gfind = _solaris_detect_gfind
 else:
     raise AssertionError("Unsupported operating system: %s" % (_uname))
-
-def check(**kwargs):
-    result = 0
-    if not check_hosts_file():
-        if kwargs['fix_hosts']:
-            sys.stdout.write("Attempting to fix /etc/hosts file.\n")
-            fix_hosts_file()
-        else:
-            result = 1
-    if not check_host_address():
-        result = 2
-    return result
-

@@ -38,6 +38,7 @@ import afsutil.transarc
 import afsutil.rpm
 import afsutil.keytab
 import afsutil.cell
+import afsutil.check
 
 logger = logging.getLogger('afsutil')
 
@@ -89,7 +90,7 @@ def main():
     p.add_argument('--creds', help='location of repo creds (maybe url)', default='/root/creds')
 
     p = subparsers.add_parser('check', help='check system')
-    p.set_defaults(fn=afsutil.system.check, must_be_root=False)
+    p.set_defaults(fn=afsutil.check.check, must_be_root=False)
     _add_common_arguments(p)
     p.add_argument('--fix-hosts', help='fix /etc/hosts file by replacing loopback entry.', action='store_true')
 
