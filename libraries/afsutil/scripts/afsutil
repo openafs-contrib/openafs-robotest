@@ -39,6 +39,8 @@ import afsutil.rpm
 import afsutil.keytab
 import afsutil.cell
 import afsutil.check
+import afsutil.getdeps
+import afsutil.modreload
 
 logger = logging.getLogger('afsutil')
 
@@ -85,7 +87,7 @@ def main():
     _add_common_arguments(p)
 
     p = subparsers.add_parser('getdeps', help='install build dependencies')
-    p.set_defaults(fn=afsutil.build.getdeps, must_be_root=True)
+    p.set_defaults(fn=afsutil.getdeps.getdeps, must_be_root=True)
     _add_common_arguments(p)
     p.add_argument('--creds', help='location of repo creds (maybe url)', default='/root/creds')
 
@@ -109,7 +111,7 @@ def main():
     p.add_argument('--tarball', help='path and file name of dest tarball (default: openafs-<sysname>.tar.gz)', default=None)
 
     p = subparsers.add_parser('reload', help='reload the kernel module after a build')
-    p.set_defaults(fn=afsutil.build.modreload, must_be_root=True)
+    p.set_defaults(fn=afsutil.modreload.modreload, must_be_root=True)
     _add_common_arguments(p)
     p.add_argument('--chdir', help='change to directory', default=None)
 
