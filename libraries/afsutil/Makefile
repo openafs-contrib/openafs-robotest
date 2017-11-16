@@ -20,7 +20,7 @@ help:
 lint:
 	pyflakes $(PACKAGE)/*.py test/*.py scripts/*
 
-test:
+test: version
 	python -m test.test_system -v
 	python -m test.test_keytab -v
 	#python -m test.test_package -v
