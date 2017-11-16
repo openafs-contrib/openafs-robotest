@@ -1,8 +1,6 @@
 .PHONY: help lint test preinstall postinstall install install-user \
 		install-dev uninstall uninstall-user uninstall-dev clean
 
-include Makefile.config
-
 LIBS=\
 	libraries/afsutil \
 	libraries/OpenAFSLibrary \
@@ -108,3 +106,5 @@ uninstall-dev:
 clean:
 	for lib in $(LIBS); do (cd $$lib && $(MAKE) clean); done
 	rm -f Makefile.config
+
+include Makefile.config
