@@ -30,7 +30,7 @@ import shutil
 
 from afsutil.system import CommandFailed, mkdirp
 from afsutil.transarc import AFS_CONF_DIR
-from afsutil.cli import asetkey, aklog
+from afsutil.cmd import asetkey, aklog
 
 logger = logging.getLogger(__name__)
 

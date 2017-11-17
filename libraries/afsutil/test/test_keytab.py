@@ -24,7 +24,7 @@ import tempfile
 import subprocess
 import os
 
-import afsutil.cli
+import afsutil.cmd
 import afsutil.system
 from afsutil.keytab import Keytab, _split_principal
 from afsutil.keytab import _check_for_extended_keyfile_support
@@ -162,27 +162,27 @@ class _KeytabTest(unittest.TestCase):
 
     @unittest.skipIf(not os.path.exists(asetkey_old), "missing test old asetkey")
     def test_check_for_no_extended_keyfile_support(self):
-        origprog = afsutil.cli.ASETKEY
-        afsutil.cli.ASETKEY = asetkey_old
+        origprog = afsutil.cmd.ASETKEY
+        afsutil.cmd.ASETKEY = asetkey_old
         self.assertFalse(_check_for_extended_keyfile_support())
-        afsutil.cli.ASETKEY = origprog
+        afsutil.cmd.ASETKEY = origprog
 
     @unittest.skipIf(not os.path.exists(asetkey_new), "missing test new asetkey")
     def test_check_for_extended_keyfile_support(self):
-        origprog = afsutil.cli.ASETKEY
-        afsutil.cli.ASETKEY = asetkey_new
+        origprog = afsutil.cmd.ASETKEY
+        afsutil.cmd.ASETKEY = asetkey_new
         self.assertTrue(_check_for_extended_keyfile_support())
-        afsutil.cli.ASETKEY = origprog
+        afsutil.cmd.ASETKEY = origprog
 
     @unittest.skipIf(not os.path.exists(asetkey_new), "missing test new asetkey")
     def test_guess_key_format(self):
-        origprog = afsutil.cli.ASETKEY
-        afsutil.cli.ASETKEY = asetkey_new
+        origprog = afsutil.cmd.ASETKEY
+        afsutil.cmd.ASETKEY = asetkey_new
         k = Keytab()
         principal = "afs/xyzzy@LOCALREALM"
         k.add_fake_key(principal)
         self.assertEquals(k._guess_key_format(principal), 'extended')
-        afsutil.cli.ASETKEY = origprog
+        afsutil.cmd.ASETKEY = origprog
 
 if __name__ == "__main__":
      unittest.main()

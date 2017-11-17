@@ -36,7 +36,7 @@ import socket
 
 import afsutil.system
 import afsutil.keytab
-from afsutil.cli import bos, vos, pts, fs, udebug, rxdebug
+from afsutil.cmd import bos, vos, pts, fs, udebug, rxdebug
 from afsutil.system import CommandFailed, afs_mountpoint
 from afsutil.transarc import AFS_SRV_LIBEXEC_DIR
 
@@ -427,9 +427,9 @@ class Cell(object):
         # Set the programs to be used by login().
         self.akimpersonate = akimpersonate
         if aklog:
-            afsutil.cli.AKLOG = aklog
+            afsutil.cmd.AKLOG = aklog
         if kinit:
-            afsutil.cli.KINIT = kinit
+            afsutil.cmd.KINIT = kinit
 
     @classmethod
     def current(cls, **kwargs):
@@ -450,10 +450,10 @@ class Cell(object):
     def _kinit_aklog(self, user):
         if not os.path.exists(self.keytab):
             raise ValueError("Keytab file not found.")
-        output = afsutil.cli.kinit('-V', '-k', '-t', self.keytab, user.replace('.','/'))
+        output = afsutil.cmd.kinit('-V', '-k', '-t', self.keytab, user.replace('.','/'))
         for line in output.splitlines():
             logger.info(line)
-        output = afsutil.cli.aklog('-d', '-c', self.cell, '-k', self.realm)
+        output = afsutil.cmd.aklog('-d', '-c', self.cell, '-k', self.realm)
         for line in output.splitlines():
             logger.info(line)
 

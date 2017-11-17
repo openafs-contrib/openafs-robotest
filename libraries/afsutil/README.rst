@@ -11,7 +11,7 @@ Classes
 
     build     build and package OpenAFS from source
     cell      setup a new OpenAFS cell
-    cli       basic OpenAFS command wrappers
+    cmd       basic OpenAFS command wrappers
     install   interface to install and remove OpenAFS binaries
     keytab    import Kerberos 5 keytabs and create fake keytabs for testing
     rpm       install and remove OpenAFS rpm packages
