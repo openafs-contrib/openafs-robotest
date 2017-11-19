@@ -64,3 +64,16 @@ Display Header and VLDB Information
     [Teardown]  Remove Volume   xyzzy
     ${output}=  Run             ${VOS} examine xyzzy
     Should Contain              ${output}  xyzzy
+
+Avoid creating a rogue volume during create
+    [Tags]         rogue-avoidance
+    [Teardown]     Cleanup Rogue    ${vid}
+    Set test variable    ${vid}    0
+    ${vid}=        Create volume    xyzzy    ${SERVER}    a    orphan=True
+    Command Should Fail    ${VOS} create -server ${SERVER} -part b -name xyzzy -id ${vid}
+
+*** Keywords ***
+Cleanup Rogue
+    [Arguments]     ${vid}
+    Remove volume   ${vid}    server=${SERVER}
+    Remove volume   ${vid}    server=${SERVER}    zap=True
