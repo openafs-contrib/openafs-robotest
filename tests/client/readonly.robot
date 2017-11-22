@@ -7,7 +7,7 @@ Suite Teardown    Teardown Test Suite
 *** Variables ***
 ${VOLUME}      test.ro
 ${PARTITION}   a
-${SERVER}      ${FILESERVER}
+${SERVER}      @{AFS_FILESERVERS}[0]
 ${RWPATH}      /afs/.${AFS_CELL}/test/readonly
 ${ROPATH}      /afs/${AFS_CELL}/test/readonly
 

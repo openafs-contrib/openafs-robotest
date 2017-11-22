@@ -14,7 +14,7 @@ Test Teardown       Cleanup
 *** Variables ***
 ${VOLUME}           test.restore
 ${PART}             a
-${SERVER}           ${FILESERVER}
+${SERVER}           @{AFS_FILESERVERS}[0]
 ${DUMP}             /tmp/test.dump
 
 *** Test Cases ***

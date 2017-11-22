@@ -11,7 +11,7 @@ Suite Teardown    Teardown
 *** Variables ***
 ${VOLUME}      test.basic
 ${PARTITION}   a
-${SERVER}      ${FILESERVER}
+${SERVER}      @{AFS_FILESERVERS}[0]
 ${TESTPATH}    /afs/.${AFS_CELL}/test/${VOLUME}
 ${NAME}        \u20ac\u2020\u2021
 ${FILE}        ${TESTPATH}/${NAME}
