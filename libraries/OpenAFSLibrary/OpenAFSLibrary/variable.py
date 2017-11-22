@@ -19,7 +19,7 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
 
-from robot.libraries.BuiltIn import BuiltIn
+from robot.libraries.BuiltIn import BuiltIn,RobotNotRunningError
 
 _rf = BuiltIn()
 
@@ -55,11 +55,13 @@ def _split_into_list(name):
     # scalars.
     try:
         value = get_var(name)
+        values = [v.strip() for v in value.split(',')]
+        _rf.set_global_variable('@{%s}' % name, *values)
     except VariableMissing:
-        value = ''
+        pass
     except VariableEmpty:
-        value = ''
-    values = [v.strip() for v in value.split(',')]
-    _rf.set_global_variable('@{%s}' % name, *values)
+        pass
+    except RobotNotRunningError:
+        pass
 
 _split_into_list('AFS_FILESERVERS')
