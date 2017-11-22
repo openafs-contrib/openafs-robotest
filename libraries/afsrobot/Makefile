@@ -49,4 +49,5 @@ clean:
 	-rm -f *.pyc
 	-rm -f test/*.pyc
 	-rm -f $(PACKAGE)/*.pyc
+	-rm -f $(PACKAGE)/__version__.py
 	-rm -fr $(PACKAGE).egg-info/ build/ dist/
