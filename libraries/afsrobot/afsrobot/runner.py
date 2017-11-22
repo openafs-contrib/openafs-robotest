@@ -564,6 +564,7 @@ def test(config, **kwargs):
     # Additional variables.
     variable = [
         'AFS_CELL:%s' % config.get('cell', 'name'),
+        'AFS_FILESERVERS:%s' % config.get('cell', 'fs'),
         'AFS_ADMIN:%s' % config.get('cell', 'admin'),
         'AFS_AKIMPERSONATE:%s' % akimpersonate,
         'KRB_REALM:%s' % config.get('kerberos', 'realm'),
@@ -577,6 +578,9 @@ def test(config, **kwargs):
     if not config.optstr('test', 'gfind'):
         logger.warning("Excluding 'requires-gfind'; gfind is not set in config.\n")
         exclude.append('requires-gfind')
+    fs = config.optstr('cell', 'fs').split(',')
+    if len(fs) < 2:
+        exclude.append('requires-multi-fs')
 
     # Setup the rf options.
     tests = config.get('test', 'tests') # path to our tests

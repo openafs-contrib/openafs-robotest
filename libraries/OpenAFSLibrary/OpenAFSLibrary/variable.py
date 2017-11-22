@@ -23,21 +23,43 @@ from robot.libraries.BuiltIn import BuiltIn
 
 _rf = BuiltIn()
 
+class VariableMissing(Exception):
+    pass
+
+class VariableEmpty(Exception):
+    pass
+
 def get_var(name):
     """Return the variable value as a string."""
     if not name:
-        raise AssertionError("get_var argument is missing!")
+        raise ValueError("get_var argument is missing!")
     try:
         value = _rf.get_variable_value("${%s}" % name)
     except AttributeError:
         value = None
     if value is None:
-        raise AssertionError("%s is not set!" % name)
+        raise VariableMissing(name)
     if value == "":
-        raise AssertionError("%s is empty!" % name)
+        raise VariableEmpty(name)
     return value
 
 def get_bool(name):
     """Return the variable value as a bool."""
     value = get_var(name)
     return value.lower() in ("yes", "y", "true", "t", "1")
+
+def _split_into_list(name):
+    # Split the given scalar into a list. This can be useful since lists can be
+    # created only from tests or resources, and we set variables at runtime via
+    # the command line or with the robot.run() function, which only supports
+    # scalars.
+    try:
+        value = get_var(name)
+    except VariableMissing:
+        value = ''
+    except VariableEmpty:
+        value = ''
+    values = [v.strip() for v in value.split(',')]
+    _rf.set_global_variable('@{%s}' % name, *values)
+
+_split_into_list('AFS_FILESERVERS')

@@ -9,12 +9,14 @@ Suite Setup       Login  ${AFS_ADMIN}
 Suite Teardown    Logout
 
 *** Variables ***
-${SERVER}      ${FILESERVER}
-${VOLID}       0
+${SERVER}        @{AFS_FILESERVERS}[0]
+${VOLID}         0
+
 
 *** Test Cases ***
 Create a Volume
     [Teardown]  Remove Volume  xyzzy
+    Log Variables
     Volume Should Not Exist  xyzzy
     Command Should Succeed   ${VOS} create ${SERVER} a xyzzy
     Volume Should Exist      xyzzy
@@ -26,6 +28,14 @@ Move a Volume
     Command Should Succeed   ${VOS} move xyzzy ${SERVER} a ${SERVER} b
     Volume Should Exist      xyzzy
     Volume Location Matches  xyzzy  server=${SERVER}  part=b
+
+Move a volume between servers
+    [Tags]      requires-multi-fs
+    [Setup]     Create Volume  xyzzy
+    Log Variables
+    ${from_server}=    Set Variable    @{AFS_FILESERVERS}[0]
+    ${to_server}=      Set Variable    @{AFS_FILESERVERS}[1]
+    Command Should Succeed   ${VOS} move xyzzy ${from_server} a ${to_server} a
 
 Add a Replication Site
     [Setup]     Create Volume  xyzzy
