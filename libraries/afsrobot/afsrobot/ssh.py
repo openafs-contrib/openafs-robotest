@@ -125,7 +125,7 @@ def check(config, check_sudo=True, **kwargs):
         if not check_sudo:
             continue
         try:
-            ssh(hostname, _sudo(['id']), ident=keyfile)
+            ssh(hostname, _sudo(['afsutil', 'version']), ident=keyfile)
         except CommandFailed:
             failed.append(hostname)
     if failed:
