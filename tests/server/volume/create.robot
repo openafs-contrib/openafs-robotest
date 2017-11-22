@@ -32,6 +32,7 @@ Move a Volume
 Move a volume between servers
     [Tags]      requires-multi-fs
     [Setup]     Create Volume  xyzzy
+    [Teardown]  Remove Volume  xyzzy
     Log Variables
     ${from_server}=    Set Variable    @{AFS_FILESERVERS}[0]
     ${to_server}=      Set Variable    @{AFS_FILESERVERS}[1]
