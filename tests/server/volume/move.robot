@@ -27,3 +27,18 @@ Move a volume between servers
     ${from_server}=    Set Variable    @{AFS_FILESERVERS}[0]
     ${to_server}=      Set Variable    @{AFS_FILESERVERS}[1]
     Command Should Succeed   ${VOS} move xyzzy ${from_server} a ${to_server} a
+
+Avoid creating a rogue volume during move
+    [Tags]      requires-multi-fs
+    [Teardown]  Cleanup Rogue    ${vid}   @{AFS_FILESERVERS}[1]
+    ${from_server}=    Set Variable    @{AFS_FILESERVERS}[0]
+    ${to_server}=      Set Variable    @{AFS_FILESERVERS}[1]
+    ${vid}=            Create volume    xyzzy    ${to_server}    b    orphan=True
+    Command Should Succeed    ${VOS} create -server ${from_server} -part a -name xyzzy -id ${vid}
+    Command Should Fail       ${VOS} move xyzzy ${from_server} a ${to_server} a
+
+*** Keywords ***
+Cleanup Rogue
+    [Arguments]     ${vid}    ${server}
+    Remove volume   ${vid}
+    Remove volume   ${vid}    server=${server}    zap=True
