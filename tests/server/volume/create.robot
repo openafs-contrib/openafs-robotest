@@ -28,14 +28,6 @@ Add a Replication Site
     Command Should Succeed    ${VOS} addsite ${SERVER} a xyzzy
     Command Should Succeed    ${VOS} remsite ${SERVER} a xyzzy
 
-Release a Volume
-    [Setup]     Create Volume  xyzzy
-    [Teardown]  Remove Volume  xyzzy
-    Command Should Succeed    ${VOS} addsite ${SERVER} a xyzzy
-    Command Should Succeed    ${VOS} release xyzzy
-    Volume Should Exist       xyzzy.readonly
-    Volume Location Matches   xyzzy  server=${SERVER}  part=a  vtype=ro
-
 Remove a Replication Site
     [Setup]     Create Volume  xyzzy
     [Teardown]  Run Keywords   Command Should Succeed  ${VOS} remove ${SERVER} a xyzzy.readonly
