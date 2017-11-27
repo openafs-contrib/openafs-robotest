@@ -47,12 +47,6 @@ Remove a Replicated Volume
     Volume Should Not Exist   xyzzy.readonly
     Volume Should Not Exist   xyzzy
 
-Create a Backup Volume
-    [Setup]     Create Volume   xyzzy
-    [Teardown]  Remove Volume   xyzzy
-    ${output}=  Run           ${VOS} backup xyzzy
-    Should Contain            ${output}  xyzzy
-
 Display Volume Header Information
     [Setup]     Create Volume   xyzzy
     [Teardown]  Remove Volume   xyzzy
