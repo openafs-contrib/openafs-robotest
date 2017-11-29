@@ -35,6 +35,7 @@ from afsutil.system import file_should_exist, \
                            network_interfaces, \
                            mkdirp, touch, cat, sh
 
+from afsutil.misc import lists2dict
 
 logger = logging.getLogger(__name__)
 
@@ -85,17 +86,6 @@ def remove_files(path, quiet=False):
     if not quiet:
         logger.info("Removing %s", path)
     shutil.rmtree(path)
-
-# Covert the option list of lists to a dict.
-def _optlists2dict(options):
-    names = {}
-    if not options:
-        return names
-    for optlist in options:
-        for o in optlist:
-            name,value = o.split('=', 1)
-            names[name.strip()] = value.strip()
-    return names
 
 class Installer(object):
     """Base class for OpenAFS installers."""
@@ -154,7 +144,7 @@ class Installer(object):
         self.verbose = verbose
         self.hostnames = hosts
         self.cellhosts = None # Defer to pre-install.
-        self.options = _optlists2dict(options)
+        self.options = lists2dict(options)
         self.scripts = {
             'pre_install': pre_install,
             'post_install': post_install,
