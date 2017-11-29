@@ -108,7 +108,7 @@ class Host(object):
         """Get the bos create -cmd argument."""
         # Use the canonical path; bosserver will convert it to the actual path.
         cmd = os.path.join(AFS_SRV_LIBEXEC_DIR, program)
-        flags = self.options.get(self.hostname + ":" + program, None)
+        flags = self.options.get(self.hostname + "." + program, None)
         if flags is None:
             flags = self.options.get(program, None)
         if flags:

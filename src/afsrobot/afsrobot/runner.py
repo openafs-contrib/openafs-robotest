@@ -307,7 +307,7 @@ class Node(object):
                 options = c.optstr(section, program)
                 if options is not None:
                     args.append('-o')
-                    args.append("%s:%s=%s" % (hostname, program, options))
+                    args.append("%s.%s=%s" % (hostname, program, options))
         self.execute(_sudo(self._afsutil('newcell', None, args)))
 
     def mtroot(self):
