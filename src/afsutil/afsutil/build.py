@@ -31,13 +31,21 @@ from afsutil.system import sh, CommandFailed, tar, mkdirp
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_CF = [
-    '--enable-debug',
-    '--enable-debug-kernel',
-    '--disable-optimize',
-    '--disable-optimize-kernel',
-    '--without-dot',
-]
+def cfopts():
+    """Return the default configure options for this system."""
+    options = [
+        '--enable-debug',
+        '--enable-debug-kernel',
+        '--enable-checking',
+        '--disable-optimize',
+        '--disable-optimize-kernel',
+        '--without-dot',
+        '--enable-transarc-paths',
+    ]
+    sysname = os.uname()[0]
+    if sysname == "Linux":
+        options.append('--with-linux-kernel-packaging')
+    return " ".join(options)
 
 def _detect_sysname():
     """Try to detect the sysname from the previous build output."""
@@ -131,33 +139,38 @@ def _make_tarball(tarball=None):
     tar(tarball, sysname)
     logger.info("Created tar file %s", tarball)
 
+def _cfadd(cf, option):
+    if option in cf:
+        cf.remove(option)
+
+def _cfrm(cf, option):
+    if option not in cf:
+        cf.append(option)
+
 def build(**kwargs):
     """Build the OpenAFS binaries.
 
     Build the transarc-path compatible bins by default, which are
     deprecated, but old habits die hard.
     """
-    sysname = os.uname()[0]
-    cf = kwargs.get('cf', None)
+    cf = kwargs.get('cf', cfopts())
     target = kwargs.get('target', 'all')
     clean = kwargs.get('clean', True)
-    transarc_paths = kwargs.get('transarc_paths', True)
-    modern_kmod_name = kwargs.get('modern_kmod_name', True)
+    no_transarc_paths = kwargs.get('no_transarc_paths', False)
+    no_modern_kmod_name = kwargs.get('no_modern_kmod_name', False)
+    no_checking = kwargs.get('no_checking', False)
     jobs = kwargs.get('jobs', 1)
     srcdir = kwargs.get('srcdir', '.')
     tarball = kwargs.get('tarball', None)
 
-    if cf is not None:
-        cf = shlex.split(cf)  # Note: shlex handles quoting properly.
-    else:
-        cf = DEFAULT_CF
-        if sysname == "Linux":
-            if not '--disable-checking' in cf:
-                cf.append('--enable-checking')
-            if modern_kmod_name:
-                cf.append('--with-linux-kernel-packaging')
-        if transarc_paths and not '--enable-transarc-paths' in cf:
-            cf.append('--enable-transarc-paths')
+    cf = shlex.split(cf)  # Note: shlex handles quoting properly.
+    if no_transarc_paths:
+        _cfrm('--enable-transarc-paths')
+    if no_modern_kmod_name:
+        _cfrm('--with-linux-kernel-packaging')
+    if no_checking:
+        _cfrm('--enable-checking')
+        _cfadd('--disable-checking')
 
     # Sadly, the top-level target depends on the mode we are
     # building.

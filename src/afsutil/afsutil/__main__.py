@@ -23,7 +23,8 @@
 from __future__ import print_function
 import sys
 from afsutil.cli import subcommand, argument, usage, dispatch
-from afsutil.system import nproc
+import afsutil.system
+import afsutil.build
 
 @subcommand()
 def version(**args):
@@ -58,15 +59,14 @@ def check(**args):
 
 @subcommand(
     argument('--chdir', help='change to directory'),
-    argument('--cf', help='configure options'),
+    argument('--cf', help='configure options', default=afsutil.build.cfopts()),
     argument('--target', help='make target', default='all'),
     argument('--no-clean', help='do not run git clean',
                            dest='clean', action='store_false'),
-    argument('--no-transarc-paths', help='do not use transarc paths',
-                                    dest='transarc_paths', action='store_false'),
-    argument('--no-modern-kmod-name', help='use the legacy kernel module name (linux only)',
-                                      action='store_false', dest='modern_kmod_name'),
-    argument('-j', '--jobs', help='parallel build jobs', default=nproc()),
+    argument('--no-transarc-paths', help='do not use transarc paths', action='store_true'),
+    argument('--no-modern-kmod-name', help='use the legacy kernel module name (linux only)', action='store_true'),
+    argument('--no-checking', help='disable error on warnings', action='store_true'),
+    argument('-j', '--jobs', help='parallel build jobs', default=afsutil.system.nproc()),
     argument('--srcdir', help='source code directory', default='.'),
     argument('--tarball', help='path and file name of dest tarball'),
     )
