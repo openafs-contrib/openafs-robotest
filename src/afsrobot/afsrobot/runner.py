@@ -123,12 +123,10 @@ class Node(object):
     def opt(self, name, default=None):
         return self.config.optstr(self.section, name, default=default)
 
-    def _afsutil(self, cmd, subcmd, args):
+    def _afsutil(self, cmd, args):
         """Build afsutil command line args."""
         afsutil = [self.afsutil]
         afsutil.append(cmd)
-        if subcmd:
-            afsutil.append(subcmd)
         if logger.getEffectiveLevel() == logging.DEBUG:
             afsutil.append('--verbose')
         return afsutil + args
@@ -139,7 +137,7 @@ class Node(object):
 
     def version(self):
         """Run afsutil version."""
-        self.execute((self._afsutil('version', None, [])))
+        self.execute((self._afsutil('version', [])))
 
     def install(self):
         """Run afsutil install."""
@@ -195,7 +193,7 @@ class Node(object):
         if post:
             args.append('--post')
             args.append(post)
-        self.execute(_sudo(self._afsutil('install', None, args)))
+        self.execute(_sudo(self._afsutil('install', args)))
 
     def keytab_create(self):
         """Run afsutil keytab create."""
@@ -223,7 +221,7 @@ class Node(object):
         if secret:
             args.append('--secret')
             args.append(secret)
-        self.execute(_sudo(self._afsutil('keytab', 'create', args)))
+        self.execute(_sudo(self._afsutil('ktcreate', args)))
 
     def keytab_setkey(self):
         """Run afsutil keytab setkey."""
@@ -249,7 +247,7 @@ class Node(object):
         if keyformat:
             args.append('--format')
             args.append(keyformat)
-        self.execute(_sudo(self._afsutil('keytab', 'setkey', args)))
+        self.execute(_sudo(self._afsutil('ktsetkey', args)))
 
     def keytab_destroy(self):
         """Run afsutil keytab destroy."""
@@ -262,15 +260,15 @@ class Node(object):
             args.append('--keytab')
             args.append(keytab)
         args.append('--force')
-        self.execute(_sudo(self._afsutil('keytab', 'destroy', args)))
+        self.execute(_sudo(self._afsutil('ktdestroy', args)))
 
     def start(self, comp):
         """Run afsutil start."""
-        self.execute(_sudo(self._afsutil('start', comp, [])))
+        self.execute(_sudo(self._afsutil('start', [comp])))
 
     def stop(self, comp):
         """Run afsutil stop."""
-        self.execute(_sudo(self._afsutil('stop', comp, [])))
+        self.execute(_sudo(self._afsutil('stop', [comp])))
 
     def newcell(self):
         """Run afsutil newcell."""
@@ -308,7 +306,7 @@ class Node(object):
                 if options is not None:
                     args.append('-o')
                     args.append("%s.%s=%s" % (hostname, program, options))
-        self.execute(_sudo(self._afsutil('newcell', None, args)))
+        self.execute(_sudo(self._afsutil('newcell', args)))
 
     def mtroot(self):
         """Run afsutil mtroot."""
@@ -356,7 +354,7 @@ class Node(object):
         if options is not None:
             args.append('-o')
             args.append("afsd=%s" % (options))
-        self.execute(self._afsutil('mtroot', None, args))
+        self.execute(self._afsutil('mtroot', args))
 
     def login(self, user):
         """Run afsutil login."""
@@ -388,7 +386,7 @@ class Node(object):
             if keytab:
                 args.append('--keytab')
                 args.append(keytab)
-        self.execute(self._afsutil('login', None, args))
+        self.execute(self._afsutil('ktlogin', args))
 
     def remove(self):
         """Run afsutil remove."""
@@ -401,7 +399,7 @@ class Node(object):
         if post:
             args.append('--post')
             args.append(post)
-        self.execute(_sudo(self._afsutil('remove', None, args)))
+        self.execute(_sudo(self._afsutil('remove', args)))
 
 class RemoteNode(Node):
     """Remote node (host) to be setup."""
