@@ -202,6 +202,8 @@ def ktdestroy(**args):
                          default='detect', dest='kformat'),
     argument('-n', '--dry-run', help="do not make changes",
                                 dest='dryrun', action='store_true'),
+    argument('-p', '--paths', help="command paths: <cmd>=<path-to-cmd>",
+                                nargs='+', action='append', default=[]),
     requires_root=True,
     )
 def ktsetkey(**args):
@@ -215,8 +217,8 @@ def ktsetkey(**args):
     argument('--user', help="user name", default="admin"),
     argument('--cell', help="cell name", default="localcell"),
     argument('--realm', help="realm name", default="LOCALCELL"),
-    argument('--aklog', help="path to the aklog program"),
-    argument('--kinit', help="path to the kinit program"),
+    argument('-p', '--paths', help="command paths: <cmd>=<path-to-cmd>",
+                                nargs='+', action='append', default=[]),
     )
 def ktlogin(**args):
     "Obtain a token with a keytab"
@@ -230,6 +232,8 @@ def ktlogin(**args):
     argument('--db', help="cell database hosts", nargs='+', default=[]),
     argument('--fs', help="cell fileserver hosts", nargs='+', default=[]),
     argument('-o', '--options', help="command line args: <[hostname:]name>=<value>",
+                                nargs='+', action='append', default=[]),
+    argument('-p', '--paths', help="command paths: <cmd>=<path-to-cmd>",
                                 nargs='+', action='append', default=[]),
     requires_root=True,
     )
@@ -250,6 +254,8 @@ def newcell(**args):
     argument('--kinit', help="path to kinit program"),
     argument('-o', '--options', help="command line args: <name>=<value>",
                                 action='append', nargs='+', default=[]),
+    argument('-p', '--paths', help="command paths: <cmd>=<path-to-cmd>",
+                                action='append', nargs='+', default=[]),
     )
 def mtroot(**args):
     "Mount root volumes in a new cell"
@@ -261,6 +267,8 @@ def mtroot(**args):
     argument('--keytab', help="keytab file", default="/tmp/afs.keytab"),
     argument('-o', '--options', help="command line args; <name>=<value>",
                                 nargs='+', action='append', default=[]),
+    argument('-p', '--paths', help="command paths: <cmd>=<path-to-cmd>",
+                                action='append', nargs='+', default=[]),
     requires_root=True,
     )
 def addfs(**args):

@@ -351,9 +351,8 @@ class Cell(object):
 
     def __init__(self, cell='localcell', db=None, fs=None,
                  admins=None, admin='admin',
-                 options=None,
-                 keytab='/tmp/afs.keytab', realm=None,
-                 aklog=None, kinit=None, akimpersonate=False,
+                 options=None, paths=None,
+                 keytab='/tmp/afs.keytab', realm=None, akimpersonate=False,
                  **kwargs):
         """Initialize the cell object.
 
@@ -367,6 +366,7 @@ class Cell(object):
         assert fs is None or not isinstance(fs, basestring) # expect a list or tuple
         assert admins is None or not isinstance(admins, basestring) # expect a list or tuple
         assert options is None or not isinstance(options, basestring) # expect a list or dict
+        assert paths is None or not isinstance(options, basestring) # expect a list or dict
 
         # Defaults.
         hostname = socket.gethostname()
@@ -388,6 +388,7 @@ class Cell(object):
         else:
             self.realm = realm
         self.options = lists2dict(options)
+        self.paths = lists2dict(paths)
 
         # Super users for this cell. Convert k5 style names to k4 style for AFS.
         self.admins = [name.replace('/', '.') for name in admins]
@@ -405,10 +406,8 @@ class Cell(object):
 
         # Set the programs to be used by login().
         self.akimpersonate = akimpersonate
-        if aklog:
-            afsutil.cmd.AKLOG = aklog
-        if kinit:
-            afsutil.cmd.KINIT = kinit
+        for cmd in self.paths:
+            afsutil.cmd.setpath(cmd, self.paths[cmd])
 
     @classmethod
     def current(cls, **kwargs):
