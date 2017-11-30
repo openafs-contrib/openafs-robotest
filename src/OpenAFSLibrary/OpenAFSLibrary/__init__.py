@@ -59,64 +59,6 @@ class OpenAFSLibrary(
     | AFS_ADMIN         | Test cell admin username |
     | AFS_USER          | Test cell username |
 
-    == Test cell options ==
-
-    The following settings determine how OpenAFS is installed:
-    | AFS_DIST          | Distribution style; one of 'rhel6','suse','transarc' |
-    | AFS_AKIMPERSONATE | Use akimpersonate for Kerberos-less testing |
-    | AFS_KEY_FILE      | Service key style; one of 'KeyFile','rxkad.keytab','KeyFileExt' |
-    | AFS_DAFS          | Run the DAFS fileserver |
-    | AFS_CSDB_DIST     | Pathname of file with extra CellServDB entries |
-    | DO_TEARDOWN       | Perform the cell teardown after running the tests |
-
-    == Kerberos options ==
-
-    The following settings are used when `AFS_AKIMPERSONATE` is `False`:
-    | KRB_ADMIN_KEYTAB  | Admin user keytab file |
-    | KRB_AFS_ENCTYPE   | AFS service key encryption type |
-    | KRB_AFS_KEYTAB    | AFS service keytab file |
-    | KRB_USER_KEYTAB   | Test user keytab |
-    | KADMIN_LOCAL      | Kerberos kadmin.local pathname |
-    | KADMIN            | Kerberos kadmin pathname |
-    | KDESTROY          | Kerberos kdestroy pathname |
-    | KINIT             | Kerberos kinit pathname |
-    | KLIST             | Kerberos klist pathname |
-
-    == RPM options ==
-
-    The following options are used when `AFS_DIST` refers to an RPM based
-    distribution:
-    | RPM_AFSRELEASE    | RPM release number |
-    | RPM_AFSVERSION    | AFS Version Number |
-    | RPM_PACKAGE_DIR   | Path the RPM packages |
-
-    == Transarc style options ==
-
-    The following options are used when `AFS_DIST` is `transarc`:
-    | TRANSARC_DEST     | Directory containing binaries |
-    | TRANSARC_TARBALL  | Optional pathname of tar archive |
-    | GTAR              | GNU tar utility pathname |
-
-
-    == Distribution options ==
-
-    === Directory paths ===
-
-    The following settings are used to specify the directory paths
-    used by the OpenAFS binaries.
-    | AFS_CONF_DIR        |   `/usr/afs/etc` |
-    | AFS_KERNEL_DIR      |   `/usr/vice/etc` |
-    | AFS_SRV_BIN_DIR     |    `/usr/afs/bin` |
-    | AFS_SRV_SBIN_DIR    |   `/usr/afs/bin` |
-    | AFS_SRV_LIBEXEC_DIR |   `/usr/afs/bin` |
-    | AFS_DB_DIR          |   `/usr/afs/db` |
-    | AFS_LOGS_DIR        |   `/usr/afs/logs` |
-    | AFS_LOCAL_DIR       |   `/usr/afs/local` |
-    | AFS_BACKUP_DIR      |   `/usr/afs/backup` |
-    | AFS_BOS_CONFIG_DIR  |   `/usr/afs/local` |
-    | AFS_DATA_DIR        |   `/usr/vice/etc` |
-    | AFS_CACHE_DIR       |   `/usr/vice/cache` |
-
     === Command paths ===
 
     | AKLOG   |   `/usr/afsws/bin/aklog` |
