@@ -102,6 +102,7 @@ class Node(object):
         if name is None or name == '' or name == 'localhost':
             name = socket.gethostname()
         self.name = name
+        assert(self.name)
         self.config = config
         self.name = name
         self.dryrun = kwargs.get('dryrun', False)
@@ -119,6 +120,16 @@ class Node(object):
         self.is_database = name in config.optstr('cell', 'db').split(',')
         self.is_fileserver = name in config.optstr('cell', 'fs').split(',')
         self.is_client = name in config.optstr('cell', 'cm').split(',')
+
+    def __repr__(self):
+        return "Node(<" \
+            "id={id} ," \
+            "name='{self.name}', " \
+            "installer='{self.installer}', " \
+            "is_database={self.is_database}, " \
+            "is_fileserver={self.is_fileserver}, " \
+            "is_client={self.is_client}>)" \
+            .format(id=id(self),self=self)
 
     def opt(self, name, default=None):
         return self.config.optstr(self.section, name, default=default)
@@ -448,19 +459,21 @@ def _get_nodes(config, **kwargs):
         'install': [],
         'servers': [],
         'clients': [],
+        'server': None,
+        'client': None,
     }
-    names = set()
+    names = dict()
     db = config.optstr('cell', 'db').split(',')
     fs = config.optstr('cell', 'fs').split(',')
     cm = config.optstr('cell', 'cm').split(',')
     for name in config.opthostnames():
         if name in names:
             continue  # avoid dupes
-        names.add(name)
         if islocal(name):
             node = Node(name, config, **kwargs)
         else:
             node = RemoteNode(name, config, **kwargs)
+        names[name] = node
         nodes['all'].append(node)
         if node.installer:
             nodes['install'].append(node)
@@ -468,6 +481,16 @@ def _get_nodes(config, **kwargs):
             nodes['servers'].append(node)
         if name in cm:
             nodes['clients'].append(node)
+
+    # Find the nodes for the client-side and server-side setup.
+    for flavor in ('server', 'client'):
+        name = None
+        if nodes[flavor+'s']:
+            name = nodes[flavor+'s'][0].name # First one of this type.
+        name = config.optstr('setup', flavor, default=name)
+        if name:
+            nodes[flavor] = names[name]
+
     return nodes
 
 def setup(config, **kwargs):
@@ -507,16 +530,20 @@ def setup(config, **kwargs):
         with progress("Starting servers"):
             for node in nodes['servers']:
                 node.start('server')
+
+    node = nodes['server']
+    if node:
         with progress("Creating new cell"):
-            node = nodes['servers'][0]
             node.newcell()
 
     if nodes['clients']:
         with progress("Starting clients"):
             for node in nodes['clients']:
                 node.start('client')
+
+    node = nodes['client']
+    if node:
         with progress("Mounting root volumes"):
-            node = nodes['clients'][0]
             node.mtroot()
 
     logger.info("setup done")
