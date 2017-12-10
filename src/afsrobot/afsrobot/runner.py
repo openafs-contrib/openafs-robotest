@@ -115,7 +115,6 @@ class Node(object):
                     break
         if self.section is None:
             raise ValueError("Missing config section for host %s" % name)
-        self.afsutil = self.opt('afsutil', 'afsutil') # path to afsutil on this node
         self.installer = config.optstr(self.section, 'installer', default=None)
         self.is_database = name in config.optstr('cell', 'db').split(',')
         self.is_fileserver = name in config.optstr('cell', 'fs').split(',')
@@ -148,7 +147,7 @@ class Node(object):
 
     def _afsutil(self, cmd, args):
         """Build afsutil command line args."""
-        afsutil = [self.afsutil]
+        afsutil = [self.paths.get('afsutil', 'afsutil')]
         afsutil.append(cmd)
         if logger.getEffectiveLevel() == logging.DEBUG:
             afsutil.append('--verbose')
@@ -270,6 +269,9 @@ class Node(object):
         if keyformat:
             args.append('--format')
             args.append(keyformat)
+        if 'asetkey' in self.paths:
+            args.append('--paths')
+            args.append('asetkey=%s' % (self.paths['asetkey']))
         self.execute(_sudo(self._afsutil('ktsetkey', args)))
 
     def keytab_destroy(self):
@@ -329,6 +331,9 @@ class Node(object):
                 if options is not None:
                     args.append('-o')
                     args.append("%s.%s=%s" % (hostname, program, options))
+        for p in self.paths:
+            args.append('-p')
+            args.append("%s=%s" % (p, self.paths[p]))
         self.execute(_sudo(self._afsutil('newcell', args)))
 
     def mtroot(self):
@@ -367,16 +372,15 @@ class Node(object):
         if fs:
             args.append('--fs')
             args += fs
-        aklog = c.optstr('test', 'aklog')
-        if aklog:
-            args.append('--aklog')
-            args.append(aklog)
         options = self.opt('afsd')
         if options is None:
             options = c.optstr('cell', 'afsd')
         if options is not None:
             args.append('-o')
             args.append("afsd=%s" % (options))
+        for p in self.paths:
+            args.append('-p')
+            args.append("%s=%s" % (p, self.paths[p]))
         self.execute(self._afsutil('mtroot', args))
 
     def login(self, user):
@@ -394,10 +398,12 @@ class Node(object):
         if realm:
             args.append('--realm')
             args.append(realm)
-        aklog = c.optstr('test', 'aklog')
-        if aklog:
-            args.append('--aklog')
-            args.append(aklog)
+        if 'aklog' in self.paths:
+            args.append('--paths')
+            args.append('aklog=%s' % (self.paths['aklog']))
+        if 'kinit' in self.paths:
+            args.append('--paths')
+            args.append('aklog=%s' % (self.paths['kinit']))
         if c.optbool('kerberos', 'akimpersonate'):
             args.append('--akimpersonate')
             keytab = c.optstr('kerberos', 'fake')
