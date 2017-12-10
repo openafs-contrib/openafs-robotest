@@ -82,6 +82,48 @@ fake = <AFSROBOT_DATA>/fake.keytab
 afs = <AFSROBOT_DATA>/afs.keytab
 user = <AFSROBOT_DATA>/user.keytab
 
+[paths]
+gfind = /usr/bin/find
+
+[paths.transarc]
+aklog = /usr/afsws/bin/aklog
+asetkey = /usr/afs/bin/asetkey
+bos = /usr/afs/bin/bos
+fs = /usr/afs/bin/fs
+pagsh = /usr/afsws/bin/pagsh
+pts = /usr/afs/bin/pts
+rxdebug = /usr/afsws/etc/rxdebug
+tokens = /usr/afsws/bin/tokens
+udebug = /usr/afs/bin/udebug
+unlog = /usr/afsws/bin/unlog
+vos = /usr/afs/bin/vos
+
+[paths.rhel]
+aklog = /usr/bin/aklog
+asetkey = /usr/sbin/asetkey
+bos = /usr/bin/bos
+fs = /usr/bin/fs
+pagsh = /usr/bin/pagsh
+pts = /usr/bin/pts
+rxdebug = /usr/sbin/rxdebug
+tokens = /usr/bin/tokens
+udebug = /usr/bin/udebug
+unlog = /usr/bin/unlog
+vos = /usr/sbin/vos
+
+[paths.suse]
+aklog = /usr/bin/aklog
+asetkey = /usr/sbin/asetkey
+bos = /usr/sbin/bos
+fs = /usr/bin/fs
+pagsh = /usr/bin/pagsh
+pts = /usr/bin/pts
+rxdebug = /usr/sbin/rxdebug
+tokens = /usr/bin/tokens
+udebug = /usr/sbin/udebug
+unlog = /usr/bin/unlog
+vos = /usr/sbin/vos
+
 [host.0]
 name = <HOSTNAME>
 installer = transarc
