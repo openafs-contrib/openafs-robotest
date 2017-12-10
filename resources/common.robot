@@ -2,8 +2,7 @@
 # See LICENSE
 
 *** Settings ***
-Documentation     Common keywords and variables for the OpenAFS test suite.
+Documentation     Common setting for the OpenAFS test suite.
 Library           OperatingSystem
 Library           String
 Library           OpenAFSLibrary
-Variables         ${RESOURCES}/dist/${AFS_DIST}.py

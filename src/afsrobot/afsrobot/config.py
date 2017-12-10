@@ -58,10 +58,8 @@ resources = <AFSROBOT_ROOT>/resources
 output = <AFSROBOT_DATA>/output
 exclude = bug,slow
 loglevel = INFO
-fileserver = <HOSTNAME>
-afs_dist = transarc
 pag_onegroup = yes
-gfind = <GFIND>
+host = <HOSTNAME>
 
 [cell]
 name = robotest
@@ -83,7 +81,7 @@ afs = <AFSROBOT_DATA>/afs.keytab
 user = <AFSROBOT_DATA>/user.keytab
 
 [paths]
-gfind = /usr/bin/find
+gfind = <GFIND>
 
 [paths.transarc]
 aklog = /usr/afsws/bin/aklog

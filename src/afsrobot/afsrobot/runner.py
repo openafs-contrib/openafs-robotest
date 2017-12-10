@@ -465,7 +465,7 @@ def _aklog_workaround_check(config):
         logger.warning("testing without Kerberos.")
 
 def _get_nodes(config, **kwargs):
-    """Get nodes for setup and teardown."""
+    """Get nodes for setup, test, and teardown."""
     nodes = {
         'all': [],
         'install': [],
@@ -473,6 +473,7 @@ def _get_nodes(config, **kwargs):
         'clients': [],
         'server': None,
         'client': None,
+        'test': None,
     }
     names = dict()
     db = config.optstr('cell', 'db').split(',')
@@ -502,6 +503,10 @@ def _get_nodes(config, **kwargs):
         name = config.optstr('setup', flavor, default=name)
         if name:
             nodes[flavor] = names[name]
+
+    # Find the nodes for running the RF tests.
+    name = config.optstr('test', 'host', socket.gethostname())
+    nodes['test'] = names[name]
 
     return nodes
 
@@ -577,6 +582,7 @@ def login(config, **kwargs):
 
 def test(config, **kwargs):
     """Run the Robotframework test suites."""
+    node = _get_nodes(config, **kwargs)['test']
     akimpersonate = config.optbool('kerberos', 'akimpersonate')
     if akimpersonate:
         _aklog_workaround_check(config)
@@ -607,12 +613,14 @@ def test(config, **kwargs):
         'KRB_REALM:%s' % config.get('kerberos', 'realm'),
         'KRB_AFS_KEYTAB:%s' % keytab,
     ]
+    for path in node.paths:
+        variable.append("%s:%s" % (path.upper(), node.paths[path]))
     for o,v in config.items('test'):
         variable.append("%s:%s" % (o.upper(), v))
 
     # Determine tests to exclude.
     exclude = config.get('test', 'exclude').split(',')
-    if not config.optstr('test', 'gfind'):
+    if 'gfind' not in node.paths:
         logger.warning("Excluding 'requires-gfind'; gfind is not set in config.\n")
         exclude.append('requires-gfind')
     fs = config.optstr('cell', 'fs').split(',')
