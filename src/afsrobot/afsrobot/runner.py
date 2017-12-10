@@ -116,10 +116,22 @@ class Node(object):
         if self.section is None:
             raise ValueError("Missing config section for host %s" % name)
         self.afsutil = self.opt('afsutil', 'afsutil') # path to afsutil on this node
-        self.installer = config.optstr(self.section, 'installer', default='none') != 'none'
+        self.installer = config.optstr(self.section, 'installer', default=None)
         self.is_database = name in config.optstr('cell', 'db').split(',')
         self.is_fileserver = name in config.optstr('cell', 'fs').split(',')
         self.is_client = name in config.optstr('cell', 'cm').split(',')
+
+        # Get the paths to commands on this host given in the config file.
+        self.paths = {}
+        sections = ['paths']
+        paths = config.optstr(self.section, 'paths', default=self.installer)
+        if paths:
+            sections.append('paths.'+paths)
+        sections.append(self.section+'.paths')
+        for section in sections:
+            if section in config.sections():
+                for cmd,path in config.items(section):
+                    self.paths[cmd] = path # overload
 
     def __repr__(self):
         return "Node(<" \
