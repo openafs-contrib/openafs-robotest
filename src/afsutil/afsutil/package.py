@@ -65,33 +65,12 @@ import logging
 import shutil
 import glob
 from afsutil.system import sh, mkdirp, which
+from afsutil.misc import flatten, trim
 
 logger = logging.getLogger(__name__)
 
 class RpmBuilderError(Exception):
     """Failed to build packages."""
-
-def flatten(x):
-    """Flatten a small list of lists.
-
-    Example:
-        flatten( [[1, 2], [3]] ) => [1, 2, 3]
-    """
-    if not isinstance(x, (list, tuple)):
-        return x # skip non-interables, including None
-    y = []
-    for e in x:
-        if isinstance(e, (list, tuple)):
-            y.extend(flatten(e))
-        else:
-            y.append(e)
-    return y
-
-def trim(s, x):
-    """Trim trailing x from s."""
-    if s.endswith(x):
-        s = s.rsplit(x,1)[0]
-    return s
 
 def readfile(path):
     """Read a file into a string."""

@@ -39,6 +39,7 @@ import afsutil.keytab
 from afsutil.cmd import bos, vos, pts, fs, udebug, rxdebug
 from afsutil.system import CommandFailed, afs_mountpoint
 from afsutil.transarc import AFS_SRV_LIBEXEC_DIR
+from afsutil.misc import lists2dict, uniq
 
 logger = logging.getLogger(__name__)
 
@@ -50,25 +51,6 @@ PORT = {
     'volserver':  '7005',
     'bosserver':  '7007',
 }
-
-def _optlists2dict(options):
-    """ Helper to convert a list of lists to a dict."""
-    if options is None:
-        options = [[]]
-    names = {}
-    for optlist in options:
-        for o in optlist:
-            name,value = o.split('=', 1)
-            names[name.strip()] = value.strip()
-    return names
-
-def _uniq(x):
-    """Remove dupes from a small list, preserving order."""
-    y = []
-    for item in x:
-        if not item in y:
-            y.append(item)
-    return y
 
 class Host(object):
     """Helper to configure an OpenAFS server using the bos command."""
@@ -126,7 +108,7 @@ class Host(object):
         """Get the bos create -cmd argument."""
         # Use the canonical path; bosserver will convert it to the actual path.
         cmd = os.path.join(AFS_SRV_LIBEXEC_DIR, program)
-        flags = self.options.get(self.hostname + ":" + program, None)
+        flags = self.options.get(self.hostname + "." + program, None)
         if flags is None:
             flags = self.options.get(program, None)
         if flags:
@@ -369,9 +351,8 @@ class Cell(object):
 
     def __init__(self, cell='localcell', db=None, fs=None,
                  admins=None, admin='admin',
-                 options=None,
-                 keytab='/tmp/afs.keytab', realm=None,
-                 aklog=None, kinit=None, akimpersonate=False,
+                 options=None, paths=None,
+                 keytab='/tmp/afs.keytab', realm=None, akimpersonate=False,
                  **kwargs):
         """Initialize the cell object.
 
@@ -385,6 +366,7 @@ class Cell(object):
         assert fs is None or not isinstance(fs, basestring) # expect a list or tuple
         assert admins is None or not isinstance(admins, basestring) # expect a list or tuple
         assert options is None or not isinstance(options, basestring) # expect a list or dict
+        assert paths is None or not isinstance(options, basestring) # expect a list or dict
 
         # Defaults.
         hostname = socket.gethostname()
@@ -405,10 +387,8 @@ class Cell(object):
             self.realm = cell.upper()
         else:
             self.realm = realm
-        if isinstance(options, dict):
-            self.options = options
-        else:
-            self.options = _optlists2dict(options)
+        self.options = lists2dict(options)
+        self.paths = lists2dict(paths)
 
         # Super users for this cell. Convert k5 style names to k4 style for AFS.
         self.admins = [name.replace('/', '.') for name in admins]
@@ -418,18 +398,16 @@ class Cell(object):
         # objects.  The first element in the given lists are the first
         # servers for the cell setup.
         hosts = {} # tmp dict to setup db and fs lists.
-        for name in _uniq(db + fs):
+        for name in uniq(db + fs):
             hosts[name] = Host(name, options=self.options)
         self.hosts = hosts.values() # list of Host objects for db and/or fs
-        self.db = [hosts[name] for name in _uniq(db)]
-        self.fs = [hosts[name] for name in _uniq(fs)]
+        self.db = [hosts[name] for name in uniq(db)]
+        self.fs = [hosts[name] for name in uniq(fs)]
 
         # Set the programs to be used by login().
         self.akimpersonate = akimpersonate
-        if aklog:
-            afsutil.cmd.AKLOG = aklog
-        if kinit:
-            afsutil.cmd.KINIT = kinit
+        for cmd in self.paths:
+            afsutil.cmd.setpath(cmd, self.paths[cmd])
 
     @classmethod
     def current(cls, **kwargs):

@@ -102,6 +102,7 @@ class Node(object):
         if name is None or name == '' or name == 'localhost':
             name = socket.gethostname()
         self.name = name
+        assert(self.name)
         self.config = config
         self.name = name
         self.dryrun = kwargs.get('dryrun', False)
@@ -120,15 +121,23 @@ class Node(object):
         self.is_fileserver = name in config.optstr('cell', 'fs').split(',')
         self.is_client = name in config.optstr('cell', 'cm').split(',')
 
+    def __repr__(self):
+        return "Node(<" \
+            "id={id} ," \
+            "name='{self.name}', " \
+            "installer='{self.installer}', " \
+            "is_database={self.is_database}, " \
+            "is_fileserver={self.is_fileserver}, " \
+            "is_client={self.is_client}>)" \
+            .format(id=id(self),self=self)
+
     def opt(self, name, default=None):
         return self.config.optstr(self.section, name, default=default)
 
-    def _afsutil(self, cmd, subcmd, args):
+    def _afsutil(self, cmd, args):
         """Build afsutil command line args."""
         afsutil = [self.afsutil]
         afsutil.append(cmd)
-        if subcmd:
-            afsutil.append(subcmd)
         if logger.getEffectiveLevel() == logging.DEBUG:
             afsutil.append('--verbose')
         return afsutil + args
@@ -139,7 +148,7 @@ class Node(object):
 
     def version(self):
         """Run afsutil version."""
-        self.execute((self._afsutil('version', None, [])))
+        self.execute((self._afsutil('version', [])))
 
     def install(self):
         """Run afsutil install."""
@@ -195,7 +204,7 @@ class Node(object):
         if post:
             args.append('--post')
             args.append(post)
-        self.execute(_sudo(self._afsutil('install', None, args)))
+        self.execute(_sudo(self._afsutil('install', args)))
 
     def keytab_create(self):
         """Run afsutil keytab create."""
@@ -223,7 +232,7 @@ class Node(object):
         if secret:
             args.append('--secret')
             args.append(secret)
-        self.execute(_sudo(self._afsutil('keytab', 'create', args)))
+        self.execute(_sudo(self._afsutil('ktcreate', args)))
 
     def keytab_setkey(self):
         """Run afsutil keytab setkey."""
@@ -249,7 +258,7 @@ class Node(object):
         if keyformat:
             args.append('--format')
             args.append(keyformat)
-        self.execute(_sudo(self._afsutil('keytab', 'setkey', args)))
+        self.execute(_sudo(self._afsutil('ktsetkey', args)))
 
     def keytab_destroy(self):
         """Run afsutil keytab destroy."""
@@ -262,15 +271,15 @@ class Node(object):
             args.append('--keytab')
             args.append(keytab)
         args.append('--force')
-        self.execute(_sudo(self._afsutil('keytab', 'destroy', args)))
+        self.execute(_sudo(self._afsutil('ktdestroy', args)))
 
     def start(self, comp):
         """Run afsutil start."""
-        self.execute(_sudo(self._afsutil('start', comp, [])))
+        self.execute(_sudo(self._afsutil('start', [comp])))
 
     def stop(self, comp):
         """Run afsutil stop."""
-        self.execute(_sudo(self._afsutil('stop', comp, [])))
+        self.execute(_sudo(self._afsutil('stop', [comp])))
 
     def newcell(self):
         """Run afsutil newcell."""
@@ -307,8 +316,8 @@ class Node(object):
                 options = c.optstr(section, program)
                 if options is not None:
                     args.append('-o')
-                    args.append("%s:%s=%s" % (hostname, program, options))
-        self.execute(_sudo(self._afsutil('newcell', None, args)))
+                    args.append("%s.%s=%s" % (hostname, program, options))
+        self.execute(_sudo(self._afsutil('newcell', args)))
 
     def mtroot(self):
         """Run afsutil mtroot."""
@@ -356,7 +365,7 @@ class Node(object):
         if options is not None:
             args.append('-o')
             args.append("afsd=%s" % (options))
-        self.execute(self._afsutil('mtroot', None, args))
+        self.execute(self._afsutil('mtroot', args))
 
     def login(self, user):
         """Run afsutil login."""
@@ -388,7 +397,7 @@ class Node(object):
             if keytab:
                 args.append('--keytab')
                 args.append(keytab)
-        self.execute(self._afsutil('login', None, args))
+        self.execute(self._afsutil('ktlogin', args))
 
     def remove(self):
         """Run afsutil remove."""
@@ -401,7 +410,7 @@ class Node(object):
         if post:
             args.append('--post')
             args.append(post)
-        self.execute(_sudo(self._afsutil('remove', None, args)))
+        self.execute(_sudo(self._afsutil('remove', args)))
 
 class RemoteNode(Node):
     """Remote node (host) to be setup."""
@@ -450,19 +459,21 @@ def _get_nodes(config, **kwargs):
         'install': [],
         'servers': [],
         'clients': [],
+        'server': None,
+        'client': None,
     }
-    names = set()
+    names = dict()
     db = config.optstr('cell', 'db').split(',')
     fs = config.optstr('cell', 'fs').split(',')
     cm = config.optstr('cell', 'cm').split(',')
     for name in config.opthostnames():
         if name in names:
             continue  # avoid dupes
-        names.add(name)
         if islocal(name):
             node = Node(name, config, **kwargs)
         else:
             node = RemoteNode(name, config, **kwargs)
+        names[name] = node
         nodes['all'].append(node)
         if node.installer:
             nodes['install'].append(node)
@@ -470,6 +481,16 @@ def _get_nodes(config, **kwargs):
             nodes['servers'].append(node)
         if name in cm:
             nodes['clients'].append(node)
+
+    # Find the nodes for the client-side and server-side setup.
+    for flavor in ('server', 'client'):
+        name = None
+        if nodes[flavor+'s']:
+            name = nodes[flavor+'s'][0].name # First one of this type.
+        name = config.optstr('setup', flavor, default=name)
+        if name:
+            nodes[flavor] = names[name]
+
     return nodes
 
 def setup(config, **kwargs):
@@ -509,16 +530,20 @@ def setup(config, **kwargs):
         with progress("Starting servers"):
             for node in nodes['servers']:
                 node.start('server')
+
+    node = nodes['server']
+    if node:
         with progress("Creating new cell"):
-            node = nodes['servers'][0]
             node.newcell()
 
     if nodes['clients']:
         with progress("Starting clients"):
             for node in nodes['clients']:
                 node.start('client')
+
+    node = nodes['client']
+    if node:
         with progress("Mounting root volumes"):
-            node = nodes['clients'][0]
             node.mtroot()
 
     logger.info("setup done")

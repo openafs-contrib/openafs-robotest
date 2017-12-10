@@ -18,7 +18,7 @@ help:
 
 
 lint:
-	pyflakes $(PACKAGE)/*.py $(PACKAGE)/system/*.py test/*.py scripts/*
+	pyflakes $(PACKAGE)/*.py $(PACKAGE)/system/*.py test/*.py
 
 test: version
 	python -m test.test_system -v

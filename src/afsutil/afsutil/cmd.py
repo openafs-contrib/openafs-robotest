@@ -31,24 +31,21 @@ logger = logging.getLogger(__name__)
 
 # Common hidding places.
 PATHS = [
-  '/usr/bin',
-  '/usr/sbin',
-  AFS_SRV_BIN_DIR,
-  AFS_SRV_SBIN_DIR,
-  os.path.join(AFS_WS_DIR, 'bin'),
-  os.path.join(AFS_WS_DIR, 'etc'),
+    '/usr/bin',
+    '/usr/sbin',
+    AFS_SRV_BIN_DIR,
+    AFS_SRV_SBIN_DIR,
+    os.path.join(AFS_WS_DIR, 'bin'),
+    os.path.join(AFS_WS_DIR, 'etc'),
+    '/usr/kerberos/bin',
+    '/usr/heimdal/bin',
 ]
 
-KINIT = None
-ASETKEY = None
-AKLOG = None
-BOS = None
-VOS = None
-PTS = None
-FS = None
-UDEBUG = None
-RXDEBUG = None
-TOKENS = None
+_cmdpath = {
+}
+
+def setpath(cmd, path):
+    _cmdpath[cmd] = path
 
 def _run(cmd, args=None, quiet=False, retry=0, wait=1, cleanup=None):
     """Execute a command and return the output as a string.
@@ -69,7 +66,8 @@ def _run(cmd, args=None, quiet=False, retry=0, wait=1, cleanup=None):
         args = []
     elif not isinstance(args, list):
         args = list(args)
-    args.insert(0, which(cmd, raise_errors=True))
+    cmd = _cmdpath.get(cmd, cmd)
+    args.insert(0, which(cmd, raise_errors=True, extra_paths=PATHS))
     while True:
         try:
             lines = sh(*args, quite=quiet)
@@ -87,71 +85,40 @@ def _run(cmd, args=None, quiet=False, retry=0, wait=1, cleanup=None):
     return "\n".join(lines)
 
 def asetkey(*args, **kwargs):
-    global ASETKEY
-    if ASETKEY is None:
-        ASETKEY = which('asetkey', extra_paths=PATHS, raise_errors=True)
-    return _run(ASETKEY, args=args, **kwargs)
+    return _run('asetkey', args=args, **kwargs)
 
 def kinit(*args, **kwargs):
-    global KINIT
-    extra_paths = ['/usr/bin', '/usr/sbin', '/usr/kerberos/bin', '/usr/heimdal/bin']
-    if KINIT is None:
-        KINIT = which('kinit', extra_paths=extra_paths, raise_errors=True)
-    return _run(KINIT, args=args, **kwargs)
+    return _run('kinit', args=args, **kwargs)
 
 def aklog(*args, **kwargs):
-    global AKLOG
-    if AKLOG is None:
-        AKLOG = which('aklog', extra_paths=PATHS, raise_errors=True)
-    return _run(AKLOG, args=args, **kwargs)
+    return _run('aklog', args=args, **kwargs)
 
 def bos(*args, **kwargs):
-    global BOS
-    if BOS is None:
-        BOS = which('bos', extra_paths=PATHS, raise_errors=True)
     if os.geteuid() == 0:
         args = list(args)
         args.append('-localauth')
-    return _run(BOS, args=args, **kwargs)
+    return _run('bos', args=args, **kwargs)
 
 def vos(*args, **kwargs):
-    global VOS
-    if VOS is None:
-        VOS = which('vos', extra_paths=PATHS, raise_errors=True)
     if os.geteuid() == 0:
         args = list(args)
         args.append('-localauth')
-    return _run(VOS, args=args, **kwargs)
+    return _run('vos', args=args, **kwargs)
 
 def pts(*args, **kwargs):
-    global PTS
-    if PTS is None:
-        PTS = which('pts', extra_paths=PATHS, raise_errors=True)
     if os.geteuid() == 0:
         args = list(args)
         args.append('-localauth')
-    return _run(PTS, args=args, **kwargs)
+    return _run('pts', args=args, **kwargs)
 
 def fs(*args, **kwargs):
-    global FS
-    if FS is None:
-        FS = which('fs', extra_paths=PATHS, raise_errors=True)
-    return _run(FS, args=args, **kwargs)
+    return _run('fs', args=args, **kwargs)
 
 def udebug(*args, **kwargs):
-    global UDEBUG
-    if UDEBUG is None:
-        UDEBUG = which('udebug', extra_paths=PATHS, raise_errors=True)
-    return _run(UDEBUG, args=args, **kwargs)
+    return _run('udebug', args=args, **kwargs)
 
 def rxdebug(*args, **kwargs):
-    global RXDEBUG
-    if RXDEBUG is None:
-        RXDEBUG = which('rxdebug', extra_paths=PATHS+[os.path.join(AFS_WS_DIR,'etc')], raise_errors=True)
-    return _run(RXDEBUG, args=args, **kwargs)
+    return _run('rxdebug', args=args, **kwargs)
 
 def tokens(*args, **kwargs):
-    global TOKENS
-    if TOKENS is None:
-        TOKENS = which('tokens', extra_paths=PATHS+[os.path.join(AFS_WS_DIR,'bin')], raise_errors=True)
-    return _run(TOKENS, args=args, **kwargs)
+    return _run('tokens', args=args, **kwargs)
