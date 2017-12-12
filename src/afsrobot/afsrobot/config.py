@@ -51,14 +51,12 @@ port = 8000
 foreground = no
 
 [test]
-doc = <AFSROBOT_ROOT>/doc
 tests = <AFSROBOT_ROOT>/tests
 libraries = <AFSROBOT_ROOT>/libraries
 resources = <AFSROBOT_ROOT>/resources
 output = <AFSROBOT_DATA>/output
 exclude = bug,slow
 loglevel = INFO
-pag_onegroup = yes
 host = <HOSTNAME>
 
 [cell]
@@ -128,6 +126,7 @@ installer = transarc
 keyformat = detect
 dafileserver = -d 1 -L
 davolserver = -d 1
+pag_onegroup = yes
 
 """
 

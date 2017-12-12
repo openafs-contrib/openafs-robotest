@@ -621,6 +621,8 @@ def test(config, **kwargs):
     ]
     for path in node.paths:
         variable.append("%s:%s" % (path.upper(), node.paths[path]))
+    for o,v in config.items(node.section):
+        variable.append("%s:%s" % (o.upper(), v))
     for o,v in config.items('test'):
         variable.append("%s:%s" % (o.upper(), v))
 
