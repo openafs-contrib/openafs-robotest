@@ -45,3 +45,13 @@ def uniq(x):
         if not item in y:
             y.append(item)
     return y
+
+def flipbase64_encode(n):
+    """Encode an integer to a flip-base64, a base64 variant for AFS namei."""
+    index = '+=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+    base64 = [index[n & 0x3f]]
+    n >>= 6
+    while n:
+        base64.append(index[n & 0x3f])
+        n >>= 6
+    return ''.join(base64)
