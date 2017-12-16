@@ -51,8 +51,6 @@ install: preinstall install-afsutil
 	@afsutil check --quiet || { echo "Try: sudo afsutil check --fix-hosts"; exit 1; }
 	@echo installing modules...
 	for mod in $(MODULES); do (cd $$mod && $(MAKE) install); done
-	(cd src/OpenAFSLibrary && make install)
-	(cd src/afsrobot && make install)
 	@echo installing tests...
 	mkdir -p $(PREFIX)/afsrobot
 	cp -r tests/ $(PREFIX)/afsrobot
