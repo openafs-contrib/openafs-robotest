@@ -45,8 +45,8 @@ def help(**args):
     )
 def getdeps(**args):
     "Install build dependencies"
-    #from afsutil.getdeps import getdeps
-    return 0 #getdeps(args)
+    from afsutil.getdeps import getdeps
+    return getdeps(**args)
 
 @subcommand(
     argument('--fix-hosts', help='fix /etc/hosts file by replacing loopback entry.',
