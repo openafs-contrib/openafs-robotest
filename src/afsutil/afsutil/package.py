@@ -609,7 +609,7 @@ class RpmBuilder(object):
                    defaults to the list of versions of currently
                    installed kernel-devel packages.
         """
-        if kversions is None:
+        if not kversions:
             kversions = self.find_kversions()
         self.banner(["Building modules for versions:", kversions])
         self.total = len(kversions)
