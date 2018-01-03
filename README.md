@@ -18,7 +18,12 @@ OpenAFS and run the tests.
 * Python pip
 * Python argparse
 * Robotframework 2.7+
+* afsutil package (currently included here)
 * OpenAFS installation packages or binaries built from source
+
+Thee prereqs may be installed for commonly used systems with:
+
+    $ sudo make preinstall
 
 ## Installation
 

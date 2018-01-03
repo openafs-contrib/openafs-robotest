@@ -40,14 +40,12 @@ test:
 
 preinstall:
 	install/preinstall.$(OSID)
+	(cd src/afsutil && make install)
 
 postinstall:
 	test -x install/postinstall.$(OSID) && install/postinstall.$(OSID)
 
-install-afsutil:
-	(cd src/afsutil && make install)
-
-install: preinstall install-afsutil
+install:
 	@afsutil check --quiet || { echo "Try: sudo afsutil check --fix-hosts"; exit 1; }
 	@echo installing modules...
 	for mod in $(MODULES); do (cd $$mod && $(MAKE) install); done
