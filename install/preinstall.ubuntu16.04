@@ -1,0 +1,13 @@
+#!/bin/bash
+set -e
+source ./install/linux-functions.sh
+
+# System-wide prereqs
+create_tester "$AFSROBOT_USERNAME" "$SETUP_GROUP"
+fixup_etc_hosts "$AFSROBOT_IFDEVICE"
+sed -i 's/^# deb-src/deb-src/' /etc/apt/sources.list
+
+# Install prereqs
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -q
+apt-get install -q -y python python-pip
