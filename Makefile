@@ -70,36 +70,9 @@ install: preinstall install-afsutil
 	@echo ""
 	@echo "Happy robotesting."
 
-install-user:
-	@afsutil check --quiet || echo "Try: sudo afsutil check --fix-hosts"
-	(cd src/OpenAFSLibrary && make install-user)
-	(cd src/afsrobot && make install-user)
-	mkdir -p ~/afsrobot
-	cp -r tests/ ~/afsrobot
-	cp -r resources/ ~/afsrobot
-	input=src/OpenAFSLibrary/OpenAFSLibrary; \
-	output=~/afsrobot/doc/OpenAFSLibary.html; \
-	mkdir -p ~/afsrobot/doc && \
-	python -m robot.libdoc --format HTML --pythonpath $$input $$input $$output
-	afsrobot config init
-
-install-dev:
-	@afsutil check --quiet || echo "Try: sudo afsutil check --fix-hosts"
-	(cd src/OpenAFSLibrary && make install-dev)
-	(cd src/afsrobot && make install-dev)
-	afsrobot config init
-
 uninstall:
 	for mod in $(MODULES); do (cd $$mod && $(MAKE) uninstall); done
 	rm -fr $(PREFIX)/afsrobot
-
-uninstall-user:
-	for mod in $(MODULES); do (cd $$mod && $(MAKE) uninstall); done
-	rm -fr ~/afsrobot
-
-uninstall-dev:
-	for mod in $(MODULES); do (cd $$mod && $(MAKE) uninstall); done
-	rm -fr ~/afsrobot
 
 clean:
 	for mod in $(MODULES); do (cd $$mod && $(MAKE) clean); done
