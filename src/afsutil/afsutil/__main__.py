@@ -65,7 +65,6 @@ def check(**args):
                            dest='clean', action='store_false'),
     argument('--no-transarc-paths', help='do not use transarc paths', action='store_true'),
     argument('--no-modern-kmod-name', help='use the legacy kernel module name (linux only)', action='store_true'),
-    argument('--no-checking', help='disable error on warnings', action='store_true'),
     argument('-j', '--jobs', help='parallel build jobs', default=afsutil.system.nproc()),
     argument('--srcdir', help='source code directory', default='.'),
     argument('--tarball', help='path and file name of dest tarball'),
