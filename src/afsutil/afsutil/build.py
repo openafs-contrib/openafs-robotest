@@ -36,7 +36,6 @@ def cfopts():
     options = [
         '--enable-debug',
         '--enable-debug-kernel',
-        '--enable-checking',
         '--disable-optimize',
         '--disable-optimize-kernel',
         '--without-dot',
@@ -45,6 +44,7 @@ def cfopts():
     sysname = os.uname()[0]
     if sysname == "Linux":
         options.append('--with-linux-kernel-packaging')
+        options.append('--enable-checking')
     return " ".join(options)
 
 def _detect_sysname():
