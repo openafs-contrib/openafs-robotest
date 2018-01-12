@@ -62,7 +62,7 @@ def check(**args):
     argument('--cf', help='configure options', default=afsutil.build.cfopts()),
     argument('--target', help='make target', default='all'),
     argument('--no-clean', help='do not run git clean',
-                           dest='clean', action='store_false'),
+                           dest='clean', default=True, action='store_false'),
     argument('--no-transarc-paths', help='do not use transarc paths', action='store_true'),
     argument('--no-modern-kmod-name', help='use the legacy kernel module name (linux only)', action='store_true'),
     argument('-j', '--jobs', help='parallel build jobs', default=afsutil.system.nproc()),
