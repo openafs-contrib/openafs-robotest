@@ -56,19 +56,19 @@ root = argparse.ArgumentParser()
 parent = root.add_subparsers(dest='subcommand')
 config = ConfigParser()
 config.read([
-    '/etc/{}.ini'.format(progname),
-    os.path.expanduser('~/.{}.ini'.format(progname)),
+    '/etc/{0}.ini'.format(progname),
+    os.path.expanduser('~/.{0}.ini'.format(progname)),
 ])
 
 def _get_config(section, option, default):
     """Get the config option"""
     value = default
     if isinstance(value, list) or isinstance(value, tuple):
-        subsection = "{}.{}".format(section, option)
+        subsection = "{0}.{1}".format(section, option)
         if config.has_section(subsection):
             value = []
             for k,v in config.items(subsection):
-                value.append("{}={}".format(k,v))
+                value.append("{0}={1}".format(k,v))
         elif config.has_option(section, option):
             value = config.get(section, option).split()
     else:
@@ -108,7 +108,7 @@ def subcommand(*arguments, **kwargs):
             if default and 'help' in options:
                 if isinstance(default, list):
                     default = " ".join(default)
-                options['help'] += " (default: {})".format(default)
+                options['help'] += " (default: {0})".format(default)
             parser.add_argument(*name_or_flags, **options)
         parser.set_defaults(function=function, **kwargs)
         return function
@@ -116,7 +116,7 @@ def subcommand(*arguments, **kwargs):
 
 def usage():
     """Print a summary of the subcommands."""
-    print("usage: {} <command> [options]".format(progname))
+    print("usage: {0} <command> [options]".format(progname))
     print("")
     print("commands:")
     for name,parser in parent.choices.items():

@@ -113,16 +113,16 @@ class PackageTest(unittest.TestCase):
     def assertExists(self, path):
         self.assertIsNotNone(path)
         self.assertTrue(os.path.exists(path),
-            msg="path {} does not exist".format(path))
+            msg="path {0} does not exist".format(path))
 
     def assertNotExists(self, path):
         self.assertIsNotNone(path)
         self.assertFalse(os.path.exists(path),
-            msg="path {} exists".format(path))
+            msg="path {0} exists".format(path))
 
     def assertGlobExists(self, g):
         files = glob.glob(g)
-        self.assertTrue(len(files) > 0, msg="No files found for glob {}".format(g))
+        self.assertTrue(len(files) > 0, msg="No files found for glob {0}".format(g))
 
     def test_01_get_package_version(self):
         testcases = [

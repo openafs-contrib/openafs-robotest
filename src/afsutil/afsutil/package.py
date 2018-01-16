@@ -224,7 +224,7 @@ class RpmBuilder(object):
             return []
         logger.info("Checking for existing kmods in {0}".format(self.dstdir))
         linux_pkgver,linux_pkgrel = self.get_package_version()
-        logger.debug("linux_pkgver={}, linux_pkgrel={}".format(linux_pkgver,linux_pkgrel))
+        logger.debug("linux_pkgver={0}, linux_pkgrel={1}".format(linux_pkgver,linux_pkgrel))
         def get_kversion(line):
             # Extract the linux kernel version from the rpm RELEASE tag.
             # e.g. 1.3.10.0_514.10.2.el7 => 3.10.0-514.10.2.el7
