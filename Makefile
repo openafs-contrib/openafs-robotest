@@ -12,12 +12,10 @@ help:
 	@echo "  help            display targets"
 	@echo "  lint            lint code"
 	@echo "  test            run unit tests"
-	@echo "  install         install packages and tests (global)"
-	@echo "  install-user    install packages and tests (user)"
-	@echo "  install-dev     install packages and tests (developer mode)"
+	@echo "  preinstall      install prereqs and system setup (requires root)"
+	@echo "  install         install packages and tests (requires root)"
+	@echo "  preinstall      finalize system setup (requires root)"
 	@echo "  uninstall       uninstall packages and tests"
-	@echo "  uninstall-user  uninstall packages and tests (user)"
-	@echo "  uninstall-dev   uninstall packages and tests (developer mode)"
 	@echo "  clean           remove generated files"
 
 Makefile.config:
