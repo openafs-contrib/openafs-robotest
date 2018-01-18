@@ -127,6 +127,13 @@ class RpmBuilder(object):
         self.skipped = []
         self.built = []
 
+    def rpmbuild(self, *args, **kwargs):
+        """Run the rpmbuild commands."""
+        return sh(
+            'rpmbuild',
+            '--define', '_topdir {0}'.format(self.topdir),
+            *args, **kwargs)
+
     def git(self, *args):
         """Helper to run git commands in the source tree."""
         if not self.srcdir or self.srcdir == ".":
@@ -516,10 +523,8 @@ class RpmBuilder(object):
         def name_written(line):
             m = re.match(r'Wrote: (.*\.src\.rpm)$', line)
             return m.group(1) if m else None
-        output = sh(
-            'rpmbuild',
+        output = self.rpmbuild(
             '-bs', '--nodeps',
-            '--define', '_topdir {0}'.format(self.topdir),
             '--define', 'build_userspace 1',
             '--define', 'build_modules 0',
             '--with', 'kauth',
@@ -548,11 +553,9 @@ class RpmBuilder(object):
         def get_wrote(line):
             m = re.match(r'Wrote: (.*\.rpm)$', line)
             return m.group(1) if m else None
-        output = sh(
-            'rpmbuild',
+        output = self.rpmbuild(
             '--rebuild', '-bb',
             '--target', self.arch,
-            '--define', '_topdir {0}'.format(self.topdir),
             '--define', 'build_userspace 1',
             '--define', 'build_modules 0',
             '--with', 'kauth',
@@ -588,10 +591,8 @@ class RpmBuilder(object):
         def name_written(line):
             m = re.match(r'Wrote: (.*\.rpm)$', line)
             return m.group(1) if m else None
-        output = sh(
-            'rpmbuild',
+        output = self.rpmbuild(
             '--rebuild', '-bb',
-            '--define', '_topdir {0}'.format(self.topdir),
             '--target', self.arch,
             '--define', 'kernvers {0}'.format(kversion),
             '--define', 'build_userspace 0',
