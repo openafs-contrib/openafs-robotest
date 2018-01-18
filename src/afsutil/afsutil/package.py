@@ -660,26 +660,29 @@ class MockRpmBuilder(RpmBuilder):
         self.inited = False
         RpmBuilder.__init__(self, **kwargs)
 
+    def mock(self, *args, **kwargs):
+        return sh('mock', '--root', self.chroot, *args, **kwargs)
+
     def init_chroot(self):
         """Initialize the chroot."""
         if not self.inited:
             logger.info("Initializing chroot {0}.".format(self.chroot))
-            sh('mock', '--root', self.chroot, '--init', '--quiet', output=False)
+            self.mock('--init', '--quiet', output=False)
             self.inited = True
 
     def __del__(self):
         """Remove the chroot."""
         if self.inited and self.autoclean:
             logger.info("Removing chroot {0}.".format(self.chroot))
-            sh('mock', '--root', self.chroot, '--clean', '--quiet', output=False)
+            self.mock('--clean', '--quiet', output=False)
             self.inited = False
 
     def find_kversions_available(self):
         """List the linux kernel versions of the available kernel header packages in the chroot."""
         self.init_chroot()
-        sh('mock', '--root', self.chroot, '--install', 'yum-utils', '--quiet', output=False) # for repoquery
+        self.mock('--install', 'yum-utils', '--quiet', output=False) # for repoquery
         cmd = "repoquery --show-dupes --queryformat='%{VERSION}-%{RELEASE}' kernel-devel"
-        output = sh('mock', '--root', self.chroot, '--quiet', '--chroot', cmd, quiet=True)
+        output = self.mock('--quiet', '--chroot', cmd, quiet=True)
         logger.debug("kernel versions: {0}".format(" ".join(output)))
         return output
 
@@ -689,8 +692,7 @@ class MockRpmBuilder(RpmBuilder):
         self.prepare_sources()
         self.banner(["Building srpm"])
         resultdir = "/var/lib/mock/{chroot}/result".format(chroot=self.chroot)
-        sh('mock',
-            '--root', self.chroot,
+        self.mock(
             '--buildsrpm',
             '--resultdir', resultdir,
             '--spec', self.spec,
@@ -725,7 +727,8 @@ class MockRpmBuilder(RpmBuilder):
         self.init_chroot()
         logger.info("Building userspace rpms in chroot {chroot}".format(chroot=self.chroot))
         resultdir = "/var/lib/mock/{chroot}/result".format(chroot=self.chroot)
-        sh('mock', '--root', self.chroot, '--rebuild',
+        self.mock(
+            '--rebuild',
             '--arch', self.arch,
             '--resultdir', resultdir,
             '--define', 'build_userspace 1',
@@ -767,7 +770,8 @@ class MockRpmBuilder(RpmBuilder):
         self.init_chroot()
         logger.info("Building kmod for linux version {0}.".format(kversion))
         resultdir = "/var/lib/mock/{chroot}/result".format(chroot=self.chroot)
-        sh('mock', '--root', self.chroot, '--rebuild',
+        self.mock(
+            '--rebuild',
             '--arch', self.arch,
             '--resultdir', resultdir,
             '--define', 'kernvers {0}'.format(kversion),
