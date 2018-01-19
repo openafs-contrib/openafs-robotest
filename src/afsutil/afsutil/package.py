@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2017 Sine Nomine Associates
+# Copyright (c) 2014-2018 Sine Nomine Associates
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -84,13 +84,15 @@ def writefile(path, contents):
 
 class RpmBuilder(object):
     def __init__(self, srcdir=None, pkgdir=None, topdir=None, dstdir=None,
-                 arch=None, spec=None, csdb=None, clobber=False, quiet=False,**kwargs):
+                 version=None, arch=None, spec=None, csdb=None, clobber=False, quiet=False,**kwargs):
         """Initialize the RpmBuilder object
 
         srcdir:  path of the checked out source tree (default: .)
         pkgdir:  path of the packaging files (default: {srcdir}/src/packaging/RedHat
         topdir:  path of the rpmbuild directories (default: {srcdir}/packaging/rpmbuild)
         dstdir:  path to place rpms (default: None)
+        version: target version number (default: check)
+        arch:    target architecture (default: check)
         spec:    custom rpmbuild specfile (default: {pkdir}/openafs.spec.in}
         clobber: build and overwrite existing kmod-openafs rpms
         quiet:   less output
@@ -114,8 +116,8 @@ class RpmBuilder(object):
         self.custom_spec = spec
         self.custom_csdb = csdb
         # state
+        self.version = version
         self.arch = arch
-        self.version = None
         self.spec = None
         self.csdb = None
         self.sources = {}
@@ -156,6 +158,7 @@ class RpmBuilder(object):
         if self.version:
             return self.version
         dot_version = os.path.join(self.srcdir, ".version")
+        version = None
         if os.path.exists(dot_version):
             # Note: If the .version file exists, the value of the working file is
             # used when populating SOURCES, not the one extracted from git.
@@ -163,7 +166,11 @@ class RpmBuilder(object):
             version = readfile(dot_version).strip()
         else:
             logger.debug("getting OpenAFS version number with git describe.")
-            version = self.git('describe', '--abbrev=4', 'HEAD')[0]
+            output = self.git('describe', '--abbrev=4', 'HEAD')
+            if output:
+                version = output[0]
+        if not version:
+            raise RpmBuilderError("Failed to find version number.")
         self.version = re.sub(r'^openafs-[^-]*-', '', version).replace('_', '.')
         logger.info("OpenAFS version is {0}".format(self.version))
         return self.version
