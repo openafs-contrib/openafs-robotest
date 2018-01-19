@@ -84,7 +84,8 @@ def writefile(path, contents):
 
 class RpmBuilder(object):
     def __init__(self, srcdir=None, pkgdir=None, topdir=None, dstdir=None,
-                 version=None, arch=None, spec=None, csdb=None, clobber=False, quiet=False,**kwargs):
+                 version=None, arch=None, spec=None, csdb=None, clobber=False, quiet=False,
+                 with_=None, without=None, **kwargs):
         """Initialize the RpmBuilder object
 
         srcdir:  path of the checked out source tree (default: .)
@@ -96,6 +97,8 @@ class RpmBuilder(object):
         spec:    custom rpmbuild specfile (default: {pkdir}/openafs.spec.in}
         clobber: build and overwrite existing kmod-openafs rpms
         quiet:   less output
+        with_:   rpmbuild --with options
+        without: rpmbuild --without options
         """
         if srcdir is None:
             srcdir = os.getcwd()
@@ -105,6 +108,10 @@ class RpmBuilder(object):
             topdir = os.path.join(srcdir, "packages/rpmbuild")
         if arch is None:
             arch = os.uname()[4]
+        if with_ is None:
+            with_ = []
+        if without is None:
+            without = []
         # paths
         self.srcdir = srcdir
         self.pkgdir = pkgdir
@@ -115,6 +122,8 @@ class RpmBuilder(object):
         self.quiet = quiet
         self.custom_spec = spec
         self.custom_csdb = csdb
+        self.with_ = flatten(with_)
+        self.without = flatten(without)
         # state
         self.version = version
         self.arch = arch
@@ -128,6 +137,17 @@ class RpmBuilder(object):
         self.generated = []
         self.skipped = []
         self.built = []
+
+    def withargs(self):
+        """Return a list of optional --with and --without options."""
+        args = []
+        for with_ in self.with_:
+            args.append('--with')
+            args.append(with_)
+        for without in self.without:
+            args.append('--without')
+            args.append(without)
+        return args
 
     def rpmbuild(self, *args, **kwargs):
         """Run the rpmbuild commands."""
@@ -530,12 +550,13 @@ class RpmBuilder(object):
         def name_written(line):
             m = re.match(r'Wrote: (.*\.src\.rpm)$', line)
             return m.group(1) if m else None
+        args = self.withargs()
+        args.append(self.spec)
         output = self.rpmbuild(
             '-bs', '--nodeps',
             '--define', 'build_userspace 1',
             '--define', 'build_modules 0',
-            '--with', 'kauth',
-            self.spec,
+            *args,
             sed=name_written)
         if len(output) < 1:
             raise RpmBuilderError("Failed to get srpm name.")
@@ -560,13 +581,14 @@ class RpmBuilder(object):
         def get_wrote(line):
             m = re.match(r'Wrote: (.*\.rpm)$', line)
             return m.group(1) if m else None
+        args = self.withargs()
+        args.append(srpm)
         output = self.rpmbuild(
             '--rebuild', '-bb',
             '--target', self.arch,
             '--define', 'build_userspace 1',
             '--define', 'build_modules 0',
-            '--with', 'kauth',
-            srpm,
+            *args,
             sed=get_wrote)
         self.built.extend(output)
 
@@ -734,14 +756,14 @@ class MockRpmBuilder(RpmBuilder):
         self.init_chroot()
         logger.info("Building userspace rpms in chroot {chroot}".format(chroot=self.chroot))
         resultdir = "/var/lib/mock/{chroot}/result".format(chroot=self.chroot)
+        args = self.withargs()
+        args.append(srpm)
         self.mock(
             '--rebuild',
             '--arch', self.arch,
             '--resultdir', resultdir,
             '--define', 'build_userspace 1',
             '--define', 'build_modules 0',
-            '--with', 'kauth',
-            srpm,
             output=False)
         if self.dstdir:
             mkdirp(self.dstdir)
@@ -777,6 +799,8 @@ class MockRpmBuilder(RpmBuilder):
         self.init_chroot()
         logger.info("Building kmod for linux version {0}.".format(kversion))
         resultdir = "/var/lib/mock/{chroot}/result".format(chroot=self.chroot)
+        args = self.withargs()
+        args.append(srpm)
         self.mock(
             '--rebuild',
             '--arch', self.arch,
@@ -784,8 +808,7 @@ class MockRpmBuilder(RpmBuilder):
             '--define', 'kernvers {0}'.format(kversion),
             '--define', 'build_userspace 0',
             '--define', 'build_modules 1',
-            '--with', 'kauth',
-            srpm,
+            *args,
             output=False)
         if self.dstdir:
             mkdirp(self.dstdir)

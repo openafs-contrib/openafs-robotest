@@ -101,6 +101,10 @@ def reload(**args):
     argument('--kversion', help='linux kernel versions; may be given more than once',
                            metavar='<kernel-version>', dest='kversions',
                            nargs='+', action='append', default=[]),
+    argument('--with', help='rpmbuild --with options', dest='with_',
+                       nargs='+', action='append', default=[]),
+    argument('--without', help='rpmbuild --without options',
+                       nargs='+', action='append', default=[]),
     )
 def package(**args):
     "Build packages"
