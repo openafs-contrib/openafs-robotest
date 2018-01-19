@@ -146,7 +146,7 @@ def dispatch():
     if requires_root and os.geteuid() != 0:
         sys.stderr.write("afsutil: Must run as root!\n")
         sys.exit(1)
-    log = _setup_logging(args)
+    log = _setup_logging(**args)
     cwd = None
     chdir = args.get('chdir')
     if chdir:
