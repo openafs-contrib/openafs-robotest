@@ -85,13 +85,13 @@ def reload(**args):
 
 @subcommand(
     argument('--chdir', help='change to directory', metavar='<path>'),
-    argument('--with-mock', help='build in mock chroot',
-                            metavar='<chroot>', dest='chroot'),
-    argument('--dstdir', help='where to place rpms (--with-mock only)',
+    argument('--mock', help='build in mock chroot',
+                           metavar='<chroot>', dest='chroot'),
+    argument('--dstdir', help='where to place rpms (--mock only)',
                            metavar='<dstdir>'),
-    argument('--clobber', help='rebuild and overwrite existing kmods (--with-mock only)',
+    argument('--clobber', help='rebuild and overwrite existing kmods (--mock only)',
                            action='store_true'),
-    argument('--no-clean', help='do not clean after build (--with-mock only)', dest='autoclean', action='store_false'),
+    argument('--no-clean', help='do not clean after build (--mock only)', dest='autoclean', action='store_false'),
     argument('--build', help='what to build: all, srpm, userspace, kmods', metavar='<target>', default='all',
                         choices=['all','srpm','userspace','kmods']),
     argument('--csdb', help='CellServDB file path (default: download)', metavar='<csdb>'),
@@ -101,9 +101,11 @@ def reload(**args):
     argument('--kversion', help='linux kernel versions; may be given more than once',
                            metavar='<kernel-version>', dest='kversions',
                            nargs='+', action='append', default=[]),
-    argument('--with', help='rpmbuild --with options', dest='with_',
+    argument('--with', help='build with optional feature (e.g. --with kauth)',
+                       dest='with_', metavar='<feature>',
                        nargs='+', action='append', default=[]),
-    argument('--without', help='rpmbuild --without options',
+    argument('--without', help='build without optional feature (e.g. --without kauth)',
+                       metavar='<feature>',
                        nargs='+', action='append', default=[]),
     )
 def package(**args):
