@@ -1,6 +1,0 @@
-*.pyc
-*.swp
-afsutil.egg-info/
-dist/
-build/
-__version__.py
