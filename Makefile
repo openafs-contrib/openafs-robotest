@@ -1,5 +1,4 @@
-.PHONY: help lint test preinstall install install-user \
-		install-dev uninstall uninstall-user uninstall-dev clean
+.PHONY: help lint test preinstall install uninstall clean
 
 MODULES=\
 	src/OpenAFSLibrary \
