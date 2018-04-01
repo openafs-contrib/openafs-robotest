@@ -2,7 +2,6 @@
 		install-dev uninstall uninstall-user uninstall-dev clean
 
 MODULES=\
-	src/afsutil \
 	src/OpenAFSLibrary \
 	src/afsrobot
 
@@ -13,8 +12,7 @@ help:
 	@echo "  lint            lint code"
 	@echo "  test            run unit tests"
 	@echo "  preinstall      install prereqs and system setup (requires root)"
-	@echo "  install         install packages and tests (requires root)"
-	@echo "  preinstall      finalize system setup (requires root)"
+	@echo "  install         install packages and tests"
 	@echo "  uninstall       uninstall packages and tests"
 	@echo "  clean           remove generated files"
 
@@ -38,10 +36,9 @@ test:
 
 preinstall:
 	install/preinstall.$(OSID)
-	(cd src/afsutil && make install)
+	@afsutil check --quiet || { echo "Try: sudo afsutil check --fix-hosts"; exit 1; }
 
 install:
-	@afsutil check --quiet || { echo "Try: sudo afsutil check --fix-hosts"; exit 1; }
 	@echo installing modules...
 	for mod in $(MODULES); do (cd $$mod && $(MAKE) install); done
 	@echo installing tests...
