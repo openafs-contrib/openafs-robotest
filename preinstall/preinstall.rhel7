@@ -1,0 +1,14 @@
+#!/bin/bash
+set -e
+source ./preinstall/linux-functions.sh
+
+# System-wide prereqs
+create_tester "$AFSROBOT_USERNAME" "$SETUP_GROUP"
+if hostnamectl --no-ask-password --static status | grep -q '^localhost'; then
+    hostnamectl --no-ask-password set-hostname ${AFSROBOT_HOSTNAME:-"afsrobot"}
+fi
+fixup_etc_hosts "$AFSROBOT_IFDEVICE"
+
+# Install prereqs
+yum install -q -y epel-release
+yum install -q -y python python-pip

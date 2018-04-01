@@ -1,4 +1,4 @@
-.PHONY: help lint test preinstall install uninstall clean
+.PHONY: help lint test install uninstall clean
 
 MODULES=\
 	src/OpenAFSLibrary \
@@ -7,12 +7,10 @@ MODULES=\
 help:
 	@echo "usage: make <target> [<target> ...]"
 	@echo "targets:"
-	@echo "  help            display targets"
 	@echo "  lint            lint code"
 	@echo "  test            run unit tests"
-	@echo "  preinstall      install prereqs and system setup (requires root)"
-	@echo "  install         install packages and tests"
-	@echo "  uninstall       uninstall packages and tests"
+	@echo "  install         install packages, docs, and tests"
+	@echo "  uninstall       uninstall packages, docs, and tests"
 	@echo "  clean           remove generated files"
 
 Makefile.config:
@@ -23,7 +21,6 @@ Makefile.config:
 	elif test -d /opt; then \
 		echo PREFIX=/opt; \
 	fi >Makefile.config
-	echo "OSID=`install/detect-os.sh`" >>Makefile.config
 
 lint:
 	for mod in $(MODULES); do (cd $$mod && $(MAKE) lint) || exit 1; done
@@ -32,10 +29,6 @@ lint:
 test:
 	for mod in $(MODULES); do (cd $$mod && $(MAKE) test) || exit 1; done
 	@echo ok
-
-preinstall:
-	install/preinstall.$(OSID)
-	@afsutil check --quiet || { echo "Try: sudo afsutil check --fix-hosts"; exit 1; }
 
 install:
 	@echo Installing modules...

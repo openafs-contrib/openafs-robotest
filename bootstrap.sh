@@ -81,8 +81,8 @@ export AFSROBOT_GROUP
 export AFSROBOT_IFDEVICE
 export AFSROBOT_CREDS
 
-make preinstall  || die "preinstall failed"
-make install     || die "install failed"
+sudo preinstall.sh || die "preinstall failed"
+make install       || die "install failed"
 
 echo "Installing build tools..."
 afsutil getdeps --creds $AFSROBOT_CREDS || die "Failed to install build tools."
