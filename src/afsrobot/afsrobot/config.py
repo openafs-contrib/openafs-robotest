@@ -320,23 +320,23 @@ class Config(ConfigParser.SafeConfigParser):
         raise ValueError("Host section not found for hostname %s" % (hostname))
 
 
-def init(config, ini, **kwargs):
+def init(config, cfg, **kwargs):
     afsrobot_data = os.path.expanduser("~/afsrobot");
     if not os.path.isdir(afsrobot_data):
         logger.info("Making data directory %s" % (afsrobot_data))
         os.makedirs(afsrobot_data)
     config = Config()
     config.load_defaults()
-    if os.path.exists(ini):
+    if os.path.exists(cfg):
         msg = "Updating config file"
-        config.load_from_file(ini)
+        config.load_from_file(cfg)
     else:
         msg = "Creating config file"
-        if not os.path.isdir(os.path.dirname(ini)):
-            logger.info("Making config file directory %s" % (os.path.dirname(ini)))
-            os.makedirs(os.path.dirname(ini))
-    logger.info("%s %s" % (msg, ini))
-    config.save_as(ini)
+        if not os.path.isdir(os.path.dirname(cfg)):
+            logger.info("Making config file directory %s" % (os.path.dirname(cfg)))
+            os.makedirs(os.path.dirname(cfg))
+    logger.info("%s %s" % (msg, cfg))
+    config.save_as(cfg)
 
 def list(config, out, section, raw=False, sections=False, **kwargs):
     if sections and section is None:

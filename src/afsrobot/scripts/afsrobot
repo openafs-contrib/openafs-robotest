@@ -38,12 +38,12 @@ except ImportError:
     sys.stderr.write("Install argparse with `sudo pip install argparse`.\n")
     sys.exit(1)
 #
-# AFSROBOT_INI  Fully qualified filename of the configuration file.
-#               Defaults to $HOME/afsrobot/afsrobot.ini
+# AFSROBOT_CFG  Fully qualified filename of the configuration file.
+#               Defaults to $HOME/afsrobot/afsrobot.cfg
 #               Overridden by the --config (-c) command line option.
 #
-AFSROBOT_INI = os.getenv('AFSROBOT_INI',
-    os.path.join(os.environ['HOME'], 'afsrobot', 'afsrobot.ini'))
+AFSROBOT_CFG = os.getenv('AFSROBOT_CFG',
+    os.path.join(os.environ['HOME'], 'afsrobot', 'afsrobot.cfg'))
 
 logger = logging.getLogger('afsrobot')
 
@@ -115,9 +115,9 @@ def main():
     """Command line handling for the afsrobot tool."""
 
     def common_options(p):
-        p.add_argument('-c', '--config', dest='ini', metavar='<filename>',
-                       help="config file (default: %s)" % AFSROBOT_INI,
-                       default=AFSROBOT_INI)
+        p.add_argument('-c', '--config', dest='cfg', metavar='<filename>',
+                       help="config file (default: %s)" % AFSROBOT_CFG,
+                       default=AFSROBOT_CFG)
         p.add_argument('-q', '--quiet', help="less messages", default=False, action='store_true')
         p.add_argument('-v', '--verbose', help="show log messages", default=False, action='store_true')
         p.add_argument('--debug', help="debug log level", default=False, action='store_true')
@@ -271,7 +271,7 @@ def main():
     args = parser.parse_args()
     config = afsrobot.config.Config()
     if not args._defer_config:
-        config.load_from_file(args.ini)
+        config.load_from_file(args.cfg)
     _set_logging_options(args, config)
     kwargs = vars(args)
     function = kwargs.pop('_function')

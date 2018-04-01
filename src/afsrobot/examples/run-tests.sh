@@ -2,7 +2,7 @@
 set -e
 set -x
 
-rm -f ~/afsrobot/afsrobot.ini
+rm -f ~/afsrobot/afsrobot.cfg
 afsrobot init --quiet
 afsrobot config set test aklog /usr/local/bin/aklog-1.6
 afsrobot config set host.0 installer transarc
