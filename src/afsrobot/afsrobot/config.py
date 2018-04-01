@@ -55,7 +55,7 @@ tests = <AFSROBOT_ROOT>/tests
 libraries = <AFSROBOT_ROOT>/libraries
 resources = <AFSROBOT_ROOT>/resources
 output = <AFSROBOT_DATA>/output
-exclude = bug,slow
+exclude = bug,slow,rogue-avoidance
 loglevel = INFO
 host = <HOSTNAME>
 
