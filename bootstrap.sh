@@ -83,7 +83,6 @@ export AFSROBOT_CREDS
 
 make preinstall  || die "preinstall failed"
 make install     || die "install failed"
-make postinstall || die "postintall failed"
 
 echo "Installing build tools..."
 afsutil getdeps --creds $AFSROBOT_CREDS || die "Failed to install build tools."

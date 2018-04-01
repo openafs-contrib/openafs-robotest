@@ -1,4 +1,4 @@
-.PHONY: help lint test preinstall postinstall install install-user \
+.PHONY: help lint test preinstall install install-user \
 		install-dev uninstall uninstall-user uninstall-dev clean
 
 MODULES=\
@@ -40,9 +40,6 @@ preinstall:
 	install/preinstall.$(OSID)
 	(cd src/afsutil && make install)
 
-postinstall:
-	test -x install/postinstall.$(OSID) && install/postinstall.$(OSID)
-
 install:
 	@afsutil check --quiet || { echo "Try: sudo afsutil check --fix-hosts"; exit 1; }
 	@echo installing modules...
@@ -57,8 +54,6 @@ install:
 	mkdir -p $(PREFIX)/afsrobot/doc && \
 	python -m robot.libdoc --format HTML --pythonpath $$input $$input $$output
 	@echo checking...
-	if test -x install/postinstall.$(OSID); then install/postinstall.$(OSID); fi
-	@echo ""
 	@echo "Post-install steps:"
 	@echo ""
 	@echo "    sudo usermod -a -G testers <username>"
