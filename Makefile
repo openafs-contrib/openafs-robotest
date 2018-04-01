@@ -38,31 +38,28 @@ preinstall:
 	@afsutil check --quiet || { echo "Try: sudo afsutil check --fix-hosts"; exit 1; }
 
 install:
-	@echo installing modules...
+	@echo Installing modules...
 	for mod in $(MODULES); do (cd $$mod && $(MAKE) install); done
-	@echo installing tests...
+	@echo Installing tests...
 	mkdir -p $(PREFIX)/afsrobot
 	cp -r tests/ $(PREFIX)/afsrobot
 	cp -r resources/ $(PREFIX)/afsrobot
-	@echo generating docs...
+	@echo Generating docs...
 	input=src/OpenAFSLibrary/OpenAFSLibrary; \
 	output=$(PREFIX)/afsrobot/doc/OpenAFSLibary.html; \
 	mkdir -p $(PREFIX)/afsrobot/doc && \
 	python -m robot.libdoc --format HTML --pythonpath $$input $$input $$output
-	@echo checking...
-	@echo "Post-install steps:"
-	@echo ""
-	@echo "    sudo usermod -a -G testers <username>"
-	@echo "    afsrobot init"
-	@echo ""
+	@echo "Post-install steps..."
+	afsrobot init
+	# sudo usermod -a -G testers <username>"
 	@echo "Happy robotesting."
 
 uninstall:
-	for mod in $(MODULES); do (cd $$mod && $(MAKE) uninstall); done
+	for mod in $(MODULES); do (cd $$mod && $(MAKE) uninstall || true); done
 	rm -fr $(PREFIX)/afsrobot
 
 clean:
-	for mod in $(MODULES); do (cd $$mod && $(MAKE) clean); done
+	for mod in $(MODULES); do (cd $$mod && $(MAKE) clean || true); done
 	rm -f Makefile.config
 
 include Makefile.config
