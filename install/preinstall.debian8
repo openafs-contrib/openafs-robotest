@@ -10,4 +10,3 @@ fixup_etc_hosts "$AFSROBOT_IFDEVICE"
 export DEBIAN_FRONTEND=noninteractive
 export PIP_DISABLE_PIP_VERSION_CHECK=1
 apt-get install -q -y python python-pip
-pip install --upgrade robotframework
