@@ -16,6 +16,8 @@ help:
 Makefile.config:
 	if [ "x$(PREFIX)" != "x" ]; then \
 		echo PREFIX=$(PREFIX); \
+	elif [ `id -u` != '0' ]; then \
+		echo PREFIX=$(HOME); \
 	elif test -d /usr/local; then \
 		echo PREFIX=/usr/local; \
 	elif test -d /opt; then \
@@ -38,18 +40,22 @@ install:
 	cp -r tests/ $(PREFIX)/afsrobot
 	cp -r resources/ $(PREFIX)/afsrobot
 	@echo Generating docs...
-	input=src/OpenAFSLibrary/OpenAFSLibrary; \
-	output=$(PREFIX)/afsrobot/doc/OpenAFSLibary.html; \
-	mkdir -p $(PREFIX)/afsrobot/doc && \
-	python -m robot.libdoc --format HTML --pythonpath $$input $$input $$output
-	@echo "Post-install steps..."
+	mkdir -p $(PREFIX)/afsrobot/doc
+	python \
+	  -m robot.libdoc \
+	  --format HTML \
+	  --pythonpath src/OpenAFSLibrary/OpenAFSLibrary \
+	  src/OpenAFSLibrary/OpenAFSLibrary \
+	  $(PREFIX)/afsrobot/doc/OpenAFSLibary.html
+	@echo "Create config..."
 	afsrobot init
 	# sudo usermod -a -G testers <username>"
-	@echo "Happy robotesting."
 
 uninstall:
 	for mod in $(MODULES); do (cd $$mod && $(MAKE) uninstall || true); done
-	rm -fr $(PREFIX)/afsrobot
+	rm -fr $(PREFIX)/afsrobot/tests
+	rm -fr $(PREFIX)/afsrobot/resources
+	rm -fr $(PREFIX)/afsrobot/doc
 
 clean:
 	for mod in $(MODULES); do (cd $$mod && $(MAKE) clean || true); done

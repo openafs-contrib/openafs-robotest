@@ -15,29 +15,27 @@ OpenAFS and run the tests.
 
 * Linux or Solaris
 * Python 2.7
-* Python pip
+* Python setuptools and pip
 * Python argparse
 * Robotframework 2.7+
-* afsutil package (currently included here)
+* Python afsutil package
 * OpenAFS installation packages or binaries built from source
 
-Thee prereqs may be installed for commonly used systems with:
+## PrerInstallation
 
-    $ sudo make preinstall
+The prereqs may be installed for commonly used systems with:
+
+    $ sudo ./preinstall.sh
 
 ## Installation
 
 Install the OpenAFS robotest tests, libraries, and the frontend `afsrobot` tool
 
-    $ sudo make install
+    $ make install
 
-Add the users to run tests to the 'testers' group.
+Add the user to run tests to the 'testers' group.
 
     $ sudo usermod -a -G testers <username>
-
-Create the configuration file and output directories:
-
-    $ afsrobot init
 
 To show the current configuration:
 
