@@ -156,10 +156,10 @@ def cmd_ssh_exec(c):
     keyfile = c.config.optstr('ssh', 'keyfile', required=True)
     if c.args.include:
         hostnames = c.args.include
-	hostnames = hostnames.split('.')
+        hostnames = hostnames.split('.')
     else:
-    	hostnames = config.opthostnames()
-	# no split needed
+        hostnames = config.opthostnames()
+        # no split needed
     return afsrobot.ssh.execute(keyfile, hostnames, c.args.command,
                                 exclude=c.args.exclude, quiet=c.args.quiet,
                                 sudo=c.args.sudo)
