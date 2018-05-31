@@ -1,3 +1,0 @@
-#!/bin/sh
-echo "Unknown os."
-exit 1

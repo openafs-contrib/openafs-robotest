@@ -81,7 +81,6 @@ export AFSROBOT_GROUP
 export AFSROBOT_IFDEVICE
 export AFSROBOT_CREDS
 
-sudo preinstall.sh || die "preinstall failed"
 make install       || die "install failed"
 
 echo "Installing build tools..."

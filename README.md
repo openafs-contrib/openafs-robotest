@@ -21,11 +21,6 @@ OpenAFS and run the tests.
 * Python afsutil package
 * OpenAFS installation packages or binaries built from source
 
-## PrerInstallation
-
-The prereqs may be installed for commonly used systems with:
-
-    $ sudo ./preinstall.sh
 
 ## Installation
 

@@ -1,9 +1,0 @@
-#!/bin/bash
-set -e
-source ./preinstall/linux-functions.sh
-
-zypper install -y python-pip
-
-# System-wide prereqs
-create_tester "$AFSROBOT_USERNAME" "$SETUP_GROUP"
-fixup_etc_hosts "$AFSROBOT_IFDEVICE"
