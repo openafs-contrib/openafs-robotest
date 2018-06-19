@@ -1,3 +1,9 @@
+## [unreleased]
+
+* Moved afsutil to https://github.com/openafs-contrib/afsutil
+* Moved OpenAFSLibrary to https://github.com/openafs-contrib/robotframework-openafs
+
+
 ## [v0.6.0]
 
 ### Tests

@@ -1,7 +1,6 @@
 .PHONY: help lint test install uninstall clean
 
 MODULES=\
-	src/OpenAFSLibrary \
 	src/afsrobot
 
 help:
@@ -39,14 +38,6 @@ install:
 	mkdir -p $(PREFIX)/afsrobot
 	cp -r tests/ $(PREFIX)/afsrobot
 	cp -r resources/ $(PREFIX)/afsrobot
-	@echo Generating docs...
-	mkdir -p $(PREFIX)/afsrobot/doc
-	python \
-	  -m robot.libdoc \
-	  --format HTML \
-	  --pythonpath src/OpenAFSLibrary/OpenAFSLibrary \
-	  src/OpenAFSLibrary/OpenAFSLibrary \
-	  $(PREFIX)/afsrobot/doc/OpenAFSLibary.html
 	@echo "Create config..."
 	afsrobot init
 	# sudo usermod -a -G testers <username>"
