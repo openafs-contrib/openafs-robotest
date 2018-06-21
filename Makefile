@@ -1,7 +1,3 @@
-.PHONY: help lint test install uninstall clean
-
-MODULES=\
-	src/afsrobot
 
 help:
 	@echo "usage: make <target> [<target> ...]"
@@ -12,44 +8,30 @@ help:
 	@echo "  uninstall       uninstall packages, docs, and tests"
 	@echo "  clean           remove generated files"
 
-Makefile.config:
-	if [ "x$(PREFIX)" != "x" ]; then \
-		echo PREFIX=$(PREFIX); \
-	elif [ `id -u` != '0' ]; then \
-		echo PREFIX=$(HOME); \
-	elif test -d /usr/local; then \
-		echo PREFIX=/usr/local; \
-	elif test -d /opt; then \
-		echo PREFIX=/opt; \
-	fi >Makefile.config
+Makefile.config: configure.py
+	python configure.py > $@
+
+include Makefile.config
 
 lint:
-	for mod in $(MODULES); do (cd $$mod && $(MAKE) lint) || exit 1; done
-	@echo ok
+	cd src/afsrobot && $(MAKE) lint
 
 test:
-	for mod in $(MODULES); do (cd $$mod && $(MAKE) test) || exit 1; done
-	@echo ok
+	cd src/afsrobot && $(MAKE) test
 
 install:
-	@echo Installing modules...
-	for mod in $(MODULES); do (cd $$mod && $(MAKE) install); done
-	@echo Installing tests...
+	cd src/afsrobot && $(MAKE) install
 	mkdir -p $(PREFIX)/afsrobot
 	cp -r tests/ $(PREFIX)/afsrobot
 	cp -r resources/ $(PREFIX)/afsrobot
-	@echo "Create config..."
-	afsrobot init
-	# sudo usermod -a -G testers <username>"
 
 uninstall:
-	for mod in $(MODULES); do (cd $$mod && $(MAKE) uninstall || true); done
+	cd src/afsrobot && $(MAKE) uninstall
 	rm -fr $(PREFIX)/afsrobot/tests
 	rm -fr $(PREFIX)/afsrobot/resources
-	rm -fr $(PREFIX)/afsrobot/doc
 
 clean:
-	for mod in $(MODULES); do (cd $$mod && $(MAKE) clean || true); done
-	rm -f Makefile.config
+	cd src/afsrobot && $(MAKE) clean
 
-include Makefile.config
+distclean: clean
+	rm -f Makefile.config
