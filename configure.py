@@ -18,5 +18,5 @@ def prefix():
 PREFIX = prefix()
 
 print("""\
-PREFIX="{PREFIX}"\
+PREFIX={PREFIX}\
 """.format(**locals()))
