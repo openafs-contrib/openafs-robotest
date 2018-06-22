@@ -1,0 +1,23 @@
+# Copyright (c) 2018 Sine Nomine Associates
+#
+# Install and uninstall with pip.
+#
+include Makefile.config
+
+install:
+	$(PIP) install --upgrade .
+
+install-user:
+	$(PIP) install --upgrade --user .
+
+install-dev:
+	$(PIP) install --editable .
+
+uninstall:
+	$(PIP) uninstall -y $(NAME)
+
+uninstall-user:
+	$(PIP) uninstall -y $(NAME)
+
+uninstall-dev:
+	$(PIP) uninstall -y $(NAME)

@@ -1,0 +1,25 @@
+# Copyright (c) 2018 Sine Nomine Associates
+#
+# Install with setup.py and uninstall by removing files.
+# pip is preferred and should be used if available.
+#
+include Makefile.config
+
+install:
+	$(PYTHON) setup.py install --record files.txt
+
+install-user:
+	$(PYTHON) setup.py install --user --record files.txt
+
+install-dev:
+	$(PYTHON) setup.py develop --user --record files.txt
+
+uninstall:
+	test -f files.txt && cat files.txt | xargs rm -f
+
+uninstall-user:
+	test -f files.txt && cat files.txt | xargs rm -f
+
+uninstall-dev:
+	$(PYTHON) setup.py develop --user --uninstall
+	@echo todo: remove scripts!

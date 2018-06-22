@@ -4,3 +4,5 @@ afsrobot.egg-info/
 dist/
 build/
 __version__.py
+Makefile.config
+files.txt
