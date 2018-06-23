@@ -21,17 +21,18 @@ test:
 
 install:
 	cd src/afsrobot && $(MAKE) install
-	mkdir -p $(PREFIX)/afsrobot
-	cp -r tests/ $(PREFIX)/afsrobot
-	cp -r resources/ $(PREFIX)/afsrobot
+	install -m 755 -d $(DESTDIR)$(PREFIX)/afsrobot
+	cp -r tests/ $(DESTDIR)$(PREFIX)/afsrobot
+	cp -r resources/ $(DESTDIR)$(PREFIX)/afsrobot
 
 uninstall:
 	cd src/afsrobot && $(MAKE) uninstall
-	rm -fr $(PREFIX)/afsrobot/tests
-	rm -fr $(PREFIX)/afsrobot/resources
+	rm -rf $(DESTDIR)$(PREFIX)/afsrobot/tests
+	rm -rf $(DESTDIR)$(PREFIX)/afsrobot/resources
 
 clean:
 	cd src/afsrobot && $(MAKE) clean
 
 distclean: clean
+	cd src/afsrobot && $(MAKE) distclean
 	rm -f Makefile.config
