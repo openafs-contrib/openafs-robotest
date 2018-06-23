@@ -464,7 +464,7 @@ def _aklog_workaround_check(config):
     # workaround this users must setup an aklog 1.6.10+ in some directory
     # and then set a option to specify the location. Since this is easy to
     # get wrong, do a sanity check up front, at least until aklog is fixed.
-    aklog = config.optstr('test', 'aklog')
+    aklog = config.optstr('run', 'aklog')
     if aklog is None:
         logger.warning("The akimpersonate feature is enabled but the aklog option")
         logger.warning("is not set. See the README.md for more information about")
@@ -511,7 +511,7 @@ def _get_nodes(config, **kwargs):
             nodes[flavor] = names[name]
 
     # Find the nodes for running the RF tests.
-    name = config.optstr('test', 'host', socket.gethostname())
+    name = config.optstr('run', 'host', socket.gethostname())
     nodes['test'] = names[name]
 
     return nodes
@@ -594,11 +594,11 @@ def test(config, **kwargs):
         _aklog_workaround_check(config)
 
     # Setup the python paths for our libs and resources.
-    sys.path.append(os.path.join(config.get('test', 'libraries'), 'OpenAFSLibrary'))
-    sys.path.append(config.get('test', 'resources'))
+    sys.path.append(os.path.join(config.get('run', 'libraries'), 'OpenAFSLibrary'))
+    sys.path.append(config.get('run', 'resources'))
 
     # Create output dir if needed.
-    output = config.optstr('test', 'output', required=True)
+    output = config.optstr('run', 'output', required=True)
     if not os.path.isdir(output):
         os.makedirs(output)
 
@@ -623,11 +623,11 @@ def test(config, **kwargs):
         variable.append("%s:%s" % (path.upper(), node.paths[path]))
     for o,v in config.items(node.section):
         variable.append("%s:%s" % (o.upper(), v))
-    for o,v in config.items('test'):
+    for o,v in config.items('run'):
         variable.append("%s:%s" % (o.upper(), v))
 
     # Determine tests to exclude.
-    exclude = config.get('test', 'exclude').split(',')
+    exclude = config.get('run', 'exclude').split(',')
     if 'gfind' not in node.paths:
         logger.warning("Excluding 'requires-gfind'; gfind is not set in config.\n")
         exclude.append('requires-gfind')
@@ -636,11 +636,11 @@ def test(config, **kwargs):
         exclude.append('requires-multi-fs')
 
     # Setup the rf options.
-    tests = config.get('test', 'tests') # path to our tests
+    tests = config.get('run', 'tests') # path to our tests
     options = {
         'report': 'index.html',
         'outputdir': output,
-        'loglevel': config.get('test', 'loglevel'),
+        'loglevel': config.get('run', 'loglevel'),
         'variable': variable,
         'exclude': exclude,
         'runemptysuite': True,

@@ -1,5 +1,5 @@
-#!/usr/bin/python
-# Copyright (c) 2015-2017 Sine Nomine Associates
+#!/usr/bin/env python
+# Copyright (c) 2015-2018 Sine Nomine Associates
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -134,11 +134,30 @@ def main():
     subparsers = parser.add_subparsers(title="commands", metavar="<command>")
 
     #
-    # afsrobot version
+    # afsrobot setup
     #
-    p = subparsers.add_parser('version', help="print version information")
+    p = subparsers.add_parser('setup', help="setup the test cell")
     common_options(p)
-    p.set_defaults(_function=_print_version, _defer_config=True)
+    p.add_argument('-n', '--dryrun', help="print commands instead of running", default=False, action='store_true')
+    p.set_defaults(_function=afsrobot.runner.setup, _section='setup')
+
+    #
+    # afsrobot run
+    #
+    p = subparsers.add_parser('run', help="run the tests")
+    common_options(p)
+    p.add_argument('-s', '--suite', help="test suite to run; e.g. client.basic  (default: all)", default=None)
+    p.add_argument('-i', '--include', help="test tags to include (default: all)", default=None)
+    p.add_argument('-t', '--test', help="test name to run; e.g. create_a_file (default: all)", default=None)
+    p.set_defaults(_function=afsrobot.runner.test, _section='test')
+
+    #
+    # afsrobot teardown
+    #
+    p = subparsers.add_parser('teardown', help="teardown the test cell")
+    common_options(p)
+    p.add_argument('-n', '--dryrun', help="print commands instead of running", default=False, action='store_true')
+    p.set_defaults(_function=afsrobot.runner.teardown, _section='teardown')
 
     #
     # afsrobot init
@@ -234,24 +253,6 @@ def main():
     p.set_defaults(_function=afsrobot.web.status)
 
     #
-    # afsrobot setup
-    #
-    p = subparsers.add_parser('setup', help='install and setup OpenAFS')
-    common_options(p)
-    p.add_argument('-n', '--dryrun', help="print commands instead of running", default=False, action='store_true')
-    p.set_defaults(_function=afsrobot.runner.setup, _section='setup')
-
-    #
-    # afsrobot test
-    #
-    p = subparsers.add_parser('test', help="run the tests")
-    common_options(p)
-    p.add_argument('-s', '--suite', help="test suite to run; e.g. client.basic  (default: all)", default=None)
-    p.add_argument('-i', '--include', help="test tags to include (default: all)", default=None)
-    p.add_argument('-t', '--test', help="test name to run; e.g. create_a_file (default: all)", default=None)
-    p.set_defaults(_function=afsrobot.runner.test, _section='test')
-
-    #
     # afsrobot login
     #
     p = subparsers.add_parser('login', help="obtain a token")
@@ -261,12 +262,11 @@ def main():
     p.set_defaults(_function=afsrobot.runner.login, _section='login')
 
     #
-    # afsrobot teardown
+    # afsrobot version
     #
-    p = subparsers.add_parser('teardown', help="remove OpenAFS")
+    p = subparsers.add_parser('version', help="print version information")
     common_options(p)
-    p.add_argument('-n', '--dryrun', help="print commands instead of running", default=False, action='store_true')
-    p.set_defaults(_function=afsrobot.runner.teardown, _section='teardown')
+    p.set_defaults(_function=_print_version, _defer_config=True)
 
     args = parser.parse_args()
     config = afsrobot.config.Config()

@@ -34,6 +34,15 @@ DEFAULT_CONFIG_DATA = """
 log = <AFSROBOT_DATA>/log/setup.log
 loglevel = INFO
 
+[run]
+tests = <AFSROBOT_ROOT>/tests
+libraries = <AFSROBOT_ROOT>/libraries
+resources = <AFSROBOT_ROOT>/resources
+output = <AFSROBOT_DATA>/output
+exclude = bug,slow,rogue-avoidance
+loglevel = INFO
+host = <HOSTNAME>
+
 [teardown]
 log = <AFSROBOT_DATA>/log/teardown.log
 loglevel = INFO
@@ -49,15 +58,6 @@ keyfile = <HOME>/.ssh/afsrobot
 docroot = <AFSROBOT_DATA>/output
 port = 8000
 foreground = no
-
-[test]
-tests = <AFSROBOT_ROOT>/tests
-libraries = <AFSROBOT_ROOT>/libraries
-resources = <AFSROBOT_ROOT>/resources
-output = <AFSROBOT_DATA>/output
-exclude = bug,slow,rogue-avoidance
-loglevel = INFO
-host = <HOSTNAME>
 
 [cell]
 name = robotest
