@@ -15,15 +15,30 @@ OpenAFS and run the tests.
 
 * Linux or Solaris
 * Python 2.7
-* Python setuptools and pip
-* Python argparse
-* Robotframework 2.7+
-* Python afsutil package
+  * setuptools
+  * pip
+  * argparse
+  * Robotframework 2.7+
+  * afsutil
 * OpenAFS installation packages or binaries built from source
 
-
 ## Installation
+### Ubuntu/Debian Dependencies
+```
+# Get pip & packages
+apt-get install -y python-pip
+pip install --upgrade pip
+yes | pip install robotframework
+yes | pip install afsutil
 
+# Robotframework Library for OpenAFS
+cd /tmp
+git clone https://github.com/openafs-contrib/robotframework-openafs
+cd robotframework-openafs
+sudo make install
+```
+
+### afsrobot
 Install the OpenAFS robotest tests, libraries, and the frontend `afsrobot` tool
 
     $ make install
