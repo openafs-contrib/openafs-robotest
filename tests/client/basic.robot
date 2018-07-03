@@ -149,6 +149,23 @@ Touch a file
     ...    Remove File             ${FILE}  AND
     ...    Should Not Exist        ${FILE}
 
+Timestamp rollover after 2147483647 (January 19, 2038 03:14:07 UTC) 
+    [Tags]  #(touch1)
+    [Setup]  Run Keyword
+    ...    Should Not Exist        ${FILE}
+    Command Should Succeed   touch ${FILE}
+    Should Exist                   ${FILE}
+    Set Modified Time              ${FILE}   2147483647
+    ${secs}=  Get Modified Time    ${FILE}   epoch
+    Should Be Equal                ${secs}   ${2147483647}
+    Set Modified Time              ${FILE}   2147483648
+    ${secs}=  Get Modified Time    ${FILE}   epoch
+    Should Not Be Equal            ${secs}   ${2147483648}
+    Should Be Equal                ${secs}  ${-2147483648}
+    [Teardown]  Run Keywords
+    ...    Remove File             ${FILE}  AND
+    ...    Should Not Exist        ${FILE}
+
 Write to a File
     [Tags]  #(write1)
     [Setup]  Run Keywords
