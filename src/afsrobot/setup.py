@@ -6,6 +6,9 @@ except ImportError:
 
 exec(open('afsrobot/__version__.py').read())
 
+with open('requirements.txt') as f:
+    requirements = f.read().splitlines()
+
 setup(name='afsrobot',
     version=VERSION,
     description='OpenAFS Robotest Runner',
@@ -15,11 +18,7 @@ setup(name='afsrobot',
     url='http://www.sinenomine.net',
     license='BSD',
     packages=['afsrobot'],
-    install_requires=[
-        # 'afsutil', do not install this one from the index yet
-        # 'robotframework-openafs',
-        'robotframework',
-    ],
+    install_requires=requirements,
     scripts=['scripts/afsrobot'],
     test_suite='test',
     zip_safe=False,

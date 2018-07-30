@@ -1,0 +1,3 @@
+afsutil
+robotframework-openafslibrary
+robotframework
