@@ -20,36 +20,30 @@ OpenAFS and run the tests.
   * argparse
   * Robotframework 2.7+
   * afsutil
+  * robotframework-openafslibrary
 * OpenAFS installation packages or binaries built from source
 
 ## Installation
-### Ubuntu/Debian Dependencies
-```
-# Get pip & packages
-apt-get install -y python-pip
-pip install --upgrade pip
-yes | pip install robotframework
-yes | pip install afsutil
-
-# Robotframework Library for OpenAFS
-cd /tmp
-git clone https://github.com/openafs-contrib/robotframework-openafs
-cd robotframework-openafs
-sudo make install
-```
 
 ### afsrobot
+
 Install the OpenAFS robotest tests, libraries, and the frontend `afsrobot` tool
+on the master host:
 
     $ make install
 
-Add the user to run tests to the 'testers' group.
+Install the `afsutil` tool globally on each host.
 
-    $ sudo usermod -a -G testers <username>
+    $ sudo pip install afsutil
 
-To show the current configuration:
+Update your sudoers so the user running the setup/teardown is able to run
+`afsutil` with sudo without a passord:
 
-    $ afsrobot config list
+    $ sudo -n afsutil version
+
+Set your initial configuration:
+
+    $ afsrobot init
 
 By default, the configuration will install binaries built from source using the
 legacy Transarc-style.  Update the configuration to install RPM packages during
