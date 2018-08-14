@@ -47,31 +47,26 @@ Remove Superuser
 
 *** Test Cases ***
 List Server Hosts
-    [Tags]  #(bostlisthosts)
     ${output}=  Run       ${BOS} listhosts ${SERVER}
     Should Contain        ${output}  ${AFS_CELL}
 
 Add a Superuser
-    [Tags]  #(bosadduser)
     [Setup]      Superusers Exclude User1
     Command Should Succeed    ${BOS} adduser ${SERVER} user1
     Superusers Include User1
     [Teardown]   Remove Superuser
 
 List Superusers
-    [Tags]  #(boslistusers)
     ${output}=  Run           ${BOS} listusers ${SERVER}
     Should Not Contain        ${output}  user1
 
 Remove a Superuser
-    [Tags]  #(bosremoveuser)
     [Setup]      Add Superuser
     Superusers Include User1
     Command Should Succeed    ${BOS} removeuser ${SERVER} user1
     [Teardown]   Superusers Exclude User1
 
 Get a bnode Status
-    [Tags]  #(bosstatus)
     ${output}=  Run            ${BOS} status ${SERVER}
     Should Contain             ${output}  ptserver
     Should Contain             ${output}  vlserver

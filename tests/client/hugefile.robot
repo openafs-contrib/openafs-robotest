@@ -40,7 +40,7 @@ Write a File Larger than the Cache
     [Setup]  Run Keywords
     ...    Should Not Exist               ${FILE}  AND
     ...    Create File                    ${FILE}
-    ${size}=  Get Cache Size 
+    ${size}=  Get Cache Size
     Should Exist                   ${FILE}
     ${output}=  Run                dd if=/dev/zero of=${FILE} bs=1024 count=${size+1}
     [Teardown]  Run Keywords
@@ -52,7 +52,7 @@ Read a File Larger than the Cache
     [Setup]  Run Keywords
     ...    Should Not Exist               ${FILE}  AND
     ...    Create File                    ${FILE}
-    ${size}=  Get Cache Size 
+    ${size}=  Get Cache Size
     Should Exist                   ${FILE}
     ${output}=  Run                dd if=/dev/zero of=${FILE} bs=1024 count=${size+1}
     Should Not Contain             ${FILE}  0

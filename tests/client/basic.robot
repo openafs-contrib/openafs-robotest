@@ -38,7 +38,6 @@ Teardown
 
 *** Test Cases ***
 Create a File
-    [Tags]  #(creat1)
     [Setup]  Run Keyword
     ...      Should Not Exist        ${FILE}
     Command Should Succeed  touch ${FILE}
@@ -49,7 +48,6 @@ Create a File
     ...         Should Not Exist        ${FILE}
 
 Create a Directory
-    [Tags]  #(mkdir1)
     [Setup]   Run Keyword
     ...       Should Not Exist  ${DIR}
     Create Directory  ${DIR}
@@ -62,7 +60,6 @@ Create a Directory
     ...         Should Not Exist  ${DIR}
 
 Create a Symlink
-    [Tags]  #(symlink)
     [Setup]  Run Keywords
     ...    Should Not Exist        ${DIR}  AND
     ...    Should Not Exist        ${SYMLINK}  AND
@@ -112,7 +109,6 @@ Create a Hard Link within a Volume
     Link    ${FILE3}  ${LINK2}  code_should_be=${EXDEV}
 
 Create a Hard Link to a Directory
-    [Tags]  #(hardlink2)
     [Setup]  Run Keywords
     ...    Should Not Exist        ${DIR}  AND
     ...    Should Not Exist        ${LINK}  AND
@@ -128,7 +124,6 @@ Create a Hard Link to a Directory
     ...    Should Not Exist        ${LINK}
 
 Create a Cross-Volume Hard Link
-    [Tags]  #(hardlink5)
     [Setup]  Run Keywords
     ...    Should Not Exist           ${NVOLUME}  AND
     ...    Create Volume  xyzzy  server=${SERVER}  part=${PARTITION}  path=${NVOLUME}  acl=system:anyuser,read
@@ -140,7 +135,6 @@ Create a Cross-Volume Hard Link
     ...    Should Not Exist           ${NVOLUME}
 
 Touch a file
-    [Tags]  #(touch1)
     [Setup]  Run Keyword
     ...    Should Not Exist        ${FILE}
     Command Should Succeed  touch ${FILE}
@@ -149,8 +143,7 @@ Touch a file
     ...    Remove File             ${FILE}  AND
     ...    Should Not Exist        ${FILE}
 
-Timestamp rollover after 2147483647 (January 19, 2038 03:14:07 UTC) 
-    [Tags]  #(touch1)
+Timestamp rollover after 2147483647 (January 19, 2038 03:14:07 UTC)
     [Setup]  Run Keyword
     ...    Should Not Exist        ${FILE}
     Command Should Succeed   touch ${FILE}
@@ -167,7 +160,6 @@ Timestamp rollover after 2147483647 (January 19, 2038 03:14:07 UTC)
     ...    Should Not Exist        ${FILE}
 
 Write to a File
-    [Tags]  #(write1)
     [Setup]  Run Keywords
     ...    Should Not Exist    ${FILE}  AND
     ...    Create File         ${FILE}  Hello world!\n
@@ -179,7 +171,6 @@ Write to a File
     ...    Should Not Exist    ${FILE}
 
 Rewrite a file
-    [Tags]  #(write3)
     [Setup]  Run Keywords
     ...    Should Not Exist        ${FILE}  AND
     ...    Create File             ${FILE}  Hello world!\n
@@ -193,7 +184,6 @@ Rewrite a file
     ...    Should Not Exist        ${FILE}
 
 Rename a File
-    [Tags]  #(rename1)
     [Setup]  Run Keywords
     ...    Should Not Exist  ${FILE1}  AND
     ...    Should Not Exist  ${FILE2}  AND
@@ -207,7 +197,6 @@ Rename a File
     ...    Should Not Exist  ${FILE2}
 
 Write and Execute a Script in a Directory
-    [Tags]  #(exec)
     [Setup]  Run Keyword
     ...    Should Not Exist      ${SCRIPT}
     [Teardown]  Run Keyword

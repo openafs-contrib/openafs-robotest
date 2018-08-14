@@ -22,7 +22,6 @@ Teardown Test Suite
 
 *** Test Cases ***
 Write a File in a Read-only Volume
-    [Tags]  #(write-ro)
     Run Keyword And Expect Error
     ...  *Read-only file system*
     ...  Create File  ${ROPATH}/should-be-read-only
