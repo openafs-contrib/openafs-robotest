@@ -60,9 +60,9 @@ port = 8000
 foreground = no
 
 [cell]
-name = robotest
-user = robotest
-admin = robotest.admin
+name = example.com
+user = afsrobot
+admin = afsrobot.admin
 db = <HOSTNAME>
 fs = <HOSTNAME>
 cm = <HOSTNAME>
@@ -73,7 +73,7 @@ davolserver =
 
 [kerberos]
 akimpersonate = yes
-realm = ROBOTEST
+realm = EXAMPLE.COM
 fake = <AFSROBOT_DATA>/fake.keytab
 afs = <AFSROBOT_DATA>/afs.keytab
 user = <AFSROBOT_DATA>/user.keytab
