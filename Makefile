@@ -4,8 +4,8 @@ help:
 	@echo "targets:"
 	@echo "  lint            lint code"
 	@echo "  test            run unit tests"
-	@echo "  install         install packages, docs, and tests"
-	@echo "  uninstall       uninstall packages, docs, and tests"
+	@echo "  install         install tests"
+	@echo "  uninstall       uninstall tests"
 	@echo "  clean           remove generated files"
 
 Makefile.config: configure.py
@@ -20,7 +20,7 @@ test:
 	cd src/afsrobot && $(MAKE) test
 
 install:
-	cd src/afsrobot && $(MAKE) install
+	#cd src/afsrobot && $(MAKE) install
 	install -m 755 -d $(DESTDIR)$(PREFIX)/afsrobot
 	cp -r tests/ $(DESTDIR)$(PREFIX)/afsrobot
 	cp -r resources/ $(DESTDIR)$(PREFIX)/afsrobot

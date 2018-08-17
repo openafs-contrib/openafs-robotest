@@ -14,43 +14,84 @@ OpenAFS and run the tests.
 ## System Requirements
 
 * Linux or Solaris
+* OpenAFS installation packages or binaries built from source
 * Python 2.7
-  * setuptools
-  * pip
   * argparse
   * Robotframework 2.7+
   * afsutil
   * robotframework-openafslibrary
-* OpenAFS installation packages or binaries built from source
 
 ## Installation
 
+The following setup instructions assume your system has Python `pip` and
+`setuptools` installed.  Older systems may not have those tools installed by
+default. (TODO: Provide info on how to install without `pip` in another
+document.)
+
+## Prerequisites
+
+### Linux
+
+Install the `afsutil` Python package on **each** host in the test cell.
+`afsutil` is a command line tool to install and setup of OpenAFS for testing.
+This package should be installed globally since it will need to be run as root
+for the OpenAFS setup. `afsutil` does not have any non-standard Python library
+dependencies.
+
+    # pip install afsutil
+
+Create a group and a user account on *each* test system in the cell.
+
+    # groupadd testers
+    # useradd -G testers afsrobot
+    # passwd afsrobot
+
+Configure `sudoers` on *each* test system to allow the members of the group
+created above to run `afsutil` with `sudo` without a password. This can be done
+on modern systems by adding a file in `/etc/sudoers.d` and making that file
+read-only.
+
+    # echo '%testers ALL=(root) NOPASSWD: /usr/bin/afsutil' > /etc/sudoers.d/afsrobot
+    # chmod 440 /etc/sudoers.d/afsrobot
+
+Verify you are able to login as the `afsrobot` user and are able to run
+`afsutil` on *each* test system.
+
+    # sudo -i -u afsrobot
+    $ afsutil version
+    afsutil <version-number>
+    $ sudo -n afsutil version
+    afsutil <version-number>
+
+### Solaris
+
+TODO: commands variants for solaris
+
 ### afsrobot
 
-Install the OpenAFS robotest tests, libraries, and the frontend `afsrobot` tool
-on the master host:
+Install the OpenAFS Robotest files on the *primary* test system, as a user
+in the `testers` group.
 
+    $ su - afsrobot
+    $ whoami
+    afsrobot
+
+    $ git clone https://github.com/openafs-contrib/openafs-robotest.git
+    $ cd openafs-robotest
     $ make install
 
-Install the `afsutil` tool globally on each host.
+Install frontend `afsrobot` tool and the OpenAFS Robotframework library,
+without sudo.
 
-    $ sudo pip install afsutil
+    $ cd src/afsrobot
+    $ make install-user
 
-Update your sudoers so the user running the setup/teardown is able to run
-`afsutil` with sudo without a passord:
-
-    $ sudo -n afsutil version
-
-Set your initial configuration:
+Create the `afsrobot` configuration file.
 
     $ afsrobot init
 
-By default, the configuration will install binaries built from source using the
-legacy Transarc-style.  Update the configuration to install RPM packages during
-the setup phase.
 
-    $ afsrobot config set test afs_dist rhel6
-    $ afsrobot config set host.0 installer rpm
+TODO: Configuration file stuff....
 
 ### akimpersonate notes
 
