@@ -238,19 +238,8 @@ def main():
     # afsrobot web
     #
     p = subparsers.add_parser('web', help="run the test report web server")
-    ssp = p.add_subparsers(title="actions", metavar="<action>")
-
-    p = ssp.add_parser('start', help="start web server")
     common_options(p)
-    p.set_defaults(_function=afsrobot.web.start)
-
-    p = ssp.add_parser('stop', help="stop web server")
-    common_options(p)
-    p.set_defaults(_function=afsrobot.web.stop)
-
-    p = ssp.add_parser('status', help="show web server status")
-    common_options(p)
-    p.set_defaults(_function=afsrobot.web.status)
+    p.set_defaults(_function=afsrobot.web.run)
 
     #
     # afsrobot login

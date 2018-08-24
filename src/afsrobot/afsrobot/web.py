@@ -18,128 +18,35 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-import atexit
+from __future__ import print_function
 import os
-import logging
-import signal
 import SimpleHTTPServer
 import SocketServer
-import sys
-import time
 
-logger = logging.getLogger(__name__)
-
-class SilentRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
-    """Handle requests without printing messages."""
-    def log_message(self, format, *args):
-        pass
-
-class TinyWebServer(object):
+def run(config, **kwargs):
     """Minimal web server to display test reports and logs.
 
-    This optional helper is provided as a simple way to view the test
-    reports and logs.  This only serves static content.
+    This minimal http server is provided as a simple way to view the test
+    reports and logs.
     """
-    def __init__(self, config):
-        run = '/tmp'  # Should be /var/run/<dir>, with proper perms.
-        pidfile = "afsrobot-%d.pid" % (os.getuid())
-        self.pidfile = os.path.join(run, pidfile)
-        self.port = config.getint('web', 'port')
-        self.docroot = config.get('web', 'docroot')
-        self.foreground = config.getboolean('web', 'foreground')
+    port = config.getint('web', 'port')
+    docroot = config.get('web', 'docroot')
+    if not os.path.isdir(docroot):
+        print("Creating directory '%s'." % (docroot,))
+        os.makedirs(docroot)
+    print("Changing to docroot directory '%s'." % (docroot,))
+    os.chdir(docroot)
 
-    def _exit(self):
-        """Clean up our pid file."""
-        try:
-            os.remove(self.pidfile)
-        except:
-            pass
+    Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
+    Handler.extensions_map['.log'] = 'text/plain'
 
-    def _getpid(self):
-        """Get the child process pid from the pid file."""
-        pid = 0
-        try:
-            with open(self.pidfile) as f:
-                pid = int(f.readline().strip())
-        except:
-            pass
-        return pid
-
-    def _daemonize(self):
-        """Simplified daemonize to run the server in the background."""
-        pid = os.fork()
-        if pid < 0:
-            raise AssertionError("Failed to fork!")
-        if pid != 0:
-            sys.exit(0) # Parent process
-        # Child process
-        os.setsid() # detach
-        atexit.register(self._exit)
-        with open(self.pidfile, "w") as f:
-            f.write("%d\n" % os.getpid())
-
-    def start(self):
-        """Start the miminal web server."""
-        pid = self._getpid()
-        if pid:
-            logger.error("Already running (pid %d)." % (pid))
-            return
-        if not os.path.isdir(self.docroot):
-            os.makedirs(self.docroot)
-        os.chdir(self.docroot)
-        logger.info("Listening at http://%s:%d" % (os.uname()[1], self.port))
-        if not self.foreground:
-            self._daemonize()
-        address = ('', self.port)
-        Handler = SilentRequestHandler
-        Handler.extensions_map['.log'] = 'text/plain'
-        server = SocketServer.TCPServer(address, Handler)
-        try:
-            server.serve_forever()
-        except KeyboardInterrupt:
-            pass
-        sys.exit(0)
-
-    def stop(self):
-        """Stop the miminal web server."""
-        if self.foreground:
-            logger.error("Skipping stop; foreground mode.")
-            return
-        pid = self._getpid()
-        if pid == 0:
-            logger.info("Not running.")
-        else:
-            logger.info("Stopping process %d" % (pid))
-            os.kill(pid, signal.SIGINT)
-            for _ in xrange(0,10):
-                time.sleep(1)
-                if self._getpid() == 0:
-                    logger.info("ok.")
-                    return
-            logger.info("failed.")
-
-    def status(self):
-        """Get the status of the miminal web server."""
-        if self.foreground:
-            logger.error("Skipping status; foreground mode.")
-            return ""
-        pid = self._getpid()
-        if pid:
-            status = "Process %d listening at http://%s:%d." % (pid, os.uname()[1], self.port)
-        else:
-            status = "Not running."
-        return status
-
-
-def start(config, **kwargs):
-    server = TinyWebServer(config)
-    server.start()
-
-def stop(config, **kwargs):
-    server = TinyWebServer(config)
-    server.stop()
-
-def status(config, **kwargs):
-    server = TinyWebServer(config)
-    logger.info("%s" % (server.status()))
-
+    SocketServer.TCPServer.allow_reuse_address = True
+    httpd = SocketServer.TCPServer(('', port), Handler)
+    try:
+        print("Listening on port %d." % (port,))
+        print("(Press <Control>-c to stop.)")
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        print("\nInterrupted.")
+    finally:
+        httpd.server_close()

@@ -57,7 +57,6 @@ keyfile = <HOME>/.ssh/afsrobot
 [web]
 docroot = <AFSROBOT_DATA>/output
 port = 8000
-foreground = no
 
 [cell]
 name = example.com

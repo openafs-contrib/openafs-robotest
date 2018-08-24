@@ -149,17 +149,14 @@ After running the tests, the AFS cell may be removed with:
 
 ## Test results
 
-The setup logs and test results are saved in `$HOME/afsrobot/` by
-default.  A minimal web server is provided as a convenience to view the test
-reports.
+The setup logs and test results are saved in `$HOME/afsrobot/` by default.  A
+minimal web server is provided as a convenience to view the test reports.
 
-To start the minimal web server:
+To run the minimal web server:
 
-    $ afsrobot web start
+    $ afsrobot web
 
-To stop the minimal web server:
-
-    $ afsrobot web stop
+Use Control-C to stop the server.
 
 ## Multiple servers
 
