@@ -5,16 +5,20 @@
 *** Settings ***
 Documentation     Mountpoint tests
 Resource          common.robot
-Suite Setup       Login  ${AFS_ADMIN}
-Suite Teardown    Logout
+Suite Setup       Setup
+Suite Teardown    Teardown
 
 *** Variables ***
 ${MTPT}         /afs/.${AFS_CELL}/test/mtpt
+${VOLUME}     test.mtpt
+${PARTITION}  a
+${SERVER}     @{AFS_FILESERVERS}[0]
+${TESTPATH}   /afs/.${AFS_CELL}/test/${VOLUME}
 
 *** Test Cases ***
 Make and Remove a Mountpoint
     [Setup]    Run Keyword
-    ...    Command Should Succeed  ${FS} mkmount -dir ${MTPT} -vol root.cell
+    ...    Command Should Succeed  ${FS} mkmount -dir ${MTPT} -vol ${VOLUME}
     Directory Should Exist  ${MTPT}
     [Teardown]  Run Keywords
     ...    Command Should Succeed  ${FS} rmmount -dir ${MTPT}  AND
@@ -39,3 +43,11 @@ Create a Mountpoint to a Nonexistent Volume
     [Teardown]    Run Keyword
     ...    Command Should Succeed        ${FS} rmm ${MTPT}
 
+*** Keywords ***
+Setup
+    Login  ${AFS_ADMIN}
+    Command Should Succeed  ${VOS} create ${SERVER} ${PARTITION} ${VOLUME}
+
+Teardown
+    Remove Volume  ${VOLUME}
+    Logout
