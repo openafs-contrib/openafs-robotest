@@ -77,10 +77,8 @@ fake = <AFSROBOT_DATA>/fake.keytab
 afs = <AFSROBOT_DATA>/afs.keytab
 user = <AFSROBOT_DATA>/user.keytab
 
-[paths]
-gfind = <GFIND>
-
 [paths.transarc]
+gfind = <GFIND>
 aklog = /usr/afsws/bin/aklog
 asetkey = /usr/afs/bin/asetkey
 bos = /usr/afs/bin/bos
@@ -94,6 +92,7 @@ unlog = /usr/afsws/bin/unlog
 vos = /usr/afs/bin/vos
 
 [paths.rhel]
+gfind = <GFIND>
 aklog = /usr/bin/aklog
 asetkey = /usr/sbin/asetkey
 bos = /usr/bin/bos
@@ -107,6 +106,7 @@ unlog = /usr/bin/unlog
 vos = /usr/sbin/vos
 
 [paths.suse]
+gfind = <GFIND>
 aklog = /usr/bin/aklog
 asetkey = /usr/sbin/asetkey
 bos = /usr/sbin/bos
@@ -122,6 +122,7 @@ vos = /usr/sbin/vos
 [host.0]
 name = <HOSTNAME>
 installer = transarc
+paths = transarc
 keyformat = detect
 dafileserver = -d 1 -L
 davolserver = -d 1
