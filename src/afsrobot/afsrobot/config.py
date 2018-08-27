@@ -73,9 +73,9 @@ davolserver =
 [kerberos]
 akimpersonate = yes
 realm = EXAMPLE.COM
-fake = <AFSROBOT_DATA>/fake.keytab
-afs = <AFSROBOT_DATA>/afs.keytab
-user = <AFSROBOT_DATA>/user.keytab
+fake = <AFSROBOT_DATA>/keytabs/fake.keytab
+afs = <AFSROBOT_DATA>/keytabs/afs.keytab
+user = <AFSROBOT_DATA>/keytabs/user.keytab
 
 [paths.transarc]
 gfind = <GFIND>
