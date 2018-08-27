@@ -419,7 +419,10 @@ class Node(object):
 
     def remove(self):
         """Run afsutil remove."""
-        args = ['--purge']
+        args = []
+        args.append('--dist')
+        args.append(self.opt('installer', default='transarc'))
+        args.append('--purge')
         pre = self.opt('pre_remove')
         if pre:
             args.append('--pre')
