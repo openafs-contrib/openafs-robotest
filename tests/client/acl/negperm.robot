@@ -17,13 +17,13 @@ ${PUB_PATH}        /afs/.${AFS_CELL}/test/permtest/pubdir
 Setup Users and Groups
     Logout
     Login  ${AFS_ADMIN}
-    Command Should Succeed   ${PTS} createuser user1
+    Command Should Succeed   ${PTS} createuser ${AFS_USER}
     Command Should Succeed   ${PTS} creategroup group1 -owner ${AFS_ADMIN}
-    Command Should Succeed   ${PTS} adduser user1 group1
+    Command Should Succeed   ${PTS} adduser ${AFS_USER} group1
 
 Teardown Users and Groups
     Login  ${AFS_ADMIN}
-    Command Should Succeed   ${PTS} delete user1
+    Command Should Succeed   ${PTS} delete ${AFS_USER}
     Command Should Succeed   ${PTS} delete group1
     Logout
 
@@ -34,8 +34,8 @@ Setup Test Directory
     Create Directory          ${PUB_PATH}
     ${output}=  Run           ${FS} listacl ${PATH}
     #setacl needs a keyword
-    Command Should Succeed    ${FS} setacl ${PATH} user1 rl
-    Command Should Succeed    ${FS} setacl ${PRIV_PATH} user1 none
+    Command Should Succeed    ${FS} setacl ${PATH} ${AFS_USER} rl
+    Command Should Succeed    ${FS} setacl ${PRIV_PATH} ${AFS_USER} none
     Command Should Succeed    ${FS} setacl ${PRIV_PATH} system:anyuser none
     Command Should Succeed    ${FS} setacl ${PRIV_PATH} system:administrators all
     Command Should Succeed    ${FS} setacl ${PUB_PATH} system:anyuser rlidwk
@@ -54,7 +54,7 @@ Admin
     Login  ${AFS_ADMIN}
 
 User1
-    Login  user1
+    Login  ${AFS_USER}
 
 Create PRIV File
     Admin
@@ -115,7 +115,7 @@ Delete Permissions for User1
     Create PRIV File
     # HACK: The user needs l access to attempt to unlink the file.
     Login    ${AFS_ADMIN}
-    Command Should Succeed    ${FS} sa ${PRIV_PATH} user1 l
+    Command Should Succeed    ${FS} sa ${PRIV_PATH} ${AFS_USER} l
     Logout
     User1
     Run Keyword and Expect Error    *
@@ -123,7 +123,7 @@ Delete Permissions for User1
     Logout
     # HACK: we need proper setup and teardowns!
     Login    ${AFS_ADMIN}
-    Command Should Succeed    ${FS} sa ${PRIV_PATH} user1 none
+    Command Should Succeed    ${FS} sa ${PRIV_PATH} ${AFS_USER} none
     Logout
     Remove PRIV File
 
@@ -137,7 +137,7 @@ Delete Permissions for Anyuser
     ...    Remove File    ${PRIV_PATH}/privfile
     # HACK: we need proper setup and teardowns!
     Login    ${AFS_ADMIN}
-    Command Should Succeed    ${FS} sa ${PRIV_PATH} user1 none
+    Command Should Succeed    ${FS} sa ${PRIV_PATH} ${AFS_USER} none
     Logout
     Remove PRIV File
 

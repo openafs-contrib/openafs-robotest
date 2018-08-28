@@ -17,13 +17,13 @@ ${PUB_PATH}        /afs/.${AFS_CELL}/test/permtest/pubdir
 Setup Users and Groups
     Logout
     Login  ${AFS_ADMIN}
-    Command Should Succeed   ${PTS} createuser user1
+    Command Should Succeed   ${PTS} createuser ${AFS_USER}
     Command Should Succeed   ${PTS} creategroup group1 -owner ${AFS_ADMIN}
-    Command Should Succeed   ${PTS} adduser user1 group1
+    Command Should Succeed   ${PTS} adduser ${AFS_USER} group1
 
 Teardown Users and Groups
     Login  ${AFS_ADMIN}
-    Command Should Succeed   ${PTS} delete user1
+    Command Should Succeed   ${PTS} delete ${AFS_USER}
     Command Should Succeed   ${PTS} delete group1
     Logout
 
@@ -34,8 +34,8 @@ Setup Test Directory
     Create Directory          ${PUB_PATH}
     ${output}=  Run           ${FS} listacl ${PATH}
     #setacl needs a keyword
-    Command Should Succeed    ${FS} setacl ${PATH} user1 rl
-    Command Should Succeed    ${FS} setacl ${PRIV_PATH} user1 rlidwka
+    Command Should Succeed    ${FS} setacl ${PATH} ${AFS_USER} rl
+    Command Should Succeed    ${FS} setacl ${PRIV_PATH} ${AFS_USER} rlidwka
     Command Should Succeed    ${FS} setacl ${PRIV_PATH} system:anyuser none
     Command Should Succeed    ${FS} setacl ${PRIV_PATH} system:administrators rl
     Command Should Succeed    ${FS} setacl ${PUB_PATH} system:anyuser rlidwk
@@ -54,12 +54,12 @@ List PUB and PRIV ACLs
     ${output}=   Run              ${FS} listacl ${PRIV_PATH}
 
 User1 Create File
-    Login  user1
+    Login  ${AFS_USER}
     Create File                   ${PRIV_PATH}/privfile
     Logout
 
 User1 Remove File
-    Login  user1
+    Login  ${AFS_USER}
     Remove File                   ${PRIV_PATH}/privfile
     Logout
 
@@ -78,7 +78,7 @@ Write Permissions as Anyuser
     Remove File                   ${PUB_PATH}/pubfile2
 
 Write Permissions as User1
-    Login  user1
+    Login  ${AFS_USER}
     Touch                         ${PUB_PATH}/pubfile3
     Touch                         ${PRIV_PATH}/privfile
     Remove File                   ${PUB_PATH}/pubfile3
@@ -94,7 +94,7 @@ Read Permissions as Anyuser
     User1 Remove File
 
 Read Permissions as User1
-    Login  user1
+    Login  ${AFS_USER}
     Create File                   ${PRIV_PATH}/privfile
     Create File                   ${PUB_PATH}/pubfile
     Command Should Succeed        cat ${PRIV_PATH}/privfile
@@ -108,13 +108,13 @@ Lookup Permissions as Anyuser
     Command Should Fail           ls ${PRIV_PATH}
 
 Lookup Permissions as User1
-    Login  user1
+    Login  ${AFS_USER}
     Command Should Succeed        ls ${PUB_PATH}
     Command Should Succeed        ls ${PRIV_PATH}
     Logout
 
 Delete Permissions as User1
-    Login  user1
+    Login  ${AFS_USER}
     Create File                   ${PRIV_PATH}/privfile
     Create File                   ${PUB_PATH}/pubfile
     Remove File                   ${PRIV_PATH}/privfile
@@ -122,7 +122,7 @@ Delete Permissions as User1
     Logout
 
 New Directory for User1
-    Login  user1
+    Login  ${AFS_USER}
     Command Should Succeed        mkdir ${PRIV_PATH}/new_priv
     Command Should Succeed        mkdir ${PUB_PATH}/new_pub
     Remove Directory              ${PRIV_PATH}/new_priv
