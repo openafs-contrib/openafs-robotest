@@ -610,6 +610,8 @@ def test(config, **kwargs):
         keytab = config.optstr('kerberos', 'fake')
     else:
         keytab = config.optstr('kerberos', 'afs')
+    admin_keytab = config.optstr('kerberos', 'user') # has admin keys too
+    user_keytab = config.optstr('kerberos', 'user')
     if not os.path.isfile(keytab):
         raise ValueError("Cannot find keytab file '%s'!\n" % keytab)
 
@@ -618,9 +620,12 @@ def test(config, **kwargs):
         'AFS_CELL:%s' % config.get('cell', 'name'),
         'AFS_FILESERVERS:%s' % config.get('cell', 'fs'),
         'AFS_ADMIN:%s' % config.get('cell', 'admin'),
+        'AFS_USER:%s' % config.get('cell', 'user'),
         'AFS_AKIMPERSONATE:%s' % akimpersonate,
         'KRB_REALM:%s' % config.get('kerberos', 'realm'),
         'KRB_AFS_KEYTAB:%s' % keytab,
+        'KRB_ADMIN_KEYTAB:%s' % admin_keytab,
+        'KRB_USER_KEYTAB:%s' % user_keytab,
     ]
     for path in node.paths:
         variable.append("%s:%s" % (path.upper(), node.paths[path]))

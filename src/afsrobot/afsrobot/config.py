@@ -90,6 +90,8 @@ tokens = /usr/afsws/bin/tokens
 udebug = /usr/afs/bin/udebug
 unlog = /usr/afsws/bin/unlog
 vos = /usr/afs/bin/vos
+kinit = /usr/bin/kinit
+kdestroy = /usr/bin/kdestroy
 
 [paths.rhel]
 gfind = <GFIND>
@@ -104,6 +106,8 @@ tokens = /usr/bin/tokens
 udebug = /usr/bin/udebug
 unlog = /usr/bin/unlog
 vos = /usr/sbin/vos
+kinit = /usr/bin/kinit
+kdestroy = /usr/bin/kdestroy
 
 [paths.suse]
 gfind = <GFIND>
@@ -118,6 +122,8 @@ tokens = /usr/bin/tokens
 udebug = /usr/sbin/udebug
 unlog = /usr/bin/unlog
 vos = /usr/sbin/vos
+kinit = /usr/bin/kinit
+kdestroy = /usr/bin/kdestroy
 
 [host.0]
 name = <HOSTNAME>
