@@ -398,12 +398,10 @@ class Node(object):
         if realm:
             args.append('--realm')
             args.append(realm)
-        if 'aklog' in self.paths:
-            args.append('--paths')
-            args.append('aklog=%s' % (self.paths['aklog']))
-        if 'kinit' in self.paths:
-            args.append('--paths')
-            args.append('aklog=%s' % (self.paths['kinit']))
+        for prog in ('aklog', 'kinit'):
+            if prog in self.paths:
+                args.append('--paths')
+                args.append('%s=%s' % (prog, self.paths[prog]))
         if c.optbool('kerberos', 'akimpersonate'):
             args.append('--akimpersonate')
             keytab = c.optstr('kerberos', 'fake')
