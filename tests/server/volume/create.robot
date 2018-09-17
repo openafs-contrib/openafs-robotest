@@ -11,25 +11,25 @@ Suite Teardown    Logout
 *** Variables ***
 ${SERVER}        @{AFS_FILESERVERS}[0]
 ${VOLID}         0
+${PART}          a
 
 
 *** Test Cases ***
 Create a Volume
     [Teardown]  Remove Volume  xyzzy
-    Log Variables
     Volume Should Not Exist  xyzzy
-    Command Should Succeed   ${VOS} create ${SERVER} a xyzzy
+    Command Should Succeed   ${VOS} create ${SERVER} ${PART} xyzzy
     Volume Should Exist      xyzzy
-    Volume Location Matches  xyzzy  server=${SERVER}  part=a
+    Volume Location Matches  xyzzy  server=${SERVER}  part=${PART}
 
 Add a Replication Site
-    [Setup]     Create Volume  xyzzy
+    [Setup]     Create Volume  xyzzy  ${SERVER}  ${PART}
     [Teardown]  Remove Volume  xyzzy
     Command Should Succeed    ${VOS} addsite ${SERVER} a xyzzy
     Command Should Succeed    ${VOS} remsite ${SERVER} a xyzzy
 
 Remove a Replication Site
-    [Setup]     Create Volume  xyzzy
+    [Setup]     Create Volume  xyzzy  ${SERVER}  ${PART}
     [Teardown]  Run Keywords   Command Should Succeed  ${VOS} remove ${SERVER} a xyzzy.readonly
     ...         AND            Remove Volume  xyzzy
     Command Should Succeed    ${VOS} addsite ${SERVER} a xyzzy
@@ -38,7 +38,7 @@ Remove a Replication Site
     Volume Should Exist       xyzzy.readonly
 
 Remove a Replicated Volume
-    [Setup]     Create Volume   xyzzy
+    [Setup]     Create Volume   xyzzy  ${SERVER}  ${PART}
     [Teardown]  Remove Volume   xyzzy
     Command Should Succeed    ${VOS} addsite ${SERVER} a xyzzy
     Command Should Succeed    ${VOS} release xyzzy
@@ -48,19 +48,19 @@ Remove a Replicated Volume
     Volume Should Not Exist   xyzzy
 
 Display Volume Header Information
-    [Setup]     Create Volume   xyzzy
+    [Setup]     Create Volume   xyzzy  ${SERVER}  ${PART}
     [Teardown]  Remove Volume   xyzzy
     ${output}=  Run           ${VOS} listvol ${SERVER} a
     Should Contain            ${output}  xyzzy
 
 Display VLDB Information
-    [Setup]     Create Volume   xyzzy
+    [Setup]     Create Volume   xyzzy  ${SERVER}  ${PART}
     [Teardown]  Remove Volume   xyzzy
     ${output}=  Run             ${VOS} listvldb -server ${SERVER}
     Should Contain              ${output}  xyzzy
 
 Display Header and VLDB Information
-    [Setup]     Create Volume   xyzzy
+    [Setup]     Create Volume   xyzzy  ${SERVER}  ${PART}
     [Teardown]  Remove Volume   xyzzy
     ${output}=  Run             ${VOS} examine xyzzy
     Should Contain              ${output}  xyzzy

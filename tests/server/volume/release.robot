@@ -9,23 +9,25 @@ Suite Teardown    Logout
 
 *** Variables ***
 ${SERVER}        @{AFS_FILESERVERS}[0]
+${PART}          a
+${OTHERPART}     b
 
 
 *** Test Cases ***
 Release a Volume
-    [Setup]     Create Volume  xyzzy
+    [Setup]     Create Volume  xyzzy  ${SERVER}  ${PART}
     [Teardown]  Remove Volume  xyzzy
-    Command Should Succeed    ${VOS} addsite ${SERVER} a xyzzy
+    Command Should Succeed    ${VOS} addsite ${SERVER} ${PART} xyzzy
     Command Should Succeed    ${VOS} release xyzzy
     Volume Should Exist       xyzzy.readonly
-    Volume Location Matches   xyzzy  server=${SERVER}  part=a  vtype=ro
+    Volume Location Matches   xyzzy  server=${SERVER}  part=${PART}  vtype=ro
 
 Avoid creating a rogue volume during release
     [Tags]         rogue-avoidance
     [Teardown]     Run Keywords    Remove volume    xyzzz
     ...            AND             Cleanup Rogue    ${vid}
     Set test variable    ${vid}    0
-    ${vid}=        Create volume    xyzzy    ${SERVER}    b    orphan=True
+    ${vid}=        Create volume    xyzzy    ${SERVER}    ${OTHERPART}    orphan=True
     Command Should Succeed    ${VOS} create ${SERVER} a xyzzz -roid ${vid}
     Command Should Succeed    ${VOS} addsite ${SERVER} a xyzzz
     Command Should Fail       ${VOS} release xyzzz

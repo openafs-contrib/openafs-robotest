@@ -9,6 +9,8 @@ Suite Teardown    Logout
 
 *** Variables ***
 ${SERVER}      @{AFS_FILESERVERS}[0]
+${PART}        a
+${OTHERPART}   b
 
 *** Test Cases ***
 Avoid creating a rogue volume during clone
@@ -16,9 +18,9 @@ Avoid creating a rogue volume during clone
     [Teardown]     Run Keywords    Remove volume    xyzzz
     ...            AND             Cleanup Rogue    ${vid}
     Set test variable    ${vid}    0
-    ${vid}=        Create volume    xyzzy    ${SERVER}    b    orphan=True
-    Command Should Succeed    ${VOS} create ${SERVER} a xyzzz
-    Command Should Fail       ${VOS} clone xyzzz ${SERVER} a -toid ${vid}
+    ${vid}=        Create volume    xyzzy    ${SERVER}    ${OTHERPART}    orphan=True
+    Command Should Succeed    ${VOS} create ${SERVER} ${PART} xyzzz
+    Command Should Fail       ${VOS} clone xyzzz ${SERVER} ${PART} -toid ${vid}
 
 *** Keywords ***
 Cleanup Rogue

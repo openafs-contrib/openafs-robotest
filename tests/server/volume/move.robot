@@ -8,34 +8,31 @@ Suite Setup       Login  ${AFS_ADMIN}
 Suite Teardown    Logout
 
 *** Variables ***
-${SERVER}        @{AFS_FILESERVERS}[0]
-
+${SERVER1}       @{AFS_FILESERVERS}[0]
+${SERVER2}       @{AFS_FILESERVERS}[1]
+${PART1}         a
+${PART2}         b
 
 *** Test Cases ***
 Move a Volume
-    [Setup]     Create Volume  xyzzy
+    [Setup]     Create Volume  xyzzy  ${SERVER1}  ${PART1}
     [Teardown]  Remove Volume  xyzzy
-    Command Should Succeed   ${VOS} move xyzzy ${SERVER} a ${SERVER} b
+    Command Should Succeed   ${VOS} move xyzzy ${SERVER1} ${PART1} ${SERVER1} ${PART2}
     Volume Should Exist      xyzzy
-    Volume Location Matches  xyzzy  server=${SERVER}  part=b
+    Volume Location Matches  xyzzy  server=${SERVER1}  part=${PART2}
 
 Move a volume between servers
     [Tags]      requires-multi-fs
-    [Setup]     Create Volume  xyzzy
+    [Setup]     Create Volume  xyzzy  ${SERVER1}  ${PART1}
     [Teardown]  Remove Volume  xyzzy
-    Log Variables
-    ${from_server}=    Set Variable    @{AFS_FILESERVERS}[0]
-    ${to_server}=      Set Variable    @{AFS_FILESERVERS}[1]
-    Command Should Succeed   ${VOS} move xyzzy ${from_server} a ${to_server} a
+    Command Should Succeed   ${VOS} move xyzzy ${SERVER1} ${PART1} ${SERVER2} ${PART1}
 
 Avoid creating a rogue volume during move
-    [Tags]      requires-multi-fs
+    [Tags]      requires-multi-fs  bug
     [Teardown]  Cleanup Rogue    ${vid}   @{AFS_FILESERVERS}[1]
-    ${from_server}=    Set Variable    @{AFS_FILESERVERS}[0]
-    ${to_server}=      Set Variable    @{AFS_FILESERVERS}[1]
-    ${vid}=            Create volume    xyzzy    ${to_server}    b    orphan=True
-    Command Should Succeed    ${VOS} create -server ${from_server} -part a -name xyzzy -id ${vid}
-    Command Should Fail       ${VOS} move xyzzy ${from_server} a ${to_server} a
+    ${vid}=            Create volume    xyzzy    ${SERVER2}    ${PART2}    orphan=True
+    Command Should Succeed    ${VOS} create -server ${SERVER1} -part ${PART1} -name xyzzy -id ${vid}
+    Command Should Fail       ${VOS} move xyzzy ${SERVER1} ${PART1} ${SERVER2} ${PART1}
 
 *** Keywords ***
 Cleanup Rogue

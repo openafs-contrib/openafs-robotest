@@ -9,11 +9,13 @@ Suite Teardown    Logout
 
 *** Variables ***
 ${SERVER}        @{AFS_FILESERVERS}[0]
+${PART}          a
+${OTHERPART}     b
 
 
 *** Test Cases ***
 Create a Backup Volume
-    [Setup]     Create Volume   xyzzy
+    [Setup]     Create Volume   xyzzy  ${SERVER}  ${PART}
     [Teardown]  Remove Volume   xyzzy
     ${output}=  Run           ${VOS} backup xyzzy
     Should Contain            ${output}  xyzzy
@@ -23,11 +25,11 @@ Avoid creating a rogue volume during backup
     [Teardown]     Run Keywords    Remove volume    xyzzz
     ...            AND             Cleanup Rogue    ${vid_bk}
     Set test variable    ${vid}    0
-    Command Should Succeed    ${VOS} create ${SERVER} a xyzzy
-    Command Should Succeed    ${VOS} remove ${SERVER} a -id xyzzy
-    ${vid_bk}=        Create volume    xyzzy    ${SERVER}    b    orphan=True
+    Command Should Succeed    ${VOS} create ${SERVER} ${PART} xyzzy
+    Command Should Succeed    ${VOS} remove ${SERVER} ${PART} -id xyzzy
+    ${vid_bk}=        Create volume    xyzzy    ${SERVER}    ${OTHERPART}    orphan=True
     ${vid}=           Evaluate    ${vid_bk} - 2
-    Command Should Succeed    ${VOS} create ${SERVER} a xyzzz -id ${vid} 
+    Command Should Succeed    ${VOS} create ${SERVER} ${PART} xyzzz -id ${vid}
     Command Should Fail       ${VOS} backup xyzzz
 
 *** Keywords ***
