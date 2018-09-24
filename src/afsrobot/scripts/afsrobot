@@ -149,7 +149,7 @@ def main():
     p.add_argument('-s', '--suite', help="test suite to run; e.g. client.basic  (default: all)", default=None)
     p.add_argument('-i', '--include', help="test tags to include (default: all)", default=None)
     p.add_argument('-t', '--test', help="test name to run; e.g. create_a_file (default: all)", default=None)
-    p.set_defaults(_function=afsrobot.runner.test, _section='test')
+    p.set_defaults(_function=afsrobot.runner.run, _section='run')
 
     #
     # afsrobot teardown

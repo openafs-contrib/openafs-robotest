@@ -587,7 +587,7 @@ def login(config, **kwargs):
     with progress("Obtaining token for %s" % (user)):
         node.login(user)
 
-def test(config, **kwargs):
+def run(config, **kwargs):
     """Run the Robotframework test suites."""
     node = _get_nodes(config, **kwargs)['test']
     akimpersonate = config.optbool('kerberos', 'akimpersonate')
