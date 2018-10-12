@@ -3,7 +3,9 @@
 # See LICENSE
 
 *** Settings ***
-Resource          common.robot
+Library           OperatingSystem
+Library           String
+Library           OpenAFSLibrary
 Suite Setup       Login  ${AFS_ADMIN}
 Suite Teardown    Logout
 

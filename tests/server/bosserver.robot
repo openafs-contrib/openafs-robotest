@@ -4,7 +4,9 @@
 
 *** Settings ***
 Documentation     Bosserver tests
-Resource          common.robot
+Library           OperatingSystem
+Library           String
+Library           OpenAFSLibrary
 Suite Setup       Setup Users and Groups
 Suite Teardown    Teardown Users and Groups
 

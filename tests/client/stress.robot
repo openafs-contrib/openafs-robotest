@@ -4,7 +4,9 @@
 
 *** Settings ***
 Documentation     Client stess tests
-Resource          common.robot
+Library           OperatingSystem
+Library           String
+Library           OpenAFSLibrary
 
 *** Variables ***
 ${VOLUME}      test.stress

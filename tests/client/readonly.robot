@@ -1,6 +1,8 @@
 *** Settings ***
 Documentation     Read-only tests
-Resource          common.robot
+Library           OperatingSystem
+Library           String
+Library           OpenAFSLibrary
 Suite Setup       Setup Test Suite
 Suite Teardown    Teardown Test Suite
 

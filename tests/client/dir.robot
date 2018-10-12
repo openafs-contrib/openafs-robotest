@@ -4,7 +4,9 @@
 
 *** Settings ***
 Documentation     Directory Object tests
-Resource          common.robot
+Library           OperatingSystem
+Library           String
+Library           OpenAFSLibrary
 Suite Setup       Setup
 Suite Teardown    Teardown
 

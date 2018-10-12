@@ -2,7 +2,9 @@
 # See LICENSE
 
 *** Settings ***
-Resource          common.robot
+Library           OperatingSystem
+Library           String
+Library           OpenAFSLibrary
 Suite Setup       Set Test Run Documentation
 
 *** Keywords ***

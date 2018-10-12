@@ -4,7 +4,9 @@
 
 *** Settings ***
 Documentation     Basic Functional Tests
-Resource          common.robot
+Library           OperatingSystem
+Library           String
+Library           OpenAFSLibrary
 Suite Setup       Setup
 Suite Teardown    Teardown
 

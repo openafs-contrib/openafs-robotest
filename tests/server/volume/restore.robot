@@ -6,7 +6,9 @@ Documentation       Tests to verify volume restore operations with the
 ...                 various of the restore options and to test the volume
 ...                 server robustness while attempting to restore invalid
 ...                 volume dump streams.
-Resource            common.robot
+Library             OperatingSystem
+Library             String
+Library             OpenAFSLibrary
 Suite Setup         Login  ${AFS_ADMIN}
 Suite Teardown      Logout
 Test Teardown       Cleanup
