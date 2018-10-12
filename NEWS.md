@@ -1,8 +1,9 @@
-## [unreleased]
+## [v0.7.0]
 
 * Moved afsutil to https://github.com/openafs-contrib/afsutil
 * Moved OpenAFSLibrary to https://github.com/openafs-contrib/robotframework-openafs
-
+* Reverted acl tests
+* Fixes for real kerberos kdc support
 
 ## [v0.6.0]
 
