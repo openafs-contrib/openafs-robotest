@@ -7,7 +7,6 @@ Documentation     Basic Functional Tests
 Resource          common.robot
 Suite Setup       Setup
 Suite Teardown    Teardown
-Variables         ${RESOURCES}/errorcodes.py
 
 *** Variables ***
 ${VOLUME}     test.basic
@@ -106,7 +105,8 @@ Create a Hard Link within a Volume
     ...    Should Not Exist         ${DIR2}     AND
     ...    Should Not Exist         ${LINK2}    AND
     ...    Should Not Exist         ${FILE3}
-    Link    ${FILE3}  ${LINK2}  code_should_be=${EXDEV}
+    ${exdev}=   Evaluate    os.errno.EXDEV    modules=os
+    Link    ${FILE3}  ${LINK2}  code_should_be=${exdev}
 
 Create a Hard Link to a Directory
     [Setup]  Run Keywords
