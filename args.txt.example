@@ -1,0 +1,9 @@
+--pythonpath=resources
+--exclude=bug
+--exclude=requires-multi-fs
+--exclude=rogue-avoidance
+--exclude=slow
+--loglevel=INFO
+--outputdir=/var/www/html/output
+--report=index.html
+--runemptysuite

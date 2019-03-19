@@ -1,0 +1,35 @@
+---
+AFS_ADMIN: afsrobot.admin
+AFS_AKIMPERSONATE: true
+AFS_CELL: example.com
+AFS_FILESERVERS: bismark
+AFS_USER: afsrobot
+AKLOG: /usr/local/bin/aklog-1.6
+ASETKEY: /usr/afs/bin/asetkey
+BOS: /usr/afs/bin/bos
+DAFILESERVER: -d 1 -L
+DAVOLSERVER: -d 1
+EXCLUDE: bug,slow,rogue-avoidance
+FS: /usr/afs/bin/fs
+GFIND: /usr/bin/find
+HOST: bismark
+INSTALLER: transarc
+KDESTROY: /usr/bin/kdestroy
+KEYFORMAT: detect
+KINIT: /usr/bin/kinit
+KRB_ADMIN_KEYTAB: /tmp/afsrobot/user.keytab
+KRB_AFS_KEYTAB: /tmp/afsrobot/fake.keytab
+KRB_REALM: EXAMPLE.COM
+KRB_USER_KEYTAB: /tmp/afsrobot/user.keytab
+LOGLEVEL: INFO
+NAME: bismark
+OUTPUT: /var/www/html/output
+PAG_ONEGROUP: yes
+PAGSH: /usr/afsws/bin/pagsh
+PATHS: transarc
+PTS: /usr/afs/bin/pts
+RXDEBUG: /usr/afsws/etc/rxdebug
+TOKENS: /usr/afsws/bin/tokens
+UDEBUG: /usr/afs/bin/udebug
+UNLOG: /usr/afsws/bin/unlog
+VOS: /usr/afs/bin/vos
