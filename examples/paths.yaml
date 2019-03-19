@@ -1,0 +1,15 @@
+# Paths
+AKLOG: /usr/local/bin/aklog-1.6
+ASETKEY: /usr/afs/bin/asetkey
+BOS: /usr/afs/bin/bos
+FS: /usr/afs/bin/fs
+GFIND: /usr/bin/find
+KDESTROY: /usr/bin/kdestroy
+KINIT: /usr/bin/kinit
+PAGSH: /usr/afsws/bin/pagsh
+PTS: /usr/afs/bin/pts
+RXDEBUG: /usr/afsws/etc/rxdebug
+TOKENS: /usr/afsws/bin/tokens
+UDEBUG: /usr/afs/bin/udebug
+UNLOG: /usr/afsws/bin/unlog
+VOS: /usr/afs/bin/vos

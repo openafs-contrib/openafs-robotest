@@ -1,2 +1,2 @@
 #!/bin/sh
-robot -A args.txt -V vars.yaml tests
+robot -P resources -V config/settings.yaml -V config/paths.yaml -A config/args.txt tests

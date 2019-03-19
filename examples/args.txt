@@ -1,4 +1,3 @@
---pythonpath=resources
 --exclude=bug
 --exclude=requires-multi-fs
 --exclude=rogue-avoidance
