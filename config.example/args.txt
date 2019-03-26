@@ -1,3 +1,7 @@
+--variablefile=config/cell.py
+--variablefile=config/client.py
+--variablefile=config/os/rhel7.py
+--variablefile=config/openafs/rhel7.py
 --exclude=bug
 --exclude=requires-multi-fs
 --exclude=rogue-avoidance

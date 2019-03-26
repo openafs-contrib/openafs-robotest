@@ -1,0 +1,1 @@
+PAG_ONEGROUP = True

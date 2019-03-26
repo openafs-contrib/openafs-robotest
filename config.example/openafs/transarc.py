@@ -1,10 +1,11 @@
+#
+# OpenAFS Transarc-style installation paths.
+#
 AKLOG = '/usr/afs/bin/aklog'
 ASETKEY = '/usr/afs/bin/asetkey'
 BOS = '/usr/afs/bin/bos'
 FS = '/usr/afs/bin/fs'
-GFIND = '/usr/bin/find'
-KDESTROY = '/usr/bin/kdestroy'
-KINIT = '/usr/bin/kinit'
+KLOG_KRB5 = '/usr/afs/bin/klog.krb5'
 PAGSH = '/usr/afsws/bin/pagsh'
 PTS = '/usr/afs/bin/pts'
 RXDEBUG = '/usr/afsws/etc/rxdebug'

@@ -8,8 +8,5 @@ KRB_USER_KEYTAB = '/tmp/afsrobot/user.keytab'
 AFS_CELL = 'example.com'
 AFS_USER = 'afsrobot'
 AFS_ADMIN = 'afsrobot.admin'
-AFS_AKIMPERSONATE = 'true'
+AFS_AKIMPERSONATE = False
 AFS_FILESERVERS = 'bismark,'
-
-# Client options
-PAG_ONEGROUP = True
