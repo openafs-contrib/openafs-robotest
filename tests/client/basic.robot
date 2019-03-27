@@ -30,7 +30,7 @@ ${TEXT}       hello-world
 
 *** Keywords ***
 Setup
-    Login  ${AFS_ADMIN}
+    Login  ${AFS_ADMIN}  password=${AFS_ADMIN_LOGIN}
     Create Volume  ${VOLUME}  server=${SERVER}  part=${PARTITION}  path=${TESTPATH}  acl=system:anyuser,read
 
 Teardown
