@@ -47,7 +47,7 @@ Create a Mountpoint to a Nonexistent Volume
 
 *** Keywords ***
 Setup
-    Login  ${AFS_ADMIN}  password=${AFS_ADMIN_LOGIN}
+    Login  ${AFS_ADMIN}  password=${AFS_ADMIN_PASSWORD}
     Command Should Succeed  ${VOS} create ${SERVER} ${PARTITION} ${VOLUME}
 
 Teardown

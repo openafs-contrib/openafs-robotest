@@ -6,7 +6,7 @@
 Library           OperatingSystem
 Library           String
 Library           OpenAFSLibrary
-Suite Setup       Login  ${AFS_ADMIN}  password=${AFS_ADMIN_LOGIN}
+Suite Setup       Login  ${AFS_ADMIN}  password=${AFS_ADMIN_PASSWORD}
 Suite Teardown    Logout
 
 *** Variables ***
