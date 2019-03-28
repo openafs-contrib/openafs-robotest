@@ -1,0 +1,9 @@
+--exclude=bug
+--exclude=requires-multi-fs
+--exclude=rogue-avoidance
+--exclude=slow
+--loglevel=INFO
+--outputdir=output
+--report=index.html
+--runemptysuite
+--variablefile=config/example.com/variables.py

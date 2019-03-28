@@ -1,3 +1,22 @@
+# Realm
+KRB_REALM = 'EXAMPLE.COM'
+
+# Cell
+AFS_CELL = 'example.com'
+AFS_USER = 'afsrobot'
+AFS_ADMIN = 'afsrobot.admin'
+AFS_AKIMPERSONATE = False
+AFS_FILESERVERS = 'afs01.example.com,'
+PAG_ONEGROUP = True
+
+# Kerberos paths
+KADMIN = '/usr/bin/kadmin'
+KDESTROY = '/usr/bin/kdestroy'
+KINIT = '/usr/bin/kinit'
+
+# Misc paths
+GFIND = '/usr/bin/find'
+
 #
 # OpenAFS Transarc-style installation paths.
 #
