@@ -1,11 +1,12 @@
 # Copyright #(c) 2015 Sine Nomine Associates
-# Copyright #(c) 2001 Kungliga Tekniska Högskolan
 # See LICENSE
 
 *** Settings ***
 Documentation     Ptserver tests
-Resource          common.robot
-Suite Setup       Login  ${AFS_ADMIN}
+Library           OperatingSystem
+Library           String
+Library           OpenAFSLibrary
+Suite Setup       Login  ${AFS_ADMIN}  password=${AFS_ADMIN_PASSWORD}
 Suite Teardown    Logout
 
 *** Keywords ***

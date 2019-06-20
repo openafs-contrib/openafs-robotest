@@ -1,7 +1,2 @@
 *.pyc
 *.swp
-*.conf
-*.ini
-MANIFEST
-/html
-Makefile.config

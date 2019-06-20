@@ -1,10 +1,11 @@
 # Copyright (c) 2015 Sine Nomine Associates
-# Copyright (c) 2001 Kungliga Tekniska Högskolan
 # See LICENSE
 
 *** Settings ***
 Documentation     Client stess tests
-Resource          common.robot
+Library           OperatingSystem
+Library           String
+Library           OpenAFSLibrary
 
 *** Variables ***
 ${VOLUME}      test.stress
@@ -14,7 +15,7 @@ ${RWPATH}      /afs/.${AFS_CELL}/test/stress
 
 *** Keywords ***
 Create Stress Test Volume
-    Login           ${AFS_ADMIN}
+    Login  ${AFS_ADMIN}  password=${AFS_ADMIN_PASSWORD}
     Create Volume   ${VOLUME}  server=${SERVER}  part=${PARTITION}  path=${RWPATH}  ro=True  acl=system:anyuser,read
 
 Remove Stress Test Volume

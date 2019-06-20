@@ -1,10 +1,11 @@
 # Copyright (c) 2015 Sine Nomine Associates
-# Copyright (c) 2001 Kungliga Tekniska Högskolan
 # See LICENSE
 
 *** Settings ***
 Documentation     Bosserver tests
-Resource          common.robot
+Library           OperatingSystem
+Library           String
+Library           OpenAFSLibrary
 Suite Setup       Setup Users and Groups
 Suite Teardown    Teardown Users and Groups
 
@@ -16,7 +17,7 @@ ${TESTPATH}    /afs/.${AFS_CELL}/test/${VOLUME}
 
 *** Keywords ***
 Setup Users and Groups
-    Login  ${AFS_ADMIN}
+    Login  ${AFS_ADMIN}  password=${AFS_ADMIN_PASSWORD}
     Command Should Succeed  ${PTS} createuser user1
     Command Should Succeed  ${PTS} createuser user2
     Command Should Succeed  ${PTS} creategroup group1 -owner ${AFS_ADMIN}

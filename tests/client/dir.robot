@@ -1,10 +1,11 @@
 # Copyright (c) 2015 Sine Nomine Associates
-# Copyright (c) 2001 Kungliga Tekniska Högskolan
 # See LICENSE
 
 *** Settings ***
 Documentation     Directory Object tests
-Resource          common.robot
+Library           OperatingSystem
+Library           String
+Library           OpenAFSLibrary
 Suite Setup       Setup
 Suite Teardown    Teardown
 
@@ -18,7 +19,7 @@ ${FILE}        ${TESTPATH}/${NAME}
 
 *** Keywords ***
 Setup
-    Login  ${AFS_ADMIN}
+    Login  ${AFS_ADMIN}  password=${AFS_ADMIN_PASSWORD}
     Create Volume  ${VOLUME}  server=${SERVER}  part=${PARTITION}  path=${TESTPATH}  acl=system:anyuser,read
 
 Teardown

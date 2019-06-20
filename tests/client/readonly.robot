@@ -1,6 +1,8 @@
 *** Settings ***
 Documentation     Read-only tests
-Resource          common.robot
+Library           OperatingSystem
+Library           String
+Library           OpenAFSLibrary
 Suite Setup       Setup Test Suite
 Suite Teardown    Teardown Test Suite
 
@@ -13,7 +15,7 @@ ${ROPATH}      /afs/${AFS_CELL}/test/readonly
 
 *** Keywords ***
 Setup Test Suite
-    Login           ${AFS_ADMIN}
+    Login  ${AFS_ADMIN}  password=${AFS_ADMIN_PASSWORD}
     Create Volume   ${VOLUME}  server=${SERVER}  part=${PARTITION}  path=${RWPATH}  ro=True  acl=system:anyuser,read
 
 Teardown Test Suite

@@ -3,7 +3,9 @@
 
 *** Settings ***
 Documentation     AFS PAG tests
-Resource          common.robot
+Library           OperatingSystem
+Library           String
+Library           OpenAFSLibrary
 
 *** Variables ***
 ${PRINT_GROUPS}    python -c 'import os; print os.getgroups()'

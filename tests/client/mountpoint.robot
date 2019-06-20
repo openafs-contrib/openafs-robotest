@@ -1,10 +1,11 @@
 # Copyright (c) 2015 Sine Nomine Associates
-# Copyright (c) 2001 Kungliga Tekniska Högskolan
 # See LICENSE
 
 *** Settings ***
 Documentation     Mountpoint tests
-Resource          common.robot
+Library           OperatingSystem
+Library           String
+Library           OpenAFSLibrary
 Suite Setup       Setup
 Suite Teardown    Teardown
 
@@ -45,7 +46,7 @@ Create a Mountpoint to a Nonexistent Volume
 
 *** Keywords ***
 Setup
-    Login  ${AFS_ADMIN}
+    Login  ${AFS_ADMIN}  password=${AFS_ADMIN_PASSWORD}
     Command Should Succeed  ${VOS} create ${SERVER} ${PARTITION} ${VOLUME}
 
 Teardown
