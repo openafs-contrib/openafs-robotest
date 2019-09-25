@@ -66,9 +66,3 @@ Remove a Superuser
     Superusers Include User1
     Command Should Succeed    ${BOS} removeuser ${SERVER} user1
     [Teardown]   Superusers Exclude User1
-
-Get a bnode Status
-    ${output}=  Run            ${BOS} status ${SERVER}
-    Should Contain             ${output}  ptserver
-    Should Contain             ${output}  vlserver
-    Should Contain             ${output}  dafs
