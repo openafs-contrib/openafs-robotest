@@ -1,4 +1,4 @@
-# Copyright (c) 2015 Sine Nomine Associates
+# Copyright (c) 2015, 2020 Sine Nomine Associates
 # See LICENSE
 
 *** Settings ***
@@ -57,6 +57,15 @@ Read a File Larger than the Cache
     Should Exist                   ${FILE}
     ${output}=  Run                dd if=/dev/zero of=${FILE} bs=1024 count=${size+1}
     Should Not Contain             ${FILE}  0
+    [Teardown]  Run Keywords
+    ...    Remove File                    ${FILE}  AND
+    ...    Should Not Exist               ${FILE}
+
+Read Write a File Larger than 4G
+    [Tags]  slow
+    [Setup]  Run Keywords
+    Command Should Succeed  dd if=/dev/urandom of=${FILE} bs=1024 count=5M
+    Command Should Succeed  dd if=${FILE} of=/dev/null
     [Teardown]  Run Keywords
     ...    Remove File                    ${FILE}  AND
     ...    Should Not Exist               ${FILE}
