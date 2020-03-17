@@ -8,7 +8,7 @@ Library           String
 Library           OpenAFSLibrary
 
 *** Variables ***
-${PRINT_GROUPS}    python -c 'import os; print os.getgroups()'
+${PRINT_GROUPS}    python -c 'import sys; import os; sys.stdout.write("%s\n" % os.getgroups())'
 
 *** Test Cases ***
 Obtain a PAG with pagsh
