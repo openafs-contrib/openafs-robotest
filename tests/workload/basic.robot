@@ -12,7 +12,7 @@ Suite Teardown    Teardown
 *** Variables ***
 ${VOLUME}     test.basic
 ${PARTITION}  a
-${SERVER}     @{AFS_FILESERVERS}[0]
+${SERVER}     ${AFS_FILESERVERS}[0]
 ${TESTPATH}   /afs/.${AFS_CELL}/test/${VOLUME}
 ${DIR2}       ${TESTPATH}/dir2
 ${DIR}        ${TESTPATH}/dir
