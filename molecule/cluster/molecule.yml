@@ -1,0 +1,95 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: vagrant
+platforms:
+  - name: afs01
+    box: ${BOX-generic/centos7}
+    memory: 1024
+    cpus: 1
+    groups:
+      - afs_cell
+      - afs_kdcs
+      - afs_databases
+      - afs_fileservers
+  - name: afs02
+    box: ${BOX-generic/centos7}
+    memory: 1024
+    cpus: 1
+    groups:
+      - afs_cell
+      - afs_kdcs
+      - afs_databases
+      - afs_fileservers
+  - name: afs03
+    box: ${BOX-generic/centos7}
+    memory: 1024
+    cpus: 1
+    groups:
+      - afs_cell
+      - afs_kdcs
+      - afs_databases
+      - afs_fileservers
+  - name: afs04
+    box: ${BOX-generic/centos7}
+    memory: 1024
+    cpus: 1
+    groups:
+      - afs_cell
+      - afs_clients
+      - afs_admin
+      - afs_test
+  - name: afs05
+    box: ${BOX-generic/centos7}
+    memory: 1024
+    cpus: 1
+    groups:
+      - afs_cell
+      - afs_clients
+  - name: afs06
+    box: ${BOX-generic/centos7}
+    memory: 1024
+    cpus: 1
+    groups:
+      - afs_cell
+      - afs_clients
+provisioner:
+  name: ansible
+  playbooks:
+    prepare: ../default/prepare.yml
+    cleanup: ../default/cleanup.yml
+    verify: ../default/verify.yml
+  inventory:
+    group_vars:
+      afs_fileservers:
+        afs_partitions:
+          - a
+          - b
+      afs_admin:
+        afs_volumes:
+          - name: test
+verifier:
+  name: ansible
+scenario:
+  test_sequence:
+    - cleanup
+    - destroy
+    - create
+    - prepare
+    - converge
+    - verify
+    - cleanup
+    - destroy
+  create_sequence:
+    - create
+    - prepare
+  converge_sequence:
+    - create
+    - prepare
+    - converge
+  check_sequence:
+    - verify
+  destroy_sequence:
+    - cleanup
+    - destroy
