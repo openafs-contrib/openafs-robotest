@@ -1,0 +1,8 @@
+---
+- name: Install OpenAFS
+  hosts: all
+  roles:
+    - openafs_krbserver
+    - openafs_server
+    - openafs_client
+    - openafs_cell
