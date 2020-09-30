@@ -1,0 +1,69 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: delegated
+  host: ${LIBVIRT_HOST-localhost}
+  libvirt_uri: "${LIBVIRT_URI-qemu:///system}"
+  python_interpreter: /usr/bin/python3
+platforms:
+  - name: afs01
+    template: generic-centos-7
+    memory: 1024
+    cpus: 1
+    groups:
+      - afs_cell
+      - afs_kdcs
+      - afs_databases
+      - afs_fileservers
+      - afs_clients
+      - afs_test
+provisioner:
+  name: ansible
+  playbooks:
+    prepare: ../default/prepare.yml
+    converge: ../default/converge.yml
+    verify: ../default/verify.yml
+  inventory:
+    host_vars:
+      afs01:
+        afs_partitions:
+          - a
+          - b
+        afs_volumes:
+          - name: test
+    group_vars:
+      afs_cell:
+        afs_client_version: ${AFS_VERSION-1.8.5}
+        afs_server_version: ${AFS_VERSION-1.8.5}
+      afs_test:
+        afs_robotest_suite: ${TESTS-tests}
+        afs_robotest_loglevel: INFO
+        afs_robotest_exclude_tags:
+          - bug
+          - slow
+          - rogue-avoidance
+verifier:
+  name: ansible
+scenario:
+  test_sequence:
+    - cleanup
+    - destroy
+    - create
+    - prepare
+    - converge
+    - verify
+    - cleanup
+    - destroy
+  create_sequence:
+    - create
+    - prepare
+  converge_sequence:
+    - create
+    - prepare
+    - converge
+  check_sequence:
+    - verify
+  destroy_sequence:
+    - cleanup
+    - destroy
