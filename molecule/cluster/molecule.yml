@@ -57,9 +57,10 @@ platforms:
 provisioner:
   name: ansible
   playbooks:
-    prepare: ../default/prepare.yml
-    cleanup: ../default/cleanup.yml
-    verify: ../default/verify.yml
+    cleanup: ../playbooks/cleanup.yml
+    converge: ../playbooks/converge-cluster.yml
+    prepare: ../playbooks/prepare.yml
+    verify: ../playbooks/verify.yml
   inventory:
     group_vars:
       afs_fileservers:

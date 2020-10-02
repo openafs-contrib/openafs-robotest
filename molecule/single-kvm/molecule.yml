@@ -21,9 +21,12 @@ platforms:
 provisioner:
   name: ansible
   playbooks:
-    prepare: ../default/prepare.yml
-    converge: ../default/converge.yml
-    verify: ../default/verify.yml
+    cleanup: ../playbooks/cleanup.yml
+    converge: ../playbooks/converge.yml
+    create: ../playbooks/create-kvm.yml
+    destroy: ../playbooks/destroy-kvm.yml
+    prepare: ../playbooks/prepare.yml
+    verify: ../playbooks/verify.yml
   inventory:
     host_vars:
       afs01:

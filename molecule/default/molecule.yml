@@ -17,6 +17,11 @@ platforms:
       - afs_test
 provisioner:
   name: ansible
+  playbooks:
+    cleanup: ../playbooks/cleanup.yml
+    converge: ../playbooks/converge.yml
+    prepare: ../playbooks/prepare.yml
+    verify: ../playbooks/verify.yml
   inventory:
     host_vars:
       afs01:

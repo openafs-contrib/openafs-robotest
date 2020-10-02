@@ -17,9 +17,10 @@ platforms:
 provisioner:
   name: ansible
   playbooks:
-    prepare: ../default/prepare.yml
-    cleanup: ../default/cleanup.yml
-    verify: ../default/verify.yml
+    cleanup: ../playbooks/cleanup.yml
+    converge: ../playbooks/converge.yml
+    prepare: ../playbooks/prepare.yml
+    verify: ../playbooks/verify.yml
   inventory:
     host_vars:
       afs01:
