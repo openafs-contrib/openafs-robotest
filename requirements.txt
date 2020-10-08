@@ -1,3 +1,3 @@
 ansible
-molecule==3.*
+molecule
 molecule-vagrant
