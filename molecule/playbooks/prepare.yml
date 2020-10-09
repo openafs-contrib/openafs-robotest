@@ -1,4 +1,11 @@
 ---
+- name: Wait for instances
+  hosts: all
+  gather_facts: no
+  tasks:
+    - name: Waiting for system to start
+      wait_for_connection:
+
 - name: Prepare
   hosts: all
   tasks:
