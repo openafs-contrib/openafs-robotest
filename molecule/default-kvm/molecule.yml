@@ -3,9 +3,11 @@ dependency:
   name: galaxy
 driver:
   name: delegated
-  host: ${LIBVIRT_HOST-localhost}
+  host: "${LIBVIRT_HOST-localhost}"
   libvirt_uri: "${LIBVIRT_URI-qemu:///system}"
-  python_interpreter: /usr/bin/python3
+  logfile: "${LIBVIRT_LOGFILE-~/.cache/virt-up/virt-up.log}"
+  loglevel: "${LIBVIRT_LOGLEVEL-info}"
+  python_interpreter: "${LIBVIRT_PYTHON-/usr/bin/python3}"
 platforms:
   - name: afs01
     template: generic-centos-7

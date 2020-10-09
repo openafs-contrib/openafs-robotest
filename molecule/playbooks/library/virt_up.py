@@ -41,8 +41,7 @@ options:
     type: str
 
   template:
-    description: The os template name. See C(virt-up --list-templates).
-    required: true
+    description: The os template name. See C(virt-up --list-templates). Required for state C(up).
     type: str
 
   sshdir:
@@ -50,6 +49,11 @@ options:
       - Local destination for ssh key files. This path will be used to
         set the results for the molecule instance configuration.
     type: path
+
+  logfile:
+    description: Log file destination on hypervisor.
+    type: path
+    default: $HOME/.cache/virt-up/virt-up.log
 
 author:
   - Michael Meffie (@meffie)
@@ -88,14 +92,24 @@ from ansible.module_utils.basic import AnsibleModule
 import virt_up
 
 log = logging.getLogger(__name__)
+loglevels = {
+    'critical': logging.CRITICAL,
+    'error': logging.ERROR,
+    'warning': logging.WARNING,
+    'warn': logging.WARNING,
+    'info': logging.INFO,
+    'debug': logging.DEBUG,
+}
 
 def run_module():
     module = AnsibleModule(
         argument_spec=dict(
             state=dict(type='str', choices=['up', 'absent'], default='up'),
             name=dict(type='str', required=True),
-            template=dict(type='str', required=True),
-            sshdir=dict(type='path', default='')
+            template=dict(type='str'),
+            sshdir=dict(type='path', default=''),
+            logfile=dict(type='path', default='~/.cache/virt-up/virt-up.log'),
+            loglevel=dict(type='str', choices=loglevels.keys(), default='info'),
         ),
         supports_check_mode=False,
     )
@@ -104,12 +118,20 @@ def run_module():
         server=dict(),
     )
 
-    logging.basicConfig(level=logging.INFO, filename='/tmp/virt_up.log')
+    logfile = os.path.expanduser(module.params['logfile'])
+    if not os.path.exists(os.path.dirname(logfile)):
+        os.makedirs(os.path.dirname(logfile))
+    logging.basicConfig(
+        filename=logfile,
+        level=loglevels[module.params['loglevel']],
+        format='%(asctime)s %(levelname)s %(message)s')
     log.info("Staring virt_up: version='%s', state='%s', name='%s', template='%s'",
         virt_up.__version__,
         module.params['state'], module.params['name'], module.params['template'])
 
     if module.params['state'] == 'up':
+        if not 'template' in module.params:
+            raise ValueError('template parameter is required.')
         name = module.params['name']
         tname = module.params['template']
         template = virt_up.Instance.build(tname, template=tname, prefix='TEMPLATE-')
