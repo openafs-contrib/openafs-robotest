@@ -87,6 +87,7 @@ remote_identity_file:
 
 import logging
 import os
+import pprint
 
 from ansible.module_utils.basic import AnsibleModule
 import virt_up
@@ -107,6 +108,9 @@ def run_module():
             state=dict(type='str', choices=['up', 'absent'], default='up'),
             name=dict(type='str', required=True),
             template=dict(type='str'),
+            size=dict(type='str', default=None),
+            memory=dict(type='str', default=None),
+            cpus=dict(type='int', default=1),
             sshdir=dict(type='path', default=''),
             logfile=dict(type='path', default='~/.cache/virt-up/virt-up.log'),
             loglevel=dict(type='str', choices=loglevels.keys(), default='info'),
@@ -125,43 +129,51 @@ def run_module():
         filename=logfile,
         level=loglevels[module.params['loglevel']],
         format='%(asctime)s %(levelname)s %(message)s')
-    log.info("Staring virt_up: version='%s', state='%s', name='%s', template='%s'",
+    log.info("Starting virt_up: version='%s', state='%s', name='%s', template='%s'",
         virt_up.__version__,
         module.params['state'], module.params['name'], module.params['template'])
 
-    if module.params['state'] == 'up':
+    name = module.params['name']
+    if module.params['state'] == 'up' and not virt_up.Instance.exists(name):
         if not 'template' in module.params:
-            raise ValueError('template parameter is required.')
-        name = module.params['name']
-        tname = module.params['template']
-        template = virt_up.Instance.build(tname, template=tname, prefix='TEMPLATE-')
+            raise ValueError("template parameter is required for state 'up'.")
+
+        template = virt_up.Instance.build(
+            module.params['template'],
+            template=module.params['template'],
+            prefix='TEMPLATE-',
+            size=module.params['size'],
+            memory=module.params['memory'],
+            vcpus=module.params['cpus'])
+
         instance = template.clone(name)
         instance.start()
-        address = instance.address() # Wait for address to be assigned.
+        instance.wait_for_port(22) # Wait for boot to complete.
+        log.info("Instance '%s' is up.", instance.name)
 
         ssh_identity = instance.meta['user']['ssh_identity']
+        identity_file = os.path.join(module.params['sshdir'], os.path.basename(ssh_identity))
         result['changed'] = True
+        result['remote_identity_file'] = ssh_identity
         result['server'] = {
             'instance': instance.name,
-            'address': address,
+            'address': instance.address(),
             'user': instance.meta['user']['username'],
             'port': '22',
+            'identity_file': identity_file,
+        }
+
+    if module.params['state'] == 'absent' and virt_up.Instance.exists(name):
+        instance = virt_up.Instance(name)
+        ssh_identity = instance.meta['user']['ssh_identity']
+        instance.delete()
+        log.info("Instance '%s' was delete.", name)
+        result['changed'] = True
+        result['server'] = {
             'identity_file': os.path.join(module.params['sshdir'], os.path.basename(ssh_identity)),
         }
-        result['remote_identity_file'] = ssh_identity
-    elif module.params['state'] == 'absent':
-        name = module.params['name']
-        if virt_up.Instance.exists(name):
-            instance = virt_up.Instance(name)
-            ssh_identity = instance.meta['user']['ssh_identity']
-            instance.delete()
-            result['changed'] = True
-            result['server'] = {
-                'identity_file': os.path.join(module.params['sshdir'], os.path.basename(ssh_identity)),
-            }
-    else:
-        raise ValueError('Invalid state parameter.')
 
+    log.debug('result=%s', pprint.pformat(result))
     module.exit_json(**result)
 
 def main():

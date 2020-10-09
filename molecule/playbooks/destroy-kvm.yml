@@ -9,7 +9,7 @@
       add_host:
         name: hypervisor
         ansible_host: "{{ molecule_yml.driver.host }}"
-        ansible_python_interpreter: "{{ molecule_yml.driver.python_interpreter }}"
+        ansible_python_interpreter: "{{ molecule_yml.driver.python_interpreter | default('/usr/bin/python') }}"
 
 - name: Destroy
   hosts: hypervisor
@@ -21,8 +21,8 @@
         state: absent
         name: "{{ item.name }}"
         sshdir: "{{ molecule_ephemeral_directory }}"
-        logfile: "{{ molecule_yml.driver.logfile | default('~/.cache/virt-up/virt-up.log') }}"
-        loglevel: "{{ molecule_yml.driver.loglevel | default('info') }}"
+        logfile: "{{ molecule_yml.driver.logfile | default(omit) }}"
+        loglevel: "{{ molecule_yml.driver.loglevel | default(omit) }}"
       environment:
         LIBVIRT_DEFAULT_URI: "{{ molecule_yml.driver.libvirt_uri | default('qemu:///session') }}"
       loop: "{{ molecule_yml.platforms }}"
