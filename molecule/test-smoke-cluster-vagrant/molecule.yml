@@ -4,7 +4,7 @@ dependency:
 driver:
   name: vagrant
 platforms:
-  - name: afs01
+  - name: m-afs01
     box: ${BOX-generic/centos7}
     memory: 1024
     cpus: 1
@@ -13,7 +13,7 @@ platforms:
       - afs_kdcs
       - afs_databases
       - afs_fileservers
-  - name: afs02
+  - name: m-afs02
     box: ${BOX-generic/centos7}
     memory: 1024
     cpus: 1
@@ -22,7 +22,7 @@ platforms:
       - afs_kdcs
       - afs_databases
       - afs_fileservers
-  - name: afs03
+  - name: m-afs03
     box: ${BOX-generic/centos7}
     memory: 1024
     cpus: 1
@@ -31,7 +31,7 @@ platforms:
       - afs_kdcs
       - afs_databases
       - afs_fileservers
-  - name: afs04
+  - name: m-afs04
     box: ${BOX-generic/centos7}
     memory: 1024
     cpus: 1
@@ -40,14 +40,14 @@ platforms:
       - afs_clients
       - afs_admin
       - afs_test
-  - name: afs05
+  - name: m-afs05
     box: ${BOX-generic/centos7}
     memory: 1024
     cpus: 1
     groups:
       - afs_cell
       - afs_clients
-  - name: afs06
+  - name: m-afs06
     box: ${BOX-generic/centos7}
     memory: 1024
     cpus: 1
@@ -57,10 +57,10 @@ platforms:
 provisioner:
   name: ansible
   playbooks:
-    cleanup: ../playbooks/cleanup.yml
-    converge: ../playbooks/converge-cluster.yml
-    prepare: ../playbooks/prepare.yml
-    verify: ../playbooks/verify.yml
+    cleanup: ../../playbooks/cleanup.yml
+    converge: ../../playbooks/newcell-cluster.yml
+    prepare: ../../playbooks/prepare.yml
+    verify: ../../playbooks/verify-robot.yml
   inventory:
     group_vars:
       afs_fileservers:

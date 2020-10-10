@@ -8,17 +8,17 @@
   tasks:
     - name: Copy tests
       copy:
-        src: ../../tests
+        src: ../tests
         dest: tests
 
-    - name: Run tests
+    - name: Start tests
       command:
         cmd: "robot -A .openafs-robotest/robotrc {{ afs_robotest_suite}}"
       async: 10000
       poll: 0
       register: robotest_async
 
-    - name: Waiting for tests to finish
+    - name: Running tests
       async_status:
         jid: "{{ robotest_async.ansible_job_id }}"
       register: test_results
@@ -33,7 +33,7 @@
       fetch:
         flat: yes
         src: "public_html/openafs-robotest-output/{{ item }}"
-        dest: ../../output/{{ item }}
+        dest: ../output/{{ item }}
       with_items:
         - index.html
         - log.html

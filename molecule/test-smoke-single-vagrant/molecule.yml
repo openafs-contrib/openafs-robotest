@@ -2,15 +2,10 @@
 dependency:
   name: galaxy
 driver:
-  name: delegated
-  host: "${LIBVIRT_HOST-localhost}"
-  libvirt_uri: "${LIBVIRT_URI-qemu:///system}"
-  logfile: "${LIBVIRT_LOGFILE-~/.cache/virt-up/virt-up.log}"
-  loglevel: "${LIBVIRT_LOGLEVEL-info}"
-  python_interpreter: "${LIBVIRT_PYTHON-/usr/bin/python3}"
+  name: vagrant
 platforms:
-  - name: afs01
-    template: generic-centos-7
+  - name: m-afs01
+    box: ${BOX-generic/centos7}
     memory: 1024
     cpus: 1
     groups:
@@ -23,15 +18,13 @@ platforms:
 provisioner:
   name: ansible
   playbooks:
-    cleanup: ../playbooks/cleanup.yml
-    converge: ../playbooks/converge.yml
-    create: ../playbooks/create-kvm.yml
-    destroy: ../playbooks/destroy-kvm.yml
-    prepare: ../playbooks/prepare.yml
-    verify: ../playbooks/verify.yml
+    cleanup: ../../playbooks/cleanup.yml
+    converge: ../../playbooks/newcell-single.yml
+    prepare: ../../playbooks/prepare.yml
+    verify: ../../playbooks/verify-robot.yml
   inventory:
     host_vars:
-      afs01:
+      m-afs01:
         afs_partitions:
           - a
           - b

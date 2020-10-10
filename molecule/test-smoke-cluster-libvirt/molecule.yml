@@ -1,0 +1,107 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: delegated
+  host: "${LIBVIRT_HOST-localhost}"
+  libvirt_uri: "${LIBVIRT_URI-qemu:///system}"
+  logfile: "${LIBVIRT_LOGFILE-~/.cache/virt-up/virt-up.log}"
+  loglevel: "${LIBVIRT_LOGLEVEL-info}"
+  python_interpreter: "${LIBVIRT_PYTHON-/usr/bin/python3}"
+platforms:
+  - name: m-afs01
+    template: generic-centos-7
+    memory: 1024
+    cpus: 1
+    groups:
+      - afs_cell
+      - afs_kdcs
+      - afs_databases
+  - name: m-afs02
+    template: generic-centos-7
+    memory: 1024
+    cpus: 1
+    groups:
+      - afs_cell
+      - afs_fileservers
+  - name: m-afs03
+    template: generic-centos-7
+    memory: 1024
+    cpus: 1
+    groups:
+      - afs_cell
+      - afs_fileservers
+  - name: m-afs04
+    template: generic-centos-7
+    memory: 1024
+    cpus: 1
+    groups:
+      - afs_cell
+      - afs_clients
+      - afs_admin
+      - afs_test
+  - name: m-afs05
+    template: generic-centos-7
+    memory: 1024
+    cpus: 1
+    groups:
+      - afs_cell
+      - afs_clients
+  - name: m-afs06
+    template: generic-centos-7
+    memory: 1024
+    cpus: 1
+    groups:
+      - afs_cell
+      - afs_clients
+provisioner:
+  name: ansible
+  playbooks:
+    cleanup: ../../playbooks/cleanup.yml
+    converge: ../../playbooks/newcell-cluster.yml
+    create: ../../playbooks/create-libvirt.yml
+    destroy: ../../playbooks/destroy-libvirt.yml
+    prepare: ../../playbooks/prepare.yml
+    verify: ../../playbooks/verify-robot.yml
+  inventory:
+    group_vars:
+      afs_cell:
+        afs_client_version: ${AFS_VERSION-1.8.5}
+        afs_server_version: ${AFS_VERSION-1.8.5}
+        afs_volumes:
+          - name: test
+      afs_fileservers:
+        afs_partitions:
+          - a
+          - b
+      afs_test:
+        afs_robotest_suite: ${TESTS-tests}
+        afs_robotest_loglevel: INFO
+        afs_robotest_exclude_tags:
+          - bug
+          - slow
+          - rogue-avoidance
+verifier:
+  name: ansible
+scenario:
+  test_sequence:
+    - cleanup
+    - destroy
+    - create
+    - prepare
+    - converge
+    - verify
+    - cleanup
+    - destroy
+  create_sequence:
+    - create
+    - prepare
+  converge_sequence:
+    - create
+    - prepare
+    - converge
+  check_sequence:
+    - verify
+  destroy_sequence:
+    - cleanup
+    - destroy

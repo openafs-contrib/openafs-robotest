@@ -16,7 +16,7 @@
   gather_facts: false
   no_log: "{{ molecule_no_log }}"
   tasks:
-    - name: Destroy instance(s).
+    - name: Destroy molecule instance(s)
       virt_up:
         state: absent
         name: "{{ item.name }}"

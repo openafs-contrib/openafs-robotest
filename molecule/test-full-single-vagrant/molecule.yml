@@ -4,7 +4,7 @@ dependency:
 driver:
   name: vagrant
 platforms:
-  - name: afs01
+  - name: m-afs01
     box: ${BOX-generic/centos7}
     memory: 1024
     cpus: 1
@@ -17,13 +17,13 @@ platforms:
 provisioner:
   name: ansible
   playbooks:
-    cleanup: ../playbooks/cleanup.yml
-    converge: ../playbooks/converge.yml
-    prepare: ../playbooks/prepare.yml
-    verify: ../playbooks/verify.yml
+    cleanup: ../../playbooks/cleanup.yml
+    converge: ../../playbooks/newcell-single.yml
+    prepare: ../../playbooks/prepare.yml
+    verify: ../../playbooks/verify-robot.yml
   inventory:
     host_vars:
-      afs01:
+      m-afs01:
         afs_partitions:
           - a
           - b

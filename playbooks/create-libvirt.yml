@@ -1,5 +1,5 @@
 ---
-- name: Create
+- name: Prepare create
   hosts: localhost
   connection: local
   gather_facts: false
@@ -16,7 +16,7 @@
   gather_facts: false
   no_log: "{{ molecule_no_log }}"
   tasks:
-    - name: Create instance(s).
+    - name: Create molecule instance(s)
       virt_up:
         state: up
         name: "{{ item.name }}"

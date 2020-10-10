@@ -1,0 +1,51 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: delegated
+  host: "${LIBVIRT_HOST-localhost}"
+  libvirt_uri: "${LIBVIRT_URI-qemu:///system}"
+  logfile: "${LIBVIRT_LOGFILE-~/.cache/virt-up/virt-up.log}"
+  loglevel: "${LIBVIRT_LOGLEVEL-info}"
+  python_interpreter: "${LIBVIRT_PYTHON-/usr/bin/python3}"
+platforms:
+  - name: build01
+    template: generic-centos-7
+    memory: 1024
+    cpus: 1
+    #groups:
+provisioner:
+  name: ansible
+  playbooks:
+    cleanup: ../../playbooks/cleanup.yml
+    converge: ../../playbooks/build-dest.yml
+    create: ../../playbooks/create-libvirt.yml
+    destroy: ../../playbooks/destroy-libvirt.yml
+    prepare: ../../playbooks/prepare.yml
+    verify: ../../playbooks/verify-dest.yml
+  #inventory:
+  #  group_vars:
+verifier:
+  name: ansible
+scenario:
+  test_sequence:
+    - cleanup
+    - destroy
+    - create
+    - prepare
+    - converge
+    - verify
+    - cleanup
+    - destroy
+  create_sequence:
+    - create
+    - prepare
+  converge_sequence:
+    - create
+    - prepare
+    - converge
+  check_sequence:
+    - verify
+  destroy_sequence:
+    - cleanup
+    - destroy
