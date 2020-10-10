@@ -1,6 +1,6 @@
 ---
 - name: Setup the Kerberos realm kdc
-  hosts: afs_kdcs[0]
+  hosts: afs_kdcs
   roles:
     - openafs_krbserver
 

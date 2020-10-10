@@ -9,12 +9,12 @@
 - name: Prepare
   hosts: all
   tasks:
+    #- debug:
+    #    var: hostvars
+
     - name: Set hostname address mapping
       become: yes
-      copy:
-        backup: yes
+      template:
+        src: templates/hosts.j2
         dest: /etc/hosts
-        content: |
-          127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
-          ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
-          {{ ansible_default_ipv4.address }} {{ ansible_hostname}}
+        backup: yes
