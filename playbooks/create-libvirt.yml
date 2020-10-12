@@ -33,6 +33,7 @@
       register: virt_up
 
     - name: Fetch ssh identity files.
+      when: virt_up.changed
       block:
         - name: Fetch private key files.
           fetch:
@@ -65,10 +66,12 @@
           loop: "{{ virt_up.results }}"
 
     - name: Convert results to instance config.
+      when: virt_up.changed
       set_fact:
         instance_conf: "{{ virt_up.results | map(attribute='server') | list }}"
 
     - name: Write instance config
+      when: virt_up.changed
       local_action:
         module: copy
         content: "{{ instance_conf | to_json | from_json | molecule_to_yaml | molecule_header }}"

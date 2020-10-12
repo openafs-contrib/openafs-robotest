@@ -9,22 +9,32 @@ driver:
   loglevel: "${LIBVIRT_LOGLEVEL-info}"
   python_interpreter: "${LIBVIRT_PYTHON-/usr/bin/python3}"
 platforms:
-  - name: build01
+  - name: m-builder02
     template: generic-centos-7
-    memory: 1024
-    cpus: 1
-    #groups:
+    memory: 2048
+    cpus: 4
+    groups:
+      - rpm_builders
 provisioner:
   name: ansible
   playbooks:
-    cleanup: ../../playbooks/cleanup.yml
-    converge: ../../playbooks/build-dest.yml
+    cleanup: ../../playbooks/cleanup-build.yml
+    converge: ../../playbooks/build.yml
     create: ../../playbooks/create-libvirt.yml
     destroy: ../../playbooks/destroy-libvirt.yml
     prepare: ../../playbooks/prepare.yml
-    verify: ../../playbooks/verify-dest.yml
-  #inventory:
-  #  group_vars:
+    verify: ../../playbooks/verify-build.yml
+  inventory:
+    host_vars:
+      m-builder02:
+        sysname: amd64_linux26
+        dist: el7
+        arch: x86_64
+    group_vars:
+      rpm_builders:
+        ref: "${OPENAFS_REF-master}"
+        repo: "${OPENAFS_REPO-https://github.com/openafs/openafs.git}"
+        builddir: ~/openafs
 verifier:
   name: ansible
 scenario:

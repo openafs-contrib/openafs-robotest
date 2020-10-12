@@ -1,0 +1,68 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: delegated
+  host: "${LIBVIRT_HOST-localhost}"
+  libvirt_uri: "${LIBVIRT_URI-qemu:///system}"
+  logfile: "${LIBVIRT_LOGFILE-~/.cache/virt-up/virt-up.log}"
+  loglevel: "${LIBVIRT_LOGLEVEL-info}"
+  python_interpreter: "${LIBVIRT_PYTHON-/usr/bin/python3}"
+platforms:
+  - name: m-builder01
+    template: generic-centos-7
+    memory: 2048
+    cpus: 4
+    groups:
+      - tarball_builders
+provisioner:
+  name: ansible
+  playbooks:
+    cleanup: ../../playbooks/cleanup-build.yml
+    converge: ../../playbooks/build.yml
+    create: ../../playbooks/create-libvirt.yml
+    destroy: ../../playbooks/destroy-libvirt.yml
+    prepare: ../../playbooks/prepare.yml
+    verify: ../../playbooks/verify-build.yml
+  inventory:
+    host_vars:
+      m-builder01:
+        jobs: 1
+    group_vars:
+      tarball_builders:
+        ref: "${OPENAFS_REF-master}"
+        repo: "${OPENAFS_REPO-https://github.com/openafs/openafs.git}"
+        builddir: ~/openafs
+        configure_options: >
+          --enable-transarc-paths
+          --enable-checking
+          --enable-kernel-module
+          --enable-debug
+          --enable-debug-kernel
+          --enable-supergroups
+          --enable-namei-fileserver
+          --enable-pthreaded-ubik
+verifier:
+  name: ansible
+scenario:
+  test_sequence:
+    - cleanup
+    - destroy
+    - create
+    - prepare
+    - converge
+    - verify
+    - cleanup
+    - destroy
+  create_sequence:
+    - create
+    - prepare
+  converge_sequence:
+    - create
+    - prepare
+    - converge
+  check_sequence:
+    - verify
+  destroy_sequence:
+    - cleanup
+    - destroy

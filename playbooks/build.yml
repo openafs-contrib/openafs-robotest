@@ -1,0 +1,161 @@
+---
+- name: Build binary distribution
+  hosts: tarball_builders
+  module_defaults:
+    shell:
+      chdir: "{{ builddir }}"
+      executable: /bin/bash
+  vars:
+    appendlog: 1> >(tee -a build.out) 2> >(tee -a build.err 1>&2)
+  tasks:
+    - import_role:
+        name: openafs_devel
+
+    - name: Checkout source code
+      git:
+        repo: "{{ repo }}"
+        version: "{{ ref }}"
+        dest: "{{ builddir }}"
+      register: checkout_results
+
+    - name: Autoconf
+      shell:
+        cmd: ./regen.sh {{ appendlog }}
+        creates: configure
+      register: regen_results
+
+    - name: Configure
+      shell:
+        cmd: ./configure {{ configure_options }} {{ appendlog }}
+        creates: config.status
+      register: configure_results
+
+    - name: Make
+      shell:
+        cmd: make -j {{ jobs | default(ansible_processors_nproc) }} dest {{ appendlog }}
+      register: make_results
+
+    - debug:
+        msg: "{{ make_results.stdout_lines[-20:] }}"
+
+    - name: Create packages directory
+      file:
+        state: directory
+        path: "{{ builddir}}/packages"
+      register: mkdir_results
+
+    - name: Get version string
+      shell: ./build-tools/git-version .
+      changed_when: false
+      register: git_version_results
+
+    - name: Set build facts
+      set_fact:
+        buildsdir: "{{ buildsdir | default('../builds') }}"
+        packagesdir: "{{ mkdir_results.path }}"
+        version: "{{ git_version_results.stdout }}"
+        sysname: "{{ sysname | default('amd64_linux26') }}"
+        dist: "{{ dist | default(ansible_distribution|lower + ansible_distribution_major_version) }}"
+        arch: "{{ arch | default('x86_64') }}"
+
+    - name: Create binary distribution tarball
+      shell:
+        cmd: tar czf {{ packagesdir }}/openafs-{{ dist }}-{{ version }}.tar.gz {{ sysname }} {{ appendlog }}
+        creates: "{{ packagesdir }}/packages/openafs-{{ dist }}-{{ version }}.tar.gz"
+        warn: false
+
+    - name: Download binary distribution tarball
+      fetch:
+        flat: yes
+        src: "{{ packagesdir }}/openafs-{{ dist }}-{{ version }}.tar.gz"
+        dest: "{{ buildsdir }}/{{ ref }}/bdist/"
+      register: fetch_results
+
+    - name: Downloaded
+      debug:
+        msg: "{{ fetch_results.dest }}"
+
+- name: Build RPMs
+  hosts: rpm_builders
+  module_defaults:
+    shell:
+      chdir: "{{ builddir }}"
+      executable: /bin/bash
+  vars:
+    appendlog: 1> >(tee -a build.out) 2> >(tee -a build.err 1>&2)
+  tasks:
+    - import_role:
+        name: openafs_devel
+
+    - name: Checkout source code
+      git:
+        repo: "{{ repo }}"
+        version: "{{ ref }}"
+        dest: "{{ builddir }}"
+      register: checkout_results
+
+    - name: Autoconf
+      shell:
+        cmd: ./regen.sh {{ appendlog }}
+        creates: configure
+      register: regen_results
+
+    - name: Generate makefile
+      shell:
+        cmd: ./configure --disable-kernel-module {{ appendlog }}
+        creates: config.status
+      register: configure_results
+
+    - name: Create source RPM
+      shell:
+        cmd: make dist srpm {{ appendlog }}
+      register: make_results
+
+    - name: Create rpmbuild workspace
+      file:
+        state: directory
+        path: "{{ builddir }}/packages/rpmbuild"
+      register: mkdir_results
+
+    - name: Set build facts
+      set_fact:
+        buildsdir: "{{ buildsdir | default('../builds') }}"
+        workspace: "{{ mkdir_results.path }}"
+        sysname: "{{ sysname | default('amd64_linux26') }}"
+        dist: "{{ dist | default(ansible_distribution|lower + ansible_distribution_major_version) }}"
+        arch: "{{ arch | default('x86_64') }}"
+
+    - name: Build RPMs
+      shell:
+        cmd: >
+          rpmbuild
+          --rebuild
+          --define "_topdir {{ workspace }}"
+          packages/openafs-*.src.rpm
+          {{ appendlog }}
+      register: rpmbuild_results
+
+    - debug:
+        msg: "{{ rpmbuild_results.stdout_lines[-20:] }}"
+
+    - find:
+        paths: "{{ workspace }}/RPMS"
+        recurse: yes
+        file_type: file
+        patterns: "*.rpm"
+      register: find_results
+
+    - set_fact:
+        rpms: "{{ find_results.files | map(attribute='path') | list }}"
+
+    - name: Downloading RPMs
+      fetch:
+        flat: yes
+        src: "{{ item }}"
+        dest: "{{ buildsdir }}/{{ ref }}/rpms/{{ dist }}/{{ arch }}/"
+      with_items: "{{ rpms }}"
+      register: fetch_results
+
+    - name: Downloaded
+      debug:
+        msg: "{{ fetch_results.results | map(attribute='dest') | list }}"

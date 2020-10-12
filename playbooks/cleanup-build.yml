@@ -1,0 +1,14 @@
+---
+- name: Cleanup
+  hosts: all
+  tasks:
+    - name: Check build directory
+      stat:
+        path: "{{ builddir }}"
+      register: stat_results
+
+    - name: Clean up build directory
+      command:
+        cmd: git clean -f -d -x -q
+        chdir: "{{ builddir }}"
+      when: stat_results.stat.exists
