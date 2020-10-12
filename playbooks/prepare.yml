@@ -9,9 +9,6 @@
 - name: Prepare
   hosts: all
   tasks:
-    #- debug:
-    #    var: hostvars
-
     - name: Set hostname address mapping
       become: yes
       template:
