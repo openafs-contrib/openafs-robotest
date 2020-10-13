@@ -61,7 +61,7 @@ provisioner:
     converge: ../../playbooks/newcell-cluster.yml
     create: ../../playbooks/create-libvirt.yml
     destroy: ../../playbooks/destroy-libvirt.yml
-    prepare: ../../playbooks/prepare.yml
+    prepare: "${MOLECULE_PREPARE_PLAYBOOK-../../playbooks/prepare.yml}"
     verify: ../../playbooks/verify-robot.yml
   inventory:
     group_vars:

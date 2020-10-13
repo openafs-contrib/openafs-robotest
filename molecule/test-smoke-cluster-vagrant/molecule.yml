@@ -59,7 +59,7 @@ provisioner:
   playbooks:
     cleanup: ../../playbooks/cleanup.yml
     converge: ../../playbooks/newcell-cluster.yml
-    prepare: ../../playbooks/prepare.yml
+    prepare: "${MOLECULE_PREPARE_PLAYBOOK-../../playbooks/prepare.yml}"
     verify: ../../playbooks/verify-robot.yml
   inventory:
     group_vars:

@@ -22,7 +22,7 @@ provisioner:
     converge: ../../playbooks/build.yml
     create: ../../playbooks/create-libvirt.yml
     destroy: ../../playbooks/destroy-libvirt.yml
-    prepare: ../../playbooks/prepare.yml
+    prepare: "${MOLECULE_PREPARE_PLAYBOOK-../../playbooks/prepare.yml}"
     verify: ../../playbooks/verify-build.yml
   inventory:
     host_vars:
