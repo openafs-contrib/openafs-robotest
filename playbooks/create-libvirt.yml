@@ -10,6 +10,7 @@
         name: hypervisor
         ansible_host: "{{ molecule_yml.driver.host }}"
         ansible_python_interpreter: "{{ molecule_yml.driver.python_interpreter | default('/usr/bin/python') }}"
+      changed_when: false
 
 - name: Create
   hosts: hypervisor
