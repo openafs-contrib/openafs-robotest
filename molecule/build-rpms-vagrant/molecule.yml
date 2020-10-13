@@ -32,7 +32,6 @@ verifier:
   name: ansible
 scenario:
   test_sequence:
-    - cleanup
     - destroy
     - create
     - prepare
@@ -50,5 +49,4 @@ scenario:
   check_sequence:
     - verify
   destroy_sequence:
-    - cleanup
     - destroy
