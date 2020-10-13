@@ -1,3 +1,5 @@
 ---
 - name: Cleanup
-  hosts: all
+  gather_facts: no
+  hosts: localhost
+  connection: local
