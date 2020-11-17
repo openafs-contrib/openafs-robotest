@@ -66,8 +66,8 @@ provisioner:
   inventory:
     group_vars:
       afs_cell:
-        afs_client_version: ${AFS_VERSION-1.8.5}
-        afs_server_version: ${AFS_VERSION-1.8.5}
+        afs_install_method: bdist
+        afs_bdist_dir: "~/.cache/openafs-robotest/binaries/bdist-transarc"
         afs_volumes:
           - name: test
       afs_fileservers:

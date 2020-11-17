@@ -152,7 +152,7 @@
       fetch:
         flat: yes
         src: "{{ item }}"
-        dest: "{{ buildsdir }}/{{ ref }}/rpms/{{ dist }}/{{ arch }}/"
+        dest: "{{ buildsdir }}/rpms/{{ dist }}/{{ arch }}/"
       with_items: "{{ rpms }}"
       register: fetch_results
 

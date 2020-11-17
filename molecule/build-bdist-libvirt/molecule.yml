@@ -11,37 +11,28 @@ driver:
 platforms:
   - name: m-builder01
     template: generic-centos-7
-    memory: 2048
+    memory: 4096
     cpus: 4
     groups:
-      - tarball_builders
+      - bdist_builders
 provisioner:
   name: ansible
   playbooks:
     cleanup: ../../playbooks/cleanup-build.yml
-    converge: ../../playbooks/build.yml
+    converge: ../../playbooks/build-transarc.yml
     create: ../../playbooks/create-libvirt.yml
     destroy: ../../playbooks/destroy-libvirt.yml
-    prepare: "${MOLECULE_PREPARE_PLAYBOOK-../../playbooks/prepare.yml}"
+    prepare: "${MOLECULE_PREPARE_PLAYBOOK:-../../playbooks/prepare.yml}"
     verify: ../../playbooks/verify-build.yml
   inventory:
     host_vars:
       m-builder01:
         jobs: 1
     group_vars:
-      tarball_builders:
-        ref: "${OPENAFS_REF-master}"
-        repo: "${OPENAFS_REPO-https://github.com/openafs/openafs.git}"
-        builddir: ~/openafs
-        configure_options: >
-          --enable-transarc-paths
-          --enable-checking
-          --enable-kernel-module
-          --enable-debug
-          --enable-debug-kernel
-          --enable-supergroups
-          --enable-namei-fileserver
-          --enable-pthreaded-ubik
+      bdist_builders:
+        m_gitref: "${M_GITREF:-master}"
+        m_gitrepo: "${M_GITREPO:-https://github.com/openafs/openafs.git}"
+        afs_bdist_dir: "~/.cache/openafs-robotest/binaries/bdist-transarc"
 verifier:
   name: ansible
 scenario:
