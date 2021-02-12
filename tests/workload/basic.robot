@@ -106,8 +106,7 @@ Create a Hard Link within a Volume
     ...    Should Not Exist         ${DIR2}     AND
     ...    Should Not Exist         ${LINK2}    AND
     ...    Should Not Exist         ${FILE3}
-    ${exdev}=   Evaluate    os.errno.EXDEV    modules=os
-    Link    ${FILE3}  ${LINK2}  code_should_be=${exdev}
+    Link    ${FILE3}  ${LINK2}  code_should_be=EXDEV
 
 Create a Hard Link to a Directory
     [Setup]  Run Keywords
