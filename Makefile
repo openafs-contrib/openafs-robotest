@@ -3,6 +3,7 @@
 .PHONY: help venv init
 
 BUILDS=.builds.txt
+TESTS=.tests.txt
 MOLECULE_ENV_FILES=.molecule
 
 help:
@@ -23,6 +24,14 @@ init:
 
 builds: init
 	@grep -v '^#' $(BUILDS) | while read s e; do \
+		echo "Running build $$s on with vars $$e"; \
+		molecule --env-file $(MOLECULE_ENV_FILES)/$${e}.yml test -s $$s || \
+		(echo "FAIL: scenario $$s vars $$e"; exit 1); \
+		echo "PASS: scenario $$s vars $$e"; \
+	done
+
+tests: init
+	@grep -v '^#' $(TESTS) | while read s e; do \
 		echo "Running build $$s on with vars $$e"; \
 		molecule --env-file $(MOLECULE_ENV_FILES)/$${e}.yml test -s $$s || \
 		(echo "FAIL: scenario $$s vars $$e"; exit 1); \

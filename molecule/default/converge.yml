@@ -1,0 +1,4 @@
+---
+- import_playbook: ../__playbooks__/realm.yml
+- import_playbook: ../__playbooks__/cell.yml
+- import_playbook: ../__playbooks__/robot.yml

@@ -1,0 +1,105 @@
+---
+dependency:
+  name: galaxy
+[% if driver is defined %]
+driver:
+  name: [[ driver.name ]]
+  [% if driver.provider is defined %]
+  provider:
+    name: [[ driver.provider ]]
+  [% endif %]
+  [% if driver.options is defined %]
+  options:
+    [[ driver.options | to_nice_yaml | indent ]]
+  [%- endif %]
+[% endif %]
+[% if platforms is defined %]
+platforms:
+  - name: [[ platforms.instance_prefix ]]server-01
+[% if driver is defined %]
+    [% if driver.name == 'vagrant' %]
+    box: "${AFS_IMAGE:-generic/centos7}"
+    [% elif driver.name == 'delegated' and driver.provider == 'libvirt' %]
+    template: "${AFS_IMAGE:-generic-centos-7}"
+    [% endif %]
+[% endif %]
+    groups:
+      - afs_admin
+      - afs_clients
+      - afs_databases
+      - afs_fileservers
+      - afs_kdcs
+      - afs_test
+[% endif %]
+provisioner:
+  name: ansible
+  [% if driver is defined and driver.name == 'delegated' %]
+  playbooks:
+    cleanup: ../__drivers__/delegated/cleanup.yml
+    create: ../__drivers__/delegated/create.yml
+    destroy: ../__drivers__/delegated/destroy.yml
+    prepare: ../__drivers__/delegated/prepare.yml
+  [% endif %]
+  inventory:
+    group_vars:
+      all:
+        #
+        # Image preparation
+        #
+        afs_prep_update_kernel: "${AFS_PREP_UPDATE_KERNEL:-yes}"
+        afs_prep_selinux_mode: "${AFS_PREP_SELINUX_MODE:-permissive}"
+        #
+        # Setup parameters
+        #
+        afs_realm: "${AFS_REALM:-EXAMPLE.COM}"
+        afs_cell: "${AFS_CELL:-example.com}"
+        afs_builds: "${AFS_BUILDS:-~/.cache/ansible-openafs/builds}"
+        afs_git_repo: "${AFS_GIT_REPO:-git://git.openafs.org/openafs.git}"
+        afs_git_version: "${AFS_GIT_VERSION:-master}"
+        afs_install_archive: "${AFS_INSTALL_ARCHIVE}"
+        afs_install_method: "${AFS_INSTALL_METHOD:-managed}"
+        afs_module_install_method: "${AFS_MODULE_INSTALL_METHOD:-dkms}"
+        afs_robotest_install_webserver: "${AFS_ROBOTEST_INSTALL_WEBSERVER:-no}"
+        afs_robotest_tests: "${AFS_ROBOTEST_TESTS:-../../tests}"
+        afs_pseudo_partitions: ['a', 'b']
+        #
+        # Molecule environment
+        #
+        afs_cell_files: "${MOLECULE_EPHEMERAL_DIRECTORY}"
+        afs_csdb_file: "${MOLECULE_EPHEMERAL_DIRECTORY}/csdb.yaml"
+        #
+        # Test execution
+        #
+        afs_robotest_suite: "${AFS_ROBOTEST_SUITE:-tests}"
+        afs_robotest_loglevel: "${AFS_ROBOTEST_LOGLEVEL:-INFO}"
+        afs_robotest_exclude_tags: ['bug', 'slow', 'rogue-avoidance']
+verifier:
+  name: ansible
+scenario:
+  create_sequence:
+    - create
+    - prepare
+  check_sequence:
+    - cleanup
+    - destroy
+    - create
+    - prepare
+    - converge
+    - check
+    - destroy
+  converge_sequence:
+    - create
+    - prepare
+    - converge
+  destroy_sequence:
+    - cleanup
+    - destroy
+  test_sequence:
+    - cleanup
+    - destroy
+    - create
+    - prepare
+    - converge
+    - verify
+    - cleanup
+    - destroy

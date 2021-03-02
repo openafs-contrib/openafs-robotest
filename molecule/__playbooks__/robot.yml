@@ -1,0 +1,13 @@
+---
+- name: Install tests
+  hosts: afs_test
+  collections:
+    - openafs_contrib.openafs
+  tasks:
+    - import_role:
+        name: openafs_robotest
+
+    - name: Copy tests
+      copy:
+        src: "{{ afs_robotest_tests | d('../../tests') }}"
+        dest: tests
