@@ -1,0 +1,30 @@
+---
+- name: Add hypervisor
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  no_log: "{{ molecule_no_log }}"
+  tasks:
+    - name: Add the hypervisor to the in-memory inventory
+      add_host:
+        name: hypervisor
+        ansible_host: "{{ molecule_yml.driver.options.host }}"
+        ansible_port: "{{ molecule_yml.driver.options.port | default(omit) }}"
+        ansible_connection: "{{ molecule_yml.driver.options.connection | default(omit) }}"
+        ansible_python_interpreter: "{{ molecule_yml.driver.options.python_interpreter | default(omit) }}"
+      changed_when: false
+
+- name: Destroy
+  hosts: hypervisor
+  gather_facts: false
+  no_log: "{{ molecule_no_log }}"
+  tasks:
+    - name: Destroy molecule instance(s)
+      virt_up:
+        state: absent
+        name: "{{ item.name }}"
+        sshdir: "{{ molecule_ephemeral_directory }}"
+        logfile: "{{ molecule_yml.driver.options.logfile | default(omit) }}"
+        loglevel: "{{ molecule_yml.driver.options.loglevel | default(omit) }}"
+      loop: "{{ molecule_yml.platforms }}"
+      register: virt_up

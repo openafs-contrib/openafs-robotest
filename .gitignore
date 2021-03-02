@@ -3,3 +3,5 @@
 *.swp
 output
 builds
+molecule.yml
+prepare.yml

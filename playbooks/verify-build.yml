@@ -1,6 +1,0 @@
----
-- name: Verify dest distribution
-  hosts: all
-  tasks:
-    - debug:
-        msg: todo

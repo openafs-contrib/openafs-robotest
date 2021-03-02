@@ -1,0 +1,72 @@
+---
+dependency:
+  name: galaxy
+[% if driver is defined %]
+driver:
+  name: [[ driver.name ]]
+  [% if driver.provider is defined %]
+  provider:
+    name: [[ driver.provider ]]
+  [% endif %]
+  [% if driver.options is defined %]
+  options:
+    [[ driver.options | to_nice_yaml | indent ]]
+  [%- endif %]
+[% endif %]
+[% if platforms is defined %]
+platforms:
+  - name: [[ platforms.instance_prefix ]]devel-01
+[% if driver is defined %]
+    [% if driver.name == 'vagrant' %]
+    box: "${AFS_IMAGE:-generic/centos7}"
+    [% elif driver.name == 'delegated' and driver.provider == 'libvirt' %]
+    template: "${AFS_IMAGE:-generic-centos-7}"
+    [% endif %]
+[% endif %]
+[% endif %]
+provisioner:
+  name: ansible
+  [% if driver is defined and driver.name == 'delegated' %]
+  playbooks:
+    cleanup: ../__drivers__/delegated/cleanup.yml
+    create: ../__drivers__/delegated/create.yml
+    destroy: ../__drivers__/delegated/destroy.yml
+    prepare: ../__drivers__/delegated/prepare.yml
+  [% endif %]
+  inventory:
+    group_vars:
+      all:
+        afs_prep_update_kernel: "${AFS_PREP_UPDATE_KERNEL:-no}"
+        afs_git_repo: "${AFS_GIT_REPO:-git://git.openafs.org/openafs.git}"
+        afs_git_version: "${AFS_GIT_VERSION:-master}"
+        afs_builds: "${AFS_BUILDS:-~/.cache/ansible-openafs/builds}"
+verifier:
+  name: ansible
+scenario:
+  create_sequence:
+    - create
+    - prepare
+  check_sequence:
+    - cleanup
+    - destroy
+    - create
+    - prepare
+    - converge
+    - check
+    - destroy
+  converge_sequence:
+    - create
+    - prepare
+    - converge
+  destroy_sequence:
+    - cleanup
+    - destroy
+  test_sequence:
+    - cleanup
+    - destroy
+    - create
+    - prepare
+    - converge
+    - verify
+    - cleanup
+    - destroy
