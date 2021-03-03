@@ -1,0 +1,57 @@
+---
+- name: Lookup install archive
+  hosts: afs_clients:afs_fileservers:afs_databases
+  tasks:
+    - name: Lookup install archive
+      when:
+        - afs_install_method in ('bdist', 'sdist', 'packages')
+        - afs_install_archive is undefined or afs_install_archive == ''
+      block:
+        - set_fact:
+            osdist: "{{ ansible_distribution | replace(' ', '_') | lower + ansible_distribution_major_version }}"
+            arch: "{{ ansible_architecture }}"
+
+        - set_fact:
+            pattern: "openafs-{{ afs_version | d('*') }}-sdist.tar.gz"
+          when: afs_install_method == 'sdist'
+
+        - set_fact:
+            pattern: "openafs-{{ afs_version | d('*') }}-{{ osdist }}-{{ arch }}.{{ afs_dist | d('bdist_modern') }}.tar.gz"
+          when: afs_install_method == 'bdist'
+
+        - set_fact:
+            pattern: "openafs-{{ afs_version | d('*') }}-{{ osdist }}-{{ arch }}.rpms.tar.gz"
+          when:
+            - afs_install_method == 'packages'
+            - ansible_pkg_mgr in ('yum', 'dnf')
+
+        - set_fact:
+            pattern: "openafs-{{ afs_version | d('*') }}-{{ osdist }}-{{ arch }}.rpms.tar.gz"
+          when:
+            - afs_install_method == 'packages'
+            - ansible_pkg_mgr in ('apt')
+
+        - name: Lookup install tarballs
+          local_action:
+            module: find
+            path: "{{ afs_builds | d('~/.cache/ansible-openafs/builds') }}"
+            pattern: "{{ pattern }}"
+          register: find_results
+
+        - set_fact:
+            tarballs: "{{ find_results.files | map(attribute='path') | list | sort(reverse=True, case_sensitive=True) }}"
+
+        - debug:
+            var: tarballs
+
+        - name: Verify install tarball was found
+          assert:
+            that: tarballs | count > 0
+            msg: "Distribution archives not found in controller directory {{ afs_builds | d('~/.cache/ansible-openafs/builds') }}."
+
+        - set_fact:
+            afs_install_archive: "{{ tarballs[0] }}"
+
+        - debug:
+            var: afs_install_archive
+
