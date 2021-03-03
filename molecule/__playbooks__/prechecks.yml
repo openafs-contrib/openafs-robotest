@@ -1,5 +1,24 @@
----
-- name: Lookup install archive
+- name: Prechecks
+  hosts: all
+  tasks:
+    - name: Verify groups
+      run_once: true
+      assert:
+        that:
+          - groups.afs_admin is defined
+          - groups.afs_clients is defined
+          - groups.afs_databases is defined
+          - groups.afs_fileservers is defined
+          - groups.afs_kdcs is defined
+          - groups.afs_test is defined
+          - groups.afs_admin | count == 1
+          - groups.afs_clients | count > 0
+          - groups.afs_databases | count > 0
+          - groups.afs_fileservers | count > 0
+          - groups.afs_kdcs | count == 1
+          - groups.afs_test | count == 1
+
+- name: Prechecks
   hosts: afs_clients:afs_fileservers:afs_databases
   tasks:
     - name: Lookup install archive
@@ -54,4 +73,3 @@
 
         - debug:
             var: afs_install_archive
-
