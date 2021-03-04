@@ -1,0 +1,24 @@
+---
+- name: Build
+  hosts: afs_builders
+  collections:
+    - openafs_contrib.openafs
+  tasks:
+    - assert:
+        that:
+          - afs_build is defined
+          - afs_build in ('packages', 'bdist', 'sdist')
+
+    - import_role:
+        name: openafs_devel
+
+    - import_tasks: "../__tasks__/git-checkout.yml"
+
+    - include_tasks: "../__tasks__/build-packages-{{ ansible_os_family | lower }}.yml"
+      when: afs_build == 'packages'
+
+    - include_tasks: "../__tasks__/build-bdist.yml"
+      when: afs_build == 'bdist'
+
+    - include_tasks: "../__tasks__/build-sdist.yml"
+      when: afs_build == 'sdist'

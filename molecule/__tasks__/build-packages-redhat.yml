@@ -1,0 +1,53 @@
+---
+- name: Autoconf
+  command:
+    cmd: ./regen.sh
+    chdir: "{{ afs_source }}"
+
+- name: Generate makefile
+  command:
+    cmd: ./configure --disable-kernel-module
+    chdir: "{{ afs_source }}"
+
+- name: Create source RPM
+  command:
+    cmd: make dist srpm
+    chdir: "{{ afs_source }}"
+
+- name: Create rpmbuild workspace
+  file:
+    state: directory
+    path: "{{ afs_source }}/packages/rpmbuild"
+  register: mkdir_results
+
+- name: Set build facts
+  set_fact:
+    workspace: "{{ mkdir_results.path }}"
+    dist: "{{ ansible_distribution | replace(' ', '_') | lower + ansible_distribution_major_version }}"
+    arch: "{{ ansible_architecture }}"
+
+- name: Build RPMs
+  shell:
+    cmd: rpmbuild --rebuild --define "_topdir {{ workspace }}" packages/openafs-*.src.rpm
+    chdir: "{{ afs_source }}"
+  register: rpmbuild_results
+
+- debug:
+    msg: "{{ rpmbuild_results.stdout_lines[-20:] }}"
+
+- name: Create archive
+  archive:
+    path: "{{ workspace }}/RPMS/{{ ansible_architecture }}/*.rpm"
+    dest: "openafs-{{ afs_version }}-{{ dist }}-{{ arch }}.rpms.tar.gz"
+    format: gz
+
+- name: Download
+  fetch:
+    flat: yes
+    src: "openafs-{{ afs_version }}-{{ dist }}-{{ arch }}.rpms.tar.gz"
+    dest: "{{ afs_builds }}/"
+  register: fetch_results
+
+- name: Downloaded
+  debug:
+    msg: "{{ fetch_results.dest }}"

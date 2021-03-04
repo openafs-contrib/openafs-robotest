@@ -35,7 +35,7 @@
           when: afs_install_method == 'sdist'
 
         - set_fact:
-            pattern: "openafs-{{ afs_version | d('*') }}-{{ osdist }}-{{ arch }}.{{ afs_dist | d('bdist_modern') }}.tar.gz"
+            pattern: "openafs-{{ afs_version | d('*') }}-{{ osdist }}-{{ arch }}.{{ afs_bdist_name | d('bdist') }}.tar.gz"
           when: afs_install_method == 'bdist'
 
         - set_fact:

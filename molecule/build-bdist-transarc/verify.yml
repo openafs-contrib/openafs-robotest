@@ -1,6 +1,0 @@
----
-- name: Verify
-  hosts: all
-  tasks:
-    - debug:
-        msg: todo
