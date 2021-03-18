@@ -1,3 +1,3 @@
-ansible
-molecule
+molecule[ansible,vagrant]
+molecule-robotframework
 afs_scenario

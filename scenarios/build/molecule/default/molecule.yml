@@ -1,40 +1,30 @@
 ---
 dependency:
   name: galaxy
-[% if driver is defined %]
 driver:
-  name: [[ driver.name ]]
-  [% if driver.provider is defined %]
+  name: delegated
   provider:
-    name: [[ driver.provider ]]
-  [% endif %]
-  [% if driver.options is defined %]
+    name: libvirt
   options:
-    [[ driver.options | to_nice_yaml | indent ]]
-  [%- endif %]
-[% endif %]
-[% if platforms is defined %]
+    connection: local
+    host: localhost
+    loglevel: info
+    python_interpreter: /usr/bin/python3
 platforms:
-  - name: [[ platforms.instance_prefix ]]devel-01
-[% if driver is defined %]
-    [% if driver.name == 'vagrant' %]
-    box: "${AFS_IMAGE:-generic/centos7}"
-    [% elif driver.name == 'delegated' and driver.provider == 'libvirt' %]
+  - name: m-devel-01
     template: "${AFS_IMAGE:-generic-centos-7}"
-    [% endif %]
     groups:
       - afs_builders
-[% endif %]
-[% endif %]
 provisioner:
   name: ansible
-  [% if driver is defined and driver.name == 'delegated' %]
+  env:
+    ANSIBLE_VERBOSITY: 1
+    ANSIBLE_STDOUT_CALLBACK: yaml
   playbooks:
-    cleanup: ../__drivers__/delegated/cleanup.yml
-    create: ../__drivers__/delegated/create.yml
-    destroy: ../__drivers__/delegated/destroy.yml
-    prepare: ../__drivers__/delegated/prepare.yml
-  [% endif %]
+    cleanup: ../../../playbooks/drivers/delegated/cleanup.yml
+    create: ../../../playbooks/drivers/delegated/create.yml
+    destroy: ../../../playbooks/drivers/delegated/destroy.yml
+    prepare: ../../../playbooks/drivers/delegated/prepare.yml
   inventory:
     group_vars:
       all:

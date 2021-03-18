@@ -22,8 +22,6 @@ GFIND = '/usr/bin/find'
 # OpenAFS installation paths
 #
 AKLOG = '/usr/bin/aklog'
-ASETKEY = '/usr/sbin/asetkey'
-AKEYCONVERT = '/usr/sbin/akeyconvert'
 BOS = '/usr/bin/bos'
 FS = '/usr/bin/fs'
 KLOG_KRB5 = '/usr/bin/klog.krb5'

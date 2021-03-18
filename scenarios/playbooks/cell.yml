@@ -65,7 +65,7 @@
         dest: admin.keytab
 
     - name: Create top-level volumes
-      openafs_contrib.openafs.openafs_volume:
+      openafs_volume:
         state: present
         name: "{{ item.name }}"
         mount: "{{ item.mount }}"

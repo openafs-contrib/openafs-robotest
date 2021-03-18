@@ -22,7 +22,6 @@ GFIND = '/usr/bin/find'
 # OpenAFS Transarc-style installation paths.
 #
 AKLOG = '/usr/afs/bin/aklog'
-ASETKEY = '/usr/afs/bin/asetkey'
 BOS = '/usr/afs/bin/bos'
 FS = '/usr/afs/bin/fs'
 KLOG_KRB5 = '/usr/afs/bin/klog.krb5'

@@ -12,13 +12,13 @@
     - import_role:
         name: openafs_devel
 
-    - import_tasks: "../__tasks__/git-checkout.yml"
+    - import_tasks: "tasks/git-checkout.yml"
 
-    - include_tasks: "../__tasks__/build-packages-{{ ansible_os_family | lower }}.yml"
+    - include_tasks: "tasks/build-packages-{{ ansible_os_family | lower }}.yml"
       when: afs_build == 'packages'
 
-    - include_tasks: "../__tasks__/build-bdist.yml"
+    - include_tasks: "tasks/build-bdist.yml"
       when: afs_build == 'bdist'
 
-    - include_tasks: "../__tasks__/build-sdist.yml"
+    - include_tasks: "tasks/build-sdist.yml"
       when: afs_build == 'sdist'
