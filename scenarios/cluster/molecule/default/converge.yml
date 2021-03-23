@@ -1,4 +1,4 @@
 ---
-- import_playbook: ../../../playbooks/prechecks.yml
-- import_playbook: ../../../playbooks/realm.yml
-- import_playbook: ../../../playbooks/cell.yml
+- import_playbook: playbooks/preamble.yml
+- import_playbook: playbooks/realm.yml
+- import_playbook: playbooks/cell.yml

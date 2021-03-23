@@ -1,3 +1,7 @@
+## [Unreleased]
+* Ansible test cell setup
+* Molecule driven test scenarios
+
 ## [v0.7.0]
 
 * Moved afsutil to https://github.com/openafs-contrib/afsutil

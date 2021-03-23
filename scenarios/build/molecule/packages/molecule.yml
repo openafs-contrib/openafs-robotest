@@ -14,11 +14,6 @@ platforms:
     template: "${AFS_TEMPLATE_02:-generic-centos-8}"
     groups:
       - afs_builders
-  - name: m-devel-03
-    box: "${AFS_BOX_01:-generic/debian10}"
-    template: "${AFS_TEMPLATE_03:-devel-debian-10}"
-    groups:
-      - afs_builders
 provisioner:
   name: ansible
   env:
@@ -34,9 +29,6 @@ provisioner:
         afs_git_version: "${AFS_GIT_VERSION:-master}"
         afs_source: "${AFS_SOURCE:-~/openafs}"
         # Build
-        afs_configure_file: "${AFS_CONFIGURE_FILE}"
-        afs_bdist_style: "${AFS_BDIST_STYLE:-modern}"
-        afs_bdist_name: "${AFS_BDIST_NAME:-bdist}"
         afs_builds: "${AFS_BUILDS:-~/.cache/ansible-openafs/builds}"
 verifier:
   name: ansible

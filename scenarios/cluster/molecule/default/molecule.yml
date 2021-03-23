@@ -2,54 +2,50 @@
 dependency:
   name: galaxy
 driver:
-  name: delegated
-  provider:
-    name: libvirt
-  options:
-    connection: local
-    host: localhost
-    loglevel: info
-    python_interpreter: /usr/bin/python3
+  name: vagrant
 platforms:
-  - name: m-server-01
-    template: "${AFS_IMAGE:-generic-centos-7}"
+  - name: m-afs01
+    box: "${AFS_BOX_01:-generic/centos7}"
+    template: "${AFS_TEMPLATE_01:-generic-centos-7}"
     groups:
       - afs_databases
       - afs_kdcs
-  - name: m-server-02
-    template: "${AFS_IMAGE:-generic-centos-7}"
+  - name: m-afs02
+    box: "${AFS_BOX_02:-generic/centos7}"
+    template: "${AFS_TEMPLATE_02:-generic-centos-7}"
     groups:
       - afs_fileservers
-  - name: m-server-03
-    template: "${AFS_IMAGE:-generic-centos-7}"
+  - name: m-afs03
+    box: "${AFS_BOX_03:-generic/centos7}"
+    template: "${AFS_TEMPLATE_03:-generic-centos-7}"
     groups:
       - afs_fileservers
-  - name: m-server-04
-    template: "${AFS_IMAGE:-generic-centos-7}"
+  - name: m-afs04
+    box: "${AFS_BOX_04:-generic/centos7}"
+    template: "${AFS_TEMPLATE_04:-generic-centos-7}"
     groups:
       - afs_admin
       - afs_clients
       - afs_test
-  - name: m-server-05
-    template: "${AFS_IMAGE:-generic-centos-7}"
+  - name: m-afs05
+    box: "${AFS_BOX_05:-generic/centos7}"
+    template: "${AFS_TEMPLATE_05:-generic-centos-7}"
     groups:
       - afs_clients
-  - name: m-server-06
-    template: "${AFS_IMAGE:-generic-centos-7}"
+  - name: m-afs06
+    box: "${AFS_BOX_06:-generic/centos7}"
+    template: "${AFS_TEMPLATE_06:-generic-centos-7}"
     groups:
       - afs_clients
 provisioner:
   name: ansible
-  playbooks:
-    cleanup: ../../../playbooks/drivers/delegated/cleanup.yml
-    create: ../../../playbooks/drivers/delegated/create.yml
-    destroy: ../../../playbooks/drivers/delegated/destroy.yml
-    prepare: ../../../playbooks/drivers/delegated/prepare.yml
   inventory:
     group_vars:
       all:
         # Image preparation
         afs_prep_update_kernel: "${AFS_PREP_UPDATE_KERNEL:-yes}"
+        afs_prep_ssh_keys: "${AFS_PREP_SSH_KEYS:-~/.ssh}"
+        afs_prep_rewrite_etc_hosts: "${AFS_PREP_REWRITE_ETC_HOSTS:-no}"
         afs_prep_selinux_mode: "${AFS_PREP_SELINUX_MODE:-permissive}"
         # Cell setup
         afs_realm: "${AFS_REALM:-EXAMPLE.COM}"
@@ -66,7 +62,7 @@ provisioner:
         afs_cell_files: "${MOLECULE_EPHEMERAL_DIRECTORY}"
         afs_csdb_file: "${MOLECULE_EPHEMERAL_DIRECTORY}/csdb.yaml"
         # Test variables
-        afs_robotest_fileservers: "m-server-02,m-server-03"
+        afs_robotest_fileservers: "m-afs02,m-afs03"
 verifier:
   name: robotframework
   group: afs_test
@@ -74,7 +70,7 @@ verifier:
     - pyyaml
     - robotframework-openafslibrary
   test_data:
-    - ${MOLECULE_SCENARIO_DIRECTORY}/../../../../tests
+    - ${MOLECULE_SCENARIO_DIRECTORY}/tests
   resources:
     - ${MOLECULE_SCENARIO_DIRECTORY}/templates/openafs-robotest.yml.j2
   options:
