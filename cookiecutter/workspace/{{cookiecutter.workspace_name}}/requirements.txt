@@ -1,0 +1,9 @@
+molecule[ansible]
+molecule-robotframework
+{% if cookiecutter.install_molecule_plugin_vagrant == 'yes' -%}
+python-vagrant
+molecule-vagrant
+{% endif -%}
+{% if cookiecutter.install_molecule_plugin_virtup == 'yes' -%}
+molecule-virtup
+{% endif -%}

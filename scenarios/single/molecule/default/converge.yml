@@ -1,4 +1,0 @@
----
-- import_playbook: playbooks/preamble.yml
-- import_playbook: playbooks/realm.yml
-- import_playbook: playbooks/cell.yml

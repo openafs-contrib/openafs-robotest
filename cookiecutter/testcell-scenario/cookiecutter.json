@@ -1,0 +1,8 @@
+{
+    "scenario_name": "myscenario",
+    "molecule_driver_name": "vagrant",
+    "image_name": "generic/centos8",
+    "configuration": ["single", "cluster"],
+    "install_method": ["managed", "packages", "bdist", "sdist", "scm"],
+    "module_install_method": ["dkms", "kmod"]
+}

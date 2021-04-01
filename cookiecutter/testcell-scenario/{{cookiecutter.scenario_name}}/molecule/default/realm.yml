@@ -1,3 +1,4 @@
+{% raw -%}
 ---
 - name: Create a Kerberos realm
   hosts: afs_kdcs
@@ -35,3 +36,4 @@
         flat: yes
         src: "/var/lib/ansible-openafs/keytabs/{{ afs_admin_principal }}.keytab"
         dest: "{{ afs_cell_files }}/{{ afs_admin_principal | replace('/', '.') }}.keytab"
+{% endraw -%}

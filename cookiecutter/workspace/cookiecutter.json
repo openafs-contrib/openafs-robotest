@@ -1,0 +1,5 @@
+{
+	"workspace_name": "myworkspace",
+	"install_molecule_plugin_vagrant": ["yes", "no"],
+	"install_molecule_plugin_virtup": ["yes", "no"]
+}

@@ -1,3 +1,4 @@
+{% raw -%}
 ---
 #
 # Create a new OpenAFS cell with a set of clients and servers. Run the
@@ -92,3 +93,4 @@
         - alice
         - bob
         - charlie
+{% endraw -%}

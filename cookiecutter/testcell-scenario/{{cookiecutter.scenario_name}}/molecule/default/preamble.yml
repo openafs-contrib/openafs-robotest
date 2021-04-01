@@ -1,6 +1,7 @@
+{% raw -%}
 ---
 - name: Group sanity checks
-  hosts: all:!afs_builders
+  hosts: all
   tasks:
     - name: Verify groups
       run_once: true
@@ -83,6 +84,7 @@
         state: directory
         path: ~/.ssh
         mode: "700"
+      when: afs_prep_ssh_keys is defined
 
     - name: Distribute user identity_file
       copy:
@@ -90,12 +92,14 @@
         dest: ~/.ssh/id_rsa
         mode: "600"
       with_fileglob: "{{ afs_prep_ssh_keys }}/{{ ansible_user }}-{{ ansible_hostname }}-id_rsa"
+      when: afs_prep_ssh_keys is defined
 
     - name: Distribute user authorized keys
       authorized_key:
         user: "{{ ansible_user }}"
         key: "{{ lookup('file', '{{ item }}')}}"
       with_fileglob: "{{ afs_prep_ssh_keys }}/{{ ansible_user }}-*.pub"
+      when: afs_prep_ssh_keys is defined
 
     - name: Ensure root ssh directory exists
       become: yes
@@ -103,6 +107,7 @@
         state: directory
         path: ~/.ssh
         mode: "700"
+      when: afs_prep_ssh_keys is defined
 
     - name: Distribute root identity_file
       become: yes
@@ -111,6 +116,7 @@
         dest: ~/.ssh/id_rsa
         mode: "600"
       with_fileglob: "{{ afs_prep_ssh_keys }}/root-{{ ansible_hostname }}-id_rsa"
+      when: afs_prep_ssh_keys is defined
 
     - name: Distribute root authorized keys
       become: yes
@@ -118,6 +124,7 @@
         user: "root"
         key: "{{ lookup('file', '{{ item }}')}}"
       with_fileglob: "{{ afs_prep_ssh_keys }}/root-*.pub"
+      when: afs_prep_ssh_keys is defined
 
 - name: Rewrite hosts file
   hosts: afs_fileservers:afs_databases
@@ -131,7 +138,7 @@
           127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
           ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
           {% for name in hostvars | sort %}
-          {{ hostvars[name].ansible_default_ipv4.address }}    {{ hostvars[name].ansible_hostname }}
+          {{ hostvars[name].ansible_default_ipv4.address }}  {{ hostvars[name].ansible_hostname }} {{ hostvars[name].ansible_fqdn }}
           {% endfor %}
       when: afs_prep_rewrite_etc_hosts | d('no') | bool
 
@@ -179,6 +186,12 @@
             reboot_timeout: 600
           when: yum_update_results.changed
 
+        - name: Wait for connection
+          wait_for_connection:
+
+        - name: Gather facts
+          setup:
+
     - name: Update kernel
       when:
         - afs_prep_update_kernel
@@ -198,3 +211,9 @@
             reboot_timeout: 600
           when: apt_update_results.changed
 
+        - name: Wait for connection
+          wait_for_connection:
+
+        - name: Gather facts
+          setup:
+{% endraw -%}

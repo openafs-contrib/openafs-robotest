@@ -1,3 +1,4 @@
+{% raw -%}
 ---
 # Realm
 KRB_REALM: '{{ afs_realm }}'
@@ -31,5 +32,10 @@ KDESTROY: '{{ afs_kdestroy | d("kdestroy") }}'
 KINIT: '{{ afs_kinit | d("kinit") }}'
 
 # Misc paths
-PYTHON: '{{ afs_python | d("python") }}'
-GFIND: '{{ afs_gfind | d("find") }}'
+PYTHON: "{{ afs_python | d(ansible_python.executable) }}"
+{% if afs_gfind is defined -%}
+GFIND: "{{ afs_gfind }}"
+{% elif ansible_os_family in ('RedHat', 'Debian') -%}
+GFIND: "/usr/bin/find"
+{% endif -%}
+{% endraw -%}
