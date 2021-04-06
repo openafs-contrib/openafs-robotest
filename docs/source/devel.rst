@@ -1,6 +1,7 @@
-## Creating a Test Suite
+Test Development
+================
 
-AFS Robotest's test suites are organized into two trees, client and server. The
+OpenAFS Robotest test suites are organized into two trees, client and server. The
 client tree has sub-trees that handle a multitude of client facing tests.
 Similar to the client tree, the server tree contains sub-trees with server side
 test suites.
@@ -13,7 +14,7 @@ because the common process is stress testing.
 Create new test suites using the above organization.  To create a new test
 suite, give the suite a name that represents the tests it will contain. Test
 suites always end in .robot.  Next, include the settings that the suite will
-use. Typically for AFS Robotest that includes resource, suite setup, and suite
+use. Typically for OpenAFS Robotest that includes resource, suite setup, and suite
 teardown. This section is included in every test suite.  The third step in test
 suite creation is to include any variables that will be used in more than one
 test case. Variables such as the volume name or the testpath should be included
@@ -24,7 +25,8 @@ included in the second step. This setup logs in and creates a volume and the
 teardown removes the volume and logs out. This section is not included in every
 test suite.  The final step to creating a new test suite is to add tests.
 
-### Writing a Test
+Writing a Test
+--------------
 
 Give the test a name that describes what the test proves or disproves. A good
 name for a test that creates a new file in a directory is "Create New File in a
@@ -54,7 +56,8 @@ It is important to check that a file does not exist before creation. It is also
 important to make sure that it does not exist after removal. Checks can and
 should be used in every test case to make deb$
 
-### Things to Remember While Creating a Test
+Things to Remember While Creating a Test
+----------------------------------------
 
 Ask these questions:
 
@@ -64,17 +67,15 @@ Ask these questions:
 
 Keep these tips in mind:
 * Keep the test cases independent.
-* Test suite and test case names should be short, but as descriptive as
-  possible.
+* Test suite and test case names should be short, but as descriptive as possible.
 * If a test case exceeds fifteen lines consider creating new keywords.
-* When writing tests, pay attention to the number of spaces. In some cases
-  Robot Framework must have two or more blank spaces between the keyword and
-  the variables. If a program fails that should succeed, check the spacing.
+* When writing tests, pay attention to the number of spaces. In some cases Robot Framework must have two or more blank spaces between the keyword and the variables. If a program fails that should succeed, check the spacing.
 * See [How To Write Good Test Cases](https://github.com/robotframework/HowToWriteGoodTestCases/blob/master/HowToWriteGoodTestCases.rst)
 
-## Testing a New Test
+Testing a New Test
+------------------
 
-Before writing and running a new test, make sure that AFS Robotest is error
+Before writing and running a new test, make sure that OpenAFS Robotest is error
 free. Run the old tests a few times before adding a new one.
 
 Once the test is written and saved, there are two ways to test it. The first
@@ -102,14 +103,8 @@ First, review the man page for the expected outcome again. If that does not
 match then check the keywords man page for its expected outcome. Sometimes the
 keywords output does not match the expected output.
 
-Check the spelling.
-
-Test failure is a great opportunity to use AFS Robotest's web feature because
-it shows the output of each line within the test case up to the line where the
-test fails. Frequently, using this tool shows the source of the error. However,
-it does not always show the exact line where the true error occurred.
-
-## Creating New Keywords
+Creating New Keywords
+---------------------
 
 The OpenAFS keyword library is still growing. Adding new keywords keeps the
 number of lines in a test case to a minimum and allows for a more thorough test

@@ -3,3 +3,4 @@
 *.swp
 output
 builds
+docs/build/
