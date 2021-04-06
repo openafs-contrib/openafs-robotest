@@ -16,6 +16,7 @@ Welcome to OpenAFS Robotest's documentation!
    workspaces
    devel
    vars
+   glossary
    license
 
 Indices and tables
