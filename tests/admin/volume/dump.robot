@@ -11,8 +11,8 @@ Test Teardown      Cleanup Test Volumes
 
 *** Variables ***
 ${VOLUME}      test.dump
-${SERVER}      ${AFS_FILESERVERS}[0]
-${SERVER2}     ${AFS_FILESERVERS}[1]
+${SERVER}      ${AFS_FILESERVER_A}
+${SERVER2}     ${AFS_FILESERVER_B}
 ${PART}        a
 ${DUMP}        /tmp/test.dump
 ${DIR}         /afs/.${AFS_CELL}/test/${VOLUME}

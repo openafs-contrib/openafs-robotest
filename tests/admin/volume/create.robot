@@ -10,7 +10,7 @@ Suite Setup       Login  ${AFS_ADMIN}  password=${AFS_ADMIN_PASSWORD}
 Suite Teardown    Logout
 
 *** Variables ***
-${SERVER}        ${AFS_FILESERVERS}[0]
+${SERVER}        ${AFS_FILESERVER_A}
 ${VOLID}         0
 ${PART}          a
 

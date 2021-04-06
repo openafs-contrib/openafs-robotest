@@ -13,7 +13,7 @@ Suite Teardown    Teardown
 ${MTPT}         /afs/.${AFS_CELL}/test/mtpt
 ${VOLUME}     test.mtpt
 ${PARTITION}  a
-${SERVER}     ${AFS_FILESERVERS}[0]
+${SERVER}     ${AFS_FILESERVER_A}
 ${TESTPATH}   /afs/.${AFS_CELL}/test/${VOLUME}
 
 *** Test Cases ***

@@ -93,9 +93,10 @@ provisioner:
 
         # Test file servers.
 {%- if cookiecutter.configuration == 'single' %}
-        afs_robotest_fileservers: "m-afs01"
+        afs_robotest_fileserver_a: "m-afs01"
 {%- elif cookiecutter.configuration == 'cluster' %}
-        afs_robotest_fileservers: "m-afs02,m-afs03"
+        afs_robotest_fileserver_a: "m-afs02"
+        afs_robotest_fileserver_b: "m-afs03"
 {%- endif %}
 
 verifier:

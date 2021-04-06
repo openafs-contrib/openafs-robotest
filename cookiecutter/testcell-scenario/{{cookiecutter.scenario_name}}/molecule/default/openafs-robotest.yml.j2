@@ -9,7 +9,10 @@ AFS_USER: 'user1'
 AFS_ADMIN: 'admin'
 AFS_AKIMPERSONATE: False
 AFS_ADMIN_PASSWORD: "{{ lookup('password', afs_cell_files+'/afs_admin_password chars=ascii_letters,digits,hexdigits length=15') }}"
-AFS_FILESERVERS: '{{ afs_robotest_fileservers }}'
+
+# Test servers
+AFS_FILESERVER_A: '{{ afs_robotest_fileserver_a | d('missing') }}'
+AFS_FILESERVER_B: '{{ afs_robotest_fileserver_b | d('missing') }}'
 
 # Client info
 PAG_ONEGROUP: True
