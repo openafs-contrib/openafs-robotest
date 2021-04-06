@@ -17,7 +17,8 @@ Create a new **test workspace**.
     2 - no
     Choose from 1, 2 [1]: <enter>
 
-Initalize the **test workspace**.
+Initalize the **test workspace** to install Ansible, Molecule, and the OpenAFS
+Ansible roles.
 
 .. code-block:: console
 
@@ -25,6 +26,8 @@ Initalize the **test workspace**.
     $ make init
     ...
     $ . .venv/bin/activate
+    (.venv) $ make install-collection
+    ...
 
 Create a test cell **scenario**.
 
