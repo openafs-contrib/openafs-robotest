@@ -16,6 +16,7 @@ help:
 	.venv/bin/pip install wheel
 	.venv/bin/pip install -r requirements.txt
 	touch .venv/bin/activate
+	@echo "Run 'source .venv/bin/activate' to activate your virtual environment."
 
 .PHONY: init
 init: .venv/bin/activate

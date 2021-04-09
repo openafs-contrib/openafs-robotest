@@ -10,7 +10,7 @@ platforms:
   - name: m-afs01
     box: "${AFS_BOX:-{{ cookiecutter.image_name }}}"
     groups:
-      - afs_admin
+      - afs_admin_client
       - afs_clients
       - afs_databases
       - afs_fileservers
@@ -36,7 +36,7 @@ platforms:
   - name: m-afs04
     box: "${AFS_BOX_04:-{{ cookiecutter.image_name }}}"
     groups:
-      - afs_admin
+      - afs_admin_client
       - afs_clients
       - afs_test
 

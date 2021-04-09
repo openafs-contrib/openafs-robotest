@@ -4,36 +4,51 @@
   hosts: afs_kdcs
   collections:
     - openafs_contrib.openafs
-  vars:
-    afs_cell: example.com
-    afs_realm: EXAMPLE.COM
-    afs_admin_principal: admin
   tasks:
     - import_role:
         name: openafs_krbserver
 
-    - name: Create AFS service key
+    - import_role:
+        name: openafs_common
+
+    - name: Create AFS service key.
       become: yes
-      no_log: yes
-      openafs_contrib.openafs.openafs_principal:
+      openafs_principal:
         state: present
         principal: "afs/{{ afs_cell }}"
         encryption_types:
           - aes128-cts
           - aes256-cts
-      register: service_key
+      register: service_key_results
 
-    - name: Download service keytab
+    - name: Create admin principal.
+      become: yes
+      openafs_principal:
+        state: present
+        principal: "{{ afs_admin | replace('.', '/') }}"
+        acl: "*"
+      register: admin_princ_results
+
+    - name: Create user principal.
+      become: yes
+      openafs_principal:
+        state: present
+        principal: "{{ afs_user }}"
+      register: user_princ_results
+
+    - name: Download keytabs.
       become: yes
       fetch:
         flat: yes
-        src: "{{ service_key.keytab }}"
-        dest: "{{ afs_cell_files }}/rxkad.keytab"
+        src: "{{ item }}"
+        dest: "{{ afs_cell_files }}/"
+      with_items:
+        - "{{ service_key_results.keytab }}"
+        - "{{ admin_princ_results.keytab }}"
+        - "{{ user_princ_results.keytab }}"
+      register: download_results
 
-    - name: Download admin keytab
-      become: yes
-      fetch:
-        flat: yes
-        src: "/var/lib/ansible-openafs/keytabs/{{ afs_admin_principal }}.keytab"
-        dest: "{{ afs_cell_files }}/{{ afs_admin_principal | replace('/', '.') }}.keytab"
-{% endraw -%}
+    - name: Downloaded.
+      debug:
+        msg: "{{ download_results.results | map(attribute='dest') | list }}"
+{%- endraw %}

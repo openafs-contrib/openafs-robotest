@@ -15,9 +15,10 @@
   collections:
     - openafs_contrib.openafs
   tasks:
-    - import_role:
+    - include_role:
         name: openafs_common
         tasks_from: generate_csdb
+      when: afs_csdb is undefined
 
 #
 # Install and setup the fileservers and database servers.
@@ -43,27 +44,29 @@
   tasks:
     - import_role:
         name: openafs_krbclient
+
     - import_role:
         name: openafs_client
+
+    - name: Upload keytabs
+      copy:
+        src: "{{ afs_cell_files }}/{{ item }}"
+        dest: "{{ item }}"
+        mode: "400"
+      with_items:
+        - "{{ afs_admin }}.keytab"
+        - "{{ afs_user }}.keytab"
 
 #
 # Create the top-level cell volumes and some initial users.
 #
 - name: New cell
-  hosts: afs_admin
+  hosts: afs_admin_client
   collections:
     - openafs_contrib.openafs
   tasks:
     - import_role:
-        name: openafs_krbclient
-
-    - import_role:
-        name: openafs_client
-
-    - name: Upload admin keytab
-      copy:
-        src: "{{ afs_cell_files }}/admin.keytab"
-        dest: admin.keytab
+        name: openafs_common
 
     - name: Create top-level volumes
       openafs_volume:
@@ -71,6 +74,8 @@
         name: "{{ item.name }}"
         mount: "{{ item.mount }}"
         acl: "{{ item.acl }}"
+        auth_user: "{{ afs_admin | replace('.', '/') }}"
+        auth_keytab: "{{ afs_admin }}.keytab"
         replicas: 3
       with_items:
         - name: root.afs
@@ -85,12 +90,11 @@
             - "system:anyuser read"
             - "system:authuser write"
 
-    - name: Create test users
-      openafs_contrib.openafs.openafs_user:
-        name: "{{ item }}"
+    - name: Create test user
+      openafs_user:
+        name: "{{ afs_user }}"
+        id: "{{ afs_user_id }}"
         group: tester
-      with_items:
-        - alice
-        - bob
-        - charlie
-{% endraw -%}
+        auth_user: "{{ afs_admin | replace('.', '/') }}"
+        auth_keytab: "{{ afs_admin }}.keytab"
+{%- endraw %}
