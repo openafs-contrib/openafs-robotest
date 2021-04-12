@@ -1,18 +1,18 @@
 {% raw -%}
 ---
 # Realm
-KRB_REALM: '{{ afs_realm }}'
+KRB_REALM: "{{ afs_realm | d('EXAMPLE.COM') }}"
 
 # Cell
-AFS_CELL: '{{ afs_cell }}'
-AFS_USER: 'user1'
-AFS_ADMIN: 'admin'
+AFS_CELL: "{{ afs_cell | d('example.com') }}"
+AFS_USER: "user1"
+AFS_ADMIN: "{{ afs_admin | d('admin') }}"
 AFS_AKIMPERSONATE: False
 AFS_ADMIN_PASSWORD: "{{ lookup('password', afs_cell_files+'/afs_admin_password chars=ascii_letters,digits,hexdigits length=15') }}"
 
 # Test servers
-AFS_FILESERVER_A: '{{ afs_robotest_fileserver_a | d('missing') }}'
-AFS_FILESERVER_B: '{{ afs_robotest_fileserver_b | d('missing') }}'
+AFS_FILESERVER_A: "{{ afs_robotest_fileserver_a | d('missing') }}"
+AFS_FILESERVER_B: "{{ afs_robotest_fileserver_b | d('missing') }}"
 
 # Client info
 PAG_ONEGROUP: True
@@ -21,7 +21,7 @@ PAG_ONEGROUP: True
 AKLOG: "{{ ansible_local.openafs.bins['aklog'] }}"
 BOS: "{{ ansible_local.openafs.bins['bos'] }}"
 FS: "{{ ansible_local.openafs.bins['fs'] }}"
-KLOG_KRB5:  "{{ ansible_local.openafs.bins['klog.krb5'] }}"
+KLOG_KRB5: "{{ ansible_local.openafs.bins['klog.krb5'] }}"
 PAGSH: "{{ ansible_local.openafs.bins['pagsh'] }}"
 PTS: "{{ ansible_local.openafs.bins['pts'] }}"
 RXDEBUG: "{{ ansible_local.openafs.bins['rxdebug'] }}"
@@ -31,14 +31,10 @@ UNLOG: "{{ ansible_local.openafs.bins['unlog'] }}"
 VOS: "{{ ansible_local.openafs.bins['vos'] }}"
 
 # Kerberos paths
-KDESTROY: '{{ afs_kdestroy | d("kdestroy") }}'
-KINIT: '{{ afs_kinit | d("kinit") }}'
+KDESTROY: "{{ ansible_local.openafs.bins['kdestroy'] }}"
+KINIT: "{{ ansible_local.openafs.bins['kinit'] }}"
 
 # Misc paths
 PYTHON: "{{ afs_python | d(ansible_python.executable) }}"
-{% if afs_gfind is defined -%}
-GFIND: "{{ afs_gfind }}"
-{% elif ansible_os_family in ('RedHat', 'Debian') -%}
-GFIND: "/usr/bin/find"
-{% endif -%}
-{% endraw -%}
+GFIND: "{{ afs_gfind | d('/usr/bin/find') }}"
+{%- endraw %}
