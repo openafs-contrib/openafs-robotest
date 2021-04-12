@@ -61,7 +61,7 @@ provisioner:
       all:
         # Instance preparation.
         afs_prep_update_kernel: "${AFS_PREP_UPDATE_KERNEL:-yes}"
-        afs_prep_ssh_keys: "${AFS_PREP_SSH_KEYS:-~/.ssh}"
+        afs_prep_ssh_keys: "${AFS_PREP_SSH_KEYS}"
         afs_prep_rewrite_etc_hosts: "${AFS_PREP_REWRITE_ETC_HOSTS:-no}"
         afs_prep_selinux_mode: "${AFS_PREP_SELINUX_MODE:-permissive}"
 
