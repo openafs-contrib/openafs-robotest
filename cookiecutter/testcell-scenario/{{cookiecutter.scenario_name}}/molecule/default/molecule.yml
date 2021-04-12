@@ -68,7 +68,6 @@ provisioner:
         # Test cell setup.
         afs_realm: "${AFS_REALM:-EXAMPLE.COM}"
         afs_cell: "${AFS_CELL:-example.com}"
-        afs_admin: "admin"
         afs_security_model: "none"
         afs_install_method: "{{ cookiecutter.install_method }}"
 {%- if cookiecutter.install_method == 'managed' %}

@@ -4,8 +4,6 @@
   hosts: afs_kdcs
   collections:
     - openafs_contrib.openafs
-  vars:
-    afs_admin_password: "{{ lookup('password', afs_cell_files+'/afs_admin_password chars=ascii_letters,digits,hexdigits length=15') }}"
   tasks:
     - import_role:
         name: openafs_krbserver
@@ -28,7 +26,6 @@
       openafs_principal:
         state: present
         principal: "{{ afs_admin | replace('.', '/') }}"
-        password: "{{ afs_admin_password }}"
         acl: "*"
       register: admin_princ_results
 

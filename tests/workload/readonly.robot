@@ -15,7 +15,7 @@ ${ROPATH}      /afs/${AFS_CELL}/test/readonly
 
 *** Keywords ***
 Setup Test Suite
-    Login  ${AFS_ADMIN}  password=${AFS_ADMIN_PASSWORD}
+    Login  ${AFS_ADMIN}  keytab=${AFS_ADMIN_KEYTAB}
     Create Volume   ${VOLUME}  server=${SERVER}  part=${PARTITION}  path=${RWPATH}  ro=True  acl=system:anyuser,read
 
 Teardown Test Suite

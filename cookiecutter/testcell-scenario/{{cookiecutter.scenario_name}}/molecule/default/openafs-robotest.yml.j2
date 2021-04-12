@@ -5,10 +5,10 @@ KRB_REALM: "{{ afs_realm | d('EXAMPLE.COM') }}"
 
 # Cell
 AFS_CELL: "{{ afs_cell | d('example.com') }}"
-AFS_USER: "user1"
-AFS_ADMIN: "{{ afs_admin | d('admin') }}"
 AFS_AKIMPERSONATE: False
-AFS_ADMIN_PASSWORD: "{{ lookup('password', afs_cell_files+'/afs_admin_password chars=ascii_letters,digits,hexdigits length=15') }}"
+AFS_USER: "{{ afs_user | d(ansible_user) }}"
+AFS_ADMIN: "{{ afs_admin | d(ansible_user + '.admin') }}"
+AFS_ADMIN_KEYTAB: "{{ afs_admin_keytab | d(ansible_user + '.admin.keytab') }}"
 
 # Test servers
 AFS_FILESERVER_A: "{{ afs_robotest_fileserver_a | d('missing') }}"

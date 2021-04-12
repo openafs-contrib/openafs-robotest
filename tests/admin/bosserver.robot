@@ -17,7 +17,7 @@ ${TESTPATH}    /afs/.${AFS_CELL}/test/${VOLUME}
 
 *** Keywords ***
 Setup Users and Groups
-    Login  ${AFS_ADMIN}  password=${AFS_ADMIN_PASSWORD}
+    Login  ${AFS_ADMIN}  keytab=${AFS_ADMIN_KEYTAB}
     Command Should Succeed  ${PTS} createuser user1
     Command Should Succeed  ${PTS} createuser user2
     Command Should Succeed  ${PTS} creategroup group1 -owner ${AFS_ADMIN}
