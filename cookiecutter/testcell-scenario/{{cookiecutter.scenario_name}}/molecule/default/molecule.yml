@@ -89,6 +89,7 @@ provisioner:
 {%- endif %}
 
         # Molecule environment
+        afs_realm_files: "${MOLECULE_EPHEMERAL_DIRECTORY}"
         afs_cell_files: "${MOLECULE_EPHEMERAL_DIRECTORY}"
         afs_csdb_file: "${MOLECULE_EPHEMERAL_DIRECTORY}/csdb.yaml"
 
