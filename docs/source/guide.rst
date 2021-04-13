@@ -71,8 +71,9 @@ Create a test cell **scenario**.
     molecule_driver_name [vagrant]: <enter>
     image_name [generic/centos8]: <enter>
     Select configuration:
-    1 - single
-    2 - cluster
+    1 - class a: single host
+    2 - class b: cluster 1 db, 2 fs, 3 cl
+    3 - class c: cluster 3 db, 3 fs, 3 cl
     Choose from 1, 2 [1]: <enter>
     Select install_method:
     1 - managed

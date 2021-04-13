@@ -6,7 +6,7 @@ driver:
   name: {{ cookiecutter.molecule_driver_name }}
 
 platforms:
-{%- if cookiecutter.configuration == 'single' %}
+{%- if cookiecutter.configuration.startswith('class a:') %}
   - name: m-afs01
     box: "${AFS_BOX:-{{ cookiecutter.image_name }}}"
     groups:
@@ -16,7 +16,7 @@ platforms:
       - afs_fileservers
       - afs_kdcs
       - afs_test
-{%- elif cookiecutter.configuration == 'cluster' %}
+{%- elif cookiecutter.configuration.startswith('class b:') %}
   - name: m-afs01
     box: "${AFS_BOX_01:-{{ cookiecutter.image_name }}}"
     groups:
@@ -47,6 +47,54 @@ platforms:
 
   - name: m-afs06
     box: "${AFS_BOX_06:-{{ cookiecutter.image_name }}}"
+    groups:
+      - afs_clients
+{%- elif cookiecutter.configuration.startswith('class c:') %}
+  - name: m-afs01
+    box: "${AFS_BOX_01:-{{ cookiecutter.image_name }}}"
+    groups:
+      - afs_kdcs
+      - afs_databases
+
+  - name: m-afs02
+    box: "${AFS_BOX_02:-{{ cookiecutter.image_name }}}"
+    groups:
+      - afs_databases
+
+  - name: m-afs03
+    box: "${AFS_BOX_03:-{{ cookiecutter.image_name }}}"
+    groups:
+      - afs_databases
+
+  - name: m-afs04
+    box: "${AFS_BOX_04:-{{ cookiecutter.image_name }}}"
+    groups:
+      - afs_fileservers
+
+  - name: m-afs05
+    box: "${AFS_BOX_05:-{{ cookiecutter.image_name }}}"
+    groups:
+      - afs_fileservers
+
+  - name: m-afs06
+    box: "${AFS_BOX_06:-{{ cookiecutter.image_name }}}"
+    groups:
+      - afs_fileservers
+
+  - name: m-afs07
+    box: "${AFS_BOX_07:-{{ cookiecutter.image_name }}}"
+    groups:
+      - afs_clients
+      - afs_admin_client
+      - afs_test
+
+  - name: m-afs08
+    box: "${AFS_BOX_08:-{{ cookiecutter.image_name }}}"
+    groups:
+      - afs_clients
+
+  - name: m-afs09
+    box: "${AFS_BOX_09:-{{ cookiecutter.image_name }}}"
     groups:
       - afs_clients
 {%- endif %}
@@ -94,12 +142,20 @@ provisioner:
         afs_csdb_file: "${MOLECULE_EPHEMERAL_DIRECTORY}/csdb.yaml"
 
         # Test file servers.
-{%- if cookiecutter.configuration == 'single' %}
+{%- if cookiecutter.configuration.startswith('class a:') %}
         afs_robotest_fileserver_a: "m-afs01"
-{%- elif cookiecutter.configuration == 'cluster' %}
+{%- elif cookiecutter.configuration.startswith('class b:') %}
         afs_robotest_fileserver_a: "m-afs02"
         afs_robotest_fileserver_b: "m-afs03"
+{%- elif cookiecutter.configuration.startswith('class c:') %}
+        afs_robotest_fileserver_a: "m-afs04"
+        afs_robotest_fileserver_b: "m-afs05"
 {%- endif %}
+
+    # Host specific variables.
+    host_vars:
+      m-afs01:
+        example_variable: "example host specific value"
 
 verifier:
   name: robotframework
@@ -125,7 +181,7 @@ verifier:
       - bug
       - slow
       - rogue-avoidance
-{%- if cookiecutter.configuration == 'single' %}
+{%- if cookiecutter.configuration.startswith('class a:') %}
       - requires-multi-fs
 {%- endif %}
     loglevel: INFO
