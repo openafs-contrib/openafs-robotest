@@ -1,7 +1,40 @@
 Quick Start Guide
 =================
 
-Create a new **test workspace**.
+This guide shows how to create a new testing workspace to create test virtual
+machines, create a Kerberos realm and OpenAFS cell, and run the test suite.
+
+This guide assume you will be using **vagrant** to manage your test instances,
+however any provisioner supported by Ansible Moleucle can be used. See XXX to
+read more about how to setup and use other provisioners.
+
+Vagrant
+-------
+
+Be sure vagrant_ is installed and working.
+
+The default provider for vagrant is **VirtualBox**. If you installed an
+alternate `provider plugin`_, then be sure to set the ``VAGRANT_DEFAULT_PROVIDER``
+environment variable to the provider you wish to be the default.
+
+The default vagrant box in the test scenarios is **generic/centos8**. Be sure
+you can start instances of that box name with **vagrant**.
+
+.. _vagrant: https://www.vagrantup.com/
+.. _`provider plugin`: https://www.vagrantup.com/docs/providers/default
+
+Cookiecutter
+------------
+
+Install cookiecutter_
+
+.. _cookiecutter: https://cookiecutter.readthedocs.io/
+
+
+Test workspace
+--------------
+
+In a directory of your choice, create a test workspace with `cookiecutter`.
 
 .. code-block:: console
 
