@@ -23,7 +23,7 @@ init: .venv/bin/activate
 
 .PHONY: install-collection
 install-collection: init
-	ansible-galaxy collection install --pre openafs_contrib.openafs
+	ansible-galaxy collection install --pre --force openafs_contrib.openafs
 
 .PHONY: build-scenario
 build-scenario:
