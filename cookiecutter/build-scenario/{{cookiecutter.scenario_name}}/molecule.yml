@@ -43,6 +43,7 @@ provisioner:
         afs_bdist_name: "${AFS_BDIST_NAME:-bdist}"
         afs_builds: "${AFS_BUILDS:-../../../../builds}"
 {%- elif cookiecutter.build_target == 'sdist' %}
+        afs_builds: "${AFS_BUILDS:-../../../../builds}"
 {%- elif cookiecutter.build_target == 'packages' %}
         afs_builds: "${AFS_BUILDS:-~/.cache/ansible-openafs/builds}"
 {%- endif %}
