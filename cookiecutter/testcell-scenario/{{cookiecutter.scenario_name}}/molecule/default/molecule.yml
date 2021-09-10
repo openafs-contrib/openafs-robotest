@@ -1,14 +1,14 @@
 ---
 dependency:
   name: galaxy
-
-driver:
-  name: {{ cookiecutter.molecule_driver_name }}
+  enabled: yes
+  requirements-file: collections.yml
 
 platforms:
-{%- if cookiecutter.configuration.startswith('class a:') %}
-  - name: m-afs01
-    box: "${AFS_BOX:-{{ cookiecutter.image_name }}}"
+{%- set image_name = 'generic/' + cookiecutter.platform %}
+{%- if cookiecutter.layout.startswith('1 host') %}
+  - name: {{ cookiecutter.instance_prefix }}afs
+    box: "{{ image_name }}"
     groups:
       - afs_admin_client
       - afs_clients
@@ -16,149 +16,199 @@ platforms:
       - afs_fileservers
       - afs_kdcs
       - afs_test
-{%- elif cookiecutter.configuration.startswith('class b:') %}
-  - name: m-afs01
-    box: "${AFS_BOX_01:-{{ cookiecutter.image_name }}}"
+  {%- if (cookiecutter.install_method in ['packages', 'bdist', 'sdist']) and (cookiecutter.enable_builds == 'yes') %}
+      - afs_builders
+  {%- endif %}
+{%- elif cookiecutter.layout.startswith('2 hosts') %}
+  - name: {{ cookiecutter.instance_prefix }}afs01
+    box: "{{ image_name }}"
+    groups:
+      - afs_kdcs
+      - afs_databases
+      - afs_fileservers
+
+  - name: {{ cookiecutter.instance_prefix }}afs02
+    box: "{{ image_name }}"
+    groups:
+      - afs_admin_client
+      - afs_clients
+      - afs_test
+  {%- if (cookiecutter.install_method in ['packages', 'bdist', 'sdist']) and (cookiecutter.enable_builds == 'yes') %}
+      - afs_builders
+  {%- endif %}
+{%- elif cookiecutter.layout.startswith('6 hosts') %}
+  - name: {{ cookiecutter.instance_prefix }}afs01
+    box: "{{ image_name }}"
     groups:
       - afs_databases
       - afs_kdcs
+  {%- if (cookiecutter.install_method in ['packages', 'bdist', 'sdist']) and (cookiecutter.enable_builds == 'yes') %}
+      - afs_builders
+  {%- endif %}
 
-  - name: m-afs02
-    box: "${AFS_BOX_02:-{{ cookiecutter.image_name }}}"
+  - name: {{ cookiecutter.instance_prefix }}afs02
+    box: "{{ image_name }}"
     groups:
       - afs_fileservers
 
-  - name: m-afs03
-    box: "${AFS_BOX_03:-{{ cookiecutter.image_name }}}"
+  - name: {{ cookiecutter.instance_prefix }}afs03
+    box: "{{ image_name }}"
     groups:
       - afs_fileservers
 
-  - name: m-afs04
-    box: "${AFS_BOX_04:-{{ cookiecutter.image_name }}}"
+  - name: {{ cookiecutter.instance_prefix }}afs04
+    box: "{{ image_name }}"
     groups:
       - afs_admin_client
       - afs_clients
       - afs_test
 
-  - name: m-afs05
-    box: "${AFS_BOX_05:-{{ cookiecutter.image_name }}}"
+  - name: {{ cookiecutter.instance_prefix }}afs05
+    box: "{{ image_name }}"
     groups:
       - afs_clients
 
-  - name: m-afs06
-    box: "${AFS_BOX_06:-{{ cookiecutter.image_name }}}"
+  - name: {{ cookiecutter.instance_prefix }}afs06
+    box: "{{ image_name }}"
     groups:
       - afs_clients
-{%- elif cookiecutter.configuration.startswith('class c:') %}
-  - name: m-afs01
-    box: "${AFS_BOX_01:-{{ cookiecutter.image_name }}}"
+{%- elif cookiecutter.layout.startswith('9 hosts') %}
+  - name: {{ cookiecutter.instance_prefix }}afs01
+    box: "{{ image_name }}"
     groups:
       - afs_kdcs
       - afs_databases
+  {%- if (cookiecutter.install_method in ['packages', 'bdist', 'sdist']) and (cookiecutter.enable_builds == 'yes') %}
+      - afs_builders
+  {%- endif %}
 
-  - name: m-afs02
-    box: "${AFS_BOX_02:-{{ cookiecutter.image_name }}}"
+  - name: {{ cookiecutter.instance_prefix }}afs02
+    box: "{{ image_name }}"
     groups:
       - afs_databases
 
-  - name: m-afs03
-    box: "${AFS_BOX_03:-{{ cookiecutter.image_name }}}"
+  - name: {{ cookiecutter.instance_prefix }}afs03
+    box: "{{ image_name }}"
     groups:
       - afs_databases
 
-  - name: m-afs04
-    box: "${AFS_BOX_04:-{{ cookiecutter.image_name }}}"
+  - name: {{ cookiecutter.instance_prefix }}afs04
+    box: "{{ image_name }}"
     groups:
       - afs_fileservers
 
-  - name: m-afs05
-    box: "${AFS_BOX_05:-{{ cookiecutter.image_name }}}"
+  - name: {{ cookiecutter.instance_prefix }}afs05
+    box: "{{ image_name }}"
     groups:
       - afs_fileservers
 
-  - name: m-afs06
-    box: "${AFS_BOX_06:-{{ cookiecutter.image_name }}}"
+  - name: {{ cookiecutter.instance_prefix }}afs06
+    box: "{{ image_name }}"
     groups:
       - afs_fileservers
 
-  - name: m-afs07
-    box: "${AFS_BOX_07:-{{ cookiecutter.image_name }}}"
+  - name: {{ cookiecutter.instance_prefix }}afs07
+    box: "{{ image_name }}"
     groups:
       - afs_clients
       - afs_admin_client
       - afs_test
 
-  - name: m-afs08
-    box: "${AFS_BOX_08:-{{ cookiecutter.image_name }}}"
+  - name: {{ cookiecutter.instance_prefix }}afs08
+    box: "{{ image_name }}"
     groups:
       - afs_clients
 
-  - name: m-afs09
-    box: "${AFS_BOX_09:-{{ cookiecutter.image_name }}}"
+  - name: {{ cookiecutter.instance_prefix }}afs09
+    box: "{{ image_name }}"
     groups:
       - afs_clients
 {%- endif %}
 
 provisioner:
   name: ansible
-  env:
-    ANSIBLE_VERBOSITY: 0
-    ANSIBLE_STDOUT_CALLBACK: yaml
+  playbooks:
+    prepare: "${MOLECULE_SCENARIO_DIRECTORY}/../playbooks/prepare.yml"
+    converge: "${MOLECULE_SCENARIO_DIRECTORY}/../playbooks/converge.yml"
   inventory:
     group_vars:
       all:
-        # Instance preparation.
-        afs_prep_update_kernel: "${AFS_PREP_UPDATE_KERNEL:-yes}"
-        afs_prep_ssh_keys: "${AFS_PREP_SSH_KEYS}"
-        afs_prep_rewrite_etc_hosts: "${AFS_PREP_REWRITE_ETC_HOSTS:-no}"
-        afs_prep_selinux_mode: "${AFS_PREP_SELINUX_MODE:-permissive}"
-
-        # Test cell setup.
-        afs_realm: "${AFS_REALM:-EXAMPLE.COM}"
-        afs_cell: "${AFS_CELL:-example.com}"
-        afs_security_model: "none"
-        afs_install_method: "{{ cookiecutter.install_method }}"
-{%- if cookiecutter.install_method == 'managed' %}
-        afs_module_install_method: "{{ cookiecutter.module_install_method }}"
-{%- elif cookiecutter.install_method == 'packages' %}
-        afs_install_archive: "${AFS_INSTALL_ARCHIVE}"
-        afs_module_install_method: "{{ cookiecutter.module_install_method }}"
-        afs_builds: "${AFS_BUILDS:-../../../../../builds}"
-{%- elif cookiecutter.install_method == 'bdist' %}
-        afs_install_archive: "${AFS_INSTALL_ARCHIVE}"
-        afs_bdist_name: "${AFS_BDIST_NAME:-bdist}"
-        afs_builds: "${AFS_BUILDS:-../../../../../builds}"
-{%- elif cookiecutter.install_method == 'sdist' %}
-        afs_install_archive: "${AFS_INSTALL_ARCHIVE}"
-        afs_builds: "${AFS_BUILDS:-../../../../../builds}"
-{%- elif cookiecutter.install_method == 'scm' %}
-        afs_git_repo: "${AFS_GIT_REPO:-git://git.openafs.org/openafs.git}"
-        afs_git_version: "${AFS_GIT_VERSION:-master}"
-{%- endif %}
-
-        # Molecule environment
+        afs_realm: "{{ cookiecutter.realm }}"
+        afs_cell: "{{ cookiecutter.cell }}"
+        afs_user: "${USER}"
+        afs_admin: "${USER}.admin"
         afs_realm_files: "${MOLECULE_EPHEMERAL_DIRECTORY}"
         afs_cell_files: "${MOLECULE_EPHEMERAL_DIRECTORY}"
         afs_csdb_file: "${MOLECULE_EPHEMERAL_DIRECTORY}/csdb.yaml"
-
-        # Test file servers.
-{%- if cookiecutter.configuration.startswith('class a:') %}
-        afs_robotest_fileserver_a: "m-afs01"
-{%- elif cookiecutter.configuration.startswith('class b:') %}
-        afs_robotest_fileserver_a: "m-afs02"
-        afs_robotest_fileserver_b: "m-afs03"
-{%- elif cookiecutter.configuration.startswith('class c:') %}
-        afs_robotest_fileserver_a: "m-afs04"
-        afs_robotest_fileserver_b: "m-afs05"
+        afs_security_model: "none"
+        afs_install_method: "{{ cookiecutter.install_method }}"
+{%- if (cookiecutter.install_method in ['managed', 'packages']) %}
+  {%- if cookiecutter.enable_dkms == 'yes' %}
+        afs_module_install_method: "dkms"
+  {%- else %}
+        afs_module_install_method: "kmod"
+  {%- endif %}
 {%- endif %}
-
-    # Host specific variables.
-    host_vars:
-      m-afs01:
-        example_variable: "example host specific value"
+{%- if cookiecutter.install_method != 'managed' %}
+{%-   if (cookiecutter.enable_builds != 'yes') %}
+        afs_install_archive: "${AFS_INSTALL_ARCHIVE}"
+{%-   else %}
+        afs_git_repo: "${AFS_GIT_REPO:-git://git.openafs.org/openafs.git}"
+        afs_git_version: "${AFS_GIT_VERSION:-master}"
+        afs_build_directory: "${AFS_BUILD_DIRECTORY}"
+        afs_archive_directory: "${AFS_ARCHIVE_DIRECTORY}"
+{%-     if cookiecutter.install_method != 'packages' %}
+{%-       if cookiecutter.platform == 'solaris114' %}
+        afs_configure_options:
+          enable:
+            - transarc-paths
+            - debug
+            - debug-kernel
+            - kernel-module
+          disable:
+            - optimize
+        afs_nolibafs_configure_options:
+          enable:
+            - transarc-paths
+            - debug
+          disable:
+            - kernel-module
+            - optimize
+{%-       else  %}
+        afs_configure_options:
+          enable:
+            - debug
+            - debug-kernel
+            - kernel-module
+          disable:
+            - optimize
+          with:
+            - linux-kernel-packaging
+        afs_nolibafs_configure_options:
+          enable:
+            - debug
+          disable:
+            - kernel-module
+            - optimize
+{%-       endif %}
+{%-     endif %}
+{%-   endif %}
+{%- endif %}
+{%- if cookiecutter.layout.startswith('1 host') %}
+        afs_robotest_fileserver_a: "{{ cookiecutter.instance_prefix }}afs"
+{%- elif cookiecutter.layout.startswith('2 hosts)') %}
+        afs_robotest_fileserver_a: "{{ cookiecutter.instance_prefix }}afs01"
+{%- elif cookiecutter.layout.startswith('6 hosts)') %}
+        afs_robotest_fileserver_a: "{{ cookiecutter.instance_prefix }}afs02"
+        afs_robotest_fileserver_b: "{{ cookiecutter.instance_prefix }}afs03"
+{%- elif cookiecutter.layout.startswith('9 hosts') %}
+        afs_robotest_fileserver_a: "{{ cookiecutter.instance_prefix }}afs04"
+        afs_robotest_fileserver_b: "{{ cookiecutter.instance_prefix }}afs05"
+{%- endif %}
 
 verifier:
   name: robotframework
+  enabled: true
   group: afs_test
   libraries:
     - robotframework-openafslibrary
@@ -175,13 +225,13 @@ verifier:
     - {{ cookiecutter._template }}/tests
 {%- endif %}
   resources:
-    - ${MOLECULE_SCENARIO_DIRECTORY}/openafs-robotest.yml.j2
+    - ${MOLECULE_SCENARIO_DIRECTORY}/../templates/openafs-robotest.yml.j2
   options:
     exclude:
       - bug
       - slow
       - rogue-avoidance
-{%- if cookiecutter.configuration.startswith('class a:') %}
+{%- if cookiecutter.layout.startswith('1 host') %}
       - requires-multi-fs
 {%- endif %}
     loglevel: INFO
@@ -189,12 +239,14 @@ verifier:
     variablefile: openafs-robotest.yml
   data_sources:
     - openafs-robotest/tests
+  dest_dir: ${MOLECULE_SCENARIO_DIRECTORY}/../../reports
 
 scenario:
   create_sequence:
     - create
     - prepare
   check_sequence:
+    - dependency
     - cleanup
     - destroy
     - create
@@ -203,6 +255,7 @@ scenario:
     - check
     - destroy
   converge_sequence:
+    - dependency
     - create
     - prepare
     - converge
@@ -210,6 +263,7 @@ scenario:
     - cleanup
     - destroy
   test_sequence:
+    - dependency
     - cleanup
     - destroy
     - create

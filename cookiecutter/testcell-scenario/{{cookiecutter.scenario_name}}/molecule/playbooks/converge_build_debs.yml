@@ -1,0 +1,90 @@
+{% raw -%}
+---
+- name: Build
+  hosts: afs_builders
+  vars:
+    build_directory: "{{ afs_build_directory | d('~/openafs', true) }}"
+    archive_directory: "{{ afs_archive_directory | d(molecule_ephemeral_directory+'/archives', true) }}"
+  collections:
+    - openafs_contrib.openafs
+  tasks:
+    - import_role:
+        name: openafs_devel
+
+    - name: "Create build directory."
+      file:
+        state: directory
+        name: Debian
+
+    - name: "Checkout OpenAFS source code and debian packaging."
+      git:
+        repo: https://salsa.debian.org/debian/openafs.git
+        version: "{{ debian_packaging_version | d(debian_codename) }}"
+        dest: Debian/openafs
+        force: yes
+
+    - name: "Add uninstalled file exceptions."
+      # The OpenAFS build system will build the optional ukernel.so and
+      # ukernel.pm files when swig is present on the build system.
+      # Unfortunately, those file are not packaged by Debian. Add an
+      # uninstalled file exceptions for these optional files to avoid
+      # dpkg-buildpackage errors.
+      lineinfile:
+        state: present
+        create: yes
+        path: Debian/openafs/debian/not-installed
+        line: "{{ item }}"
+        mode: "664"
+      with_items:
+        - "usr/lib/perl/ukernel.so"
+        - "usr/lib/perl/AFS/ukernel.pm"
+
+    - name: "Build OpenAFS debian package files."
+      command:
+      args:
+        cmd: dpkg-buildpackage -us -uc -b -rfakeroot
+        chdir: Debian/openafs
+      async: 72000
+      poll: 10
+
+    - name: "Create archive top directory."
+      vars:
+        build_type: debs
+        build_platform: "{{ ansible_distribution | lower }}{{ ansible_distribution_major_version }}-{{ ansible_architecture }}"
+        build_number: "{{ lookup('openafs_contrib.openafs.counter', build_platform + '-' + build_type) }}"
+        build_id: "{{ build_platform }}-{{ build_type }}-{{ build_number }}"
+      file:
+        state: directory
+        path: "{{ build_id }}"
+      register: mkdir_results
+
+    - debug:
+        var: mkdir_results
+
+    - name: "Copy package files to archive directory."
+      shell:
+      vars:
+        build_id: "{{ mkdir_results.path }}"
+      args:
+        cmd: cp Debian/*.deb "{{ build_id }}/"
+
+    - name: "Create install archive."
+      vars:
+        build_id: "{{ mkdir_results.path }}"
+      archive:
+        path: "{{ build_id }}/"
+        dest: "{{ build_id }}.tar.gz"
+        format: gz
+      register: archive_results
+
+    - name: "Download install archive."
+      fetch:
+        src: "{{ archive_results.dest }}"
+        dest: "{{ archive_directory }}/"
+        flat: yes
+      register: fetch_results
+
+    - name: "Downloaded."
+      debug:
+        var: fetch_results.dest
+{%- endraw %}

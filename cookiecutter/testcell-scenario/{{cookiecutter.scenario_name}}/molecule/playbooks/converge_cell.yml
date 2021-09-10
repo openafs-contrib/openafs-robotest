@@ -1,0 +1,164 @@
+---
+#
+# Create the OpenAFS test cell on set of client and server test instances.
+#
+# First, gather the addresses of the database servers for the CellServDB file to
+# be distributed to the clients and servers. The results are saved in the
+# csdb.yaml file on the controller.  Then, install and setup the file and
+# database servers and create the root volumes. Then, install the clients.
+# Finally, create the top-level volumes and the test users.
+#
+
+{% raw -%}
+- name: Create CellServDB
+  hosts: afs_databases
+  collections:
+    - openafs_contrib.openafs
+  tasks:
+    - include_role:
+        name: openafs_common
+        tasks_from: generate_csdb
+      when: afs_csdb is undefined
+{%- endraw %}
+
+{% if cookiecutter.install_method in ['packages', 'bdist', 'sdist'] and cookiecutter.enable_builds == 'yes' -%}
+  {%- raw %}
+- name: Lookup install archive
+  hosts: afs_databases:afs_fileservers:afs_clients
+  vars:
+    archive_directory: "{{ afs_archive_directory | d(molecule_ephemeral_directory+'/archives', true) }}"
+  {%- endraw %}
+    {%- if cookiecutter.install_method == 'sdist' %}
+    build_platform: ""
+    {% else %}
+      {%- raw %}
+    build_platform: "{{ ansible_distribution | lower }}{{ ansible_distribution_major_version }}-{{ ansible_architecture }}-"
+      {%- endraw %}
+    {%- endif %}
+    {%- if cookiecutter.install_method == 'sdist' %}
+    build_type: sdist
+    {%- elif cookiecutter.install_method == 'bdist' %}
+    build_type: bdist
+    {%- elif cookiecutter.install_method == 'packages' and cookiecutter.platform.startswith('centos') %}
+    build_type: rpms
+    {%- elif cookiecutter.install_method == 'packages' and cookiecutter.platform.startswith('debian') %}
+    build_type: debs
+    {%- endif %}
+  {%- raw %}
+    build_counter_name: "{{ build_platform }}{{ build_type }}"
+    build_number: "{{ lookup('openafs_contrib.openafs.counter', build_counter_name + ',current' ) }}"
+    build_id: "{{ build_counter_name }}-{{ build_number }}"
+  tasks:
+    - name: Lookup afs_install_archive
+      when: afs_install_archive is undefined or afs_install_archive | count == 0
+      block:
+        - debug:
+            var: build_id
+        - name: "Check build number."
+          assert:
+            that: build_number != "0"
+            fail_msg: "Build number not found for {{ build_counter_name }}."
+
+        - name: "Set afs_install_archive."
+          set_fact:
+            afs_install_archive: "{{ archive_directory }}/{{ build_id }}.tar.gz"
+
+    - name: "Verify afs_install_archive is set."
+      assert:
+        that:
+         - afs_install_archive is defined
+         - afs_install_archive | count != 0
+
+    - name: "Stat install archive."
+      delegate_to: localhost
+      stat:
+        path: "{{ afs_install_archive }}"
+      register: stat_results
+
+    - name: "Verify the install archive is present."
+      assert:
+        that:
+          - stat_results.stat.exists
+          - not stat_results.stat.isdir
+        fail_msg: "Install archive not found: {{ afs_install_archive }}."
+        success_msg: "Install archive is present: {{ afs_install_archive }}."
+  {%- endraw %}
+{%- endif %}
+
+{% raw -%}
+- name: Install servers
+  hosts: afs_databases:afs_fileservers
+  collections:
+    - openafs_contrib.openafs
+  vars:
+    # Create fake /vicep partitions for testing purposes.
+    afs_pseudo_partitions: ['a', 'b', 'c']
+  tasks:
+    - import_role:
+        name: openafs_server
+{%- endraw %}
+
+{% raw -%}
+- name: Install clients
+  hosts: afs_clients
+  collections:
+    - openafs_contrib.openafs
+  tasks:
+    - import_role:
+        name: openafs_krbclient
+
+    - import_role:
+        name: openafs_client
+
+    - name: Upload keytabs
+      copy:
+        src: "{{ afs_cell_files }}/{{ item }}"
+        dest: "{{ item }}"
+        mode: "400"
+      with_items:
+        - "{{ afs_admin }}.keytab"
+        - "{{ afs_user }}.keytab"
+{%- endraw %}
+
+#
+# Create the top-level cell volumes and some initial users.
+#
+{% raw -%}
+- name: New cell
+  hosts: afs_admin_client
+  collections:
+    - openafs_contrib.openafs
+  tasks:
+    - import_role:
+        name: openafs_common
+
+    - name: Create top-level volumes
+      openafs_volume:
+        state: present
+        name: "{{ item.name }}"
+        mount: "{{ item.mount }}"
+        acl: "{{ item.acl }}"
+        auth_user: "{{ afs_admin | replace('.', '/') }}"
+        auth_keytab: "{{ afs_admin }}.keytab"
+        replicas: 3
+      with_items:
+        - name: root.afs
+          mount: /afs
+          acl: "system:anyuser read"
+        - name: root.cell
+          mount: /afs/{{ afs_cell }}
+          acl: "system:anyuser read"
+        - name: test
+          mount: /afs/{{ afs_cell }}/test
+          acl:
+            - "system:anyuser read"
+            - "system:authuser write"
+
+    - name: Create test user
+      openafs_user:
+        name: "{{ afs_user }}"
+        id: "{{ afs_user_id | int }}"
+        group: tester
+        auth_user: "{{ afs_admin | replace('.', '/') }}"
+        auth_keytab: "{{ afs_admin }}.keytab"
+{%- endraw %}

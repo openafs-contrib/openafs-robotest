@@ -1,0 +1,4 @@
+molecule[ansible]
+molecule-robotframework
+python-vagrant
+molecule-vagrant

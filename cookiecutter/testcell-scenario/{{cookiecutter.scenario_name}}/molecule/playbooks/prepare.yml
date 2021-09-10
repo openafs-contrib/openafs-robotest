@@ -1,0 +1,298 @@
+{% raw -%}
+---
+#
+# Prepare instances before converge.  The following driver.prepare options are
+# used in this playbook:
+#
+#  bootstrap_python
+#    Install python with the raw module.
+#    Type: boolean
+#    Default: yes
+#
+#  include_tasks
+#    Include the specified tasks file to support site-local
+#    instance preparation tasks before converge.
+#    Type: path
+#    Default: none
+#
+#  selinux_mode
+#    Set the SE Linux mode on the instances which support SE Linux. Must
+#    be one of the following values:  'permissive', 'enforcing', 'disabled'.
+#    Omit this option to avoid changing the SE Linux mode on instances.
+#    Type: string
+#    Default: none
+#
+#  rewrite_hosts_file
+#    Rewrite the hosts file on instances create entries for all of the instances
+#    in the play. This is a workaround when a working nameserver is not available
+#    for the test instances.
+#    Type: boolean
+#    Default: False
+#
+#  allow_reboot
+#    Allow kernel to be updated on instances and perform a reboot after the
+#    kernel is updated.
+#    Type: boolean
+#    Default: False
+#
+# Example:
+#
+#   driver:
+#     name: vagrant
+#     provider:
+#       name: libvirt
+#     prepare:
+#       include_tasks: ~/.config/molecule/my-prepare-tasks.yml
+#       bootstrap_python: yes
+#       allow_reboot: yes
+#       selinux_mode: permissive
+#       rewrite_hosts_file: yes
+#
+- name: Prepare
+  hosts: all
+  vars:
+    driver_json: "{{ molecule_ephemeral_directory }}/driver.json"
+    hostvars_json: "{{ molecule_ephemeral_directory }}/hostvars.json"
+    prepare: "{{ molecule_yml.driver.get('prepare', {}) }}"
+    include_tasks: "{{ prepare.get('include_tasks', '') | expanduser }}"
+    bootstrap_python: "{{ prepare.get('bootstrap_python', 'yes') | bool }}"
+    selinux_mode: "{{ prepare.get('selinux_mode', '') }}"
+    rewrite_hosts_file: "{{ prepare.get('rewrite_hosts_file', 'no') | bool }}"
+  tasks:
+    #------------------------------------------------------------------------------
+    # Dump variables for debugging.
+    - name: "Dumping driver variables to {{ driver_json }}"
+      run_once: true
+      delegate_to: localhost
+      copy:
+        content: "{{ molecule_yml.driver | to_nice_json }}"
+        dest: "{{ driver_json }}"
+
+    - name: "Dumping host variables to {{ hostvars_json }}"
+      run_once: true
+      delegate_to: localhost
+      copy:
+        content: "{{ hostvars | to_nice_json }}"
+        dest: "{{ hostvars_json }}"
+
+    - name: Verify host groups
+      run_once: true
+      assert:
+        that:
+          - groups.afs_admin_client is defined
+          - groups.afs_clients is defined
+          - groups.afs_databases is defined
+          - groups.afs_fileservers is defined
+          - groups.afs_kdcs is defined
+          - groups.afs_test is defined
+          - groups.afs_clients | count > 0
+          - groups.afs_databases | count > 0
+          - groups.afs_fileservers | count > 0
+          - groups.afs_admin_client | count == 1
+          - groups.afs_kdcs | count == 1
+          - groups.afs_test | count == 1
+
+    #------------------------------------------------------------------------------
+    # Wait for instances to be reachable.
+    - name: Waiting for instance connection.
+      wait_for_connection:
+
+    #------------------------------------------------------------------------------
+    # Bootstrap python.
+    - name: Bootstrap python for Ansible
+      become: true
+      raw: |
+        command -v python3 python || (
+        command -v apk >/dev/null && sudo apk add --no-progress --update python3 ||
+        (test -e /usr/bin/dnf && sudo dnf install -y python3) ||
+        (test -e /usr/bin/apt && (apt -y update && apt install -y python-minimal)) ||
+        (test -e /usr/bin/yum && sudo yum -y -qq install python3) ||
+        (test -e /usr/sbin/pkg && sudo env ASSUME_ALWAYS_YES=yes pkg update && sudo env ASSUME_ALWAYS_YES=yes pkg install python3) ||
+        (test -e /usr/sbin/pkg_add && sudo /usr/sbin/pkg_add -U -I -x python%3.7) ||
+        echo "Warning: Python not boostrapped due to unknown platform."
+        )
+      changed_when: false
+      when: bootstrap_python
+
+    #------------------------------------------------------------------------------
+    # Include optional site-local prepare tasks.
+    - include_tasks: "{{ include_tasks }}"
+      when: include_tasks | count > 0
+
+    #------------------------------------------------------------------------------
+    # Setup selinux mode on the test instances.
+    - assert:
+        that: selinux_mode in ('permissive', 'enforcing', 'disabled')
+        success_msg: "driver.prepare.selinux_mode is valid; '{{ selinux_mode }}'."
+        fail_msg: "Invalid driver.prepare.selinux_mode value; '{{ selinux_mode }}'."
+      when: selinux_mode | count > 0
+
+    - name: Configure selinux mode
+      become: yes
+      selinux:
+        policy: targeted
+        state: "{{ selinux_mode }}"
+      when:
+        - selinux_mode | count > 0
+        - ansible_selinux is defined
+        - ansible_selinux.status is defined
+        - ansible_selinux.status == 'enabled'
+
+    #------------------------------------------------------------------------------
+    # Optionally setup the /etc/hosts file on the tests machines to support forward
+    # and reverse name resolution of the tests machines in the test cell.  This is a
+    # workaround which can be enabled when a proper nameserver is not setup for the
+    # test guests.
+    - name: "Rewrite hosts file."
+      when: rewrite_hosts_file
+      become: yes
+      vars:
+        hosts_file: "{{ (ansible_system == 'SunOS') | ternary('/etc/inet/hosts', '/etc/hosts') }}"
+      copy:
+        backup: yes
+        dest: "{{ hosts_file }}"
+        content: |
+          127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+          ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+          {% for name in hostvars | sort %}
+          {% if hostvars[name].ansible_hostname == hostvars[name].ansible_fqdn %}
+          {{ hostvars[name].ansible_default_ipv4.address }}  {{ hostvars[name].ansible_hostname }}
+          {% else %}
+          {{ hostvars[name].ansible_default_ipv4.address }}  {{ hostvars[name].ansible_hostname }} {{ hostvars[name].ansible_fqdn }}
+          {% endif %}
+          {% endfor %}
+{%- endraw %}{%- if cookiecutter.platform.startswith('centos') %}{%- raw %}
+
+#------------------------------------------------------------------------------
+# Ensure a kernel-devel package is installed that matches the current kernel
+# version. This is required in order to build the OpenAFS client kernel module.
+- name: Check kernel headers.
+  {%- endraw %}{%- if (cookiecutter.install_method in ['packages', 'bdist', 'sdist']) and (cookiecutter.enable_builds == 'yes') %}
+  hosts: afs_clients:afs_builders
+  {%- else %}
+  hosts: afs_clients
+  {%- endif %}{%- raw %}
+  vars:
+    prepare: "{{ molecule_yml.driver.get('prepare', {}) }}"
+    allow_reboot: "{{ prepare.get('allow_reboot', 'no') | bool }}"
+  tasks:
+  - block:
+    - name: "Query kernel-devel packages."
+      command: rpm -q --qf='%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel-devel
+      changed_when: False
+      register: rpm_query
+
+    - name: "Verify kernel-devel version."
+      assert:
+        that: ansible_kernel in rpm_query.stdout_lines
+        success_msg: "kernel-devel-{{ ansible_kernel }} is installed."
+        fail_msg: "kernel-devel-{{ ansible_kernel }} is not installed. Will attempt to install."
+
+    rescue:
+    - block:
+      - name: "Install kernel-devel package."
+        become: yes
+        yum:
+          state: present
+          name: "kernel-devel-uname-r == {{ ansible_kernel }}"
+
+      rescue:
+      - fail:
+          msg: >
+            Refusing to update kernel and reboot.  Manually update your kernel or
+            set 'driver.prepare.allow_reboot' to 'yes' and retry.
+        when: not allow_reboot
+
+      - name: "Update kernel."
+        become: yes
+        block:
+        - name: "Update kernel."
+          yum:
+            state: latest
+            name:
+            - kernel
+            - kernel-devel
+          register: yum_update_results
+
+        - name: "Reboot."
+          when: yum_update_results.changed
+          reboot:
+            reboot_timeout: 600
+
+        - name: "Wait for reboot to finish."
+          when: yum_update_results.changed
+          wait_for_connection:
+
+        - name: "Regather facts after reboot."
+          when: yum_update_results.changed
+          setup:
+{%- endraw %}{%- elif cookiecutter.platform.startswith('debian') %}{%- raw %}
+
+#------------------------------------------------------------------------------
+# Ensure a kernel-headers package is installed that matches the current kernel
+# version. This is required in order to build the OpenAFS client kernel module.
+#
+- name: Check kernel headers.
+  {%- endraw %}{%- if (cookiecutter.install_method in ['packages', 'bdist', 'sdist']) and (cookiecutter.enable_builds == 'yes') %}
+  hosts: afs_clients:afs_builders
+  {%- else %}
+  hosts: afs_clients
+  {%- endif %}{%- raw %}
+  vars:
+    prepare: "{{ molecule_yml.driver.get('prepare', {}) }}"
+    allow_reboot: "{{ prepare.get('allow_reboot', 'no') | bool }}"
+  tasks:
+  - block:
+    - name: "Query linux-header package."
+      command: dpkg-query --show --showformat='${Status}:${Package}\n'
+               'linux-headers-{{ ansible_kernel }}'
+      changed_when: False
+      register: dpkg_query
+
+    - name: "Verify linux-headers are installed."
+      assert:
+        that: dpkg_query.stdout_lines | select('match', 'install ok installed:') | count != 0
+        success_msg: "linux-headers-{{ ansible_kernel }} is installed."
+        fail_msg: "linux-headers-{{ ansible_kernel }} is not installed. Will attempt to install."
+
+    rescue:
+    - block:
+      - name: "Install linux-headers"
+        become: yes
+        apt:
+          state: present
+          name: "linux-headers-{{ ansible_kernel }}"
+
+      rescue:
+      - fail:
+          msg: >
+            Refusing to update kernel and reboot.  Manually update your kernel or
+            set 'driver.prepare.allow_reboot' to 'yes' and retry.
+        when: not allow_reboot
+
+      - name: Update kernel
+        become: yes
+        block:
+        - name: Update kernel with apt
+          apt:
+            state: latest
+            name:
+            - 'linux-image*'
+            - 'linux-headers*'
+            only_upgrade: yes
+            update_cache: yes
+            register: apt_update_results
+
+        - name: Reboot
+          when: apt_update_results.changed
+          reboot:
+            reboot_timeout: 600
+
+        - name: Wait for reboot to complete.
+          when: apt_update_results.changed
+          wait_for_connection:
+
+        - name: Regather facts after reboot.
+          when: apt_update_results.changed
+          setup:
+{%- endraw %}{%- endif %}

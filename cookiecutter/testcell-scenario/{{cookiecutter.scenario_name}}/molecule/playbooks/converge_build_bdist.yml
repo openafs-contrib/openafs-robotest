@@ -1,0 +1,58 @@
+{% raw -%}
+---
+- name: Build
+  hosts: afs_builders
+  vars:
+    build_directory: "{{ afs_build_directory | d('~/openafs', true) }}"
+    archive_directory: "{{ afs_archive_directory | d(molecule_ephemeral_directory+'/archives', true) }}"
+  collections:
+    - openafs_contrib.openafs
+  tasks:
+    - import_role:
+        name: openafs_devel
+
+    - name: "Checkout OpenAFS source code."
+      git:
+        repo: "{{ afs_git_repo }}"
+        version: "{{ afs_git_version }}"
+        dest: "{{ build_directory }}"
+
+    - name: "Build binary distribution."
+      openafs_build:
+        target: dest
+        clean: yes
+        projectdir: "{{ build_directory }}"
+        destdir: "{{ build_directory }}/packages/dest"
+        configure_options:
+          enable:
+            - debug
+            - debug-kernel
+            - kernel-module
+            - transarc-paths
+          with:
+            - linux-kernel-packaging
+      register: build_results
+
+    - name: "Create install archive."
+      vars:
+        build_type: bdist
+        build_platform: "{{ ansible_distribution | lower }}{{ ansible_distribution_major_version }}-{{ ansible_architecture }}"
+        build_number: "{{ lookup('openafs_contrib.openafs.counter', build_platform + '-' + build_type) }}"
+        build_id: "{{ build_platform }}-{{ build_type }}-{{ build_number }}"
+      archive:
+        path: "{{ build_results.destdir }}/"
+        dest: "{{ build_id }}.tar.gz"
+        format: gz
+      register: archive_results
+
+    - name: "Download install archive."
+      fetch:
+        src: "{{ archive_results.dest }}"
+        dest: "{{ archive_directory }}/"
+        flat: yes
+      register: fetch_results
+
+    - name: "Downloaded."
+      debug:
+        var: fetch_results.dest
+{%- endraw %}

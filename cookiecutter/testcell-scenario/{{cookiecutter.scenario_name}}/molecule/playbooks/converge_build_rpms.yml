@@ -1,0 +1,62 @@
+{% raw -%}
+---
+- name: Build
+  hosts: afs_builders
+  vars:
+    build_directory: "{{ afs_build_directory | d('~/openafs', true) }}"
+    archive_directory: "{{ afs_archive_directory | d(molecule_ephemeral_directory+'/archives', true) }}"
+  collections:
+    - openafs_contrib.openafs
+  tasks:
+    - import_role:
+        name: openafs_devel
+
+    - name: "Checkout OpenAFS source code."
+      git:
+        repo: "{{ afs_git_repo }}"
+        version: "{{ afs_git_version }}"
+        dest: "{{ build_directory }}"
+
+    - name: "Make source distribution files."
+      openafs_build_sdist:
+        topdir: "{{ build_directory }}"
+        sdist: "{{ build_directory }}/packages"
+      register: make_sdist_results
+
+    - debug:
+        var: make_sdist_results
+        verbosity: 1
+
+    - name: "Build RPM files."
+      openafs_build_redhat_rpms:
+        build: all
+        sdist: "{{ build_directory }}/packages"
+      register: build_results
+
+    - debug:
+        var: build_results
+        verbosity: 1
+
+    - name: "Create install archive."
+      vars:
+        build_type: rpms
+        build_platform: "{{ ansible_distribution | lower }}{{ ansible_distribution_major_version }}-{{ ansible_architecture }}"
+        build_number: "{{ lookup('openafs_contrib.openafs.counter', build_platform + '-' + build_type) }}"
+        build_id: "{{ build_platform }}-{{ build_type }}-{{ build_number }}"
+      archive:
+        path: "{{ build_results.rpms }}"
+        dest: "{{ build_id }}.tar.gz"
+        format: gz
+      register: archive_results
+
+    - name: "Download install archive."
+      fetch:
+        src: "{{ archive_results.dest }}"
+        dest: "{{ archive_directory }}/"
+        flat: yes
+      register: fetch_results
+
+    - name: "Downloaded."
+      debug:
+        var: fetch_results.dest
+{%- endraw %}

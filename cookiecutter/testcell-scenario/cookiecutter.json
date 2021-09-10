@@ -1,12 +1,25 @@
 {
-    "scenario_name": "myscenario",
-    "molecule_driver_name": "vagrant",
-    "image_name": "generic/centos8",
-    "configuration": [
-        "class a: single host",
-        "class b: cluster 1 db, 2 fs, 3 cl",
-        "class c: cluster 3 db, 3 fs, 3 cl"
+    "scenario_name": "Untitled",
+    "instance_prefix": "m-",
+    "collection_repo": ["galaxy", "github", "local"],
+    "collections_paths": ".",
+    "cell": "example.com",
+    "realm": "{{ cookiecutter.cell.upper() }}",
+    "layout": [
+        "1 host",
+        "2 hosts: 1 server, 1 client",
+        "6 hosts: 1 database, 2 fileservers, 3 clients",
+        "9 hosts: 3 databases, 3 fileservers, 3 clients"
     ],
-    "install_method": ["managed", "packages", "bdist", "sdist", "scm"],
-    "module_install_method": ["dkms", "kmod"]
+    "platform": [
+        "centos8",
+        "centos7",
+        "debian11",
+        "debian10",
+        "fedora34",
+        "solaris114"
+    ],
+    "install_method": ["managed", "packages", "bdist", "sdist", "source"],
+    "enable_dkms": ["yes", "no"],
+    "enable_builds": ["yes", "no"]
 }

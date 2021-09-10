@@ -4,3 +4,5 @@
 output
 builds
 docs/build/
+!.yamllint
+!.ansible-lint

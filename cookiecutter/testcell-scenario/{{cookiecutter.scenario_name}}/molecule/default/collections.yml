@@ -1,0 +1,50 @@
+---
+#
+# This file specifies the collections to be installed. You can specify four keys
+# for each collection entry:
+#
+#   name
+#   version
+#   source
+#   type
+#
+# The type key can be set to "file", "galaxy", "git", "url", "dir", or "subdirs".
+# If type is omitted, the name key is used to implicitly determine the source of
+# the collection.
+#
+# When you install a collection with type "git", the version key can refer to a
+# branch or to a git commit-ish object (commit or tag).
+#
+# Examples:
+#
+#   # Download latest release from galaxy.
+#   - name: openafs_contrib.openafs
+#     type: galaxy
+#
+#   # Download version 1.2 from galaxy.
+#   - name: openafs_contrib.openafs
+#     version: 1.2
+#     type: galaxy
+#
+#   # Get current master branch from github.
+#   - name: openafs_contrib.openafs
+#     version: master
+#     source: https://github.com/openafs-contrib/ansible-openafs
+#     type: git
+#
+#   # Copy from local directory.
+#   - name: openafs_contrib.openafs
+#     source: /path/to/openafs_contrib/openafs
+#     type: dir
+#
+collections:
+  - name: openafs_contrib.openafs
+{%- if cookiecutter.collection_repo == 'galaxy' %}
+{%- elif cookiecutter.collection_repo == 'github' %}
+    type: "git"
+    source: "https://github.com/openafs-contrib/ansible-openafs"
+    version: "master"
+{%- elif cookiecutter.collection_repo == 'local' %}
+    type: "dir"
+    source: "{{ cookiecutter.collections_paths }}/ansible_collections/openafs_contrib/openafs"
+{%- endif %}

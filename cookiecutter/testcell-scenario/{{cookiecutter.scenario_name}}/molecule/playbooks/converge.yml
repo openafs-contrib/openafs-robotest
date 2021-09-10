@@ -1,0 +1,16 @@
+---
+{%- if cookiecutter.enable_builds %}
+  {%- if cookiecutter.install_method == 'packages' %}
+    {%- if cookiecutter.platform in ['centos7', 'centos8', 'fedora34'] %}
+- import_playbook: converge_build_rpms.yml
+    {%- elif cookiecutter.platform in ['debian10', 'debian11'] %}
+- import_playbook: converge_build_debs.yml
+    {%- endif %}
+  {%- elif cookiecutter.install_method == 'bdist' %}
+- import_playbook: converge_build_bdist.yml
+  {%- elif cookiecutter.install_method == 'sdist' %}
+- import_playbook: converge_build_bdist.yml
+  {%- endif %}
+{%- endif %}
+- import_playbook: converge_realm.yml
+- import_playbook: converge_cell.yml

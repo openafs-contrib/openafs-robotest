@@ -1,6 +1,0 @@
-{% raw -%}
----
-- import_playbook: preamble.yml
-- import_playbook: realm.yml
-- import_playbook: cell.yml
-{% endraw -%}

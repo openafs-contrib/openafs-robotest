@@ -1,0 +1,10 @@
+skip_list:
+  - command-instead-of-module
+  - experimental
+  - package-latest
+  - unnamed-task
+  - no-changed-when
+  # Exceptions for openafs_contrib.openafs roles
+  - deprecated-local-action
+  - no-handler
+  - risky-shell-pipe

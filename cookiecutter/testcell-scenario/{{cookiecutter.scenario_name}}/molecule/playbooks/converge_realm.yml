@@ -1,5 +1,11 @@
 {% raw -%}
 ---
+#
+# Create a Kerberos test realm. Install MIT Kerberos, create the KDC, create the
+# AFS service key, and create an admin principal. Download the AFS service key
+# and admin principal keytab files to the Ansible controller to be distributed to
+# the test instances.
+#
 - name: Create a Kerberos realm
   hosts: afs_kdcs
   collections:
@@ -7,9 +13,6 @@
   tasks:
     - import_role:
         name: openafs_krbserver
-
-    - import_role:
-        name: openafs_common
 
     - name: Create AFS service key.
       become: yes
@@ -48,7 +51,7 @@
         - "{{ user_princ_results.keytab }}"
       register: download_results
 
-    - name: Downloaded.
+    - name: Downloaded keytabs.
       debug:
         msg: "{{ download_results.results | map(attribute='dest') | list }}"
 {%- endraw %}
