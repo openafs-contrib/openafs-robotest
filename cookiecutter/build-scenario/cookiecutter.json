@@ -1,4 +1,0 @@
-{
-    "scenario_name": "default",
-    "build_target": ["bdist", "sdist", "packages"]
-}
