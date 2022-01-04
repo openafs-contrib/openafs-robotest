@@ -18,9 +18,6 @@ platforms = [
 install_methods = ['managed', 'packages', 'bdist', 'sdist', 'source']
 layout = [
     '1 host',
-    '2 hosts: 1 server, 1 client',
-    '6 hosts: 1 database, 2 fileservers, 3 clients',
-    '9 hosts: 3 databases, 3 fileservers, 3 clients'
 ]
 
 @contextmanager
@@ -85,7 +82,6 @@ def test_template(tmpdir, install_method, platform, layout_index):
             'scenario_name': scenario_name,
             'collection_repo': collection_repo,
             'collections_paths': collections_paths,
-            'layout': layout[layout_index],
             'platform': platform,
             'install_method': install_method,
             'enable_dkms': ('yes' if enable_dkms else 'no'),
@@ -123,10 +119,10 @@ def test_template(tmpdir, install_method, platform, layout_index):
         assert 'afs_builders' not in molecule_yml
 
     # Check the generated scenario file.
-    converge_yml = pathlib.Path(tmpdir / scenario_name / 'molecule' / \
-                   'playbooks' / 'converge.yml').read_text()
+    prepare_yml = pathlib.Path(tmpdir / scenario_name / 'molecule' / \
+                   'playbooks' / 'prepare.yml').read_text()
     if do_build:
-        assert 'converge_build' in converge_yml
+        assert 'import_playbook: build' in prepare_yml
 
     # Optionally, check with yamllint and ansible-lint.
     if lint:

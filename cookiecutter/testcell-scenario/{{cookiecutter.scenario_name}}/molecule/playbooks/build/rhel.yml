@@ -52,7 +52,7 @@
     - name: "Download install archive."
       fetch:
         src: "{{ archive_results.dest }}"
-        dest: "{{ archive_directory }}/"
+        dest: "{{ afs_install_archive }}"
         flat: yes
       register: fetch_results
 

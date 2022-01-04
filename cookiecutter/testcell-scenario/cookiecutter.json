@@ -5,12 +5,6 @@
     "collections_paths": ".",
     "cell": "example.com",
     "realm": "{{ cookiecutter.cell.upper() }}",
-    "layout": [
-        "1 host",
-        "2 hosts: 1 server, 1 client",
-        "6 hosts: 1 database, 2 fileservers, 3 clients",
-        "9 hosts: 3 databases, 3 fileservers, 3 clients"
-    ],
     "platform": [
         "centos8",
         "centos7",
@@ -19,6 +13,7 @@
         "fedora34",
         "solaris114"
     ],
+    "image_name": "generic/{{ cookiecutter.platform }}",
     "install_method": ["managed", "packages", "bdist", "sdist", "source"],
     "enable_dkms": ["yes", "no"],
     "enable_builds": ["yes", "no"]

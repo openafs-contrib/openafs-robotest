@@ -5,14 +5,14 @@ import glob
 
 # Find build playbook(s) in use.
 keep = []
-with open('molecule/playbooks/converge.yml') as f:
+with open('molecule/playbooks/prepare.yml') as f:
     for line in f.readlines():
-        m = re.match(r'- import_playbook:\s*(.*build.*)\s*', line)
+        m = re.match(r'- import_playbook: build/(.*)', line)
         if m:
             keep.append(m.group(1))
 
 # Remove the unused build playbooks.
-for path in glob.glob('molecule/playbooks/*build*'):
+for path in glob.glob('molecule/playbooks/build/*'):
     playbook = os.path.basename(path)
     if playbook not in keep:
         os.unlink(path)

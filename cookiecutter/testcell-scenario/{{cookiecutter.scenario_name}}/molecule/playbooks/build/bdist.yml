@@ -3,56 +3,54 @@
 - name: Build
   hosts: afs_builders
   vars:
+    repo: "{{ afs_git_repo | d('git://git.openafs.org/openafs.git', true) }}"
+    version: "{{ afs_git_version | d('master', true) }}"
     build_directory: "{{ afs_build_directory | d('~/openafs', true) }}"
-    archive_directory: "{{ afs_archive_directory | d(molecule_ephemeral_directory+'/archives', true) }}"
   collections:
     - openafs_contrib.openafs
   tasks:
-    - import_role:
+    - include_role:
         name: openafs_devel
+
+    - debug:
+        msg: "Checking out '{{ version }}' from repo '{{ repo }}'."
 
     - name: "Checkout OpenAFS source code."
       git:
-        repo: "{{ afs_git_repo }}"
-        version: "{{ afs_git_version }}"
+        repo: "{{ repo }}"
+        version: "{{ version }}"
         dest: "{{ build_directory }}"
 
-    - name: "Build binary distribution."
+    - debug:
+        msg: "Build logs will be created in '{{ inventory_hostname }}:{{ build_directory }}/.ansible/'."
+
+    - name: "Building OpenAFS binaries."
       openafs_build:
-        target: dest
         clean: yes
+        target: "{{ afs_build_target | d('dest', True) }}"
         projectdir: "{{ build_directory }}"
         destdir: "{{ build_directory }}/packages/dest"
-        configure_options:
-          enable:
-            - debug
-            - debug-kernel
-            - kernel-module
-            - transarc-paths
-          with:
-            - linux-kernel-packaging
+        configure_options: "{{ afs_configure_options }}"
       register: build_results
 
     - name: "Create install archive."
       vars:
         build_type: bdist
         build_platform: "{{ ansible_distribution | lower }}{{ ansible_distribution_major_version }}-{{ ansible_architecture }}"
-        build_number: "{{ lookup('openafs_contrib.openafs.counter', build_platform + '-' + build_type) }}"
-        build_id: "{{ build_platform }}-{{ build_type }}-{{ build_number }}"
       archive:
         path: "{{ build_results.destdir }}/"
-        dest: "{{ build_id }}.tar.gz"
+        dest: "openafs-{{ build_platform }}.bdist.tar.gz"
         format: gz
       register: archive_results
 
     - name: "Download install archive."
       fetch:
         src: "{{ archive_results.dest }}"
-        dest: "{{ archive_directory }}/"
+        dest: "{{ afs_install_archive }}"
         flat: yes
       register: fetch_results
 
-    - name: "Downloaded."
+    - name: "Downloaded file."
       debug:
         var: fetch_results.dest
 {%- endraw %}

@@ -1,7 +1,6 @@
 # {{ cookiecutter.scenario_name }}
 
   * platform: {{ cookiecutter.platform }}
-  * layout: {{ cookiecutter.layout }}
   * install: {{ cookiecutter.install_method }}
 
 ## Description
