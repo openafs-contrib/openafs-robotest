@@ -6,7 +6,7 @@ Documentation: [https://openafs-robotest.readthedocs.io][5]
 
 ## System Requirements
 
-* Kerberos Realm
+* Kerberos realm
 * OpenAFS cell
 * Python 2.7 or 3.6
 * [robotframework][1]
@@ -14,13 +14,12 @@ Documentation: [https://openafs-robotest.readthedocs.io][5]
 
 ## Overview
 
-This is a basic set of tests for the [OpenAFS][4] distributed filesystem.  The
-test cases cover basic workload from a single client (at this time) and general
-OpenAFS administration.
+OpenAFS Robotest is a set of [Robotframework][1] test cases for the [OpenAFS][4]
+distributed filesystem.  The test cases cover a basic workload from a single
+client and general OpenAFS administration.
 
-Please see the [Ansible roles for OpenAFS][3] playbooks to deploy a Kerberos
-realm and OpenAFS cell in order to run the tests.
-
+An Ansible Molecule template and with Ansible playbooks are provided to quickly
+deploy a Kerberos test realm and OpenAFS test cell on virtual machines.
 
 [1]: http://robotframework.org/
 [2]: https://github.com/openafs-contrib/robotframework-openafslibrary

@@ -19,7 +19,12 @@ help:
 %: Makefile
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
-.PHONE: preview
+.PHONY: preview
 preview:
 	$(MAKE) html
 	firefox --new-tab build/html/index.html
+
+.PHONY: venv
+venv:
+	python3 -m venv .venv
+	.venv/bin/pip install -r requirements.txt
