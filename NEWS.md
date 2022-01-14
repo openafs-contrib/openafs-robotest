@@ -113,11 +113,11 @@
 
 ## [v0.3.0] 2016-01-08
 
-* New `afsutil` package: New python package and script to install and setup OpenAFS before running tests. This package is independent of Robotframework.
+* New `afsutil` package: New python package and script to install and setup OpenAFS before running tests. This package is independent of Robot Framework.
 
 ## [v0.2.0] 2015-04-13
 
-* New `OpenAFSLibary` Robotframework keyword library for writing tests.
+* New `OpenAFSLibary` Robot Framework keyword library for writing tests.
 
 ## [v0.1.0] 2013-05-23
 

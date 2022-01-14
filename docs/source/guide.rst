@@ -1,14 +1,16 @@
+.. _`Quick Start Guide`:
+
 Quick Start Guide
 =================
 
 This guide shows how to quickly create an OpenAFS_ test cell with Vagrant_ and
-Ansible_, and then run `OpenAFS Robotest`_ suite on the ephemeral test cell.
-Ansible Molecule_ is used to run the Vagrant and Ansible. The test cases are
-run as a Molecule verify action.
+Ansible_ and run `OpenAFS Robotest`_ suite on the ephemeral test cell. Ansible
+Molecule_ is used as a driver to run Vagrant, Ansible, and execute the
+tests.
 
-The `OpenAFS Robotest`_ repository contains a `Cookiecutter`_ template to create
-your initial Molecule yaml files.  The Molecule_ yaml files may be customized to
-support different test configurations.
+The `OpenAFS Robotest`_ provides a `Cookiecutter`_ template so you can quickly
+create your initial Molecule configuration files.  The Molecule_ files may be
+customized to support different test configurations.
 
 The `OpenAFS Ansible Collection`_ is automatically installed by Molecule to make
 it easy to setup the test realm and cell.
@@ -75,10 +77,14 @@ Creating a test scenario
 ------------------------
 
 In a directory of your choice, create a test scenario with `Cookiecutter`_.
+You will be prompted for various options.
 
 .. code-block:: console
 
-    $ cookiecutter --directory cookiecutter/testcell-scenario https://github.com/openafs-contrib/openafs-robotest
+    $ cookiecutter \
+      --directory cookiecutter/testcell-scenario \
+      https://github.com/openafs-contrib/openafs-robotest
+
     scenario_name [Untitled]: my-first-scenario
     instance_prefix [m-]:
     Select collection_repo:
@@ -96,7 +102,7 @@ In a directory of your choice, create a test scenario with `Cookiecutter`_.
     4 - debian10
     5 - fedora34
     6 - solaris114
-    Choose from 1, 2, 3, 4, 5, 6 [1]: 3
+    Choose from 1, 2, 3, 4, 5, 6 [1]:
     image_name [generic/debian11]:
     Select install_method:
     1 - managed
@@ -104,15 +110,15 @@ In a directory of your choice, create a test scenario with `Cookiecutter`_.
     3 - bdist
     4 - sdist
     5 - source
-    Choose from 1, 2, 3, 4, 5 [1]: 1
+    Choose from 1, 2, 3, 4, 5 [1]:
     Select enable_dkms:
     1 - yes
     2 - no
-    Choose from 1, 2 [1]: 1
+    Choose from 1, 2 [1]:
     Select enable_builds:
     1 - yes
     2 - no
-    Choose from 1, 2 [1]: 1
+    Choose from 1, 2 [1]:
 
 This should create a molecule scenario directory containing a `molecule.yml`
 file and a set of Ansible playbooks.
@@ -132,9 +138,9 @@ Create a local git repository in the test scenario.
 Installing Molecule
 ~~~~~~~~~~~~~~~~~~~
 
-Install `Ansible`_, `Molecule`_, and the required Molecule plugins.  It is
-recommended to install these in a Python3 virtualenv directory in your
-test scenario.
+Install `Ansible`_, `Molecule`_, and `Molecule Robot Framework plugin`_.  A
+Python virtualenv style installation in your scenario directory is recommended
+for these packages.
 
 .. code-block:: console
 
@@ -146,12 +152,13 @@ test scenario.
 Molecule Driver Configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Local configuration setting for the Molecule driver are specified in a Molecule
-base configuration file, located in ``.config/molecule/config.yml``.
+Local settings for the Molecule driver are specified in a Molecule base
+configuration file, located in ``.config/molecule/config.yml``.
 
-Update the base configuration file to set the name Vagrant provider name you are
-using, or to specify a different driver name if you are not using Vagrant.  See
-the Molecule driver configuration documentation for more information.
+Edit the base configuration file to set the name Vagrant provider name for your
+system, or to specify a different driver name if you are not using Vagrant.
+See the Molecule driver configuration documentation for more information about
+drivers and driver options.
 
 .. code-block:: console
 
@@ -170,7 +177,7 @@ the Molecule driver configuration documentation for more information.
 Running the tests
 -----------------
 
-Run ``molecule`` to run the Ansbile playbooks to create Kerberos realm and the
+Run ``molecule`` to run the Ansible playbooks to create Kerberos realm and the
 OpenAFS cell and then install and run the `OpenAFS Robotest`_ test suite. The
 test report and logs are saved in the ``reports/<scenario-name>`` directory.
 
@@ -202,16 +209,17 @@ Customization possibilities include:
 * Number of test instances, and whether an instance is a client or server.
 * OpenAFS installation installation method
 * OpenAFS build options
-* Test cases to run and Robotframework ``robot`` options
+* Test cases to run and Robot Framework ``robot`` options
 
 
 .. _Ansible: https://www.ansible.com/
 .. _Cookiecutter: https://cookiecutter.readthedocs.io/
 .. _homebrew: https://brew.sh
 .. _Molecule: https://molecule.readthedocs.io/en/latest/
+.. _`Molecule Robot Framework plugin`: https://pypi.org/project/molecule-robotframework/
 .. _`OpenAFS Ansible Collection`: https://galaxy.ansible.com/openafs_contrib/openafs
 .. _OpenAFS: https://www.openafs.org
 .. _`OpenAFS Robotest`: https://github.com/openafs-contrib/openafs-robotest
 .. _Vagrant: https://www.vagrantup.com/
-.. _`virtualization provider`: https://www.vagrantup.com/docs/providers
 .. _VirtualBox: https://www.virtualbox.org/
+.. _`virtualization provider`: https://www.vagrantup.com/docs/providers

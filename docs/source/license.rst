@@ -1,3 +1,5 @@
+.. _`License`:
+
 License
 =======
 
