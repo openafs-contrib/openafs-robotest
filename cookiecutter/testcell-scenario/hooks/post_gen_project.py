@@ -17,6 +17,13 @@ for path in glob.glob('molecule/playbooks/build/*'):
     if playbook not in keep:
         os.unlink(path)
 
+# Create an initial .gitignore file. We do this with the hook to
+# avoid a .gitignore file in the template repo.
+if not os.path.exists('.gitignore'):
+    with open('.gitignore', 'w') as f:
+        for i in ('.*', '*.pyc', '*.pyo', 'venv/', 'builds/', 'reports/'):
+            f.write('%s\n' % i)
+
 # Unfortunately, Cookiecutter does not clean up rendered hook scripts. As a
 # workaround, remove myself to avoid cluttering /tmp with a large number of
 # small files called /tmp/tmp*.py.
