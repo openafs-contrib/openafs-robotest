@@ -5,6 +5,7 @@
     "collections_paths": ".",
     "cell": "example.com",
     "realm": "{{ cookiecutter.cell.upper() }}",
+    "vagrant_provider": ["virtualbox", "libvirt", "vmware_desktop"],
     "platform": [
         "centos8",
         "centos7",

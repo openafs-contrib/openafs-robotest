@@ -5,8 +5,7 @@ Quick Start Guide
 
 This guide shows how to quickly create an OpenAFS_ test cell with Vagrant_ and
 Ansible_ and run `OpenAFS Robotest`_ suite on the ephemeral test cell. Ansible
-Molecule_ is used as a driver to run Vagrant, Ansible, and execute the
-tests.
+Molecule_ is used to run Vagrant, Ansible, and execute the tests.
 
 The `OpenAFS Robotest`_ provides a `Cookiecutter`_ template so you can quickly
 create your initial Molecule configuration files.  The Molecule_ files may be
@@ -152,17 +151,16 @@ for these packages.
 Molecule Driver Configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Local settings for the Molecule driver are specified in a Molecule base
-configuration file, located in ``.config/molecule/config.yml``.
+Molecule driver settings are specified in a base configuration file located in
+``<scenario-name>/.config/molecule/config.yml``.
 
-Edit the base configuration file to set the name Vagrant provider name for your
-system, or to specify a different driver name if you are not using Vagrant.
-See the Molecule driver configuration documentation for more information about
-drivers and driver options.
+See the Molecule_ documentation for more information about drivers and driver
+options.  See the prepare playbook under ``<scenario-name>/molecule/playbooks``
+for information about the ``prepare`` options.
 
 .. code-block:: console
 
-    $ cat ~/.config/molecule/config.yml
+    $ cat my-first-scenario/.config/molecule/config.yml
     ---
     driver:
       name: vagrant

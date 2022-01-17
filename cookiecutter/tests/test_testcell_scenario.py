@@ -82,6 +82,7 @@ def test_template(tmpdir, install_method, platform, layout_index):
             'scenario_name': scenario_name,
             'collection_repo': collection_repo,
             'collections_paths': collections_paths,
+            'vagrant_provider': 'libvirt',
             'platform': platform,
             'install_method': install_method,
             'enable_dkms': ('yes' if enable_dkms else 'no'),

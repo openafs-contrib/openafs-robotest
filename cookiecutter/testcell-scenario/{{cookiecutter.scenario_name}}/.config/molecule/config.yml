@@ -1,0 +1,10 @@
+---
+driver:
+  name: vagrant
+  provider:
+    name: {{ cookiecutter.vagrant_provider }}
+  prepare:
+    bootstrap_python: yes
+    allow_reboot: yes
+    selinux_mode: permissive
+    rewrite_hosts_file: yes
