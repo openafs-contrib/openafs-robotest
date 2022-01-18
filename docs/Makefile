@@ -19,6 +19,10 @@ help:
 %: Makefile
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
+.PHONY: testdoc
+testdoc:
+	python3 testdoc.py >source/tests.rst
+
 .PHONY: preview
 preview:
 	$(MAKE) html

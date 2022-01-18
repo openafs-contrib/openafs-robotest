@@ -1,65 +1,177 @@
-.. _`Tests`:
-
 Tests
 =====
 
-OpenAFS filesystem workload test suites
----------------------------------------
 
-Basic
-  AFS filesystem basic functional tests; Create and remove files, file reads and
-  writes, symlink tests.
 
-Dir
-  Additional directory related tests.
 
-Find
-  Tests related to ``find`` traversal.
-
-Hugefile
-  Large file tests.
-
-Mountpoint
-  AFS mountpoint tests.
-
-PAG
-  AFS PAG related tests.
-
-Readonly
-  Read-only file path tests.
-
-Stress
-  Tests creating a large number of files.
-
-OpenAFS administration test suites
-----------------------------------
+Admin
+-----
 
 Bosserver
-  Superuser management tests.
+~~~~~~~~~
+
+Bosserver tests
+
+* Add a Superuser
+* List Server Hosts
+* List Superusers
+* Remove a Superuser
 
 Ptserver
-  User and group management tests.
+~~~~~~~~
 
-OpenAFS volume management test suites
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Ptserver tests
+
+* Add a User to a Group
+* Chown a Group
+* Create a Group
+* Create a User
+* Delete a Group
+* Delete a User
+* Examine a Group
+* Examine a User
+* Get Group Membership
+* Get User Membership
+* List Groups a User Owns
+* Remove a User from a Group
+* Set Fields on a User
+* Set and List Maxuser
+
+Admin.Volume
+------------
 
 Backup
-  Volume backup tests.
+~~~~~~
+
+* Avoid creating a rogue volume during backup
+* Create a Backup Volume
 
 Clone
-  Volume clone tests.
+~~~~~
+
+* Avoid creating a rogue volume during clone
 
 Create
-  Volume creation tests.
+~~~~~~
+
+Volserver/vlserver tests
+
+* Add a Replication Site
+* Avoid creating a rogue volume during create
+* Create a Volume
+* Display Header and VLDB Information
+* Display VLDB Information
+* Display Volume Header Information
+* Remove a Replicated Volume
+* Remove a Replication Site
 
 Dump
-  Volume dump tests.
+~~~~
+
+* Dump a Volume
+* Dump an Empty Volume
+* Dump and Restore Data Integrity
 
 Move
-  Volume move tests.
+~~~~
+
+* Avoid creating a rogue volume during move
+* Move a Volume
+* Move a volume between servers
 
 Release
-  Volume release tests.
+~~~~~~~
+
+* Avoid creating a rogue volume during release
+* Release a Volume
 
 Restore
-  Volume restore tests.
+~~~~~~~
+
+Tests to verify volume restore operations with the
+various of the restore options and to test the volume
+server robustness while attempting to restore invalid
+volume dump streams.
+
+* Avoid creating a rogue volume during restore
+* Restore a Volume Containing a Bogus ACL
+* Restore a volume
+* Restore an empty volume
+
+Workload
+--------
+
+Basic
+~~~~~
+
+Basic Functional Tests
+
+* Create a Cross-Volume Hard Link
+* Create a Directory
+* Create a File
+* Create a Hard Link to a Directory
+* Create a Hard Link within a Directory
+* Create a Hard Link within a Volume
+* Create a Symlink
+* Rename a File
+* Rewrite a file
+* Timestamp rollover after 2147483647 (January 19, 2038 03:14:07 UTC)
+* Touch a file
+* Write and Execute a Script in a Directory
+* Write to a File
+
+Dir
+~~~
+
+Directory Object tests
+
+* Unicode File Name
+
+Find
+~~~~
+
+File Hierarchy Traversal Tests
+
+* Traverse Simple Tree
+* Traverse Tree with Two Parents
+
+Hugefile
+~~~~~~~~
+
+Regression
+
+* Create a Larger Than 2gb File
+* Read Write a File Larger than 4G
+* Read a File Larger than the Cache
+* Write a File Larger than the Cache
+
+Mountpoint
+~~~~~~~~~~
+
+Mountpoint tests
+
+* Create a Mountpoint to a Nonexistent Volume
+* Make and Remove a Mountpoint
+* Make and Remove a Mountpoint with Command Aliases
+
+Pag
+~~~
+
+AFS PAG tests
+
+* Obtain a PAG with pagsh
+
+Readonly
+~~~~~~~~
+
+Read-only tests
+
+* Write a File in a Read-only Volume
+
+Stress
+~~~~~~
+
+Client stess tests
+
+* Create a Large Number of Entries in a Directory
+
