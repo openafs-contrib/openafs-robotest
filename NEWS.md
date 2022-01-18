@@ -1,6 +1,6 @@
-## [Unreleased]
-* Ansible test cell setup
-* Molecule driven test scenarios
+## [v1.0.0]
+* Ansible Molecule test cell template
+* Sphinx documentation
 
 ## [v0.7.0]
 
