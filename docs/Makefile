@@ -24,8 +24,7 @@ testdoc:
 	python3 testdoc.py >source/tests.rst
 
 .PHONY: preview
-preview:
-	$(MAKE) html
+preview: testdoc html
 	firefox --new-tab build/html/index.html
 
 .PHONY: venv
