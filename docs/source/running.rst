@@ -52,18 +52,8 @@ cases.
 
 Example:
 
-.. code-block:: console
-
-  $ robot \
-    --exclude bug \
-    --exclude slow \
-    --exclude rogue-avoidance \
-    --exclude requires-multi-fs \
-    --loglevel INFO \
-    --debugfile debug.log \
-    --runemptysuite \
-    --variablefile openafs-robotest.yml \
-    openafs-robotest/tests
+.. image:: images/robot.png
+   :alt: Example command line output
 
 Ansible Molecule
 ~~~~~~~~~~~~~~~~
@@ -110,6 +100,25 @@ Example verifier options:
       debugfile: debug.log
       runemptysuite: true
       variablefile: openafs-robotest.yml
+
+Test results
+------------
+
+Test execution is displayed in the command line as tests are executed. The
+``robot`` command exit code is 0 when all tests pass.
+
+The ``robot`` command generates an XML and HTML output report of the executed
+tests which gives detailed information on the which tests pass and which tests
+fail.
+
+See the `Robot Framework User Guide`_ for details on test outputs.
+
+.. image:: images/report.png
+   :alt: Example report
+
+.. image:: images/log.png
+   :alt: Example log
+
 
 .. _`Robot Framework User Guide`: https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html
 .. _`Molecule Robot Framework plugin`: https://pypi.org/project/molecule-robotframework/
