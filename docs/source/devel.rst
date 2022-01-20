@@ -68,7 +68,7 @@ Creating keywords in Python
 ---------------------------
 
 Consider adding new keywords to the OpenAFSLibrary_. The OpenAFSLibrary is
-maintained is a separate git repository from the test cases.
+maintained in a separate git repository from the test cases.
 
 
 .. _`Robot Framework User Guide`: https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html
