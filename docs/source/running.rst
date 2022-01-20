@@ -17,7 +17,7 @@ General test cell requirements:
 
 * Kerberos KDC installed and running
 * OpenAFS databases and fileservers installed and running
-* OpenAFS top level volumes created, and mounted, and access rights configured
+* OpenAFS top level volumes created, mounted, and access rights configured
 * Admin user created with system:administrators membership and Superuser rights
 * Admin user keytab file created
 
@@ -64,7 +64,7 @@ the tests in this mode, the `Molecule Robot Framework plugin`_ will run ``robot`
 on the test virtual machines over an ``ssh`` connection.
 
 Before running the ``robot`` command, the plugin installs Robot Framework, the
-OpenAFSLibrary, the test files (``*.robot`` files), and create the variable
+OpenAFSLibrary, the test files (``*.robot`` files) and create the variable
 file. After running the ``robot`` command, the plugin downloads the ``robot``
 output files (logs and report) to your local machine.
 
@@ -108,7 +108,7 @@ Test execution is displayed in the command line as tests are executed. The
 ``robot`` command exit code is 0 when all tests pass.
 
 The ``robot`` command generates an XML and HTML output report of the executed
-tests which gives detailed information on the which tests pass and which tests
+tests which gives detailed information on which tests pass and which tests
 fail.
 
 See the `Robot Framework User Guide`_ for details on test outputs.
