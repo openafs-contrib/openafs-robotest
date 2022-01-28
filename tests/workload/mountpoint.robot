@@ -10,16 +10,16 @@ Suite Setup       Setup
 Suite Teardown    Teardown
 
 *** Variables ***
-${MTPT}         /afs/.${AFS_CELL}/test/mtpt
-${MTPT2}         /afs/.${AFS_CELL}/mtpt
-${MTPT3}         /afs/.${AFS_CELL}/mtpt3
-${MTPT4}         /afs/.${AFS_CELL}/mtpt4
-${VOLUME}     test.mtpt
-${VOLUME2}     test2.mtpt
-${PARTITION}  a
-${SERVER}     ${AFS_FILESERVER_A}
-${TESTPATH}   /afs/.${AFS_CELL}/test/${VOLUME}
-${TESTPATH2}   /afs/.${AFS_CELL}/${VOLUME2}
+${MTPT}           /afs/.${AFS_CELL}/test/mtpt
+${MTPT2}          /afs/.${AFS_CELL}/mtpt2
+${MTPT3}          /afs/.${AFS_CELL}/mtpt3
+${MTPT4}          /afs/.${AFS_CELL}/mtpt4
+${VOLUME}         test.mtpt
+${VOLUME2}        test2.mtpt
+${PARTITION}      a
+${SERVER}         ${AFS_FILESERVER_A}
+${TESTPATH}       /afs/.${AFS_CELL}/test/${VOLUME}
+${TESTPATH2}      /afs/.${AFS_CELL}/${VOLUME2}
 
 *** Test Cases ***
 Make and Remove a Mountpoint
@@ -49,13 +49,10 @@ Create a Mountpoint to a Nonexistent Volume
     [Teardown]    Run Keyword
     ...    Command Should Succeed        ${FS} rmm ${MTPT}
 
-Set RW ACL in root.cell for system:authuser
-    [Documentation]   Setting ACL for root.cell volume which is mounted /afs/.${AFS_CELL}
-    [Setup]    Run Keyword
-    ...    Add Access Rights  /afs/.${AFS_CELL}  system:authuser  rlidwk
-    Access Control List Contains  /afs/.${AFS_CELL}  system:authuser  rlidwk
-
-Make a Mountpoint in root.cell volume
+Make and Remove a Mountpoint in root.cell volume
+    [Documentation]   Creating/removing a mountpoint in a root directory.
+    ...               In releases prior to 1.8.x of AFS there was a bug in the
+    ...               cachemanager when removing a mountpoint that is in the root of a volume.
     [Setup]    Run Keyword
     ...    Command Should Succeed  ${FS} mkmount -dir ${MTPT2} -vol ${VOLUME2}
     Directory Should Exist  ${MTPT2}
@@ -63,30 +60,26 @@ Make a Mountpoint in root.cell volume
     ...    Command Should Succeed  ${FS} rmmount -dir ${MTPT2}  AND
     ...    Directory Should Not Exist  ${MTPT2}
 
-Make and Remove a Mountpoint with Command Aliases in root.cell volume
-    [Setup]    Run Keyword
-    ...    Command Should Succeed  ${FS} mkm ${MTPT3} root.cell
-    Directory Should Exist  ${MTPT3}
-    [Teardown]  Run Keywords
-    ...    Command Should Succeed  ${FS} rmm ${MTPT3}  AND
-    ...    Directory Should Not Exist  ${MTPT3}
-
 Create a Mountpoint to a Nonexistent Volume in root.cell volume
     [Documentation]   The fs command permits the creation of dangling mountpoints.
     ...               A directory entry is created, but the directory is not usable.
+    ...               Repeating this test in root.cell volume as well.
     [Setup]    Run Keyword
-    ...    Command Should Succeed        ${FS} mkm ${MTPT4} no-such-volume
+    ...    Command Should Succeed        ${FS} mkmount -dir ${MTPT4} -vol no-such-volume
     Directory Entry Should Exist  ${MTPT4}
     Command Should Fail           test -d ${MTPT4}
     Command Should Fail           touch ${MTPT4}/foo
-    [Teardown]    Run Keyword
-    ...    Command Should Succeed        ${FS} rmm ${MTPT4}
+    [Teardown]    Run Keywords
+    ...    Command Should Succeed        ${FS} rmmount -dir ${MTPT4}  AND
+    ...    Directory Should Not Exist  ${MTPT4}
 
 *** Keywords ***
 Setup
     Login  ${AFS_ADMIN}  keytab=${AFS_ADMIN_KEYTAB}
     Command Should Succeed  ${VOS} create ${SERVER} ${PARTITION} ${VOLUME}
     Command Should Succeed  ${VOS} create ${SERVER} ${PARTITION} ${VOLUME2}
+    Add Access Rights  /afs/.${AFS_CELL}  system:authuser  rlidwk
+    Access Control List Contains  /afs/.${AFS_CELL}  system:authuser  rlidwk
 
 Teardown
     Remove Volume  ${VOLUME}
