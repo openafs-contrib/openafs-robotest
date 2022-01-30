@@ -72,6 +72,8 @@ GFIND
 
   Type: path
 
+GDIFF
+
 KDESTROY
   The pathname of the Kerberos ``kdestroy`` command.
 

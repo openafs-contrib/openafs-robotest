@@ -37,4 +37,5 @@ KINIT: "{{ ansible_local.openafs.bins['kinit'] }}"
 # Misc paths
 PYTHON: "{{ afs_python | d(ansible_python.executable) }}"
 GFIND: "{{ afs_gfind | d('/usr/bin/find') }}"
+GDIFF: "{{ afs_gdiff | d('/usr/bin/diff') }}"
 {%- endraw %}
