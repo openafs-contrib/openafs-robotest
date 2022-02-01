@@ -1,53 +1,54 @@
 {% raw -%}
----
-- block:
-  - name: "Query kernel-devel packages."
-    command: rpm -q --qf='%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel-devel
-    changed_when: False
-    register: rpm_query
+#------------------------------------------------------------------------------
+# Ensure a kernel-headers package is installed that matches the current kernel
+# version. This is required in order to build the OpenAFS client kernel module.
+#
+- name: "Query linux-header package."
+  command: dpkg-query --show --showformat='${Status}:${Package}\n'
+           'linux-headers-{{ ansible_kernel }}'
+  changed_when: False
+  failed_when: False
+  register: dpkg_query
 
-  - name: "Verify kernel-devel version."
-    assert:
-      that: ansible_kernel in rpm_query.stdout_lines
-      success_msg: "kernel-devel-{{ ansible_kernel }} is installed."
-      fail_msg: "kernel-devel-{{ ansible_kernel }} is not installed. Will attempt to install."
+- debug:
+    var: dpkg_query
+    verbosity: 1
+
+- name: "Install kernel headers."
+  when: ansible_kernel not in dpkg_query.stdout_lines
+  become: yes
+  block:
+    - name: "Install linux-headers"
+      apt:
+        state: present
+        name: "linux-headers-{{ ansible_kernel }}"
 
   rescue:
-  - block:
-    - name: "Install kernel-devel package."
-      become: yes
-      yum:
-        state: present
-        name: "kernel-devel-uname-r == {{ ansible_kernel }}"
-
-    rescue:
+    # If we are unable to install the linux-headers package, the current
+    # kernel version may be too old. When allowed, automatically update
+    # the kernel. This entails a reboot.
     - fail:
-        msg: >
-          Refusing to update kernel and reboot.  Manually update your kernel or
-          set 'driver.prepare.allow_reboot' to 'yes' and retry.
-      when: not allow_reboot
+        msg: Kernel update and reboot required.
+      when: not (afs_devel_allow_kernel_update | d('no') | bool)
 
-    - name: "Update kernel."
-      become: yes
+    - name: Update kernel with apt
+      apt:
+        state: latest
+        name:
+          - 'linux-image*'
+          - 'linux-headers*'
+        only_upgrade: yes
+        update_cache: yes
+      register: apt_update_results
+
+    - name: Reboot
+      when: apt_update_results.changed
       block:
-      - name: "Update kernel."
-        yum:
-          state: latest
-          name:
-          - kernel
-          - kernel-devel
-        register: yum_update_results
-
-      - name: "Reboot."
-        when: yum_update_results.changed
-        reboot:
-          reboot_timeout: 600
-
-      - name: "Wait for reboot to finish."
-        when: yum_update_results.changed
-        wait_for_connection:
-
-      - name: "Regather facts after reboot."
-        when: yum_update_results.changed
-        setup:
+        - name: Rebooting
+          reboot:
+            reboot_timeout: 600
+        - name: Waiting for reboot to complete
+          wait_for_connection:
+        - name: Gathering facts
+          setup:
 {%- endraw %}
