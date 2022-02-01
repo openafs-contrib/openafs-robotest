@@ -37,7 +37,7 @@ Restore an empty volume
 Restore a Volume Containing a Bogus ACL
     Volume should not exist  ${VOLUME}
     Create dump              ${DUMP}    size=small      contains=bogus-acl
-    Command Should Fail      ${VOS} restore ${SERVER} ${PART} ${VOLUME} -FILE ${DUMP} -overwrite full
+    Command Should Fail      ${VOS} restore ${SERVER} ${PART} ${VOLUME} -file ${DUMP} -overwrite full
 
 Avoid creating a rogue volume during restore
     [Tags]         rogue-avoidance
