@@ -28,7 +28,7 @@ Dump a Volume
     Command Should Succeed  ${VOS} dump -id ${VOLUME} -file ${DUMP}
 
 Dump and Restore Data Integrity
-    [Tags]    requires-multi-fs requires-gdiff
+    [Tags]    requires-multi-fs    requires-gdiff
     Create Volume  ${VOLUME}  ${SERVER}  ${PART}  path=${DIR}
     Create Files   ${DIR}   size=512  count=64  depth=2  width=1  fill=random
     Dump Volume
