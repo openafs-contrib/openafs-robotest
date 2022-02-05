@@ -8,7 +8,7 @@ Documentation: [https://openafs-robotest.readthedocs.io][5]
 
 * Kerberos realm
 * OpenAFS cell
-* Python 2.7 or 3.6
+* Python 3.5 or later
 * [robotframework][1]
 * [robotframework-openafslibrary][2]
 

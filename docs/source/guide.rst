@@ -23,7 +23,7 @@ Python and git
 Ensure the following packages are installed on your system.
 
 * git
-* Python 3.6 (or better)
+* Python 3.5 or later
 * Python3 virtualenv
 * Python3 pip
 
