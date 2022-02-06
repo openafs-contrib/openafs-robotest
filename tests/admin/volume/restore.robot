@@ -24,40 +24,40 @@ ${DUMP}         /tmp/test.dump
 
 *** Test Cases ***
 Restore a volume
-    Volume should not exist    ${VOLUME}
-    Create dump    ${DUMP}    size=small
-    Command should succeed    ${VOS} restore ${SERVER} ${PART} ${VOLUME} -file ${DUMP} -overwrite full
-    Volume should exist    ${VOLUME}
-    Volume location matches    ${VOLUME}    ${SERVER}    ${PART}    vtype=rw
+|  | Volume should not exist | ${VOLUME}
+|  | Create dump             | ${DUMP}                                                                  | size=small
+|  | Command should succeed  | ${VOS} restore ${SERVER} ${PART} ${VOLUME} -file ${DUMP} -overwrite full
+|  | Volume should exist     | ${VOLUME}
+|  | Volume location matches | ${VOLUME}                                                                | ${SERVER}  | ${PART} | vtype=rw
 
 Restore an empty volume
-    Volume should not exist    ${VOLUME}
-    Create dump    ${DUMP}    size=empty
-    Command should succeed    ${VOS} restore ${SERVER} ${PART} ${VOLUME} -file ${DUMP} -overwrite full
-    Volume should exist    ${VOLUME}
-    Volume location matches    ${VOLUME}    ${SERVER}    ${PART}    vtype=rw
+|  | Volume should not exist | ${VOLUME}
+|  | Create dump             | ${DUMP}                                                                  | size=empty
+|  | Command should succeed  | ${VOS} restore ${SERVER} ${PART} ${VOLUME} -file ${DUMP} -overwrite full
+|  | Volume should exist     | ${VOLUME}
+|  | Volume location matches | ${VOLUME}                                                                | ${SERVER}  | ${PART} | vtype=rw
 
 Restore a Volume Containing a Bogus ACL
-    Volume should not exist    ${VOLUME}
-    Create dump    ${DUMP}    size=small    contains=bogus-acl
-    Command Should Fail    ${VOS} restore ${SERVER} ${PART} ${VOLUME} -file ${DUMP} -overwrite full
+|  | Volume should not exist | ${VOLUME}
+|  | Create dump             | ${DUMP}                                                                  | size=small | contains=bogus-acl
+|  | Command Should Fail     | ${VOS} restore ${SERVER} ${PART} ${VOLUME} -file ${DUMP} -overwrite full
 
 Avoid creating a rogue volume during restore
-    [Tags]    rogue-avoidance
-    Set test variable    ${vid}    0
-    ${vid}=    Create volume    ${VOLUME}    ${SERVER}    a    orphan=True
-    Create dump    ${DUMP}    size=small
-    Command should fail
-    ...    ${VOS} restore -server ${SERVER} -part b -name ${VOLUME} -id ${vid} -file ${DUMP} -overwrite full
-    [Teardown]    Cleanup Rogue    ${vid}
+|  | [Tags]              | rogue-avoidance
+|  | Set test variable   | ${vid}                                                                                            | 0
+|  | ${vid}=             | Create volume                                                                                     | ${VOLUME}  | ${SERVER} | a | orphan=True
+|  | Create dump         | ${DUMP}                                                                                           | size=small
+|  | Command should fail
+|  | ...                 | ${VOS} restore -server ${SERVER} -part b -name ${VOLUME} -id ${vid} -file ${DUMP} -overwrite full
+|  | [Teardown]          | Cleanup Rogue                                                                                     | ${vid}
 
 *** Keywords ***
 Cleanup
-    Remove volume    ${VOLUME}
-    Remove file    ${DUMP}
+|  | Remove volume | ${VOLUME}
+|  | Remove file   | ${DUMP}
 
 Cleanup Rogue
-    [Arguments]    ${vid}
-    Remove volume    ${vid}    server=${SERVER}
-    Remove volume    ${vid}    server=${SERVER}    zap=True
-    Remove file    ${DUMP}
+|  | [Arguments]   | ${vid}
+|  | Remove volume | ${vid}  | server=${SERVER}
+|  | Remove volume | ${vid}  | server=${SERVER} | zap=True
+|  | Remove file   | ${DUMP}

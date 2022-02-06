@@ -22,19 +22,19 @@ ${FILE}         ${TESTPATH}/${NAME}
 
 *** Test Cases ***
 Unicode File Name
-    [Setup]    Run Keyword
-    ...    Should Not Exist    ${FILE}
-    Create File    ${FILE}    Hello world!    UTF-8
-    Should Exist    ${FILE}
-    [Teardown]    Run Keywords
-    ...    Remove File    ${FILE}    AND
-    ...    Should Not Exist    ${FILE}
+|  | [Setup]      | Run Keyword
+|  | ...          | Should Not Exist | ${FILE}
+|  | Create File  | ${FILE}          | Hello world! | UTF-8
+|  | Should Exist | ${FILE}
+|  | [Teardown]   | Run Keywords
+|  | ...          | Remove File      | ${FILE}      | AND
+|  | ...          | Should Not Exist | ${FILE}
 
 *** Keywords ***
 Setup
-    Login    ${AFS_ADMIN}    keytab=${AFS_ADMIN_KEYTAB}
-    Create Volume    ${VOLUME}    server=${SERVER}    part=${PARTITION}    path=${TESTPATH}    acl=system:anyuser,read
+|  | Login         | ${AFS_ADMIN} | keytab=${AFS_ADMIN_KEYTAB}
+|  | Create Volume | ${VOLUME}    | server=${SERVER}           | part=${PARTITION} | path=${TESTPATH} | acl=system:anyuser,read
 
 Teardown
-    Remove Volume    ${VOLUME}    path=${TESTPATH}
-    Logout
+|  | Remove Volume | ${VOLUME} | path=${TESTPATH}
+|  | Logout
