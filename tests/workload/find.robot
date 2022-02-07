@@ -33,15 +33,7 @@ Traverse Tree with Two Parents
 *** Keywords ***
 Create Tree
 |  | [Documentation] | Create a simple file tree hierarchy.
-|  | ...             | :
-|  | ...             | :                                    | /
-|  | ...             | :                                    | :-- v0
-|  | ...             | :                                    | :                | `-- v3
-|  | ...             | :                                    | :                | `-- file1
-|  | ...             | :                                    | :-- v1
-|  | ...             | :                                    | `-- v2
-|  | ...             | :                                    | `-- file2
-|  | ...             | :
+|  | ...             |
 |  | Create Volume   | ${VOLUME}                            | server=${SERVER} | part=${PARTITION} | path=${TESTPATH}
 |  | Create Volume   | ${VOLUME}.0                          | server=${SERVER} | part=${PARTITION} | path=${TESTPATH}/v0
 |  | Create Volume   | ${VOLUME}.1                          | server=${SERVER} | part=${PARTITION} | path=${TESTPATH}/v1
@@ -53,17 +45,6 @@ Create Tree
 Create Tree With Two Parents
 |  | [Documentation]        | Add a second mount point to volume 3 so it
 |  | ...                    | will have two parents in the hierarchy.
-|  | ...                    | :
-|  | ...                    | :                                                  | /
-|  | ...                    | :                                                  | :-- v0
-|  | ...                    | :                                                  | :         | `-- v3
-|  | ...                    | :                                                  | :         | `-- file1
-|  | ...                    | :                                                  | :-- v1
-|  | ...                    | :                                                  | :         | `-- v3a
-|  | ...                    | :                                                  | :         | `-- file1
-|  | ...                    | :                                                  | `-- v2
-|  | ...                    | :                                                  | `-- file2
-|  | ...                    | :
 |  | Create Tree
 |  | Command Should Succeed | ${FS} mkm -dir ${TESTPATH}/v1/v3a -vol ${VOLUME}.3
 
