@@ -7,11 +7,9 @@ from cookiecutter.main import cookiecutter
 from contextlib import contextmanager
 
 platforms = [
-    'centos8',
-    'centos7',
+    'alma8',
     'debian11',
-    'debian10',
-    'fedora34',
+    'fedora35',
     'solaris114',
 ]
 

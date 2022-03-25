@@ -2,9 +2,9 @@
 - import_playbook: prepare_instances.yml
 {%- if cookiecutter.enable_builds %}
   {%- if cookiecutter.install_method == 'packages' %}
-    {%- if cookiecutter.platform in ['centos7', 'centos8', 'fedora34'] %}
+    {%- if cookiecutter.platform in ['alma8', 'fedora35'] %}
 - import_playbook: build/rhel.yml
-    {%- elif cookiecutter.platform in ['debian10', 'debian11'] %}
+    {%- elif cookiecutter.platform in ['debian11'] %}
 - import_playbook: build/debs.yml
     {%- endif %}
   {%- elif cookiecutter.install_method == 'bdist' %}

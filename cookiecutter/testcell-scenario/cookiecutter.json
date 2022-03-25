@@ -7,11 +7,9 @@
     "realm": "{{ cookiecutter.cell.upper() }}",
     "vagrant_provider": ["virtualbox", "libvirt", "vmware_desktop"],
     "platform": [
-        "centos8",
-        "centos7",
+        "alma8",
         "debian11",
-        "debian10",
-        "fedora34",
+        "fedora35",
         "solaris114"
     ],
     "image_name": "generic/{{ cookiecutter.platform }}",

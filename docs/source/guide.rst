@@ -68,7 +68,7 @@ Install Vagrant_ and a supported `virtualization provider`_ (e.g. VirtualBox,
 VMWare, Libvirt/KVM) on your system. The default virtualization provider is
 VirtualBox_.
 
-Ensure you are able to create an instance of the ``generic/centos8`` box
+Ensure you are able to create an instance of the ``generic/alma8`` box
 with Vagrant_.
 
 
@@ -95,14 +95,12 @@ You will be prompted for various options.
     cell [example.com]:
     realm [EXAMPLE.COM]:
     Select platform:
-    1 - centos8
-    2 - centos7
-    3 - debian11
-    4 - debian10
-    5 - fedora34
-    6 - solaris114
-    Choose from 1, 2, 3, 4, 5, 6 [1]:
-    image_name [generic/debian11]:
+    1 - alma8
+    2 - debian11
+    3 - fedora35
+    4 - solaris114
+    Choose from 1, 2, 3, 4 [1]:
+    image_name [generic/alma8]:
     Select install_method:
     1 - managed
     2 - packages
