@@ -8,3 +8,4 @@ skip_list:
   - deprecated-local-action
   - no-handler
   - risky-shell-pipe
+  - fqcn-builtins

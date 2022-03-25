@@ -1,14 +1,5 @@
 .PHONY: help init test check clean
 
-REQUIREMENTS=\
-  pytest \
-  cookiecutter \
-  molecule[ansible] \
-  molecule-robotframework \
-  python-vagrant \
-  molecule-vagrant \
-  molecule-virtup
-
 help:
 	@echo 'usage: make <target>'
 	@echo ''
@@ -24,15 +15,18 @@ help:
 	@echo '  TCS_COLLECTION_REPO=<name>   Where to get the openafs collection; galaxy, github, local'
 	@echo '  TCS_COLLECTIONS_PATHS=<path> Path to ansible_collections when TCS_COLLECTION_REPO is "local".'
 
-.venv/bin/activate:
+.venv/bin/activate: requirements.txt
 	python3 -m venv .venv
 	.venv/bin/pip install -U pip
-	.venv/bin/pip install $(REQUIREMENTS)
+	.venv/bin/pip install -r requirements.txt
 	touch .venv/bin/activate
 
 init: .venv/bin/activate
 
-test check: init
+test: init
+	(. .venv/bin/activate && pytest -v -s tests)
+
+check: init
 	(. .venv/bin/activate && pytest -v tests)
 
 clean:

@@ -1,0 +1,8 @@
+pytest
+cookiecutter
+python-vagrant
+molecule[ansible]
+molecule-vagrant
+molecule-virtup
+molecule-robotframework
+ansible-lint
