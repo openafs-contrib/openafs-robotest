@@ -1,5 +1,34 @@
+# OpenAFS Robotest Changes
+
+## [v1.1.0]
+
+* Convert all of the Robot Framework files from space-separated to the more
+  modern and less error prone pipe-separated format.
+
+* Improve sphinx generated documentation.
+
+* Add a new test for creating mountpoints in the root.cell volume.
+
+* Various updates to test cases:
+  - Removed double test 'with command alias'
+  - Add check 'Dir should not exists' in Teardown
+  - Move 'set/check ACL' in Setup block
+
+* Fix multi-fs-required support on Solaris.
+
+* Fix the 'vos restore' command option in some cases.
+
+* Remove unimplemented OpenAFS version info from the test report.
+
+* Add the robotab.py script to format tables in robot files.
+
+* Update platforms in cookiecutter template to generate an Anisible Molecule
+  scenario.
+
 ## [v1.0.0]
+
 * Ansible Molecule test cell template
+
 * Sphinx documentation
 
 ## [v0.7.0]
