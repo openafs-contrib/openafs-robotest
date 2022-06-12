@@ -151,7 +151,9 @@ Mountpoint
 Mountpoint tests
 
 * Create a Mountpoint to a Nonexistent Volume
+* Create a Mountpoint to a Nonexistent Volume in root.cell volume
 * Make and Remove a Mountpoint
+* Make and Remove a Mountpoint in root.cell volume
 * Make and Remove a Mountpoint with Command Aliases
 
 Pag

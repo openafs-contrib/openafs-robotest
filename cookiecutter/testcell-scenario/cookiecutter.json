@@ -1,18 +1,11 @@
 {
     "scenario_name": "Untitled",
-    "instance_prefix": "m-",
-    "collection_repo": ["galaxy", "github", "local"],
-    "collections_paths": ".",
+    "vagrant_provider": ["virtualbox", "libvirt", "vmware_desktop"],
+    "platform": ["alma8", "debian11", "fedora36", "solaris114"],
+    "image_name": "generic/{{ cookiecutter.platform }}",
+    "collection_repo": ["galaxy", "github"],
     "cell": "example.com",
     "realm": "{{ cookiecutter.cell.upper() }}",
-    "vagrant_provider": ["virtualbox", "libvirt", "vmware_desktop"],
-    "platform": [
-        "alma8",
-        "debian11",
-        "fedora35",
-        "solaris114"
-    ],
-    "image_name": "generic/{{ cookiecutter.platform }}",
     "install_method": ["managed", "packages", "bdist", "sdist", "source"],
     "enable_dkms": ["yes", "no"],
     "enable_builds": ["yes", "no"]

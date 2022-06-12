@@ -4,6 +4,16 @@ dependency:
   enabled: yes
   requirements-file: collections.yml
 
+driver:
+  name: vagrant
+  provider:
+    name: {{ cookiecutter.vagrant_provider }}
+  prepare:
+    bootstrap_python: yes
+    allow_reboot: yes
+    selinux_mode: permissive
+    rewrite_hosts_file: yes
+
 platforms:
   - name: "m-afs00"
     box: "{{ cookiecutter.image_name }}"
