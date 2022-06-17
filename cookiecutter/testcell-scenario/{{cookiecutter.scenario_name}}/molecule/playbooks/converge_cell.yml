@@ -88,7 +88,7 @@
       openafs_user:
         name: "{{ afs_user }}"
         id: "{{ afs_user_id | int }}"
-        group: tester
+        group: "{{ afs_testers_group | d('testers') }}"
         auth_user: "{{ afs_admin | replace('.', '/') }}"
         auth_keytab: "{{ afs_admin }}.keytab"
 {%- endraw %}
