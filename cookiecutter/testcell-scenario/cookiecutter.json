@@ -1,6 +1,13 @@
 {
     "scenario_name": "Untitled",
-    "vagrant_provider": ["virtualbox", "libvirt", "vmware_desktop"],
+    "driver": [
+        "vagrant/virtualbox",
+        "vagrant/libvirt",
+        "vagrant/vmware_desktop",
+        "proxmox",
+        "unmanaged"
+    ],
+    "instance": "m-afs01",
     "platform": ["alma8", "debian11", "fedora36", "solaris114"],
     "image_name": "generic/{{ cookiecutter.platform }}",
     "collection_repo": ["galaxy", "github"],

@@ -80,11 +80,13 @@ You will be prompted for various options.
         https://github.com/openafs-contrib/openafs-robotest
 
     scenario_name [Untitled]: my-first-scenario
-    Select vagrant_provider:
-    1 - virtualbox
-    2 - libvirt
-    3 - vmware_desktop
-    Choose from 1, 2, 3 [1]: 2
+    Select driver:
+    1 - vagrant/virtualbox
+    2 - vagrant/libvirt
+    3 - vagrant/vmware_desktop
+    4 - proxmox
+    5 - unmanaged
+    Choose from 1, 2, 3, 4, 5 [1]: 4
     Select platform:
     1 - alma8
     2 - debian11

@@ -5,9 +5,38 @@ dependency:
   requirements-file: collections.yml
 
 driver:
+{%- if cookiecutter.driver == 'unmanaged' %}
+  name: delegated
+  options:
+    # Note: You must configure ~/.ssh/config
+    managed: False
+    login_cmd_template: 'ssh {instance}'
+    ansible_connection_options:
+      ansible_connection: ssh
+      ansible_ssh_common_args: ''
+{%- elif cookiecutter.driver == 'vagrant/virtualbox' %}
   name: vagrant
   provider:
-    name: {{ cookiecutter.vagrant_provider }}
+    name: virtualbox
+{%- elif cookiecutter.driver == 'vagrant/libvirt' %}
+  name: vagrant
+  provider:
+    name: libvirt
+{%- elif cookiecutter.driver == 'vagrant/vmware_desktop' %}
+  name: vagrant
+  provider:
+    name: vmware_desktop
+{%- elif cookiecutter.driver == 'proxmox' %}
+  name: proxmox
+  options:
+    #api_host: <hostname>
+    #api_user: <user>@pam
+    #api_password: <password>
+    #node: <node>
+    #ssh_user: <ssh-username>
+    #ssh_identity_file: <ssh-keyname>
+    timeout: 300
+{%- endif %}
   prepare:
     bootstrap_python: yes
     allow_reboot: yes
@@ -15,8 +44,12 @@ driver:
     rewrite_hosts_file: yes
 
 platforms:
-  - name: "m-afs00"
+  - name: "{{ cookiecutter.instance }}"
+{%- if cookiecutter.driver.startswith('vagrant') %}
     box: "{{ cookiecutter.image_name }}"
+{%- elif cookiecutter.driver == 'proxmox' %}
+    proxmox_template_name: "{{ cookiecutter.image_name }}"
+{%- endif %}
     groups:
       - afs_admin_client
       - afs_clients
@@ -90,7 +123,7 @@ provisioner:
 {%- endif %}
 
       afs_test:
-        afs_robotest_fileserver_a: "m-afs00"
+        afs_robotest_fileserver_a: "{{ cookiecutter.instance }}"
 
 verifier:
   name: robotframework

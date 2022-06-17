@@ -1,4 +1,7 @@
 molecule[ansible]==3.6.1
 molecule-robotframework==2.0.1
-python-vagrant
+{%- if cookiecutter.driver.startswith('vagrant') %}
 molecule-vagrant
+{%- elif cookiecutter.driver == 'proxmox' %}
+molecule-proxmox
+{%- endif %}
