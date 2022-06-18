@@ -6,6 +6,8 @@
     "collection_repo": ["galaxy", "github"],
     "cell": "example.com",
     "realm": "{{ cookiecutter.cell.upper() }}",
+    "user": "tester",
+    "admin": "admin",
     "install_method": ["managed", "packages", "bdist", "sdist", "source"],
     "enable_dkms": ["yes", "no"],
     "enable_builds": ["yes", "no"]

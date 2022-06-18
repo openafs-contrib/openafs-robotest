@@ -39,8 +39,8 @@ provisioner:
       all:
         afs_realm: "{{ cookiecutter.realm }}"
         afs_cell: "{{ cookiecutter.cell }}"
-        afs_user: "${USER}"
-        afs_admin: "${USER}.admin"
+        afs_user: "{{ cookiecutter.user }}"
+        afs_admin: "{{ cookiecutter.admin }}"
         afs_security_model: "none"
 
         afs_realm_files: "${MOLECULE_EPHEMERAL_DIRECTORY}"
