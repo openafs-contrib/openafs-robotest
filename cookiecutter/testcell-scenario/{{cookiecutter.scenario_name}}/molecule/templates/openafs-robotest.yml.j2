@@ -6,9 +6,9 @@ KRB_REALM: "{{ afs_realm | d('EXAMPLE.COM') }}"
 # Cell
 AFS_CELL: "{{ afs_cell | d('example.com') }}"
 AFS_AKIMPERSONATE: False
-AFS_USER: "{{ afs_user | d(ansible_user) }}"
-AFS_ADMIN: "{{ afs_admin | d(ansible_user + '.admin') }}"
-AFS_ADMIN_KEYTAB: "{{ afs_admin | d(ansible_user + '.admin') }}.keytab"
+AFS_USER: "{{ afs_user }}"
+AFS_ADMIN: "{{ afs_admin }}"
+AFS_ADMIN_KEYTAB: "{{ afs_admin }}.keytab"
 
 # Test servers
 AFS_FILESERVER_A: "{{ afs_robotest_fileserver_a | d('missing') }}"
