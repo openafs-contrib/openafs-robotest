@@ -110,8 +110,11 @@ provisioner:
             - kernel-module
           disable:
             - optimize
+            - optimize-kernel
+  {%- if cookiecutter.platform != 'solaris114' %}
           with:
             - linux-kernel-packaging
+  {%- endif %}
 {%- elif cookiecutter.install_method == 'source' %}
         # source options
         afs_top_dir: "${AFS_TOPDIR}:-~/openafs.ansible"
@@ -124,8 +127,11 @@ provisioner:
             - kernel-module
           disable:
             - optimize
+            - optimize-kernel
+  {%- if cookiecutter.platform != 'solaris114' %}
           with:
             - linux-kernel-packaging
+  {%- endif %}
 {%- endif %}
 
 {%- if cookiecutter.install_method in ('packages', 'bdist', 'sdist') %}
@@ -140,8 +146,11 @@ provisioner:
             - kernel-module
           disable:
             - optimize
+            - optimize-kernel
+  {%- if cookiecutter.platform != 'solaris114' %}
           with:
             - linux-kernel-packaging
+  {%- endif %}
 {%- endif %}
 
       afs_test:
