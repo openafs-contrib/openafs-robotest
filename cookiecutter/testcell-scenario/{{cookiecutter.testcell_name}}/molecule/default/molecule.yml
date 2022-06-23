@@ -67,11 +67,11 @@ driver:
 {%- endif %}
 
 platforms:
-  - name: "{{ cookiecutter.instance }}"
+  - name: "{{ cookiecutter.instance_name }}"
 {%- if cookiecutter.driver.startswith('vagrant') %}
-    box: "{{ cookiecutter.image_name }}"
+    box: "{{ cookiecutter.image }}"
 {%- elif cookiecutter.driver == 'proxmox' %}
-    proxmox_template_name: "{{ cookiecutter.image_name }}"
+    proxmox_template_name: "{{ cookiecutter.image }}"
 {%- endif %}
     groups:
       - afs_admin_client
@@ -80,7 +80,7 @@ platforms:
       - afs_fileservers
       - afs_kdcs
       - afs_test
-{%- if cookiecutter.install_method in ('packages', 'bdist', 'sdist') %}
+{%- if cookiecutter.build_packages and cookiecutter.install_method in ('packages', 'bdist', 'sdist') %}
       - afs_builders
 {%- endif %}
 
@@ -106,7 +106,7 @@ provisioner:
         afs_install_method: "{{ cookiecutter.install_method }}"
 {%- if cookiecutter.install_method == 'managed' %}
         # managed options
-  {%- if cookiecutter.enable_dkms == 'yes' %}
+  {%- if cookiecutter.install_with_dkms == 'yes' %}
         afs_module_install_method: "dkms"
   {%- else %}
         afs_module_install_method: "kmod"
@@ -114,7 +114,7 @@ provisioner:
 {%- elif cookiecutter.install_method == 'packages' %}
         # packages options
         afs_install_archive: "${MOLECULE_PROJECT_DIRECTORY}/builds/${MOLECULE_SCENARIO_NAME}.tar.gz"
-  {%- if cookiecutter.enable_dkms == 'yes' %}
+  {%- if cookiecutter.install_with_dkms == 'yes' %}
         afs_module_install_method: "dkms"
   {%- else %}
         afs_module_install_method: "kmod"
@@ -157,7 +157,7 @@ provisioner:
   {%- endif %}
 {%- endif %}
 
-{%- if cookiecutter.install_method in ('packages', 'bdist', 'sdist') %}
+{%- if cookiecutter.build_packages and cookiecutter.install_method in ('packages', 'bdist', 'sdist') %}
       afs_builders:
         afs_top_dir: "${AFS_TOPDIR}:-~/openafs.ansible"
         afs_git_repo: "${AFS_GIT_REPO:-git://git.openafs.org/openafs}"
@@ -177,7 +177,7 @@ provisioner:
 {%- endif %}
 
       afs_test:
-        afs_robotest_fileserver_a: "{{ cookiecutter.instance }}"
+        afs_robotest_fileserver_a: "{{ cookiecutter.instance_name }}"
 
 verifier:
   name: robotframework

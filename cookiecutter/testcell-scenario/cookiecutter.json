@@ -1,5 +1,5 @@
 {
-    "scenario_name": "Untitled",
+    "testcell_name": "untitled",
     "driver": [
         "vagrant/virtualbox",
         "vagrant/libvirt",
@@ -7,15 +7,14 @@
         "proxmox",
         "unmanaged"
     ],
-    "instance": "m-afs01",
     "platform": ["alma8", "debian11", "fedora36", "solaris114"],
-    "image_name": "generic/{{ cookiecutter.platform }}",
-    "collection_repo": ["galaxy", "github"],
-    "cell": "example.com",
-    "realm": "{{ cookiecutter.cell.upper() }}",
-    "user": "tester",
-    "admin": "admin",
+    "image": "generic/{{ cookiecutter.platform }}",
+    "instance_name": "m-afs",
     "install_method": ["managed", "packages", "bdist", "sdist", "source"],
-    "enable_dkms": ["yes", "no"],
-    "enable_builds": ["yes", "no"]
+    "install_with_dkms": ["yes", "no"],
+    "build_packages": ["no", "yes"],
+    "realm": "EXAMPLE.COM",
+    "cell": "{{ cookiecutter.realm.lower() }}",
+    "user": "tester",
+    "admin": "admin"
 }

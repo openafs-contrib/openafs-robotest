@@ -1,4 +1,4 @@
-# {{ cookiecutter.scenario_name }}
+# {{ cookiecutter.testcell_name }}
 
   * platform: {{ cookiecutter.platform }}
   * install: {{ cookiecutter.install_method }}

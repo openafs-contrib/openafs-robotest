@@ -62,14 +62,12 @@ def test_template(tmpdir, install_method, platform, layout_index):
     # Test options.
     lint = get_bool_option('TCS_LINT', 'yes')
     run = get_bool_option('TCS_RUN', 'no')
-    enable_dkms = get_bool_option('TCS_ENABLE_DKMS', 'no')
-    enable_builds = get_bool_option('TCS_ENABLE_BUILDS', 'yes')
-    collection_repo = get_str_option('TCS_COLLECTION_REPO', 'galaxy')
-    collections_paths = os.path.expanduser(get_str_option('TCS_COLLECTIONS_PATHS', '~/src'))
-    do_build = (enable_builds and install_method in ('packages', 'bdist', 'sdist'))
+    install_with_dkms = get_bool_option('TCS_ENABLE_DKMS', 'no')
+    build_packages = get_bool_option('TCS_ENABLE_BUILDS', 'yes')
+    do_build = (build_packages and install_method in ('packages', 'bdist', 'sdist'))
 
     # Render the template in the tmpdir. Raises an execption on error.
-    scenario_name = '%s-%s-%d' % (platform, install_method, layout_index)
+    testcell_name = '%s-%s-%d' % (platform, install_method, layout_index)
     template = pathlib.Path(__file__).parent.parent.parent
     cookiecutter(
         template=str(template),
@@ -77,17 +75,15 @@ def test_template(tmpdir, install_method, platform, layout_index):
         output_dir=str(tmpdir),
         no_input=True,
         extra_context={
-            'scenario_name': scenario_name,
-            'collection_repo': collection_repo,
-            'collections_paths': collections_paths,
+            'testcell_name': testcell_name,
             'driver': 'vagrant/libvirt',
             'platform': platform,
             'install_method': install_method,
-            'enable_dkms': ('yes' if enable_dkms else 'no'),
-            'enable_builds': ('yes' if enable_builds else 'no'),
+            'install_with_dkms': ('yes' if install_with_dkms else 'no'),
+            'build_packages': ('yes' if build_packages else 'no'),
         },
     )
-    print("\nCreated scenario in directory %s/%s" % (tmpdir, scenario_name))
+    print("\nCreated scenario in directory %s/%s" % (tmpdir, testcell_name))
 
     # Check generated files (except optional build tasks).
     files = [
@@ -104,11 +100,11 @@ def test_template(tmpdir, install_method, platform, layout_index):
         'molecule/templates/openafs-robotest.yml.j2'
     ]
     for f in files:
-        filename = tmpdir / scenario_name / f
+        filename = tmpdir / testcell_name / f
         assert filename.exists()
 
     # Spot check the generated molecule file.
-    molecule_yml = pathlib.Path(tmpdir / scenario_name / 'molecule' / \
+    molecule_yml = pathlib.Path(tmpdir / testcell_name / 'molecule' / \
                    'default' / 'molecule.yml').read_text()
     assert platform in molecule_yml
     assert install_method in molecule_yml
@@ -118,32 +114,32 @@ def test_template(tmpdir, install_method, platform, layout_index):
         assert 'afs_builders' not in molecule_yml
 
     # Check the generated scenario file.
-    prepare_yml = pathlib.Path(tmpdir / scenario_name / 'molecule' / \
+    prepare_yml = pathlib.Path(tmpdir / testcell_name / 'molecule' / \
                    'playbooks' / 'prepare.yml').read_text()
     if do_build:
         assert 'import_playbook: build' in prepare_yml
 
     # Optionally, check with yamllint and ansible-lint.
     if lint:
-        with chdir(tmpdir / scenario_name):
+        with chdir(tmpdir / testcell_name):
             rc = run_command('yamllint .')
         assert rc == 0
 
         # Get our required collection.
-        with chdir(tmpdir / scenario_name):
+        with chdir(tmpdir / testcell_name):
             rc = run_command('molecule dependency')
         assert rc == 0
         path = pathlib.Path.home() / '.cache' / 'molecule' / \
-               scenario_name / 'default' / 'collections'
+               testcell_name / 'default' / 'collections'
         cmd = 'ANSIBLE_COLLECTIONS_PATHS=%s ansible-lint' % (path)
 
-        with chdir(tmpdir / scenario_name):
+        with chdir(tmpdir / testcell_name):
             rc = run_command(cmd)
         assert rc == 0
 
     # Optionally, run the generated scenario. This can take a long time.
     if run:
-        with chdir(tmpdir / scenario_name):
+        with chdir(tmpdir / testcell_name):
             bcdir = pathlib.Path('~/.config/molecule').expanduser()
             bc = bcdir / 'platforms' / ('%s.yml' % platform)
             opt = (' --base-config=%s' % bc) if bc.exists() else ''

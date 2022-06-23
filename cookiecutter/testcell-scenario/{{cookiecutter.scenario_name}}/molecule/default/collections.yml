@@ -1,8 +1,0 @@
----
-collections:
-  - name: openafs_contrib.openafs
-{%- if cookiecutter.collection_repo == 'github' %}
-    type: "git"
-    source: "https://github.com/openafs-contrib/ansible-openafs"
-    version: "master"
-{%- endif %}

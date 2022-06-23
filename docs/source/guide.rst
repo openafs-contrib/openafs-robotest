@@ -79,7 +79,7 @@ You will be prompted for various options.
         --directory cookiecutter/testcell-scenario \
         https://github.com/openafs-contrib/openafs-robotest
 
-    scenario_name [Untitled]: my-first-scenario
+    testcell_name [Untitled]: my-first-scenario
     Select driver:
     1 - vagrant/virtualbox
     2 - vagrant/libvirt
@@ -92,29 +92,26 @@ You will be prompted for various options.
     2 - debian11
     3 - fedora36
     4 - solaris114
-    Choose from 1, 2, 3, 4 [1]: 
-    image_name [generic/alma8]: 
-    Select collection_repo:
-    1 - galaxy
-    2 - github
-    Choose from 1, 2 [1]: 
-    cell [example.com]: 
-    realm [EXAMPLE.COM]: 
+    Choose from 1, 2, 3, 4 [1]:
+    image [generic/alma8]:
+    Choose from 1, 2 [1]:
+    cell [example.com]:
+    realm [EXAMPLE.COM]:
     Select install_method:
     1 - managed
     2 - packages
     3 - bdist
     4 - sdist
     5 - source
-    Choose from 1, 2, 3, 4, 5 [1]: 
-    Select enable_dkms:
+    Choose from 1, 2, 3, 4, 5 [1]:
+    Select install_with_dkms:
     1 - yes
     2 - no
-    Choose from 1, 2 [1]: 
-    Select enable_builds:
+    Choose from 1, 2 [1]:
+    Select build_packages:
     1 - yes
     2 - no
-    Choose from 1, 2 [1]: 
+    Choose from 1, 2 [1]:
 
 This will create a molecule scenario directory containing a molecule directory
 with a `molecule.yaml` file and a set of Ansible playbooks.

@@ -1,6 +1,6 @@
 ---
 - import_playbook: prepare_instances.yml
-{%- if cookiecutter.enable_builds %}
+{%- if cookiecutter.build_packages %}
   {%- if cookiecutter.install_method == 'packages' %}
     {%- if cookiecutter.platform in ['alma8', 'fedora35'] %}
 - import_playbook: build/rhel.yml
