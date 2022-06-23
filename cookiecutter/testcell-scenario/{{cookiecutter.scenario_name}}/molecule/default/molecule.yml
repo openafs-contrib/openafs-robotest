@@ -162,25 +162,31 @@ verifier:
   group: afs_test
   libraries:
     - robotframework-openafslibrary
-  test_repos:
+  tests:
     - name: openafs-robotest
-      repo: https://github.com/openafs-contrib/openafs-robotest
+      enabled: true
+      type: git
+      source: https://github.com/openafs-contrib/openafs-robotest
       version: master
-  resources:
-    - ${MOLECULE_SCENARIO_DIRECTORY}/../templates/openafs-robotest.yml.j2
-  data_sources:
-    - openafs-robotest/tests
+      execute: tests
+    - name: extra-tests
+      enabled: false
+      type: dir
+      source: ${MOLECULE_SCENARIO_DIRECTORY}/tests
+  variablefiles:
+    - source: ${MOLECULE_SCENARIO_DIRECTORY}/../templates/openafs-robotest.yml.j2
   dest_dir: ${MOLECULE_PROJECT_DIRECTORY}/reports/${MOLECULE_SCENARIO_NAME}
   options:
+    name: default
+    variablefile: openafs-robotest.yml
+    loglevel: INFO
+    debugfile: debug.log
+    runemptysuite: true
     exclude:
       - bug
       - slow
       - rogue-avoidance
       - requires-multi-fs
-    loglevel: INFO
-    debugfile: debug.log
-    runemptysuite: true
-    variablefile: openafs-robotest.yml
 
 scenario:
   create_sequence:
