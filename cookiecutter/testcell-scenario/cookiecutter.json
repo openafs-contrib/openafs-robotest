@@ -10,6 +10,11 @@
     "platform": ["alma8", "debian11", "fedora36", "solaris114"],
     "image": "generic/{{ cookiecutter.platform }}",
     "instance_name": "m-afs",
+    "cluster": [
+        "one instance",
+        "one client instance, one server instance",
+        "three client instances, three database instances, three fileserver instances"
+    ],
     "install_method": ["managed", "packages", "bdist", "sdist", "source"],
     "install_with_dkms": ["yes", "no"],
     "build_packages": ["no", "yes"],

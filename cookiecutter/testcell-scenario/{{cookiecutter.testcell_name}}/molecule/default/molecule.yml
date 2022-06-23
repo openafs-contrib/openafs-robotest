@@ -67,12 +67,13 @@ driver:
 {%- endif %}
 
 platforms:
+{%- if cookiecutter.cluster == 'one instance' %}
   - name: "{{ cookiecutter.instance_name }}"
-{%- if cookiecutter.driver.startswith('vagrant') %}
+  {%- if cookiecutter.driver.startswith('vagrant') %}
     box: "{{ cookiecutter.image }}"
-{%- elif cookiecutter.driver == 'proxmox' %}
+  {%- elif cookiecutter.driver == 'proxmox' %}
     proxmox_template_name: "{{ cookiecutter.image }}"
-{%- endif %}
+  {%- endif %}
     groups:
       - afs_admin_client
       - afs_clients
@@ -80,8 +81,80 @@ platforms:
       - afs_fileservers
       - afs_kdcs
       - afs_test
-{%- if cookiecutter.build_packages and cookiecutter.install_method in ('packages', 'bdist', 'sdist') %}
+  {%- if cookiecutter.build_packages and cookiecutter.install_method in ('packages', 'bdist', 'sdist') %}
       - afs_builders
+  {%- endif %}
+{%- elif cookiecutter.cluster == 'one client instance, one server instance' %}
+  - name: "{{ cookiecutter.instance_name }}-client"
+  {%- if cookiecutter.driver.startswith('vagrant') %}
+    box: "{{ cookiecutter.image }}"
+  {%- elif cookiecutter.driver == 'proxmox' %}
+    proxmox_template_name: "{{ cookiecutter.image }}"
+  {%- endif %}
+    groups:
+      - afs_admin_client
+      - afs_clients
+      - afs_test
+  {%- if cookiecutter.build_packages and cookiecutter.install_method in ('packages', 'bdist', 'sdist') %}
+      - afs_builders
+  {%- endif %}
+
+  - name: "{{ cookiecutter.instance_name }}-server"
+  {%- if cookiecutter.driver.startswith('vagrant') %}
+    box: "{{ cookiecutter.image }}"
+  {%- elif cookiecutter.driver == 'proxmox' %}
+    proxmox_template_name: "{{ cookiecutter.image }}"
+  {%- endif %}
+    groups:
+      - afs_databases
+      - afs_fileservers
+      - afs_kdcs
+
+{%- elif cookiecutter.cluster == 'three client instances, three database instances, three fileserver instances' %}
+
+{%- for i in range(3) %}
+  - name: "{{ cookiecutter.instance_name }}-client{{ i }}"
+  {%- if cookiecutter.driver.startswith('vagrant') %}
+    box: "{{ cookiecutter.image }}"
+  {%- elif cookiecutter.driver == 'proxmox' %}
+    proxmox_template_name: "{{ cookiecutter.image }}"
+  {%- endif %}
+    groups:
+      - afs_clients
+    {%- if loop.first %}
+      - afs_admin_client
+      - afs_test
+      {%- if cookiecutter.build_packages and cookiecutter.install_method in ('packages', 'bdist', 'sdist') %}
+      - afs_builders
+      {%- endif %}
+    {%- endif %}
+{% endfor %}
+
+{%- for i in range(3) %}
+  - name: "{{ cookiecutter.instance_name }}-db{{ i }}"
+  {%- if cookiecutter.driver.startswith('vagrant') %}
+    box: "{{ cookiecutter.image }}"
+  {%- elif cookiecutter.driver == 'proxmox' %}
+    proxmox_template_name: "{{ cookiecutter.image }}"
+  {%- endif %}
+    groups:
+    {%- if loop.first %}
+      - afs_kdcs
+    {%- endif %}
+      - afs_databases
+{% endfor %}
+
+{%- for i in range(3) %}
+  - name: "{{ cookiecutter.instance_name }}-fs{{ i }}"
+  {%- if cookiecutter.driver.startswith('vagrant') %}
+    box: "{{ cookiecutter.image }}"
+  {%- elif cookiecutter.driver == 'proxmox' %}
+    proxmox_template_name: "{{ cookiecutter.image }}"
+  {%- endif %}
+    groups:
+      - afs_fileservers
+{% endfor %}
+
 {%- endif %}
 
 provisioner:
@@ -177,7 +250,14 @@ provisioner:
 {%- endif %}
 
       afs_test:
+{%- if cookiecutter.cluster == 'one instance' %}
         afs_robotest_fileserver_a: "{{ cookiecutter.instance_name }}"
+{%- elif cookiecutter.cluster == 'one client instance, one server instance' %}
+        afs_robotest_fileserver_a: "{{ cookiecutter.instance_name }}-server"
+{%- elif cookiecutter.cluster == 'three client instances, three database instances, three fileserver instances' %}
+        afs_robotest_fileserver_a: "{{ cookiecutter.instance_name }}-fs1"
+        afs_robotest_fileserver_b: "{{ cookiecutter.instance_name }}-fs2"
+{%- endif %}
 
 verifier:
   name: robotframework
