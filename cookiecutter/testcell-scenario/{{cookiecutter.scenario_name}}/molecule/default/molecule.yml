@@ -14,34 +14,57 @@ driver:
     ansible_connection_options:
       ansible_connection: ssh
       ansible_ssh_common_args: ''
+  prepare:
+    bootstrap_python: no
+    allow_reboot: no
+    set_hostname: no
+    rewrite_hosts_file: no
+    selinux_mode: permissive
 {%- elif cookiecutter.driver == 'vagrant/virtualbox' %}
   name: vagrant
   provider:
     name: virtualbox
+  prepare:
+    bootstrap_python: yes
+    allow_reboot: yes
+    set_hostname: no
+    rewrite_hosts_file: yes
+    selinux_mode: permissive
 {%- elif cookiecutter.driver == 'vagrant/libvirt' %}
   name: vagrant
   provider:
     name: libvirt
+  prepare:
+    bootstrap_python: yes
+    allow_reboot: yes
+    set_hostname: no
+    rewrite_hosts_file: yes
+    selinux_mode: permissive
 {%- elif cookiecutter.driver == 'vagrant/vmware_desktop' %}
   name: vagrant
   provider:
     name: vmware_desktop
-{%- elif cookiecutter.driver == 'proxmox' %}
-  name: proxmox
-  options:
-    #api_host: <hostname>
-    #api_user: <user>@pam
-    #api_password: <password>
-    #node: <node>
-    #ssh_user: <ssh-username>
-    #ssh_identity_file: <ssh-keyname>
-    timeout: 300
-{%- endif %}
   prepare:
     bootstrap_python: yes
     allow_reboot: yes
-    selinux_mode: permissive
+    set_hostname: no
     rewrite_hosts_file: yes
+    selinux_mode: permissive
+{%- elif cookiecutter.driver == 'proxmox' %}
+  name: proxmox
+  options:
+    proxmox_secrets: "${PROXMOX_SECRETS}"
+    node: "${PROXMOX_NODE}"
+    ssh_user: "${PROXMOX_SSH_USER}"
+    ssh_identity_file: "${PROXMOX_SSH_IDENTITY_FILE}"
+    timeout: 300
+  prepare:
+    bootstrap_python: yes
+    allow_reboot: yes
+    set_hostname: yes
+    rewrite_hosts_file: yes
+    selinux_mode: permissive
+{%- endif %}
 
 platforms:
   - name: "{{ cookiecutter.instance }}"

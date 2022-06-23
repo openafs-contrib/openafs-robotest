@@ -22,6 +22,13 @@
 #    Type: string
 #    Default: none
 #
+#  set_hostname:
+#    Set the instance's hostname. The name is set to the molecule instance
+#    name by default.  Create a 'afs_hostname' host variable in the inventory
+#    to set a custom name.
+#    Type: boolean
+#    Default: False
+#
 #  rewrite_hosts_file
 #    Rewrite the hosts file on instances create entries for all of the instances
 #    in the play. This is a workaround when a working nameserver is not available
@@ -57,6 +64,7 @@
     include_tasks: "{{ prepare.get('include_tasks', '') | expanduser }}"
     bootstrap_python: "{{ prepare.get('bootstrap_python', 'yes') | bool }}"
     selinux_mode: "{{ prepare.get('selinux_mode', '') }}"
+    set_hostname: "{{ prepare.get('set_hostname', 'no') | bool }}"
     rewrite_hosts_file: "{{ prepare.get('rewrite_hosts_file', 'no') | bool }}"
   tasks:
     #------------------------------------------------------------------------------
@@ -137,6 +145,14 @@
         - ansible_selinux is defined
         - ansible_selinux.status is defined
         - ansible_selinux.status == 'enabled'
+
+    #------------------------------------------------------------------------------
+    # Optionally set the hostname of the instances.
+    - name: "Set instance hostname."
+      when: set_hostname
+      become: yes
+      hostname:
+        name: "{{ afs_hostname | d(inventory_hostname) }}"
 
     #------------------------------------------------------------------------------
     # Optionally setup the /etc/hosts file on the tests machines to support forward
