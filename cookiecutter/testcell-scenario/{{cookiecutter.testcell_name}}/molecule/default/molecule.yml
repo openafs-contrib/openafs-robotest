@@ -81,7 +81,7 @@ platforms:
       - afs_fileservers
       - afs_kdcs
       - afs_test
-  {%- if cookiecutter.build_packages and cookiecutter.install_method in ('packages', 'bdist', 'sdist') %}
+  {%- if cookiecutter.build_packages == 'yes' and cookiecutter.install_method in ('packages', 'bdist', 'sdist') %}
       - afs_builders
   {%- endif %}
 {%- elif cookiecutter.cluster == 'one client instance, one server instance' %}
@@ -95,7 +95,7 @@ platforms:
       - afs_admin_client
       - afs_clients
       - afs_test
-  {%- if cookiecutter.build_packages and cookiecutter.install_method in ('packages', 'bdist', 'sdist') %}
+  {%- if cookiecutter.build_packages == 'yes' and cookiecutter.install_method in ('packages', 'bdist', 'sdist') %}
       - afs_builders
   {%- endif %}
 
@@ -124,7 +124,7 @@ platforms:
     {%- if loop.first %}
       - afs_admin_client
       - afs_test
-      {%- if cookiecutter.build_packages and cookiecutter.install_method in ('packages', 'bdist', 'sdist') %}
+      {%- if cookiecutter.build_packages == 'yes' and cookiecutter.install_method in ('packages', 'bdist', 'sdist') %}
       - afs_builders
       {%- endif %}
     {%- endif %}
@@ -237,7 +237,7 @@ provisioner:
           - b
           - c
 
-{%- if cookiecutter.build_packages and cookiecutter.install_method in ('packages', 'bdist', 'sdist') %}
+{%- if cookiecutter.build_packages == 'yes' and cookiecutter.install_method in ('packages', 'bdist', 'sdist') %}
       afs_builders:
         afs_top_dir: "${AFS_TOPDIR}:-~/openafs.ansible"
         afs_git_repo: "${AFS_GIT_REPO:-https://github.com/openafs/openafs}"

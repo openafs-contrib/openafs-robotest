@@ -17,7 +17,7 @@
     ],
     "install_method": ["managed", "packages", "bdist", "sdist", "source"],
     "install_with_dkms": ["yes", "no"],
-    "build_packages": ["no", "yes"],
+    "build_packages": ["yes", "no"],
     "realm": "EXAMPLE.COM",
     "cell": "{{ cookiecutter.realm.lower() }}",
     "user": "tester",
