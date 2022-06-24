@@ -214,7 +214,7 @@ provisioner:
 {%- elif cookiecutter.install_method == 'source' %}
         # source options
         afs_top_dir: "${AFS_TOPDIR}:-~/openafs.ansible"
-        afs_git_repo: "${AFS_GIT_REPO:-git://git.openafs.org/openafs}"
+        afs_git_repo: "${AFS_GIT_REPO:-https://github.com/openafs/openafs}"
         afs_git_version: "${AFS_GIT_VERSION:-master}"
         afs_configure_options:
           enable:
@@ -233,7 +233,7 @@ provisioner:
 {%- if cookiecutter.build_packages and cookiecutter.install_method in ('packages', 'bdist', 'sdist') %}
       afs_builders:
         afs_top_dir: "${AFS_TOPDIR}:-~/openafs.ansible"
-        afs_git_repo: "${AFS_GIT_REPO:-git://git.openafs.org/openafs}"
+        afs_git_repo: "${AFS_GIT_REPO:-https://github.com/openafs/openafs}"
         afs_git_version: "${AFS_GIT_VERSION:-master}"
         afs_configure_options:
           enable:
