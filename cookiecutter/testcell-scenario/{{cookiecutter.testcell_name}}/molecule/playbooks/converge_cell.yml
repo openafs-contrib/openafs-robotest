@@ -24,9 +24,6 @@
   hosts: afs_databases:afs_fileservers
   collections:
     - openafs_contrib.openafs
-  vars:
-    # Create fake /vicep partitions for testing purposes.
-    afs_pseudo_partitions: ['a', 'b', 'c']
   tasks:
     - import_role:
         name: openafs_server
