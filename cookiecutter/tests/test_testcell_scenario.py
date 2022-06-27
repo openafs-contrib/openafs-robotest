@@ -77,7 +77,7 @@ def render(tmpdir, driver,cluster, platform, install_method):
 
 @pytest.mark.parametrize('driver,cluster,platform,install_method', params('render'))
 def test_render(tmpdir, driver,cluster, platform, install_method):
-    testcell_name = render(tmpdir, driver,cluster, platform, install_method)
+    testcell_name = render(tmpdir, driver, cluster, platform, install_method)
 
     # Check generated files (except optional build tasks).
     files = [
@@ -100,7 +100,8 @@ def test_render(tmpdir, driver,cluster, platform, install_method):
     # Spot check the generated molecule file.
     molecule_yml = pathlib.Path(tmpdir / testcell_name / 'molecule' / \
                    'default' / 'molecule.yml').read_text()
-    assert platform in molecule_yml
+    if driver != 'unmanaged':
+        assert platform in molecule_yml
     assert install_method in molecule_yml
     if install_method in ('packages', 'bdist', 'sdist'):
         assert 'afs_builders' in molecule_yml
