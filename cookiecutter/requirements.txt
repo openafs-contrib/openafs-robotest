@@ -3,6 +3,6 @@ cookiecutter
 python-vagrant
 molecule[ansible]
 molecule-vagrant
-molecule-virtup
+molecule-proxmox
 molecule-robotframework
 ansible-lint
