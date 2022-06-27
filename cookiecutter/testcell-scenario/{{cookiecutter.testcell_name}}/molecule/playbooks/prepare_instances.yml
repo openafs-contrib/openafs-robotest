@@ -137,7 +137,7 @@
 
     - name: Configure selinux mode
       become: yes
-      selinux:
+      ansible.posix.selinux:
         policy: targeted
         state: "{{ selinux_mode }}"
       when:
