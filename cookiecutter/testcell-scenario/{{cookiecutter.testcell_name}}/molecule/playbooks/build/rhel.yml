@@ -43,7 +43,7 @@
         build_platform: "{{ ansible_distribution | lower }}{{ ansible_distribution_major_version }}-{{ ansible_architecture }}"
         build_number: "{{ lookup('openafs_contrib.openafs.counter', build_platform + '-' + build_type) }}"
         build_id: "{{ build_platform }}-{{ build_type }}-{{ build_number }}"
-      archive:
+      community.general.archive:
         path: "{{ build_results.rpms }}"
         dest: "{{ build_id }}.tar.gz"
         format: gz

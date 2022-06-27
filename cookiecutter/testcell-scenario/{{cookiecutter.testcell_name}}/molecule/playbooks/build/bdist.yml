@@ -37,7 +37,7 @@
       vars:
         build_type: bdist
         build_platform: "{{ ansible_distribution | lower }}{{ ansible_distribution_major_version }}-{{ ansible_architecture }}"
-      archive:
+      community.general.archive:
         path: "{{ build_results.destdir }}/"
         dest: "openafs-{{ build_platform }}.bdist.tar.gz"
         format: gz

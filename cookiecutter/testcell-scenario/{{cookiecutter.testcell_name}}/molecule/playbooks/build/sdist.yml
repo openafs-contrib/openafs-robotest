@@ -31,7 +31,7 @@
         build_type: sdist
         build_number: "{{ lookup('openafs_contrib.openafs.counter', build_type) }}"
         build_id: "{{ build_type }}-{{ build_number }}"
-      archive:
+      community.general.archive:
         path: "{{ build_results.files }}"
         dest: "{{ build_id }}.tar.gz"
         format: gz

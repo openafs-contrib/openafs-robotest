@@ -71,7 +71,7 @@
     - name: "Create install archive."
       vars:
         build_id: "{{ mkdir_results.path }}"
-      archive:
+      community.general.archive:
         path: "{{ build_id }}/"
         dest: "{{ build_id }}.tar.gz"
         format: gz
