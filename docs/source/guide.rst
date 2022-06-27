@@ -4,8 +4,13 @@ Quick Start Guide
 =================
 
 This guide shows how to quickly create an OpenAFS_ test cell with Vagrant_ and
-Ansible_ and run `OpenAFS Robotest`_ suite on the ephemeral test cell. Ansible
-Molecule_ is used to run Vagrant, Ansible and execute the tests.
+Ansible_, and run `OpenAFS Robotest`_ suite on the test cell. Ansible
+Molecule_ is used to run Vagrant, Ansible, and then execute the tests.
+
+You can also run Molecule_ to create an OpenAFS cell on existing virtual or
+physical machines.  This is a common use case when setting up an enviroment for
+development.  You will need to have ssh and sudo access to the existing
+machines.
 
 The `OpenAFS Robotest`_ provides a `Cookiecutter`_ template so you can quickly
 create your initial Molecule configuration files.  The Molecule_ files may be
@@ -16,21 +21,6 @@ it easy to setup the test realm and cell.
 
 Prerequisites
 -------------
-
-Install Vagrant and Python3 on your local system.
-
-Vagrant
-~~~~~~~
-
-Install Vagrant_ and a supported `virtualization provider`_ (e.g. VirtualBox,
-VMWare, Libvirt/KVM) on your system. The default virtualization provider is
-VirtualBox_.  Be sure to follow the installation instructions on the Hashicorp
-site when installing Vagrant. It is not recommended to install vagrant with
-your package manager, since that tends to install an out of date version.
-
-After installing Vagrant, ensure you are able to create an instance of the
-``generic/alma8`` with your local virtualization provider.
-
 
 Python
 ~~~~~~
@@ -62,6 +52,54 @@ Fedora:
     $ sudo dnf install git python3 python3-venv python3-pip
     $ python3 -m pip install --user cookiecutter
 
+Vagrant
+~~~~~~~
+
+This guide assumes you will be using Vagrant_ to manage your test virtual
+machines.  If you already have existing physical or virtual machines you wish to
+use for development and testing, do not install Vagrant_, instead see
+`Unmanaged Instances`_.
+
+Vagrant_ can be used to create and manage virtual machines for development
+and testing.  To use Vagrant_ you will need to install one the supported
+`virtualization providers`_ and then install Vagrant_.
+
+The default virtualization provider is VirtualBox_.  Be sure to follow the
+installation instructions on the HashiCorp site when installing Vagrant_. It is
+recommended to download Vagrant_ from the HashiCorp site, instead of installing
+from your system's package manager.
+
+After installing Vagrant, be sure you are able to create an instance of the
+``generic/alma8`` box, since we will be using that in this guide to create
+our first test cell.
+
+Unmanaged Instances
+~~~~~~~~~~~~~~~~~~~
+
+You can also use Molecule to configure existing physical or virtual machines.
+Molecule calls these **unmanaged instances**.
+
+You are resposible for creating the machines and configuring your
+``.ssh/config`` file to allow Molecule to connect to your machines.  The
+``Host`` names in your ``.ssh/config`` file must match the instance names in the
+``molecule.yml`` file.
+
+Example:
+
+.. code-block:: console
+
+    $ cat ~/.ssh/config
+    ...
+    Host m-afs-client
+        HostName 192.168.1.200
+        User tycobb
+        IdentityFile ~/.ssh/tycobb
+
+    Host m-afs-server
+        HostName 192.168.1.201
+        User tycobb
+        IdentityFile ~/.ssh/tycobb
+
 
 Create a Scenario
 -----------------
@@ -79,24 +117,27 @@ You will be prompted for various options.
         --directory cookiecutter/testcell-scenario \
         https://github.com/openafs-contrib/openafs-robotest
 
-    testcell_name [Untitled]: my-first-scenario
+    testcell_name [untitled]: my-first-scenario
     Select driver:
     1 - vagrant/virtualbox
     2 - vagrant/libvirt
     3 - vagrant/vmware_desktop
     4 - proxmox
     5 - unmanaged
-    Choose from 1, 2, 3, 4, 5 [1]: 4
+    Choose from 1, 2, 3, 4, 5 [1]: 2
     Select platform:
     1 - alma8
     2 - debian11
     3 - fedora36
     4 - solaris114
-    Choose from 1, 2, 3, 4 [1]:
+    Choose from 1, 2, 3, 4 [1]: 1
     image [generic/alma8]:
-    Choose from 1, 2 [1]:
-    cell [example.com]:
-    realm [EXAMPLE.COM]:
+    instance_name [m-afs]:
+    Select cluster:
+    1 - one instance
+    2 - one client instance, one server instance
+    3 - three client instances, three database instances, three fileserver instances
+    Choose from 1, 2, 3 [1]:
     Select install_method:
     1 - managed
     2 - packages
@@ -112,9 +153,14 @@ You will be prompted for various options.
     1 - yes
     2 - no
     Choose from 1, 2 [1]:
+    realm [EXAMPLE.COM]:
+    cell [example.com]:
+    user [tester]:
+    admin [admin]:
+
 
 This will create a molecule scenario directory containing a molecule directory
-with a `molecule.yaml` file and a set of Ansible playbooks.
+with a `molecule.yml` file and a set of Ansible playbooks.
 
 Install Molecule
 ~~~~~~~~~~~~~~~~
@@ -150,6 +196,8 @@ can be helpful when troubleshooting.
     (venv) $ molecule verify    # To run the test suite.
     (venv) $ molecule login     # To ssh to the test instance.
     (venv) $ molecule destroy   # To destroy the test instance.
+
+
 
 Customization
 -------------
