@@ -8,7 +8,7 @@ Ansible_, and run `OpenAFS Robotest`_ suite on the test cell. Ansible
 Molecule_ is used to run Vagrant, Ansible, and then execute the tests.
 
 You can also run Molecule_ to create an OpenAFS cell on existing virtual or
-physical machines.  This is a common use case when setting up an enviroment for
+physical machines.  This is a common use case when setting up an environment for
 development.  You will need to have ssh and sudo access to the existing
 machines.
 
@@ -77,11 +77,14 @@ Unmanaged Instances
 ~~~~~~~~~~~~~~~~~~~
 
 You can also use Molecule to configure existing physical or virtual machines.
-Molecule calls these **unmanaged instances**.
+Molecule calls these **unmanaged instances**.  In this case, you will be
+running ``cookiecutter`` and ``molecule`` on your local desktop/laptop, and
+Ansible will connect to your existing machines to install and configure
+Kerberos and OpenAFS.
 
-You are resposible for creating the machines and configuring your
-``.ssh/config`` file to allow Molecule to connect to your machines.  The
-``Host`` names in your ``.ssh/config`` file must match the instance names in the
+You are responsible configuring your ``.ssh/config`` file on your local machine
+to allow Molecule to connect to the machines to be configured.  The ``Host``
+names in your ``.ssh/config`` file must match the instance names in the
 ``molecule.yml`` file.
 
 Example:
@@ -99,6 +102,13 @@ Example:
         HostName 192.168.1.201
         User tycobb
         IdentityFile ~/.ssh/tycobb
+
+
+The Ansible playbooks run by ``molecule`` require password-less ``sudo``.
+Please set the ``NOPASSWD`` option in your ``sudoers`` files on the target
+virtual machines to allow the user to run commands with ``sudo`` without a
+password.  The ``NOPASSWD`` option may be removed after the ``molecule``
+commands are run.
 
 
 Create a Scenario
