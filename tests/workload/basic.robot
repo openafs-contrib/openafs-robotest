@@ -31,7 +31,7 @@ ${SYMLINK}      ${TESTPATH}/symlink
 ${TEXT}         hello-world
 
 *** Test Cases ***
-Create a File
+| Create a File
 |  | [Setup]                | Run Keyword
 |  | ...                    | Should Not Exist | ${FILE}
 |  | Command Should Succeed | touch ${FILE}
@@ -40,8 +40,8 @@ Create a File
 |  | [Teardown]             | Run Keywords
 |  | ...                    | Remove File      | ${FILE} | AND
 |  | ...                    | Should Not Exist | ${FILE}
-
-Create a Directory
+|
+| Create a Directory
 |  | [Setup]          | Run Keyword
 |  | ...              | Should Not Exist | ${DIR}
 |  | Create Directory | ${DIR}
@@ -52,8 +52,8 @@ Create a Directory
 |  | [Teardown]       | Run Keywords
 |  | ...              | Remove Directory | ${DIR} | AND
 |  | ...              | Should Not Exist | ${DIR}
-
-Create a Symlink
+|
+| Create a Symlink
 |  | [Setup]           | Run Keywords
 |  | ...               | Should Not Exist | ${DIR}     | AND
 |  | ...               | Should Not Exist | ${SYMLINK} | AND
@@ -65,8 +65,8 @@ Create a Symlink
 |  | ...               | Remove Directory | ${DIR}     | AND
 |  | ...               | Should Not Exist | ${DIR}     | AND
 |  | ...               | Should Not Exist | ${SYMLINK}
-
-Create a Hard Link within a Directory
+|
+| Create a Hard Link within a Directory
 |  | [Setup]               | Run Keywords
 |  | ...                   | Should Not Exist | ${FILE} | AND
 |  | ...                   | Should Not Exist | ${LINK} | AND
@@ -81,8 +81,8 @@ Create a Hard Link within a Directory
 |  | Link Count Should Be  | ${FILE}          | 1
 |  | [Teardown]            | Run Keyword
 |  | ...                   | Remove File      | ${FILE}
-
-Create a Hard Link within a Volume
+|
+| Create a Hard Link within a Volume
 |  | [Setup]    | Run Keywords
 |  | ...        | Should Not Exist | ${DIR}   | AND
 |  | ...        | Should Not Exist | ${DIR2}  | AND
@@ -101,8 +101,8 @@ Create a Hard Link within a Volume
 |  | ...        | Should Not Exist | ${DIR2}  | AND
 |  | ...        | Should Not Exist | ${LINK2} | AND
 |  | ...        | Should Not Exist | ${FILE3}
-
-Create a Hard Link to a Directory
+|
+| Create a Hard Link to a Directory
 |  | [Setup]                      | Run Keywords
 |  | ...                          | Should Not Exist | ${DIR}  | AND
 |  | ...                          | Should Not Exist | ${LINK} | AND
@@ -116,8 +116,8 @@ Create a Hard Link to a Directory
 |  | ...                          | Remove Directory | ${DIR}  | AND
 |  | ...                          | Should Not Exist | ${DIR}  | AND
 |  | ...                          | Should Not Exist | ${LINK}
-
-Create a Cross-Volume Hard Link
+|
+| Create a Cross-Volume Hard Link
 |  | [Setup]                      | Run Keywords
 |  | ...                          | Should Not Exist | ${NVOLUME}  | AND
 |  | ...                          | Create Volume    | xyzzy       | server=${SERVER} | part=${PARTITION} | path=${NVOLUME} | acl=system:anyuser,read
@@ -127,8 +127,8 @@ Create a Cross-Volume Hard Link
 |  | ...                          | Remove Volume    | xyzzy       | path=${NVOLUME}  | AND
 |  | ...                          | Remove File      | ${NVOLUME}  | AND
 |  | ...                          | Should Not Exist | ${NVOLUME}
-
-Touch a file
+|
+| Touch a file
 |  | [Setup]                | Run Keyword
 |  | ...                    | Should Not Exist | ${FILE}
 |  | Command Should Succeed | touch ${FILE}
@@ -136,8 +136,8 @@ Touch a file
 |  | [Teardown]             | Run Keywords
 |  | ...                    | Remove File      | ${FILE} | AND
 |  | ...                    | Should Not Exist | ${FILE}
-
-Timestamp rollover after 2147483647 (January 19, 2038 03:14:07 UTC)
+|
+| Timestamp rollover after 2147483647 (January 19, 2038 03:14:07 UTC)
 |  | [Setup]                | Run Keyword
 |  | ...                    | Should Not Exist  | ${FILE}
 |  | Command Should Succeed | touch ${FILE}
@@ -152,8 +152,8 @@ Timestamp rollover after 2147483647 (January 19, 2038 03:14:07 UTC)
 |  | [Teardown]             | Run Keywords
 |  | ...                    | Remove File       | ${FILE}        | AND
 |  | ...                    | Should Not Exist  | ${FILE}
-
-Write to a File
+|
+| Write to a File
 |  | [Setup]         | Run Keywords
 |  | ...             | Should Not Exist | ${FILE}        | AND
 |  | ...             | Create File      | ${FILE}        | Hello world!\n
@@ -163,8 +163,8 @@ Write to a File
 |  | [Teardown]      | Run Keywords
 |  | ...             | Remove File      | ${FILE}        | AND
 |  | ...             | Should Not Exist | ${FILE}
-
-Rewrite a file
+|
+| Rewrite a file
 |  | [Setup]                | Run Keywords
 |  | ...                    | Should Not Exist                 | ${FILE}  | AND
 |  | ...                    | Create File                      | ${FILE}  | Hello world!\n
@@ -176,8 +176,8 @@ Rewrite a file
 |  | [Teardown]             | Run Keywords
 |  | ...                    | Remove File                      | ${FILE}  | AND
 |  | ...                    | Should Not Exist                 | ${FILE}
-
-Rename a File
+|
+| Rename a File
 |  | [Setup]                | Run Keywords
 |  | ...                    | Should Not Exist     | ${FILE1} | AND
 |  | ...                    | Should Not Exist     | ${FILE2} | AND
@@ -189,8 +189,8 @@ Rename a File
 |  | [Teardown]             | Run Keywords
 |  | ...                    | Remove File          | ${FILE2} | AND
 |  | ...                    | Should Not Exist     | ${FILE2}
-
-Write and Execute a Script in a Directory
+|
+| Write and Execute a Script in a Directory
 |  | [Setup]                     | Run Keyword
 |  | ...                         | Should Not Exist   | ${SCRIPT}
 |  | ${code}=                    | Catenate
@@ -207,10 +207,10 @@ Write and Execute a Script in a Directory
 |  | ...                         | Remove File        | ${SCRIPT}
 
 *** Keywords ***
-Setup
+| Setup
 |  | Login         | ${AFS_ADMIN} | keytab=${AFS_ADMIN_KEYTAB}
 |  | Create Volume | ${VOLUME}    | server=${SERVER}           | part=${PARTITION} | path=${TESTPATH} | acl=system:anyuser,read
-
-Teardown
+|
+| Teardown
 |  | Remove Volume | ${VOLUME} | path=${TESTPATH}
 |  | Logout

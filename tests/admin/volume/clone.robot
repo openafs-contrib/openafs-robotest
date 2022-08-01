@@ -16,7 +16,7 @@ ${PART}         a
 ${OTHERPART}    b
 
 *** Test Cases ***
-Avoid creating a rogue volume during clone
+| Avoid creating a rogue volume during clone
 |  | [Tags]                 | rogue-avoidance
 |  | Set test variable      | ${vid}                                            | 0
 |  | ${vid}=                | Create volume                                     | xyzzy         | ${SERVER} | ${OTHERPART} | orphan=True
@@ -26,7 +26,7 @@ Avoid creating a rogue volume during clone
 |  | ...                    | AND                                               | Cleanup Rogue | ${vid}
 
 *** Keywords ***
-Cleanup Rogue
+| Cleanup Rogue
 |  | [Arguments]   | ${vid}
 |  | Remove volume | ${vid} | server=${SERVER}
 |  | Remove volume | ${vid} | server=${SERVER} | zap=True

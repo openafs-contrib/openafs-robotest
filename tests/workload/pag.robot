@@ -13,7 +13,7 @@ Library             OpenAFSLibrary
 ${PRINT_GROUPS}     ${PYTHON} -c 'import sys; import os; sys.stdout.write("%s\\n" % os.getgroups())'
 
 *** Test Cases ***
-Obtain a PAG with pagsh
+| Obtain a PAG with pagsh
 |  | [Documentation]     | Run a pagsh as a child process verify a PAG is set.
 |  | [Setup]             | Run Keyword
 |  | ...                 | PAG Should Not Exist

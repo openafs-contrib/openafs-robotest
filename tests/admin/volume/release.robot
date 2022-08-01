@@ -16,15 +16,15 @@ ${PART}         a
 ${OTHERPART}    b
 
 *** Test Cases ***
-Release a Volume
+| Release a Volume
 |  | [Setup]                 | Create Volume                          | xyzzy            | ${SERVER}    | ${PART}
 |  | Command Should Succeed  | ${VOS} addsite ${SERVER} ${PART} xyzzy
 |  | Command Should Succeed  | ${VOS} release xyzzy
 |  | Volume Should Exist     | xyzzy.readonly
 |  | Volume Location Matches | xyzzy                                  | server=${SERVER} | part=${PART} | vtype=ro
 |  | [Teardown]              | Remove Volume                          | xyzzy
-
-Avoid creating a rogue volume during release
+|
+| Avoid creating a rogue volume during release
 |  | [Tags]                 | rogue-avoidance
 |  | Set test variable      | ${vid}                                       | 0
 |  | ${vid}=                | Create volume                                | xyzzy         | ${SERVER} | ${OTHERPART} | orphan=True
@@ -35,7 +35,7 @@ Avoid creating a rogue volume during release
 |  | ...                    | AND                                          | Cleanup Rogue | ${vid}
 
 *** Keywords ***
-Cleanup Rogue
+| Cleanup Rogue
 |  | [Arguments]   | ${vid}
 |  | Remove volume | ${vid} | server=${SERVER}
 |  | Remove volume | ${vid} | server=${SERVER} | zap=True

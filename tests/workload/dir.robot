@@ -21,7 +21,7 @@ ${NAME}         \u20ac\u2020\u2021
 ${FILE}         ${TESTPATH}/${NAME}
 
 *** Test Cases ***
-Unicode File Name
+| Unicode File Name
 |  | [Setup]      | Run Keyword
 |  | ...          | Should Not Exist | ${FILE}
 |  | Create File  | ${FILE}          | Hello world! | UTF-8
@@ -31,10 +31,10 @@ Unicode File Name
 |  | ...          | Should Not Exist | ${FILE}
 
 *** Keywords ***
-Setup
+| Setup
 |  | Login         | ${AFS_ADMIN} | keytab=${AFS_ADMIN_KEYTAB}
 |  | Create Volume | ${VOLUME}    | server=${SERVER}           | part=${PARTITION} | path=${TESTPATH} | acl=system:anyuser,read
-
-Teardown
+|
+| Teardown
 |  | Remove Volume | ${VOLUME} | path=${TESTPATH}
 |  | Logout

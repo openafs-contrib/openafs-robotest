@@ -20,16 +20,16 @@ ${DUMP}         /tmp/test.dump
 ${DIR}          /afs/.${AFS_CELL}/test/${VOLUME}
 
 *** Test Cases ***
-Dump an Empty Volume
+| Dump an Empty Volume
 |  | Create Volume          | ${VOLUME}                               | ${SERVER} | ${PART} | path=${DIR}
 |  | Command Should Succeed | ${VOS} dump -id ${VOLUME} -file ${DUMP}
-
-Dump a Volume
+|
+| Dump a Volume
 |  | Create Volume          | ${VOLUME}                               | ${SERVER} | ${PART}  | path=${DIR}
 |  | Create Files           | ${DIR}                                  | size=512  | count=64 | depth=2     | width=1 | fill=random
 |  | Command Should Succeed | ${VOS} dump -id ${VOLUME} -file ${DUMP}
-
-Dump and Restore Data Integrity
+|
+| Dump and Restore Data Integrity
 |  | [Tags]         | requires-multi-fs | requires-gdiff
 |  | Create Volume  | ${VOLUME}         | ${SERVER}      | ${PART}  | path=${DIR}
 |  | Create Files   | ${DIR}            | size=512       | count=64 | depth=2     | width=1 | fill=random
@@ -38,18 +38,18 @@ Dump and Restore Data Integrity
 |  | Compare Files
 
 *** Keywords ***
-Cleanup Test Volumes
+| Cleanup Test Volumes
 |  | Remove Volume | ${VOLUME}   | path=${DIR}
 |  | Remove Volume | ${VOLUME}.r | path=${DIR}.r
 |  | Remove File   | ${DUMP}
-
-Dump Volume
+|
+| Dump Volume
 |  | Command Should Succeed | ${VOS} dump -id ${VOLUME} -file ${DUMP}
-
-Restore Volume
+|
+| Restore Volume
 |  | Command Should Succeed
 |  | ...                    | ${VOS} restore -server ${SERVER2} -part ${PART} -name ${VOLUME}.r -file ${DUMP} -overwrite full
 |  | Command Should Succeed | ${FS} mkmount -dir ${DIR}.r -vol ${VOLUME}.r
-
-Compare Files
+|
+| Compare Files
 |  | Command Should Succeed | ${GDIFF} --recursive ${DIR} ${DIR}.r

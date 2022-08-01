@@ -16,13 +16,13 @@ ${PART}         a
 ${OTHERPART}    b
 
 *** Test Cases ***
-Create a Backup Volume
+| Create a Backup Volume
 |  | [Setup]        | Create Volume | xyzzy               | ${SERVER} | ${PART}
 |  | ${output}=     | Run           | ${VOS} backup xyzzy
 |  | Should Contain | ${output}     | xyzzy
 |  | [Teardown]     | Remove Volume | xyzzy
-
-Avoid creating a rogue volume during backup
+|
+| Avoid creating a rogue volume during backup
 |  | [Tags]                 | rogue-avoidance
 |  | Set test variable      | ${vid}                                           | 0
 |  | Command Should Succeed | ${VOS} create ${SERVER} ${PART} xyzzy
@@ -35,7 +35,7 @@ Avoid creating a rogue volume during backup
 |  | ...                    | AND                                              | Cleanup Rogue | ${vid_bk}
 
 *** Keywords ***
-Cleanup Rogue
+| Cleanup Rogue
 |  | [Arguments]   | ${vid}
 |  | Remove volume | ${vid} | server=${SERVER}
 |  | Remove volume | ${vid} | server=${SERVER} | zap=True

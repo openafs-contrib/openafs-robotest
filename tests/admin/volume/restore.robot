@@ -23,26 +23,26 @@ ${SERVER}       ${AFS_FILESERVER_A}
 ${DUMP}         /tmp/test.dump
 
 *** Test Cases ***
-Restore a volume
+| Restore a volume
 |  | Volume should not exist | ${VOLUME}
 |  | Create dump             | ${DUMP}                                                                  | size=small
 |  | Command should succeed  | ${VOS} restore ${SERVER} ${PART} ${VOLUME} -file ${DUMP} -overwrite full
 |  | Volume should exist     | ${VOLUME}
 |  | Volume location matches | ${VOLUME}                                                                | ${SERVER}  | ${PART} | vtype=rw
-
-Restore an empty volume
+|
+| Restore an empty volume
 |  | Volume should not exist | ${VOLUME}
 |  | Create dump             | ${DUMP}                                                                  | size=empty
 |  | Command should succeed  | ${VOS} restore ${SERVER} ${PART} ${VOLUME} -file ${DUMP} -overwrite full
 |  | Volume should exist     | ${VOLUME}
 |  | Volume location matches | ${VOLUME}                                                                | ${SERVER}  | ${PART} | vtype=rw
-
-Restore a Volume Containing a Bogus ACL
+|
+| Restore a Volume Containing a Bogus ACL
 |  | Volume should not exist | ${VOLUME}
 |  | Create dump             | ${DUMP}                                                                  | size=small | contains=bogus-acl
 |  | Command Should Fail     | ${VOS} restore ${SERVER} ${PART} ${VOLUME} -file ${DUMP} -overwrite full
-
-Avoid creating a rogue volume during restore
+|
+| Avoid creating a rogue volume during restore
 |  | [Tags]              | rogue-avoidance
 |  | Set test variable   | ${vid}                                                                                            | 0
 |  | ${vid}=             | Create volume                                                                                     | ${VOLUME}  | ${SERVER} | a | orphan=True
@@ -52,11 +52,11 @@ Avoid creating a rogue volume during restore
 |  | [Teardown]          | Cleanup Rogue                                                                                     | ${vid}
 
 *** Keywords ***
-Cleanup
+| Cleanup
 |  | Remove volume | ${VOLUME}
 |  | Remove file   | ${DUMP}
-
-Cleanup Rogue
+|
+| Cleanup Rogue
 |  | [Arguments]   | ${vid}
 |  | Remove volume | ${vid}  | server=${SERVER}
 |  | Remove volume | ${vid}  | server=${SERVER} | zap=True

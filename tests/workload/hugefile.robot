@@ -20,7 +20,7 @@ ${TESTPATH}     /afs/.${AFS_CELL}/test/${VOLUME}
 ${FILE}         ${TESTPATH}/file
 
 *** Test Cases ***
-Create a Larger Than 2gb File
+| Create a Larger Than 2gb File
 |  | [Tags]       | slow
 |  | [Setup]      | Run Keyword
 |  | ...          | Create File      | ${FILE}
@@ -29,8 +29,8 @@ Create a Larger Than 2gb File
 |  | [Teardown]   | Run Keywords
 |  | ...          | Remove File      | ${FILE}                                     | AND
 |  | ...          | Should Not Exist | ${FILE}
-
-Write a File Larger than the Cache
+|
+| Write a File Larger than the Cache
 |  | [Tags]       | slow
 |  | [Setup]      | Run Keywords
 |  | ...          | Should Not Exist | ${FILE}                                            | AND
@@ -41,8 +41,8 @@ Write a File Larger than the Cache
 |  | [Teardown]   | Run Keywords
 |  | ...          | Remove File      | ${FILE}                                            | AND
 |  | ...          | Should Not Exist | ${FILE}
-
-Read a File Larger than the Cache
+|
+| Read a File Larger than the Cache
 |  | [Tags]             | slow
 |  | [Setup]            | Run Keywords
 |  | ...                | Should Not Exist | ${FILE}                                            | AND
@@ -54,8 +54,8 @@ Read a File Larger than the Cache
 |  | [Teardown]         | Run Keywords
 |  | ...                | Remove File      | ${FILE}                                            | AND
 |  | ...                | Should Not Exist | ${FILE}
-
-Read Write a File Larger than 4G
+|
+| Read Write a File Larger than 4G
 |  | [Tags]                 | slow
 |  | [Setup]                | Run Keywords
 |  | Command Should Succeed | dd if=/dev/urandom of=${FILE} bs=1024 count=5M
@@ -65,10 +65,10 @@ Read Write a File Larger than 4G
 |  | ...                    | Should Not Exist                               | ${FILE}
 
 *** Keywords ***
-Setup
+| Setup
 |  | Login         | ${AFS_ADMIN} | keytab=${AFS_ADMIN_KEYTAB}
 |  | Create Volume | ${VOLUME}    | server=${SERVER}           | part=${PARTITION} | path=${TESTPATH} | acl=system:anyuser,read
-
-Teardown
+|
+| Teardown
 |  | Remove Volume | ${VOLUME} | path=${TESTPATH}
 |  | Logout
