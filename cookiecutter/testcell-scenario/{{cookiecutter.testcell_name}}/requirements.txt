@@ -1,4 +1,5 @@
-molecule[ansible]
+ansible
+molecule
 molecule-robotframework
 {%- if cookiecutter.driver.startswith('vagrant') %}
 molecule-vagrant
