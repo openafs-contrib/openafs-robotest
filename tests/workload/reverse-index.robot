@@ -28,7 +28,9 @@ ${LINKPATH}     ${PATH}/${LINKNAME}
 |  | ${FID}=                    | Get FID          | ${FILEPATH}
 |  | ${NAME}                    | Get Name by FID  | ${FID}
 |  | Should be equal as strings | ${FILENAME}      | ${NAME}
-|  | [Teardown]                 | Remove File      | ${FILEPATH}
+|  | Remove File      | ${FILEPATH}
+|  | Should Not Be in RIDB |  ${FID}
+|  | [Teardown]                 | Run Keywords
 | File with Hard Link Reverse Index test
 |  | [Setup]               | Run Keywords
 |  | ...                   | Should Not Exist | ${FILEPATH} | AND
@@ -47,9 +49,11 @@ ${LINKPATH}     ${PATH}/${LINKNAME}
 |  | Should Not Exist      | ${FILEPATH}
 |  | Link Count Should Be  | ${LINKPATH}          | 1
 |  | ${NAME}               | Get Name by FID      | ${FID}
-|  | Should be equal as strings | ${LINKNAME}     | ${NAME} 
-|  | [Teardown]            | Run Keyword
-|  | ...                   | Remove File          | ${LINKPATH}
+|  | Should be equal as strings | ${LINKNAME}     | ${NAME}
+|  | Unlink                | ${LINKPATH}
+|  | Should Not Be in RIDB |  ${FID}
+|  | [Teardown]            | Run Keywords
+
 
 
 *** Keywords ***
