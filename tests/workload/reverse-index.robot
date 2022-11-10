@@ -9,8 +9,8 @@ Library             OperatingSystem
 Library             String
 Library             OpenAFSLibrary
 
-Suite Setup         Setup
-Suite Teardown      Teardown
+Suite Setup          Setup
+Suite Teardown       Teardown
 
 *** Variables ***
 ${VOLUME}       test.ri
@@ -21,6 +21,12 @@ ${FILENAME}     hello
 ${FILEPATH}     ${PATH}/${FILENAME}
 ${LINKNAME}     link
 ${LINKPATH}     ${PATH}/${LINKNAME}
+${DIR1}         ${PATH}/ParentDir
+${DIR2}         ${DIR1}/ChildDir
+${FILE1}        ${DIR1}/level1
+${FILE2}        ${DIR2}/level2
+${DUMPFILE_T}   /home/vikram/TEMP/ridb_dump
+${SAMPLEFILE}   /home/vikram/TEMP/sample
 
 *** Test Cases ***
 | Name from FID Reverse Index test
@@ -30,7 +36,8 @@ ${LINKPATH}     ${PATH}/${LINKNAME}
 |  | Should be equal as strings | ${FILENAME}      | ${NAME}
 |  | Remove File      | ${FILEPATH}
 |  | Should Not Be in RIDB |  ${FID}
-|  | [Teardown]                 | Run Keywords
+|  | [Teardown]                 | Run Keyword
+|  | ...                        | Remove File      | ${FILEPATH}
 | File with Hard Link Reverse Index test
 |  | [Setup]               | Run Keywords
 |  | ...                   | Should Not Exist | ${FILEPATH} | AND
@@ -55,6 +62,38 @@ ${LINKPATH}     ${PATH}/${LINKNAME}
 |  | [Teardown]            | Run Keywords
 
 
+| Dump RIDB Test
+|  | [Tags]                       | requires-root | requires-local-fileserver
+|  | [Setup]                      | Run Keywords
+|  | ...                          | Should Not Exist | ${DIR1}  | AND
+|  | ...                          | Create Directory | ${DIR1}  | AND
+|  | ...                          | Should Not Exist | ${DIR2}  | AND
+|  | ...                          | Create Directory | ${DIR2}  | AND
+|  | ...                          | Should Not Exist | ${FILE1} | AND
+|  | ...                          | Should Not Exist | ${FILE2} | AND
+|  | ...                          | Should Not Exist | ${FILEPATH} | AND
+|  | ...                          | Create File      | ${FILEPATH}  | Hi | AND
+|  | ...                          | Create File      | ${FILE1}  | Heh | AND
+|  | ...                          | Create File      | ${FILE2}  | Huh
+|  | Should Exist                 | ${DIR1}
+|  | Should Exist                 | ${DIR2}
+|  | Should Exist                 | ${FILE1}
+|  | Should Exist                 | ${FILE2}
+|  | Should Exist                 | ${FILEPATH}
+|  | Dump RIDB                    | partid=${PARTITION} |  vol=${VOLUME} | fname=${DUMPFILE_T}
+|  | Generate Simple RIDB         | fname=${SAMPLEFILE}
+|  | ${F1} = | Get File           | ${DUMPFILE_T}
+|  | ${F2} = | Get File           | ${SAMPLEFILE}
+|  | Should Be Equal As Strings   |    ${F1}         | ${F2}
+|  | [Teardown]                   | Run Keywords
+|  | ...                          | Remove File      | ${FILE1}  | AND
+|  | ...                          | Remove File      | ${FILE2}  | AND
+|  | ...                          | Remove Directory | ${DIR2}   | AND
+|  | ...                          | Remove Directory | ${DIR1}   | AND
+|  | ...                          | Should Not Exist | ${DIR1}   | AND
+|  | ...                          | Should Not Exist | ${DIR2}   | AND
+|  | ...                          | Remove File      | ${FILEPATH}
+| 
 
 *** Keywords ***
 | Setup
