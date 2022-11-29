@@ -22,3 +22,6 @@ rogue-avoidance
 slow
   Indicates this test may incur a long test execution time.  Typically, this
   type of test is used for stress test cases.
+
+hardlink
+  Test involves filesystem hard links.

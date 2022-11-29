@@ -67,6 +67,7 @@ ${TEXT}         hello-world
 |  | ...               | Should Not Exist | ${SYMLINK}
 |
 | Create a Hard Link within a Directory
+|  | [Tags]                | hardlink
 |  | [Setup]               | Run Keywords
 |  | ...                   | Should Not Exist | ${FILE} | AND
 |  | ...                   | Should Not Exist | ${LINK} | AND
@@ -83,6 +84,7 @@ ${TEXT}         hello-world
 |  | ...                   | Remove File      | ${FILE}
 |
 | Create a Hard Link within a Volume
+|  | [Tags]     | hardlink
 |  | [Setup]    | Run Keywords
 |  | ...        | Should Not Exist | ${DIR}   | AND
 |  | ...        | Should Not Exist | ${DIR2}  | AND
@@ -103,6 +105,7 @@ ${TEXT}         hello-world
 |  | ...        | Should Not Exist | ${FILE3}
 |
 | Create a Hard Link to a Directory
+|  | [Tags]                       | hardlink
 |  | [Setup]                      | Run Keywords
 |  | ...                          | Should Not Exist | ${DIR}  | AND
 |  | ...                          | Should Not Exist | ${LINK} | AND
@@ -118,6 +121,7 @@ ${TEXT}         hello-world
 |  | ...                          | Should Not Exist | ${LINK}
 |
 | Create a Cross-Volume Hard Link
+|  | [Tags]                       | hardlink
 |  | [Setup]                      | Run Keywords
 |  | ...                          | Should Not Exist | ${NVOLUME}  | AND
 |  | ...                          | Create Volume    | xyzzy       | server=${SERVER} | part=${PARTITION} | path=${NVOLUME} | acl=system:anyuser,read
