@@ -275,14 +275,15 @@ verifier:
   tests:
     - name: openafs-robotest
       enabled: true
+{%- if cookiecutter.tests_source == 'github' %}
       type: git
       source: https://github.com/openafs-contrib/openafs-robotest
       version: master
-      execute: tests
-    - name: extra-tests
-      enabled: false
+{%- else %}
       type: dir
-      source: ${MOLECULE_SCENARIO_DIRECTORY}/tests
+      source: ${MOLECULE_PROJECT_DIRECTORY}/../tests
+{%- endif %}
+      execute: tests
   variablefiles:
     - source: ${MOLECULE_SCENARIO_DIRECTORY}/../templates/openafs-robotest.yml.j2
   dest_dir: ${MOLECULE_PROJECT_DIRECTORY}/reports/${MOLECULE_SCENARIO_NAME}
