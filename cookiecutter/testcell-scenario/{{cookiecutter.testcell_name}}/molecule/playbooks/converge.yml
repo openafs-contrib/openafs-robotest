@@ -1,5 +1,0 @@
-{% raw -%}
----
-- import_playbook: converge_realm.yml
-- import_playbook: converge_cell.yml
-{%- endraw %}

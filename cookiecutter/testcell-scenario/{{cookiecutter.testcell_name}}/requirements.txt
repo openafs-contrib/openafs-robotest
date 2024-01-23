@@ -1,8 +1,0 @@
-ansible
-molecule==4.0.1
-molecule-robotframework
-{%- if cookiecutter.driver.startswith('vagrant') %}
-molecule-vagrant
-{%- elif cookiecutter.driver == 'proxmox' %}
-molecule-proxmox
-{%- endif %}
