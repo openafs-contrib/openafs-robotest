@@ -1,0 +1,5 @@
+---
+collections:
+  - name: openafs_contrib.openafs
+    type: galaxy
+    version: 1.9.0

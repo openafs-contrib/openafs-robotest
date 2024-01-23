@@ -1,0 +1,52 @@
+#------------------------------------------------------------------------------
+# Ensure a kernel-headers package is installed that matches the current kernel
+# version. This is required in order to build the OpenAFS client kernel module.
+#
+- name: "Query linux-header package."
+  command: dpkg-query --show --showformat='${Status}:${Package}\n'
+           'linux-headers-{{ ansible_kernel }}'
+  changed_when: False
+  failed_when: False
+  register: dpkg_query
+
+- debug:
+    var: dpkg_query
+    verbosity: 1
+
+- name: "Install kernel headers."
+  when: ansible_kernel not in dpkg_query.stdout_lines
+  become: yes
+  block:
+    - name: "Install linux-headers"
+      apt:
+        state: present
+        name: "linux-headers-{{ ansible_kernel }}"
+
+  rescue:
+    # If we are unable to install the linux-headers package, the current
+    # kernel version may be too old. When allowed, automatically update
+    # the kernel. This entails a reboot.
+    - fail:
+        msg: Kernel update and reboot required.
+      when: not (afs_devel_allow_kernel_update | d('no') | bool)
+
+    - name: Update kernel with apt
+      apt:
+        state: latest
+        name:
+          - 'linux-image*'
+          - 'linux-headers*'
+        only_upgrade: yes
+        update_cache: yes
+      register: apt_update_results
+
+    - name: Reboot
+      when: apt_update_results.changed
+      block:
+        - name: Rebooting
+          reboot:
+            reboot_timeout: 600
+        - name: Waiting for reboot to complete
+          wait_for_connection:
+        - name: Gathering facts
+          setup:

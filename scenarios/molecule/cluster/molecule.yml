@@ -1,0 +1,156 @@
+---
+dependency:
+  name: galaxy
+  enabled: yes
+  requirements-file: collections.yml
+
+driver:
+  name: vagrant
+
+platforms:
+  - name: "openafs-robotest-01"
+    box: "${AFS_BOX:-generic/alma9}"
+    groups:
+      - afs_admin_client
+      - afs_clients
+      - afs_test
+
+  - name: "openafs-robotest-02"
+    box: "${AFS_BOX:-generic/alma9}"
+    groups:
+      - afs_clients
+
+  - name: "openafs-robotest-03"
+    box: "${AFS_BOX:-generic/alma9}"
+    groups:
+      - afs_kdcs
+      - afs_databases
+
+  - name: "openafs-robotest-04"
+    box: "${AFS_BOX:-generic/alma9}"
+    groups:
+      - afs_databases
+
+  - name: "openafs-robotest-05"
+    box: "${AFS_BOX:-generic/alma9}"
+    groups:
+      - afs_databases
+
+  - name: "openafs-robotest-06"
+    box: "${AFS_BOX:-generic/alma9}"
+    groups:
+      - afs_fileservers
+
+  - name: "openafs-robotest-07"
+    box: "${AFS_BOX:-generic/alma9}"
+    groups:
+      - afs_fileservers
+
+provisioner:
+  name: ansible
+  env:
+    ANSIBLE_PIPELINING: "True"
+    ANSIBLE_STDOUT_CALLBACK: "yaml"
+  playbooks:
+    prepare: "${MOLECULE_SCENARIO_DIRECTORY}/../playbooks/prepare.yml"
+    converge: "${MOLECULE_SCENARIO_DIRECTORY}/../playbooks/converge.yml"
+    cleanup: "${MOLECULE_SCENARIO_DIRECTORY}/../playbooks/cleanup.yml"
+  inventory:
+    group_vars:
+      all:
+        afs_realm: "EXAMPLE.COM"
+        afs_cell: "example.com"
+        afs_user: "${USER:-tester}"
+        afs_admin: "admin"
+        afs_security_model: "none"
+
+        afs_realm_files: "${MOLECULE_EPHEMERAL_DIRECTORY}"
+        afs_cell_files: "${MOLECULE_EPHEMERAL_DIRECTORY}"
+        afs_csdb_file: "${MOLECULE_EPHEMERAL_DIRECTORY}/csdb.yaml"
+
+        afs_install_method: "source"
+        afs_git_repo: "${AFS_GIT_REPO:-https://github.com/openafs/openafs.git}"
+        afs_git_version: "${AFS_GIT_VERSION:-master}"
+        afs_configure_options:
+          enable:
+            - debug
+            - debug-kernel
+            - kernel-module
+            - warnings
+            - checking
+          disable:
+            - optimize
+            - optimize-kernel
+          with:
+            - linux-kernel-packaging
+
+      afs_fileservers:
+        # Create fake /vicep partitions for testing purposes.
+        afs_pseudo_partitions:
+          - a
+          - b
+          - c
+
+      afs_test:
+        afs_robotest_fileserver_a: "openafs-robotest-06"
+        afs_robotest_fileserver_b: "openafs-robotest-07"
+
+verifier:
+  name: molecule-robotframework
+  enabled: true
+  options:
+    group: afs_test
+    libraries:
+      - robotframework-openafslibrary
+    tests:
+      - name: openafs-robotest
+        enabled: true
+        type: dir
+        source: ${MOLECULE_PROJECT_DIRECTORY}/../tests
+        execute: tests
+    variablefiles:
+      - source: ${MOLECULE_SCENARIO_DIRECTORY}/../templates/openafs-robotest.yml.j2
+    dest_dir: ${MOLECULE_PROJECT_DIRECTORY}/reports/${MOLECULE_SCENARIO_NAME}
+    robot:
+      name: default
+      variablefile: openafs-robotest.yml
+      loglevel: INFO
+      debugfile: debug.log
+      runemptysuite: true
+      exclude:
+        - bug
+        - slow
+        - rogue-avoidance
+
+scenario:
+  create_sequence:
+    - dependency
+    - create
+    - prepare
+  check_sequence:
+    - dependency
+    - cleanup
+    - destroy
+    - create
+    - prepare
+    - converge
+    - check
+    - destroy
+  converge_sequence:
+    - dependency
+    - create
+    - prepare
+    - converge
+  destroy_sequence:
+    - cleanup
+    - destroy
+  test_sequence:
+    - dependency
+    - cleanup
+    - destroy
+    - create
+    - prepare
+    - converge
+    - verify
+    - cleanup
+    - destroy

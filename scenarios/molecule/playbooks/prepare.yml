@@ -1,0 +1,163 @@
+---
+#
+# Prepare instances before converge.
+#
+# The following options can be configured in the "vars" section.
+#
+#  allow_reboot
+#    Allow kernel to be updated on instances and perform a reboot after the
+#    kernel is updated.
+#    Type: boolean
+#    Default: False
+#
+#  bootstrap_python
+#    Install python with the raw module.
+#    Type: boolean
+#    Default: yes
+#
+#  rewrite_hosts_file
+#    Rewrite the hosts file on instances create entries for all of the instances
+#    in the play. This is a workaround when a working nameserver is not available
+#    for the test instances.
+#    Type: boolean
+#    Default: False
+#
+#  selinux_mode
+#    Set the SE Linux mode on the instances which support SE Linux. Must
+#    be one of the following values:  'permissive', 'enforcing', 'disabled'.
+#    Omit this option to avoid changing the SE Linux mode on instances.
+#    Type: string
+#    Default: none
+#
+#  set_hostname:
+#    Set the instance's hostname. The name is set to the molecule instance
+#    name by default.  Create a 'afs_hostname' host variable in the inventory
+#    to set a custom name.
+#    Type: boolean
+#    Default: False
+#
+- name: Prepare
+  hosts: all
+  vars:
+    allow_reboot: yes
+    bootstrap_python: yes
+    rewrite_hosts_file: yes
+    selinux_mode: permissive
+    set_hostname: no
+  tasks:
+    #------------------------------------------------------------------------------
+    # Dump variables to json files for debugging.
+    - name: "Dumping driver variables."
+      run_once: true
+      delegate_to: localhost
+      copy:
+        content: "{{ molecule_yml.driver | to_nice_json }}"
+        dest: "{{ molecule_ephemeral_directory }}/driver.json"
+
+    - name: "Dumping host variables."
+      run_once: true
+      delegate_to: localhost
+      copy:
+        content: "{{ hostvars | to_nice_json }}"
+        dest: "{{ molecule_ephemeral_directory }}/hostvars.json"
+
+    #------------------------------------------------------------------------------
+    # Sanity checks before proceeding.
+    - name: Verify host groups
+      run_once: true
+      assert:
+        that:
+          - groups.afs_admin_client is defined
+          - groups.afs_clients is defined
+          - groups.afs_databases is defined
+          - groups.afs_fileservers is defined
+          - groups.afs_kdcs is defined
+          - groups.afs_test is defined
+          - groups.afs_clients | count > 0
+          - groups.afs_databases | count > 0
+          - groups.afs_fileservers | count > 0
+          - groups.afs_admin_client | count == 1
+          - groups.afs_kdcs | count == 1
+          - groups.afs_test | count == 1
+
+    #------------------------------------------------------------------------------
+    # Wait for instances to be reachable.
+    - name: Waiting for instance connection.
+      wait_for_connection:
+
+    #------------------------------------------------------------------------------
+    # Bootstrap python.
+    - name: Bootstrap python for Ansible
+      become: true
+      raw: |
+        command -v python3 python || (
+        command -v apk >/dev/null && sudo apk add --no-progress --update python3 ||
+        (test -e /usr/bin/dnf && sudo dnf install -y python3) ||
+        (test -e /usr/bin/apt && (apt -y update && apt install -y python-minimal)) ||
+        (test -e /usr/bin/yum && sudo yum -y -qq install python3) ||
+        (test -e /usr/sbin/pkg && sudo env ASSUME_ALWAYS_YES=yes pkg update && sudo env ASSUME_ALWAYS_YES=yes pkg install python3) ||
+        (test -e /usr/sbin/pkg_add && sudo /usr/sbin/pkg_add -U -I -x python%3.7) ||
+        echo "Warning: Python not boostrapped due to unknown platform."
+        )
+      changed_when: false
+      when: bootstrap_python
+
+    #------------------------------------------------------------------------------
+    # Setup selinux mode on the test instances.
+    - assert:
+        that: selinux_mode in ('permissive', 'enforcing', 'disabled')
+        success_msg: "driver.prepare.selinux_mode is valid; '{{ selinux_mode }}'."
+        fail_msg: "Invalid driver.prepare.selinux_mode value; '{{ selinux_mode }}'."
+      when: selinux_mode | count > 0
+
+    - name: Configure selinux mode
+      become: yes
+      ansible.posix.selinux:
+        policy: targeted
+        state: "{{ selinux_mode }}"
+      when:
+        - selinux_mode | count > 0
+        - ansible_selinux is defined
+        - ansible_selinux.status is defined
+        - ansible_selinux.status == 'enabled'
+
+    #------------------------------------------------------------------------------
+    # Optionally set the hostname of the instances.
+    - name: "Set instance hostname."
+      when: set_hostname
+      become: yes
+      hostname:
+        name: "{{ afs_hostname | d(inventory_hostname) }}"
+
+    #------------------------------------------------------------------------------
+    # Optionally setup the /etc/hosts file on the tests machines to support forward
+    # and reverse name resolution of the tests machines in the test cell.  This is a
+    # workaround which can be enabled when a proper nameserver is not setup for the
+    # test guests.
+    - name: "Rewrite hosts file."
+      when: rewrite_hosts_file
+      become: yes
+      vars:
+        hosts_file: "{{ (ansible_system == 'SunOS') | ternary('/etc/inet/hosts', '/etc/hosts') }}"
+      copy:
+        backup: yes
+        dest: "{{ hosts_file }}"
+        content: |
+          127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+          ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+          {% for name in hostvars | sort %}
+          {% if hostvars[name].ansible_hostname == hostvars[name].ansible_fqdn %}
+          {{ hostvars[name].ansible_default_ipv4.address }}  {{ hostvars[name].ansible_hostname }}
+          {% else %}
+          {{ hostvars[name].ansible_default_ipv4.address }}  {{ hostvars[name].ansible_hostname }} {{ hostvars[name].ansible_fqdn }}
+          {% endif %}
+          {% endfor %}
+
+#------------------------------------------------------------------------------
+- name: Install kernel headers
+  hosts: afs_builders:afs_clients
+  vars:
+    prepare: "{{ molecule_yml.driver.get('prepare', {}) }}"
+    allow_reboot: "{{ prepare.get('allow_reboot', 'no') | bool }}"
+  tasks:
+    - include_tasks: "kernel/{{ ansible_pkg_mgr }}.yml"
