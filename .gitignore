@@ -6,3 +6,4 @@ builds
 docs/build/
 !.yamllint
 !.ansible-lint
+!.readthedocs.yaml

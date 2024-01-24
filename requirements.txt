@@ -10,6 +10,6 @@ molecule-plugins[docker,vagrant]==23.5.0
 #
 # docs requirements
 #
-sphinx
-sphinx-rtd-theme
+Sphinx==7.2.6
+sphinx-rtd-theme==2.0.0
 robotframework>=4.0.0
