@@ -76,30 +76,31 @@ Example verifier options:
 .. code-block:: yaml
 
   verifier:
-    name: robotframework
+    name: molecule-robotframework
     enabled: true
-    group: afs_test
-    libraries:
-      - robotframework-openafslibrary
-    test_repos:
-      - name: openafs-robotest
-        repo: https://github.com/openafs-contrib/openafs-robotest
-        version: master
-    resources:
-      - ${MOLECULE_SCENARIO_DIRECTORY}/../templates/openafs-robotest.yml.j2
-    data_sources:
-      - openafs-robotest/tests
-    dest_dir: ${MOLECULE_PROJECT_DIRECTORY}/reports/${MOLECULE_SCENARIO_NAME}
     options:
-      exclude:
-        - bug
-        - slow
-        - rogue-avoidance
-        - requires-multi-fs
-      loglevel: INFO
-      debugfile: debug.log
-      runemptysuite: true
-      variablefile: openafs-robotest.yml
+        group: afs_test
+        libraries:
+          - robotframework-openafslibrary
+        test_repos:
+          - name: openafs-robotest
+            repo: https://github.com/openafs-contrib/openafs-robotest
+            version: master
+        resources:
+          - ${MOLECULE_SCENARIO_DIRECTORY}/../templates/openafs-robotest.yml.j2
+        data_sources:
+          - openafs-robotest/tests
+        dest_dir: ${MOLECULE_PROJECT_DIRECTORY}/reports/${MOLECULE_SCENARIO_NAME}
+        robot:
+          exclude:
+            - bug
+            - slow
+            - rogue-avoidance
+            - requires-multi-fs
+          loglevel: INFO
+          debugfile: debug.log
+          runemptysuite: true
+          variablefile: openafs-robotest.yml
 
 Test results
 ------------

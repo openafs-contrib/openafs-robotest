@@ -1,5 +1,9 @@
 # OpenAFS Robotest Changes
 
+## [prerelease]
+
+* Remove cookiecutter and provide molecule files in the tree.
+
 ## [v1.1.0]
 
 * Convert all of the Robot Framework files from space-separated to the more
