@@ -22,6 +22,11 @@ Install these system requirements:
 
 Install the required python packages:
 
+    $ make init
+
+If make is not available, then run the following commands to
+create the virtualenv and install the required packages:
+
     $ /usr/bin/python3.12 -m venv .venv
     $ source .venv/bin/activate
     (.venv) $ pip install -U pip
@@ -30,6 +35,7 @@ Install the required python packages:
 
 To create a test cell and run the tests:
 
+    $ source .venv/bin/activate
     (.venv) $ cd scenarios
     (.venv) $ molecule create
     (.venv) $ molecule converge
@@ -39,7 +45,6 @@ To create a test cell and run the tests:
 The molecule actions may be combined as:
 
     (.venv) $ molecule test
-
 
 [1]: http://robotframework.org/
 [2]: https://github.com/openafs-contrib/robotframework-openafslibrary
