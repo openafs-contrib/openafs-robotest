@@ -53,6 +53,7 @@ ${TESTPATH2}    /afs/.${AFS_CELL}/${VOLUME2}
 |  | ...                          | Command Should Succeed                                         | ${FS} rmm ${MTPT}
 |
 | Make and Remove a Mountpoint in root.cell volume
+|  | [Tags]                 | bug-1.6.x
 |  | [Documentation]        | Creating/removing a mountpoint in a root directory.
 |  | ...                    | In releases prior to 1.8.x of AFS there was a bug in the
 |  | ...                    | cachemanager when removing a mountpoint that is in the root of a volume.
