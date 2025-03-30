@@ -1,0 +1,4 @@
+---
+collections:
+  - name: openafs_contrib.openafs
+    version: "1.9.3"

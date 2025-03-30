@@ -1,0 +1,264 @@
+# Copyright (c) 2025, Sine Nomine Associates
+#
+# usage: ansible-playbook local_openafs_sandbox.yml [-e "name=value"]
+#
+# This playbook sets up a local OpenAFS sandbox cell for testing and
+# development.  It creates a Kerberos realm called "EXAMPLE.COM" and OpenAFS
+# cell called "example.com" on the local machine. This playbook is intended for
+# testing purposes only.
+#
+# Kerberos:
+# * Installs a Kerberos KDC and creates a realm called EXAMPLE.COM.
+# * Installs the Kerberos client and configuration.
+# * Creates the Kerberos service key the OpenAFS cell.
+# * Creates the Kerberos principals for the OpenAFS admin and regular user.
+# * Creates keytabs for the service key and user principals and
+#   places keytabs in the $HOME/keytabs directory.
+#
+# OpenAFS:
+# * Installs the OpenAFS database server.
+# * Installs the OpenAFS fileserver.
+# * Installs the OpenAFS client, including the OpenAFS kernel module.
+# * Sets up the server configuration to create the example.com cell.
+# * Creates the admin and regular OpenAFS users.
+# * Creates the top-level root.afs and root.cell volumes.
+# * Creates a top-level test volume.
+#
+# Prerequisites:
+# - sudo privileges
+# - Ansible
+# - Ansible Collection for OpenAFS
+#
+# Setup:
+#
+# Be sure your system is up to date.
+#
+#   $ sudo apt update -y && $ sudo apt upgrade -y && sudo reboot
+#
+# Install Ansible and the OpenAFS collection.
+#
+#   $ sudo apt install ansible
+#   $ ansible-galaxy collection install -r requirements.yml
+#
+---
+- name: Create an OpenAFS sandbox cell for testing.
+  hosts: localhost
+  connection: local
+  vars:
+    # This local machine will be both the client and the server.
+    afs_is_client: true
+    afs_is_server: true
+    afs_is_dbserver: true
+    afs_is_fileserver: true
+
+    # The following variables specify how to install OpenAFS.
+    # Use the ansible-playbook --extra-vars (-e) option to specify different values.
+    # See the OpenAFS Ansible Collection documentation for valid values.
+    afs_install_method: "managed"
+    afs_module_install_method: "dkms"
+    afs_git_repo: "https://github.com/openafs/openafs"
+    afs_git_version: "master"
+    afs_configure_options: "--enable-debug --enable-kernel-module --with-linux-kernel-packaging"
+
+    # The following variables specify the paths for generated files.
+    # Use the ansible-playbook --extra-vars (-e) option to specify different locations.
+    keytabs: "{{ lookup('ansible.builtin.env', 'HOME') }}/keytabs"
+    robotrc: "{{ playbook_dir | dirname }}/robotrc"
+
+  tasks:
+
+    #
+    # Get local system information.
+    #
+    - name: Get the current user id.
+      ansible.builtin.command: id -u
+      changed_when: false
+      register: id_results
+
+    # Debian adds loopback entry to the /etc/hosts file to ensure the hostname
+    # always resolves to useable address, however this workaround means we can
+    # get a loopback address from the hostname.  Even though this is a local
+    # sandbox cell, OpenAFS will refuse to use a loopback address since it
+    # normally runs as a distributed system. So, remove the /etc/hosts loopback
+    # workaround if detected and add the actual IP address to the hosts file.
+    # If the test system is not emphemeral, it's recommened to configure it with
+    # a static IP address before running this playbook.
+    - name: Check for a loopback entry in the /etc/hosts file.
+      ansible.builtin.command: grep "^127\.0\.1\.1" /etc/hosts
+      changed_when: false
+      failed_when: false
+      register: loopback_entry
+
+    - name: Replace the loopback/hostname with IP/hostname in the /etc/hosts file.
+      become: true
+      vars:
+        ipv4: "{{ ansible_default_ipv4.address }}"
+      ansible.builtin.replace:
+        path: /etc/hosts
+        regexp: '^127\.0\.1\.1\s.*'
+        replace: '{{ ipv4 }} {{ ansible_hostname }}'
+      when: loopback_entry.rc == 0
+
+    - name: Add IP/hostname entry to /etc/hosts file.
+      become: true
+      vars:
+        ipv4: "{{ ansible_default_ipv4.address }}"
+      ansible.builtin.lineinfile:
+        state: present
+        path: /etc/hosts
+        line: "{{ ipv4 }} {{ ansible_hostname }}"
+        insertafter: EOF
+      when: loopback_entry.rc != 0
+
+    - name: Set playbook parameters.
+      ansible.builtin.set_fact:
+        afs_cell: example.com
+        afs_realm: EXAMPLE.COM
+        afs_admin: admin
+        afs_user: "{{ ansible_env.USER }}"
+        afs_user_id: "{{ id_results.stdout | int }}"
+        afs_csdb:
+          cell: "{{ afs_cell }}"
+          desc: Example cell for testing
+          hosts:
+            - ip: "{{ ansible_default_ipv4.address }}"
+              name: "{{ ansible_hostname }}"
+              clone: false
+
+    - name: Print playbook parameters.
+      ansible.builtin.debug:
+        msg:
+          - "afs_cell: {{ afs_cell }}"
+          - "afs_realm: {{ afs_realm }}"
+          - "afs_admin: {{ afs_admin }}"
+          - "afs_user: {{ afs_user }}"
+          - "afs_user_id: {{ afs_user_id }}"
+          - "afs_csdb: {{ afs_csdb }}"
+          - "keytabs: {{ keytabs }}"
+
+    #
+    # Setup the Kerberos realm and create the principals on this
+    # local machine.
+    #
+    - name: Create the Kerberos realm.
+      ansible.builtin.import_role:
+        name: openafs_contrib.openafs.openafs_krbserver
+
+    - name: Install the Kerberos client programs.
+      ansible.builtin.import_role:
+        name: openafs_contrib.openafs.openafs_krbclient
+
+    - name: Create the Kerberos service key.
+      become: true
+      openafs_contrib.openafs.openafs_principal:
+        state: present
+        principal: "afs/{{ afs_cell }}"
+        encryption_types: ['aes128-cts', 'aes256-cts']
+        keytabs: "{{ keytabs }}"
+      register: service_key_results
+
+    - name: Create the Kerberos principal for the OpenAFS administrator.
+      become: true
+      openafs_contrib.openafs.openafs_principal:
+        state: present
+        principal: "{{ afs_admin }}"
+        acl: "*"
+        keytabs: "{{ keytabs }}"
+      register: admin_princ_results
+
+    - name: Create the Kerberos user principal.
+      become: true
+      openafs_contrib.openafs.openafs_principal:
+        state: present
+        principal: "{{ afs_user }}"
+        keytabs: "{{ keytabs }}"
+      register: user_princ_results
+
+    - name: Set keytab variables.
+      ansible.builtin.set_fact:
+        keytab_service: "{{ service_key_results.keytab }}"
+        keytab_admin: "{{ admin_princ_results.keytab }}"
+        keytab_user: "{{ user_princ_results.keytab }}"
+
+    - name: Set file permissions on keytabs.
+      become: true
+      ansible.builtin.file:
+        state: touch
+        path: "{{ item.path }}"
+        mode: "{{ item.mode }}"
+        owner: "{{ afs_user }}"
+      loop:
+        - path: "{{ keytabs }}"
+          mode: "0700"
+        - path: "{{ keytab_service }}"
+          mode: "0600"
+        - path: "{{ keytab_admin }}"
+          mode: "0600"
+        - path: "{{ keytab_user }}"
+          mode: "0600"
+      when: service_key_results.changed or admin_princ_results.changed or user_princ_results.changed
+
+    #
+    # Install the OpenAFS server and client packages and create the
+    # example cell on this local machine.
+    #
+    - name: Install OpenAFS database and file servers.
+      vars:
+        afs_service_keytab: "{{ keytab_service }}"
+        afs_pseudo_partitions: ["a", "b", "c"]
+      ansible.builtin.import_role:
+        name: openafs_contrib.openafs.openafs_server
+
+    - name: Install OpenAFS client.
+      ansible.builtin.import_role:
+        name: openafs_contrib.openafs.openafs_client
+
+    - name: Create the OpenAFS top level cell volumes.
+      openafs_contrib.openafs.openafs_volume:
+        state: present
+        name: "{{ item.name }}"
+        mount: "{{ item.mount }}"
+        acl: "{{ item.acl }}"
+        auth_user: "{{ afs_admin }}"
+        auth_keytab: "{{ keytab_admin }}"
+        replicas: 3
+      loop:
+        - name: root.afs
+          mount: /afs
+          acl: "system:anyuser read"
+        - name: root.cell
+          mount: "/afs/{{ afs_cell }}"
+          acl: "system:anyuser read"
+        - name: test
+          mount: "/afs/{{ afs_cell }}/test"
+          acl:
+            - "system:anyuser read"
+            - "system:authuser write"
+
+    - name: Create the OpenAFS regular user.
+      openafs_contrib.openafs.openafs_user:
+        name: "{{ afs_user }}"
+        id: "{{ afs_user_id | int }}"
+        group: testers
+        auth_user: "{{ afs_admin }}"
+        auth_keytab: "{{ keytab_admin }}"
+
+    #
+    # Setup RoboTest configuration.
+    #
+    - name: Create robot configuration directory.
+      ansible.builtin.file:
+        state: directory
+        path: "{{ robotrc }}"
+        owner: "{{ afs_user }}"
+        mode: "0755"
+
+    - name: Create robot configuration files.
+      ansible.builtin.template:
+        src: "{{ item }}.j2"
+        dest: "{{ robotrc }}/{{ item }}"
+        owner: "{{ afs_user }}"
+        mode: "0644"
+      loop:
+        - local_openafs_sandbox.py
+        - quick.args

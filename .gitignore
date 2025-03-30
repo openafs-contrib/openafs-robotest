@@ -1,9 +1,9 @@
 .*
 *.pyc
 *.swp
-output
-builds
-docs/build/
+/reports
+/docs/build/
+/robotrc
 !.yamllint
 !.ansible-lint
 !.readthedocs.yaml
