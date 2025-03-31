@@ -1,8 +1,4 @@
-# OpenAFS Robotest Changes
-
-## [prerelease]
-
-* Remove cookiecutter and provide molecule files in the tree.
+# OpenAFS RoboTest Changes
 
 ## [v1.1.0]
 

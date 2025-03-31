@@ -3,131 +3,112 @@
 Quick Start Guide
 =================
 
-This guide shows how to easily create an OpenAFS_ test cell and then run
-`OpenAFS Robotest`_ test suite.
+This guide shows how to create a local OpenAFS_ test cell and run `OpenAFS
+RoboTest`_ test suite in a test system. It is recommended to run this in a test
+virtual machine. Note that a container (docker, podman, etc) is not suitable,
+since we will be loading the OpenAFS kernel module on the test system.
 
-Prerequisites
--------------
+This guide assumes your test system is running Debian. OpenAFS packages are
+available on Debian, which makes the initial setup easier.
 
-Packages
-~~~~~~~~
+System setup
+------------
 
-Install git, Python 3.10 (or later), and Python3 virtualenv on your local system.
+Be sure you are able to run programs with ``sudo`` as a regular user. On
+Debian, you can do this by adding your username to the ``sudo`` group while
+running as root.
 
-MacOS:
+.. code-block:: shell
 
-.. code-block:: console
+    usermod -a -G sudo <username>
 
-    $ brew install git python3 virtualenv
+Be sure your system is up to date. This is required in order to build and run
+the OpenAFS kernel module.
 
-Debian/Ubuntu:
+.. code-block:: shell
 
-.. code-block:: console
+    sudo apt update -y && sudo apt upgrade -y && sudo reboot
 
-    $ sudo apt-get install git python3 python3-venv
+Install the following packages:
 
-Fedora:
+.. code-block:: shell
 
-.. code-block:: console
+    sudo apt install ansible git pipx
 
-    $ sudo dnf install git python3 python3-venv
+Run ``pipx ensurepath`` and then re-login to be sure pipx commands are in your
+``PATH``.
 
-Verify the Python version with:
+.. code-block:: shell
 
-.. code-block:: console
+    pipx ensurepath
 
-    $ python3 -V
+Install Robot Framework and the OpenAFS Library with ``pipx``.
 
-Vagrant
-~~~~~~~
+.. code-block:: shell
 
-The provided scenarios are configured to use Vagrant_ to manage your test
-virtual machines.
+    pipx install robotframework && pipx inject robotframework robotframework-openafslibrary
 
-Follow the installation instructions on the HashiCorp_ site when installing
-Vagrant.  It is recommended to download Vagrant from the HashiCorp site
-instead of installing it from your system's package manager.
 
-You will need to install one the supported virtualization providers (such as
-VirtualBox, or libvirt) and then install Vagrant.
+Checkout OpenAFS RoboTest
+--------------------------
 
-Set the ``VAGRANT_DEFAULT_PROVIDER`` environment variable to select your
-virtualization provider.  For example, if using the kvm virtualization provider
-on linux:
+Clone the openafs-robotest project:
 
-.. code-block:: console
+.. code-block:: shell
 
-    $ export VAGRANT_DEFAULT_PROVIDER=libvirt
+    git clone https://github.com/openafs-contrib/openafs-robotest
 
-After installing Vagrant, be sure you are able to create an instance of the
-``generic/alma9`` box, since we will be using that in this guide to create our
-test cell.
+This project contains the Robot Framework tests for OpenAFS and a sample
+playbook to install a test cell on your local machine.
 
-See "Customization" if you already have existing physical or virtual
-machines you wish to use for development and testing.  In this case, vagrant is
-not required.
+Run the setup playbook
+----------------------
 
-Setup
-~~~~~
+Change your working directory to the ``setup`` directory. This directory
+contains the Ansible playbook to install Kerberos and OpenAFS.
 
-Clone the ``openafs-robotest`` project in a directory of your choice:
+.. code-block:: shell
 
-.. code-block:: console
+    cd openafs-robotest/setup
 
-    $ git clone https://github.com/openafs-contrib/openafs-robotest
+Install the _`OpenAFS Ansible Collection` with ansible-galaxy:
 
-If ``make`` is available, run ``make init`` to create the local virtualenv
-and install the required Python packages.
+.. code-block:: shell
 
-.. code-block:: console
+    ansible-galaxy collection install -r requirements.yml
 
-    $ make init
-    $ source .venv/bin/activate
+Run the playbook to install Kerberos and OpenAFS on your local machine. This
+will take some time as the playbook builds the cell and the client kernel
+module.
 
-If ``make`` is not available, you can create the local virtualenv manually:
+.. code-block:: shell
 
-.. code-block:: console
+    ansible-playbook local_openafs_sandbox.yml
 
-    $ python3 -m venv .venv
-    $ source .venv/bin/activate
-    (.venv) $ pip install -U pip
-    (.venv) $ pip install -r requirements.txt
-    (.venv) $ patch-molecule-schema
-
+If the playbook succeeds, the Kerberos realm and the OpenAFS cell be installed
+and running on the local machine and your user will have administrator
+credentials.
 
 Run the tests
 -------------
 
-Run ``molecule`` to create Kerberos realm, the OpenAFS cell, and then run the
-`OpenAFS Robotest`_ test suite.  The test report and logs will be saved in the
+Use the ``robot`` command to execute the test cases.  The setup playbook
+creates an example argument file for a quick test.
+
+Change back to the project directory.
+
+.. code-block:: shell
+
+    cd ~/openafs-robotest
+
+Run the robot command to run the tests.  The results are saved in the
 ``reports`` directory.
 
-.. code-block:: console
+.. code-block:: shell
 
-    $ source .venv/bin/activate
-    (.venv) cd scenarios
-    (.venv) $ molecule create    # To create and prepare the test instance.
-    (.venv) $ molecule converge  # To create the realm and cell.
-    (.venv) $ molecule verify    # To run the test suite.
-    (.venv) $ molecule login     # To ssh to the test instance.
-    (.venv) $ molecule destroy   # To destroy the test instance.
-
-The actions can be consolidated by running the ``test`` action:
-
-.. code-block:: console
-
-    (.venv) $ molecule test  # Run create, converge, verify, destroy
-
+    robot -A robotrc/quick.args tests
 
 .. _Ansible: https://www.ansible.com/
-.. _Cookiecutter: https://cookiecutter.readthedocs.io/
-.. _homebrew: https://brew.sh
-.. _Molecule: https://molecule.readthedocs.io/en/latest/
-.. _`Molecule Robot Framework plugin`: https://pypi.org/project/molecule-robotframework/
 .. _`OpenAFS Ansible Collection`: https://galaxy.ansible.com/openafs_contrib/openafs
 .. _OpenAFS: https://www.openafs.org
-.. _`OpenAFS Robotest`: https://github.com/openafs-contrib/openafs-robotest
-.. _Vagrant: https://www.vagrantup.com/
-.. _VirtualBox: https://www.virtualbox.org/
-.. _`virtualization provider`: https://www.vagrantup.com/docs/providers
-.. _Hashicorp: https://developer.hashicorp.com/vagrant/docs
+.. _`OpenAFS RoboTest`: https://github.com/openafs-contrib/openafs-robotest
