@@ -60,36 +60,29 @@
     afs_git_version: "master"
     afs_configure_options: "--enable-debug --enable-kernel-module --with-linux-kernel-packaging"
 
+    # The following variables specify the cell and user names.
+    # Use the ansible-playbook --extra-vars (-e) option to specify different values.
+    afs_cell: example.com
+    afs_realm: EXAMPLE.COM
+    afs_admin: admin
+    afs_user: "{{ lookup('ansible.builtin.env', 'USER') | d('dexter', True) }}"
+    afs_user_id: 1000
+
+    # The following variable sets the OpenAFS CellServDB file for the server and clients.
+    afs_csdb:
+      cell: "{{ afs_cell }}"
+      desc: Example cell for testing
+      hosts:
+        - ip: "{{ ansible_default_ipv4.address }}"
+          name: "{{ ansible_hostname }}"
+          clone: false
+
     # The following variables specify the paths for generated files.
     # Use the ansible-playbook --extra-vars (-e) option to specify different locations.
     keytabs: "{{ lookup('ansible.builtin.env', 'HOME') }}/keytabs"
     robotrc: "{{ playbook_dir | dirname }}/robotrc"
 
   tasks:
-
-    #
-    # Get local system information.
-    #
-    - name: Get the current user id.
-      ansible.builtin.command: id -u
-      changed_when: false
-      register: id_results
-
-    - name: Set playbook parameters.
-      ansible.builtin.set_fact:
-        afs_cell: example.com
-        afs_realm: EXAMPLE.COM
-        afs_admin: admin
-        afs_user: "{{ ansible_env.USER }}"
-        afs_user_id: "{{ id_results.stdout | int }}"
-        afs_csdb:
-          cell: "{{ afs_cell }}"
-          desc: Example cell for testing
-          hosts:
-            - ip: "{{ ansible_default_ipv4.address }}"
-              name: "{{ ansible_hostname }}"
-              clone: false
-
     - name: Print playbook parameters.
       ansible.builtin.debug:
         msg:
