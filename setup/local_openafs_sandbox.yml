@@ -73,7 +73,7 @@
       cell: "{{ afs_cell }}"
       desc: Example cell for testing
       hosts:
-        - ip: "{{ ansible_default_ipv4.address }}"
+        - ip: "{{ afs_server_netinfo | d(ansible_default_ipv4.address) }}"
           name: "{{ ansible_hostname }}"
           clone: false
 
