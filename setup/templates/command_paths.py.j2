@@ -1,21 +1,8 @@
-# Realm
-KRB_REALM = "{{ afs_realm }}"
+#
+# Paths of commands used in tests.
+#
 
-# Cell
-AFS_CELL = "{{ afs_cell }}"
-AFS_AKIMPERSONATE = False
-AFS_USER = "{{ afs_user }}"
-AFS_ADMIN = "{{ afs_admin }}"
-AFS_ADMIN_KEYTAB = "{{ keytab_admin }}"
-
-# Test servers
-AFS_FILESERVER_A = "{{ ansible_hostname }}"
-AFS_FILESERVER_B = "missing"
-
-# Client info
-PAG_ONEGROUP = True
-
-# OpenAFS installation paths
+# OpenAFS commands
 AKLOG = "{{ ansible_local.openafs.bins['aklog'] }}"
 BOS = "{{ ansible_local.openafs.bins['bos'] }}"
 FS = "{{ ansible_local.openafs.bins['fs'] }}"
@@ -28,11 +15,11 @@ UDEBUG = "{{ ansible_local.openafs.bins['udebug'] }}"
 UNLOG = "{{ ansible_local.openafs.bins['unlog'] }}"
 VOS = "{{ ansible_local.openafs.bins['vos'] }}"
 
-# Kerberos paths
+# Kerberos commands
 KDESTROY = "{{ afs_kdestroy | d(ansible_local.openafs.bins['kdestroy']) }}"
 KINIT = "{{ afs_kinit | d(ansible_local.openafs.bins['kinit']) }}"
 
-# Misc paths
+# Misc commands
 PYTHON = "{{ afs_python | d(ansible_python.executable, true) }}"
 GFIND = "{{ afs_gfind | d('/usr/bin/find', true) }}"
 GDIFF = "{{ afs_gdiff | d('/usr/bin/diff', true) }}"

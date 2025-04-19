@@ -80,7 +80,7 @@
     # The following variables specify the paths for generated files.
     # Use the ansible-playbook --extra-vars (-e) option to specify different locations.
     keytabs: "{{ lookup('ansible.builtin.env', 'HOME') }}/keytabs"
-    robotrc: "{{ playbook_dir | dirname }}/robotrc"
+    settings: "{{ playbook_dir | dirname }}/settings"
 
   tasks:
     - name: Print playbook parameters.
@@ -204,19 +204,29 @@
     #
     # Setup RoboTest configuration.
     #
-    - name: Create robot configuration directory.
+    - name: Create robot settings directory.
       ansible.builtin.file:
         state: directory
-        path: "{{ robotrc }}"
+        path: "{{ settings }}"
         owner: "{{ afs_user }}"
         mode: "0755"
 
-    - name: Create robot configuration files.
+    - name: Create robot settings.
       ansible.builtin.template:
         src: "{{ item }}.j2"
-        dest: "{{ robotrc }}/{{ item }}"
+        dest: "{{ settings }}/{{ item }}"
         owner: "{{ afs_user }}"
         mode: "0644"
       loop:
-        - local_openafs_sandbox.py
-        - quick.args
+        - command_paths.py
+        - site_settings.py
+        - smoketest.args
+
+    - name: Completed
+      ansible.builtin.debug:
+        msg: |
+          OpenAFS cell setup completed.
+          To run the tests;
+
+            cd ..
+            robot -A settings/smoketest.args tests/

@@ -4,6 +4,7 @@
 /reports
 /docs/build/
 /robotrc
+/settings
 !.yamllint
 !.ansible-lint
 !.readthedocs.yaml

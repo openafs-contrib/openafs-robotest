@@ -1,0 +1,20 @@
+#
+# Test cell and realm settings.
+#
+
+# Test cell and realm names
+AFS_CELL = "{{ afs_cell }}"
+KRB_REALM = "{{ afs_realm }}"
+
+# User information
+AFS_USER = "{{ afs_user }}"
+AFS_ADMIN = "{{ afs_admin }}"
+AFS_ADMIN_KEYTAB = "{{ keytab_admin }}"
+AFS_AKIMPERSONATE = False
+
+# Test file servers
+AFS_FILESERVER_A = "{{ ansible_hostname }}"
+AFS_FILESERVER_B = "missing"
+
+# Client info
+PAG_ONEGROUP = True
