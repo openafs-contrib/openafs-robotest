@@ -1,7 +1,7 @@
 Keywords
 ========
 
-Version: 0.7.2
+Version: 1.0.0
 
 Access Control List Contains
 ----------------------------

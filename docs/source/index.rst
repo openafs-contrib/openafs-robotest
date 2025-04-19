@@ -17,6 +17,7 @@ cell for testing on a single machine.
    tests
    tags
    vars
+   libraries/OpenAFSLibrary/index
    libs
    devel
    license

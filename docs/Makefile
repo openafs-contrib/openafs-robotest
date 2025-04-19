@@ -11,6 +11,9 @@ BUILDDIR      = build
 # Put it first so that "make" without argument is like "make help".
 help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+	@echo "Custom targets:"
+	@echo "  refdocs     to (re)generate reference .rst files"
+	@echo "  preview     to preview html with a browser (requires xdg-open)"
 
 .PHONY: help Makefile
 
@@ -19,10 +22,11 @@ help:
 %: Makefile
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
-.PHONY: testdoc
-testdoc:
+.PHONY: refdocs
+refdocs:
 	python3 testdoc.py >source/tests.rst
+	python3 librst.py
 
 .PHONY: preview
-preview: testdoc html
-	firefox --new-tab build/html/index.html
+preview: refdocs html
+	xdg-open build/html/index.html
