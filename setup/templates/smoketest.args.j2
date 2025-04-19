@@ -1,4 +1,5 @@
 --name Smoketest
+--pythonpath {{ playbook_dir | dirname }}/libraries
 --variablefile {{ settings }}/site_settings.py
 --variablefile {{ settings }}/command_paths.py
 --exclude bug
