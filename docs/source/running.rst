@@ -55,53 +55,6 @@ Example:
 .. image:: images/robot.png
    :alt: Example command line output
 
-Ansible Molecule
-~~~~~~~~~~~~~~~~
-
-As described in the :ref:`Quick Start Guide`, Ansible Molecule may be used to create a
-test cell and execute the tests on one or more virtual machines.  When running
-the tests in this mode, the `Molecule Robot Framework plugin`_ will run ``robot``
-on the test virtual machines over an ``ssh`` connection.
-
-Before running the ``robot`` command, the plugin installs Robot Framework, the
-OpenAFSLibrary, the test files (``*.robot`` files) and create the variable
-file. After running the ``robot`` command, the plugin downloads the ``robot``
-output files (logs and report) to your local machine.
-
-You may customize the ``verifier`` section of the scenario ``molecule.yml``
-file to change ``robot`` command line options, including tag and tests names.
-
-Example verifier options:
-
-.. code-block:: yaml
-
-  verifier:
-    name: molecule-robotframework
-    enabled: true
-    options:
-        group: afs_test
-        libraries:
-          - robotframework-openafslibrary
-        test_repos:
-          - name: openafs-robotest
-            repo: https://github.com/openafs-contrib/openafs-robotest
-            version: master
-        resources:
-          - ${MOLECULE_SCENARIO_DIRECTORY}/../templates/openafs-robotest.yml.j2
-        data_sources:
-          - openafs-robotest/tests
-        dest_dir: ${MOLECULE_PROJECT_DIRECTORY}/reports/${MOLECULE_SCENARIO_NAME}
-        robot:
-          exclude:
-            - bug
-            - slow
-            - rogue-avoidance
-            - requires-multi-fs
-          loglevel: INFO
-          debugfile: debug.log
-          runemptysuite: true
-          variablefile: openafs-robotest.yml
-
 Test results
 ------------
 
@@ -122,4 +75,3 @@ See the `Robot Framework User Guide`_ for details on test outputs.
 
 
 .. _`Robot Framework User Guide`: https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html
-.. _`Molecule Robot Framework plugin`: https://pypi.org/project/molecule-robotframework/

@@ -9,9 +9,7 @@ Framework are included as well as variables referenced by the test cases.
 
 It is recommended to create a Robot Framework variable file for your test cell.
 The variables in the file may be taken with the ``robot --variablefile`` command
-line option. (Note: When running the tests with Ansible Molecule, a variable
-file is created on the test instance by Ansible. See the
-``openafs-robotest.yml.j2`` template file.)
+line option.
 
 See the `Robot Framework User Guide`_ for more information about variables and
 variable files.

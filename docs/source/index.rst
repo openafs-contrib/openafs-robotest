@@ -5,9 +5,8 @@ OpenAFS Robotest is a set of `Robot Framework`_ test cases for the OpenAFS_
 distributed filesystem.  The test cases cover basic usage on a single client
 and general OpenAFS administration.
 
-A set of Ansible Molecule scenarios are provided to easily deploy a Kerberos
-test realm and OpenAFS test cell on virtual machines, install Robot Framework,
-and execute the tests.
+An Ansible playbook is provided to deploy a basic Kerberos realm and OpenAFS
+cell for testing on a single machine.
 
 .. toctree::
    :maxdepth: 1
@@ -20,7 +19,6 @@ and execute the tests.
    vars
    libs
    devel
-   custom
    license
 
 .. _`Robot Framework`: https://robotframework.org/
