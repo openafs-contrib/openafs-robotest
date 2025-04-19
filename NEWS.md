@@ -1,5 +1,14 @@
 # OpenAFS RoboTest Changes
 
+## [v1.2.0]
+
+* Provide a simple playbook to install a test cell on the local system.  Update
+  the quick start guide to show on to get started with a simple single system.
+
+* Remove cookiecutter and molecule for setting test systems. More complex
+  multisystem setups are expected to be done with external projects or
+  playbooks.
+
 ## [v1.1.0]
 
 * Convert all of the Robot Framework files from space-separated to the more
