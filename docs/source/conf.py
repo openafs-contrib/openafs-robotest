@@ -17,7 +17,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'OpenAFS Robotest'
+project = 'OpenAFS RoboTest'
 copyright = '2021, Sine Nomine Associates'
 author = 'Sine Nomine Associates'
 

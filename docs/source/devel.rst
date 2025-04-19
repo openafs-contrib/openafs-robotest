@@ -51,7 +51,7 @@ Common errors
   The spacing is incorrect. Most often, there are to few spaces between command
   inputs. For instance, the first command below has one space in between the two
   inputs and throws an error. The second command has two spaces between the inputs
-  and is accepted by AFS and Robotest.
+  and is accepted by AFS and RoboTest.
 
 .. code-block:: robotframework
 

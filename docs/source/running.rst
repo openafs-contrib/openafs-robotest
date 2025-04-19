@@ -32,7 +32,7 @@ Test software requirements:
 * Python libyaml package (recommended)
 * Robot Framework
 * OpenAFSLibrary for Robot Framework
-* The OpenAFS Robotest test files (``*.robot`` files)
+* The OpenAFS RoboTest test files (``*.robot`` files)
 * The admin user keytab
 * A **variable file** with values setup for the cell under test. See :ref:`Variables`.
 

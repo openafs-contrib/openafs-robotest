@@ -1,12 +1,12 @@
-# OpenAFS Robotest
+# OpenAFS RoboTest
 
-OpenAFS Robotest is a [Robot Framework][1] based test suite for OpenAFS.
+OpenAFS RoboTest is a [Robot Framework][1] based test suite for OpenAFS.
 
 Documentation: [https://openafs-robotest.readthedocs.io][5]
 
 ## Overview
 
-OpenAFS Robotest is a set of [Robot Framework][1] test cases for the [OpenAFS][4]
+OpenAFS RoboTest is a set of [Robot Framework][1] test cases for the [OpenAFS][4]
 distributed filesystem.  The test cases cover a basic workload from a single
 client and general OpenAFS administration.
 
