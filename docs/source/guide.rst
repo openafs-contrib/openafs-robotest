@@ -72,7 +72,7 @@ contains the Ansible playbook to install Kerberos and OpenAFS.
 
     cd openafs-robotest/setup
 
-Install the _`OpenAFS Ansible Collection` with ansible-galaxy:
+Install the `OpenAFS Ansible Collection`_ with ansible-galaxy:
 
 .. code-block:: shell
 
