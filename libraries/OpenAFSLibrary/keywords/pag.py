@@ -26,9 +26,6 @@ from robot.api import logger
 from OpenAFSLibrary.variable import get_var, get_bool
 
 
-PY2 = sys.version_info[0] == 2
-
-
 PAG_MIN = 0x41000000
 PAG_MAX = 0x41FFFFFF
 PAG_ONEGROUP = True
@@ -126,8 +123,7 @@ class _PagKeywords(object):
         PAGSH = get_var("PAGSH")
         logger.info("running %s" % (PAGSH,))
         logger.debug("script=%s" % (script,))
-        if not PY2:
-            script = script.encode("ascii")
+        script = script.encode("ascii")
         pagsh = subprocess.Popen(
             PAGSH, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
@@ -144,6 +140,5 @@ class _PagKeywords(object):
             logger.info("stdout=%s" % (output,))
             logger.info("stderr=%s" % (error,))
             raise AssertionError("Failed to run pagsh!")
-        if not PY2:
-            output = output.decode("ascii")
+        output = output.decode("ascii")
         return output

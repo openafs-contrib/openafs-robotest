@@ -23,13 +23,6 @@ import sys
 from robot.libraries.BuiltIn import BuiltIn, RobotNotRunningError
 
 
-PY2 = sys.version_info[0] == 2
-if PY2:
-    string_types = (basestring,)
-else:
-    string_types = (str,)
-
-
 _rf = BuiltIn()
 
 
@@ -63,7 +56,7 @@ def get_bool(name):
         return value
     if isinstance(value, int):
         return value != 0
-    if isinstance(value, string_types):
+    if isinstance(value, str):
         return value.lower() in ("yes", "y", "true", "t", "1")
     if value:
         return True
@@ -77,7 +70,7 @@ def _split_into_list(name):
     # scalars.
     try:
         value = get_var(name)
-        if isinstance(value, string_types):
+        if isinstance(value, str):
             values = [v.strip() for v in value.split(",")]
             _rf.set_global_variable("@{%s}" % name, *values)
     except VariableMissing:
