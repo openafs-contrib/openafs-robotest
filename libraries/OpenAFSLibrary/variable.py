@@ -20,23 +20,26 @@
 #
 
 import sys
-from robot.libraries.BuiltIn import BuiltIn,RobotNotRunningError
+from robot.libraries.BuiltIn import BuiltIn, RobotNotRunningError
 
 
-PY2 = (sys.version_info[0] == 2)
+PY2 = sys.version_info[0] == 2
 if PY2:
-    string_types = basestring,
+    string_types = (basestring,)
 else:
-    string_types = str,
+    string_types = (str,)
 
 
 _rf = BuiltIn()
 
+
 class VariableMissing(Exception):
     pass
 
+
 class VariableEmpty(Exception):
     pass
+
 
 def get_var(name):
     """Return the variable value as a string."""
@@ -52,6 +55,7 @@ def get_var(name):
         raise VariableEmpty(name)
     return value
 
+
 def get_bool(name):
     """Return the variable value as a bool."""
     value = get_var(name)
@@ -65,6 +69,7 @@ def get_bool(name):
         return True
     return False
 
+
 def _split_into_list(name):
     # Split the given scalar into a list. This can be useful since lists can be
     # created only from tests or resources, and we set variables at runtime via
@@ -73,8 +78,8 @@ def _split_into_list(name):
     try:
         value = get_var(name)
         if isinstance(value, string_types):
-            values = [v.strip() for v in value.split(',')]
-            _rf.set_global_variable('@{%s}' % name, *values)
+            values = [v.strip() for v in value.split(",")]
+            _rf.set_global_variable("@{%s}" % name, *values)
     except VariableMissing:
         pass
     except VariableEmpty:
@@ -82,4 +87,5 @@ def _split_into_list(name):
     except RobotNotRunningError:
         pass
 
-_split_into_list('AFS_FILESERVERS')
+
+_split_into_list("AFS_FILESERVERS")

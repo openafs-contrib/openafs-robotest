@@ -1,6 +1,6 @@
-
 import re
 import OpenAFSLibrary
+
 
 def test_version():
     assert hasattr(OpenAFSLibrary, "__version__")
