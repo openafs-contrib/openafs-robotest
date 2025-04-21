@@ -49,16 +49,17 @@ def run_program(args):
         cmd_line = " ".join(args)
         shell = False
     logger.info("running: %s" % cmd_line)
-    proc = subprocess.Popen(
+    with subprocess.Popen(
         args, shell=shell, bufsize=-1, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
-    stdout, stderr = proc.communicate()
-    if proc.returncode:
-        logger.info("output: %s" % (stdout,))
-        logger.info("error: %s" % (stderr,))
-    output = stdout.decode("utf-8")
-    error = stderr.decode("utf-8")
-    return (proc.returncode, output, error)
+    ) as proc:
+        stdout, stderr = proc.communicate()
+        rc = proc.returncode
+        if rc:
+            logger.info("output: %s" % (stdout,))
+            logger.info("error: %s" % (stderr,))
+        output = stdout.decode("utf-8")
+        error = stderr.decode("utf-8")
+    return (rc, output, error)
 
 
 def rxdebug(*args):
