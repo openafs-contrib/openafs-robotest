@@ -25,13 +25,6 @@ from robot.api import logger
 from OpenAFSLibrary.variable import get_var
 
 
-PY2 = sys.version_info[0] == 2
-if PY2:
-    string_types = (basestring,)
-else:
-    string_types = (str,)
-
-
 class CommandFailed(Exception):
     def __init__(self, name, args, err):
         self.name = name
@@ -49,7 +42,7 @@ class NoSuchEntryError(CommandFailed):
 
 
 def run_program(args):
-    if isinstance(args, string_types):
+    if isinstance(args, str):
         cmd_line = args
         shell = True
     else:
@@ -64,12 +57,8 @@ def run_program(args):
     if proc.returncode:
         logger.info("output: %s" % (stdout,))
         logger.info("error: %s" % (stderr,))
-    if PY2:
-        output = stdout
-        error = stderr
-    else:
-        output = stdout.decode("utf-8")
-        error = stderr.decode("utf-8")
+    output = stdout.decode("utf-8")
+    error = stderr.decode("utf-8")
     return (proc.returncode, output, error)
 
 
