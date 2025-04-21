@@ -33,6 +33,7 @@ from OpenAFSLibrary.keywords import _PagKeywords
 from OpenAFSLibrary.keywords import _CacheKeywords
 from OpenAFSLibrary.keywords import _DumpKeywords
 
+
 class OpenAFSLibrary(
     _CommandKeywords,
     _LoginKeywords,
@@ -43,7 +44,7 @@ class OpenAFSLibrary(
     _PagKeywords,
     _CacheKeywords,
     _DumpKeywords,
-    ):
+):
     """OpenAFS Robot Framework test library
 
     `OpenAFSLibrary` provides keywords for basic OpenAFS testing. It
@@ -73,7 +74,6 @@ class OpenAFSLibrary(
     | UNLOG   |   `/usr/afsws/bin/unlog` |
     | VOS     |   `/usr/afs/bin/vos` |
     """
-    ROBOT_LIBRARY_SCOPE = 'GLOBAL'
+
+    ROBOT_LIBRARY_SCOPE = "GLOBAL"
     ROBOT_LIBRARY_VERSION = __version__
-
-

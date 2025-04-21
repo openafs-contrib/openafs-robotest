@@ -26,13 +26,13 @@ from robot.api import logger
 import errno
 
 
-PY2 = (sys.version_info[0] == 2)
+PY2 = sys.version_info[0] == 2
 if PY2:
     range = xrange
 
 
 def _convert_errno_parm(code_should_be):
-    """ Convert the code_should_be value to an integer
+    """Convert the code_should_be value to an integer
     If code_should_be isn't an integer, then try to use
     the code_should_be value as a errno "name" and extract
     the errno value from the errno module.
@@ -43,12 +43,15 @@ def _convert_errno_parm(code_should_be):
         try:
             code = getattr(errno, code_should_be)
         except AttributeError:
-            raise AssertionError("code_should_be '%s' is not a valid errno name" % code_should_be)
+            raise AssertionError(
+                "code_should_be '%s' is not a valid errno name" % code_should_be
+            )
     return code
+
 
 class _PathKeywords(object):
 
-    def create_files(self, path, count=1, size=0, depth=0, width=0, fill='zero'):
+    def create_files(self, path, count=1, size=0, depth=0, width=0, fill="zero"):
         """
         Create a directory tree of test files.
 
@@ -78,15 +81,15 @@ class _PathKeywords(object):
         depth = int(depth)
         width = int(width)
 
-        if fill == 'zero':
+        if fill == "zero":
             block = bytearray(BLOCKSIZE)
-        elif fill == 'one':
+        elif fill == "one":
             block = bytearray(BLOCKSIZE)
-        elif fill == 'random':
-            random.seed(0) # Always make the same psuedo random sequence.
+        elif fill == "random":
+            random.seed(0)  # Always make the same psuedo random sequence.
             block = bytearray(random.getrandbits(8) for _ in range(BLOCKSIZE))
-        elif fill == 'fixed':
-            hexstring = 'deadbeef'
+        elif fill == "fixed":
+            hexstring = "deadbeef"
             ncopies = BLOCKSIZE // len(hexstring)
             block = bytearray.fromhex(hexstring * ncopies)
         else:
@@ -99,8 +102,8 @@ class _PathKeywords(object):
 
         def make_files(p, count):
             for i in range(0, count):
-                name = os.path.join(p, '%d' % (i))
-                with open(name, 'wb') as f:
+                name = os.path.join(p, "%d" % (i))
+                with open(name, "wb") as f:
                     for _ in range(0, nblocks):
                         f.write(block)
                     if partial_size:
@@ -114,17 +117,18 @@ class _PathKeywords(object):
             if count:
                 make_files(p, count)
             for i in range(0, width):
-                make_tree('%s/d%d' % (p, i), d + 1)
+                make_tree("%s/d%d" % (p, i), d + 1)
 
         make_tree(path, 0)
-
 
     def directory_entry_should_exist(self, path):
         """Fails if directory entry does not exist in the given path."""
         base = os.path.basename(path)
         dir = os.path.dirname(path)
         if not base in os.listdir(dir):
-            raise AssertionError("Directory entry '%s' does not exist in '%s'." % (base, dir))
+            raise AssertionError(
+                "Directory entry '%s' does not exist in '%s'." % (base, dir)
+            )
 
     def should_be_file(self, path):
         """Fails if path is not a file."""
@@ -210,18 +214,19 @@ class _PathKeywords(object):
         if not path:
             raise AssertionError("Empty argument!")
         if os.stat(path).st_nlink != count:
-            raise AssertionError("%s does not have %d links" % (path,count))
+            raise AssertionError("%s does not have %d links" % (path, count))
 
     def inode_should_be_equal(self, a, b):
         """Fails if paths have different inodes."""
         if not a or not b:
             raise AssertionError("Empty argument!")
         if os.stat(a).st_ino != os.stat(b).st_ino:
-            raise AssertionError("%s and %s do not have the same inode number." % (a,b))
+            raise AssertionError(
+                "%s and %s do not have the same inode number." % (a, b)
+            )
 
     def get_inode(self, path):
         """Returns the inode number of a path."""
         if not path:
             raise AssertionError("Empty argument!")
         return os.stat(path).st_ino
-

@@ -27,7 +27,7 @@ class _RxKeywords(object):
     def get_version(self, host, port):
         """Request the software version number."""
         version = None
-        output = rxdebug('-servers', host, '-port', port, '-version')
+        output = rxdebug("-servers", host, "-port", port, "-version")
         for line in output.splitlines():
             if line.startswith("Trying"):
                 continue
@@ -36,4 +36,3 @@ class _RxKeywords(object):
         if not version:
             raise AssertionError("Failed to get version string.")
         return version
-

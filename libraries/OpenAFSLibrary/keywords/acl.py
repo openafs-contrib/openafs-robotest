@@ -26,8 +26,10 @@ from OpenAFSLibrary.command import fs
 
 _RIGHTS = list("rlidwkaABCDEFGH")
 
+
 def cmp(a, b):
     return (a > b) - (a < b)
+
 
 def normalize(rights):
     """Normalize a list of ACL right characters.
@@ -47,8 +49,9 @@ def normalize(rights):
             normalized.append(r)
     return normalized
 
+
 def parse(rights):
-    """ Returns a list string of right chars from a string.
+    """Returns a list string of right chars from a string.
 
     Unlike the fs commands, the leading char may be a '+'
     or '-' to indicate the type of rights.  Right alias names
@@ -57,12 +60,12 @@ def parse(rights):
     Illegal chars will throw an exception.  Duplicate chars
     are silently removed.
     """
-    sign = '+'            # default is positive rights
-    rights = list(rights) # split into chars
+    sign = "+"  # default is positive rights
+    rights = list(rights)  # split into chars
 
     # An optional leading '+' or '-' indicates positive
     # or negative rights.
-    if len(rights) >= 0 and rights[0] in ('+', '-'):
+    if len(rights) >= 0 and rights[0] in ("+", "-"):
         sign = rights[0]
         rights = rights[1:]
 
@@ -78,6 +81,7 @@ def parse(rights):
         rights = list("rlidwk")
 
     return (sign, normalize(rights))
+
 
 class AccessControlList:
     """ACL rights checking."""
@@ -102,7 +106,7 @@ class AccessControlList:
             raise AssertionError("Path is not a directory: %s" % (path))
         acl = AccessControlList()
         section = None
-        output = fs('listacl', path)
+        output = fs("listacl", path)
         for line in output.splitlines():
             if line.startswith("Access list for"):
                 continue
@@ -112,11 +116,13 @@ class AccessControlList:
             if line.startswith("Negative rights:"):
                 section = "-"
                 continue
-            m = re.match(r'  (\S+) (\S+)', line)
+            m = re.match(r"  (\S+) (\S+)", line)
             if m:
-                name,rights = (m.group(1),m.group(2))
-                if not section in ('+', '-'):
-                    raise AssertionError("Failed to parse fs listacl; missing section label")
+                name, rights = (m.group(1), m.group(2))
+                if not section in ("+", "-"):
+                    raise AssertionError(
+                        "Failed to parse fs listacl; missing section label"
+                    )
                 acl.add(name, section + rights)
         return acl
 
@@ -140,7 +146,7 @@ class AccessControlList:
         sep = ","
         items = []
         for name in sorted(self.acls.keys()):
-            (pos,neg) = self.acls[name]
+            (pos, neg) = self.acls[name]
             if neg == "":
                 items.append("%s+%s" % (name, pos))
             else:
@@ -150,19 +156,19 @@ class AccessControlList:
     def add(self, name, rights):
         """Add an entry."""
         if name not in self.acls:
-            self.acls[name] = ('','')
-        acl = self.acls[name] # current entry
-        (sign,rights) = parse(rights)
+            self.acls[name] = ("", "")
+        acl = self.acls[name]  # current entry
+        (sign, rights) = parse(rights)
         # Update the rights.
-        if sign == '+':
+        if sign == "+":
             pos = "".join(normalize(rights + list(acl[0])))
             neg = acl[1]
-        elif sign == '-':
+        elif sign == "-":
             pos = acl[0]
             neg = "".join(normalize(rights + list(acl[1])))
         else:
             assert "Internal error"
-        if pos == '' and neg == '':
+        if pos == "" and neg == "":
             del self.acls[name]  # cleared
         else:
             self.acls[name] = (pos, neg)
@@ -171,12 +177,12 @@ class AccessControlList:
         """Returns true if an entry exists with a matching name and rights."""
         if name not in self.acls:
             return False
-        acl = self.acls[name] # current entry
-        (sign,rights) = parse(rights)
+        acl = self.acls[name]  # current entry
+        (sign, rights) = parse(rights)
         rights = "%s%s" % (sign, "".join(rights))
-        if sign == '+':
+        if sign == "+":
             current = "+%s" % acl[0]
-        elif sign == '-':
+        elif sign == "-":
             current = "-%s" % acl[1]
         else:
             assert "Internal error"
@@ -184,16 +190,19 @@ class AccessControlList:
             return False
         return True
 
+
 class _ACLKeywords(object):
     """ACL testing keywords."""
 
     def add_access_rights(self, path, name, rights):
         """Add access rights to a path."""
-        fs('setacl', '-dir', path, '-acl', name, rights)
+        fs("setacl", "-dir", path, "-acl", name, rights)
 
     def access_control_list_matches(self, path, *acls):
         """Fails if an ACL does not match the given ACL."""
-        logger.debug("access_control_list_matches: path=%s, acls=[%s]" % (path, ",".join(acls)))
+        logger.debug(
+            "access_control_list_matches: path=%s, acls=[%s]" % (path, ",".join(acls))
+        )
         a1 = AccessControlList.from_path(path)
         a2 = AccessControlList.from_args(*acls)
         logger.debug("a1=%s" % a1)
@@ -203,7 +212,10 @@ class _ACLKeywords(object):
 
     def access_control_list_contains(self, path, name, rights):
         """Fails if an ACL does not contain the given rights."""
-        logger.debug("access_control_list_contains: path=%s, name=%s, rights=%s" % (path, name, rights))
+        logger.debug(
+            "access_control_list_contains: path=%s, name=%s, rights=%s"
+            % (path, name, rights)
+        )
         a = AccessControlList.from_path(path)
         if not a.contains(name, rights):
             raise AssertionError("ACL entry rights do not match for name '%s'")
@@ -223,7 +235,6 @@ class _ACLKeywords(object):
             raise AssertionError("ACL entry exists for name '%s'" % (name))
 
 
-
 #
 # Unit tests
 #
@@ -234,15 +245,16 @@ def _test1():
         ("lr", "rl"),
         ("rlidwka", "rlidwka"),
         ("adiklrw", "rlidwka"),
-        ("abcd",    None),
+        ("abcd", None),
     ]
-    for x,y in cases:
+    for x, y in cases:
         try:
             z = "".join(normalize(list(x)))
         except:
             assert y is None, "expected exception: x='%s'" % (x)
         if y:
-            assert z == y, "expected='%s', got='%s'" % (y,z)
+            assert z == y, "expected='%s', got='%s'" % (y, z)
+
 
 def _test2():
     cases = [
@@ -259,23 +271,24 @@ def _test2():
         "user7 -write",
     ]
     expected = {
-        "system:administrators": ("rlidwka",""),
-        "system:anyuser": ("rl",""),
-        "user1": ("rl",""),
-        "user2": ("rlw","l"),
-        "user3": ("rlidwk",""),
-        "user5": ("rl",""),
-        "user6": ("rlidwkl",""),
-        "user7": ("","rlidwk"),
+        "system:administrators": ("rlidwka", ""),
+        "system:anyuser": ("rl", ""),
+        "user1": ("rl", ""),
+        "user2": ("rlw", "l"),
+        "user3": ("rlidwk", ""),
+        "user5": ("rl", ""),
+        "user6": ("rlidwkl", ""),
+        "user7": ("", "rlidwk"),
     }
     a = AccessControlList()
     for case in cases:
-        name,rights = case.split()
+        name, rights = case.split()
         a.add(name, rights)
     assert cmp(a.acls, expected)
 
+
 def _test3():
-    p = '/afs/robotest/test'
+    p = "/afs/robotest/test"
     t = [
         "system:administrators rlidwka",
         "system:anyuser rl",
@@ -291,6 +304,7 @@ def _test3():
     # print "a1=", a1
     # print "a2=", a2
     assert a1 != a2
+
 
 def _test4():
     t = [
@@ -312,16 +326,16 @@ def _test4():
     assert a.contains("user3", "+rlidwk")
     assert not a.contains("user4", "none")
 
+
 def main():
     global get_var  # monkey patch a test stub.
-    get_var = lambda name: {'FS':"/usr/afs/bin/fs"}[name]
+    get_var = lambda name: {"FS": "/usr/afs/bin/fs"}[name]
     _test1()
     _test2()
     _test3()
     _test4()
 
+
 if __name__ == "__main__":
     # usage: python -m OpenAFSLibrary.keywords.acl
     main()
-
-

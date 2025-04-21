@@ -23,6 +23,7 @@ import re
 
 from OpenAFSLibrary.command import fs
 
+
 class _CacheKeywords(object):
     """Cache keywords."""
 
@@ -30,6 +31,6 @@ class _CacheKeywords(object):
         """Get the cache size.
 
         Outputs AFS cache size as the number of 1K blocks."""
-        s = fs("getcacheparms") # get output string
-        size = re.findall(r'\d+', s) # find the decimal values in the string
-        return int(size[1]) # output integer for number of 1K blocks
+        s = fs("getcacheparms")  # get output string
+        size = re.findall(r"\d+", s)  # find the decimal values in the string
+        return int(size[1])  # output integer for number of 1K blocks

@@ -21,6 +21,7 @@
 
 import struct
 
+
 class VolumeDump(object):
     """Helper class to create and check volume dumps."""
 
@@ -57,24 +58,26 @@ class VolumeDump(object):
 
     def write(self, tag, fmt, *args):
         """Write a tag and values to the dump file."""
-        packed = struct.pack("!B"+fmt, tag, *args)
+        packed = struct.pack("!B" + fmt, tag, *args)
         self.file.write(packed)
 
     def close(self):
         """Write the end of dump tag and close the dump file."""
-        self.write(self.D_DUMPEND, "L", self.DUMPENDMAGIC) # vos requires the end tag
+        self.write(self.D_DUMPEND, "L", self.DUMPENDMAGIC)  # vos requires the end tag
         self.file.close()
         self.file = None
 
+
 class _DumpKeywords(object):
     """Volume dump keywords."""
-    volid = 536870999 # random, but valid, volume id
+
+    volid = 536870999  # random, but valid, volume id
 
     def _create_empty_dump(self, filename):
         """Create the smallest possible valid dump file."""
         dump = VolumeDump(filename)
-        dump.write(ord('v'), "L", self.volid)
-        dump.write(ord('t'), "HLL", 2, 0, 0)
+        dump.write(ord("v"), "L", self.volid)
+        dump.write(ord("t"), "HLL", 2, 0, 0)
         dump.write(VolumeDump.D_VOLUMEHEADER, "")
         dump.close()
 
@@ -82,28 +85,34 @@ class _DumpKeywords(object):
         """Create a minimal dump file with bogus ACL record.
 
         The bogus ACL would crash the volume server before gerrit 11702."""
-        size, version, total, positive, negative = (0, 0, 0, 1000, 0) # positive is out of range.
+        size, version, total, positive, negative = (
+            0,
+            0,
+            0,
+            1000,
+            0,
+        )  # positive is out of range.
         dump = VolumeDump(filename)
-        dump.write(ord('v'), "L", self.volid)
-        dump.write(ord('t'), "HLL", 2, 0, 0)
+        dump.write(ord("v"), "L", self.volid)
+        dump.write(ord("t"), "HLL", 2, 0, 0)
         dump.write(VolumeDump.D_VOLUMEHEADER, "")
         dump.write(VolumeDump.D_VNODE, "LL", 3, 999)
-        dump.write(ord('A'), "LLLLL", size, version, total, positive, negative)
+        dump.write(ord("A"), "LLLLL", size, version, total, positive, negative)
         dump.close()
 
     def should_be_a_dump_file(self, filename):
         """Fails if filename is not an AFS dump file."""
         VolumeDump.check_header(filename)
 
-    def create_dump(self, filename, size='small', contains=''):
+    def create_dump(self, filename, size="small", contains=""):
         """
         Generate a volume dump file.
         """
-        if contains == 'bogus-acl':
+        if contains == "bogus-acl":
             self._create_dump_with_bogus_acl(filename)
-        elif size == 'empty':
+        elif size == "empty":
             self._create_empty_dump(filename)
-        elif size == 'small':
-            self._create_empty_dump(filename) # todo: create a dump file
+        elif size == "small":
+            self._create_empty_dump(filename)  # todo: create a dump file
         else:
-            raise ValueError('unsupported size arg: %s' % (size))
+            raise ValueError("unsupported size arg: %s" % (size))
