@@ -123,11 +123,11 @@ class _PagKeywords:
         logger.info("running %s" % (PAGSH,))
         logger.debug("script=%s" % (script,))
         script = script.encode("ascii")
-        pagsh = subprocess.Popen(
+        with subprocess.Popen(
             PAGSH, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
-        (output, error) = pagsh.communicate(input=script)
-        code = pagsh.wait()
+        ) as pagsh:
+            (output, error) = pagsh.communicate(input=script)
+            code = pagsh.wait()
         if code == 0:
             logger.debug("stdin=%s" % (script,))
             logger.debug("code=%d" % (code,))

@@ -37,10 +37,9 @@ class VolumeDump:
     @staticmethod
     def check_header(filename):
         """Verify filename is a dump file."""
-        file = open(filename, "rb")
-        size = struct.calcsize("!BLL")
-        packed = file.read(size)
-        file.close()
+        with open(filename, "rb") as file:
+            size = struct.calcsize("!BLL")
+            packed = file.read(size)
         if len(packed) != size:
             raise AssertionError("Not a dump file: file is too short.")
         (tag, magic, version) = struct.unpack("!BLL", packed)
