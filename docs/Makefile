@@ -24,7 +24,7 @@ help:
 
 .PHONY: refdocs
 refdocs:
-	python3 testdoc.py >source/tests.rst
+	python3 testdoc.py source/tests.rst
 	python3 librst.py
 
 .PHONY: preview

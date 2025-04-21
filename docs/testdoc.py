@@ -7,6 +7,7 @@
 #
 
 import os
+import sys
 import ast
 import robot.api.parsing
 
@@ -52,27 +53,29 @@ def walk(topdir):
         sections.append({'name': section, 'suites': suites})
     return sections
 
-def print_heading(name, level=1):
+def print_heading(fp, name, level=1):
     underline = {1: '=', 2: '-', 3: '~'}
-    print(name)
-    print(underline[level] * len(name))
-    print('')
+    fp.write('%s\n' % name)
+    fp.write('%s\n' % (underline[level] * len(name)))
+    fp.write('\n')
 
-def render(sections):
-    print_heading('Tests', 1)
+def render(fp, sections):
+    print_heading(fp, 'Tests', 1)
     for section in sections:
-        print_heading(section['name'], 2)
+        print_heading(fp, section['name'], 2)
         for suite in section['suites']:
-            print_heading(suite['name'], 3)
+            print_heading(fp, suite['name'], 3)
             if suite['doc']:
-                print(suite['doc'])
-                print('')
+                fp.write('%s\n' % suite['doc'])
+                fp.write('\n')
             for test in suite['tests']:
-                print('*', test)
-            print('')
+                fp.write('* %s\n' % test)
+            fp.write('\n')
 
 def main():
-    render(walk('../tests'))
+    output = sys.argv[1]
+    with open(output, 'w') as fp:
+        render(fp, walk('../tests'))
 
 if __name__ == '__main__':
     main()
