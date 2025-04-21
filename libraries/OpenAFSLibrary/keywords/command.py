@@ -23,7 +23,7 @@ from robot.api import logger
 from OpenAFSLibrary.command import run_program
 
 
-class _CommandKeywords(object):
+class _CommandKeywords:
     def command_should_succeed(self, cmd, msg=None):
         """Fails if command does not exit with a zero status code."""
         rc, out, err = run_program(cmd)

@@ -123,7 +123,7 @@ def _zap_volume(name_or_id, server, part):
         logger.info("No such volume to zap")
 
 
-class _VolumeKeywords(object):
+class _VolumeKeywords:
     """Volume keywords."""
 
     def create_volume(

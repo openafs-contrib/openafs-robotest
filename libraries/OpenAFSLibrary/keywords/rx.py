@@ -22,7 +22,7 @@
 from OpenAFSLibrary.command import rxdebug
 
 
-class _RxKeywords(object):
+class _RxKeywords:
 
     def get_version(self, host, port):
         """Request the software version number."""

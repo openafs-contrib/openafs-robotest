@@ -44,7 +44,7 @@ def _convert_errno_parm(code_should_be):
     return code
 
 
-class _PathKeywords(object):
+class _PathKeywords:
 
     def create_files(self, path, count=1, size=0, depth=0, width=0, fill="zero"):
         """
