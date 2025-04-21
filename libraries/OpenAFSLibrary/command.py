@@ -19,7 +19,6 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
 
-import sys
 import subprocess
 from robot.api import logger
 from OpenAFSLibrary.variable import get_var

@@ -19,7 +19,6 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
 
-import sys
 from robot.libraries.BuiltIn import BuiltIn, RobotNotRunningError
 
 

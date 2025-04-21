@@ -47,7 +47,7 @@ def akimpersonate(user):
         keytab,
         principal,
     )
-    rc, out, err = run_program(cmd)
+    rc, _, _ = run_program(cmd)
     if rc:
         raise AssertionError("aklog failed: '%s'; exit code = %d" % (cmd, rc))
 
@@ -68,7 +68,7 @@ def login_with_password(user, password):
         cell,
         realm,
     )
-    rc, out, err = run_program(cmd)
+    rc, _, _ = run_program(cmd)
     if rc:
         raise AssertionError("klog.krb5 failed: '%s'; exit code = %d" % (cmd, rc))
 
@@ -88,11 +88,11 @@ def login_with_keytab(user, keytab):
     if not os.path.exists(keytab):
         raise AssertionError("Keytab file '%s' is missing." % keytab)
     cmd = "%s -k -t %s %s" % (kinit, keytab, principal)
-    rc, out, err = run_program(cmd)
+    rc, _, _ = run_program(cmd)
     if rc:
         raise AssertionError("kinit failed: '%s'; exit code = %d" % (cmd, rc))
     cmd = "%s -d -c %s -k %s" % (aklog, cell, realm)
-    rc, out, err = run_program(cmd)
+    rc, _, _ = run_program(cmd)
     if rc:
         raise AssertionError("kinit failed: '%s'; exit code = %d" % (cmd, rc))
 
@@ -116,12 +116,12 @@ class _LoginKeywords:
             kdestroy = get_var("KDESTROY")
             krb5cc = "/tmp/afsrobot.krb5cc"
             cmd = "KRB5CCNAME=%s %s" % (krb5cc, kdestroy)
-            rc, out, err = run_program(cmd)
+            rc, _, _ = run_program(cmd)
             if rc:
                 raise AssertionError(
                     "kdestroy failed: '%s'; exit code = %d" % (cmd, rc)
                 )
         unlog = get_var("UNLOG")
-        rc, out, err = run_program(unlog)
+        rc, _, _ = run_program(unlog)
         if rc:
             raise AssertionError("unlog failed: '%s'; exit code = %d" % (unlog, rc))
