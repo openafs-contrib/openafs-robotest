@@ -27,7 +27,6 @@ from OpenAFSLibrary.variable import get_var, get_bool
 
 PAG_MIN = 0x41000000
 PAG_MAX = 0x41FFFFFF
-PAG_ONEGROUP = True
 
 
 def _get_pag_from_one_group(gids):
