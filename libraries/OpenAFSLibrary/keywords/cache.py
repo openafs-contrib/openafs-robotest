@@ -24,7 +24,7 @@ import re
 from OpenAFSLibrary.command import fs
 
 
-class _CacheKeywords(object):
+class _CacheKeywords:
     """Cache keywords."""
 
     def get_cache_size(self):

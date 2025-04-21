@@ -22,7 +22,7 @@
 import struct
 
 
-class VolumeDump(object):
+class VolumeDump:
     """Helper class to create and check volume dumps."""
 
     DUMPBEGINMAGIC = 0xB3A11322
@@ -68,7 +68,7 @@ class VolumeDump(object):
         self.file = None
 
 
-class _DumpKeywords(object):
+class _DumpKeywords:
     """Volume dump keywords."""
 
     volid = 536870999  # random, but valid, volume id

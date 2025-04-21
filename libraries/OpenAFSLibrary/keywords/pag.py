@@ -72,7 +72,7 @@ def _pag_from_groups(gids):
     return pag
 
 
-class _PagKeywords(object):
+class _PagKeywords:
 
     def pag_from_groups(self, gids=None):
         """Return the PAG from the given group id list."""

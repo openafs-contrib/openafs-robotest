@@ -97,7 +97,7 @@ def login_with_keytab(user, keytab):
         raise AssertionError("kinit failed: '%s'; exit code = %d" % (cmd, rc))
 
 
-class _LoginKeywords(object):
+class _LoginKeywords:
 
     def login(self, user, password=None, keytab=None):
         """Acquire an AFS token for authenticated access."""
