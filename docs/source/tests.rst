@@ -98,8 +98,8 @@ volume dump streams.
 * Restore a volume
 * Restore an empty volume
 
-Workload
---------
+Filesystem
+----------
 
 Basic
 ~~~~~
