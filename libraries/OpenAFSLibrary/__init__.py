@@ -21,8 +21,6 @@
 
 """Robotframe keyword library for OpenAFS tests"""
 
-from OpenAFSLibrary.__version__ import VERSION as __version__
-
 from OpenAFSLibrary.keywords import _CommandKeywords
 from OpenAFSLibrary.keywords import _LoginKeywords
 from OpenAFSLibrary.keywords import _PathKeywords
@@ -76,4 +74,3 @@ class OpenAFSLibrary(
     """
 
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
-    ROBOT_LIBRARY_VERSION = __version__

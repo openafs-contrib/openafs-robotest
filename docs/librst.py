@@ -63,7 +63,6 @@ def main():
     with open('source/libraries/OpenAFSLibrary/keywords.rst', 'w') as f:
         f.write('Keywords\n')
         f.write('========\n\n')
-        f.write('Version: %s\n\n' % (libspec['version']))
         for keyword in libspec['keywords']:
             write_keyword(f, keyword)
 

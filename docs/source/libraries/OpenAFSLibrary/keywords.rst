@@ -1,8 +1,6 @@
 Keywords
 ========
 
-Version: 1.0.0
-
 Access Control List Contains
 ----------------------------
 
