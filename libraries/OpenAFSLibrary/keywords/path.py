@@ -20,7 +20,6 @@
 #
 
 import os
-import sys
 import random
 from robot.api import logger
 import errno
