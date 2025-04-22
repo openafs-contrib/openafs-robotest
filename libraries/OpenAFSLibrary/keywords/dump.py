@@ -51,20 +51,26 @@ class VolumeDump:
             raise AssertionError("Not a dump file: wrong version")
 
     def __init__(self, filename):
+        self.filename = filename
+        self.file = None
+
+    def __enter__(self):
         """Create a new volume dump file."""
-        self.file = open(filename, "wb")
+        self.file = open(self.filename, "wb")
         self.write(self.D_DUMPHEADER, "LL", self.DUMPBEGINMAGIC, self.DUMPVERSION)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Write the end of dump tag and close the dump file."""
+        if self.file:
+            self.write(self.D_DUMPEND, "L", self.DUMPENDMAGIC)
+            self.file.close()
+        self.file = None
 
     def write(self, tag, fmt, *args):
         """Write a tag and values to the dump file."""
         packed = struct.pack("!B" + fmt, tag, *args)
         self.file.write(packed)
-
-    def close(self):
-        """Write the end of dump tag and close the dump file."""
-        self.write(self.D_DUMPEND, "L", self.DUMPENDMAGIC)  # vos requires the end tag
-        self.file.close()
-        self.file = None
 
 
 class _DumpKeywords:
@@ -74,11 +80,10 @@ class _DumpKeywords:
 
     def _create_empty_dump(self, filename):
         """Create the smallest possible valid dump file."""
-        dump = VolumeDump(filename)
-        dump.write(ord("v"), "L", self.volid)
-        dump.write(ord("t"), "HLL", 2, 0, 0)
-        dump.write(VolumeDump.D_VOLUMEHEADER, "")
-        dump.close()
+        with VolumeDump(filename) as dump:
+            dump.write(ord("v"), "L", self.volid)
+            dump.write(ord("t"), "HLL", 2, 0, 0)
+            dump.write(VolumeDump.D_VOLUMEHEADER, "")
 
     def _create_dump_with_bogus_acl(self, filename):
         """Create a minimal dump file with bogus ACL record.
@@ -91,13 +96,12 @@ class _DumpKeywords:
             1000,
             0,
         )  # positive is out of range.
-        dump = VolumeDump(filename)
-        dump.write(ord("v"), "L", self.volid)
-        dump.write(ord("t"), "HLL", 2, 0, 0)
-        dump.write(VolumeDump.D_VOLUMEHEADER, "")
-        dump.write(VolumeDump.D_VNODE, "LL", 3, 999)
-        dump.write(ord("A"), "LLLLL", size, version, total, positive, negative)
-        dump.close()
+        with VolumeDump(filename) as dump:
+            dump.write(ord("v"), "L", self.volid)
+            dump.write(ord("t"), "HLL", 2, 0, 0)
+            dump.write(VolumeDump.D_VOLUMEHEADER, "")
+            dump.write(VolumeDump.D_VNODE, "LL", 3, 999)
+            dump.write(ord("A"), "LLLLL", size, version, total, positive, negative)
 
     def should_be_a_dump_file(self, filename):
         """Fails if filename is not an AFS dump file."""
