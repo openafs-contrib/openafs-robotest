@@ -21,8 +21,9 @@
 
 import os
 import random
-from robot.api import logger
 import errno
+
+from robot.api import logger
 
 
 def _convert_errno_parm(code_should_be):
@@ -36,10 +37,10 @@ def _convert_errno_parm(code_should_be):
     except ValueError:
         try:
             code = getattr(errno, code_should_be)
-        except AttributeError:
+        except AttributeError as e:
             raise AssertionError(
                 "code_should_be '%s' is not a valid errno name" % code_should_be
-            )
+            ) from e
     return code
 
 
@@ -118,10 +119,10 @@ class _PathKeywords:
     def directory_entry_should_exist(self, path):
         """Fails if directory entry does not exist in the given path."""
         base = os.path.basename(path)
-        dir = os.path.dirname(path)
-        if not base in os.listdir(dir):
+        dir_ = os.path.dirname(path)
+        if not base in os.listdir(dir_):
             raise AssertionError(
-                "Directory entry '%s' does not exist in '%s'." % (base, dir)
+                "Directory entry '%s' does not exist in '%s'." % (base, dir_)
             )
 
     def should_be_file(self, path):

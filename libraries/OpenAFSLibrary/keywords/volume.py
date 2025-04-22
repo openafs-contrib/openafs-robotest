@@ -210,13 +210,13 @@ class _VolumeKeywords:
             logger.info("No vldb entry found for volume '%s'" % name_or_id)
         if volume:
             if "rosites" in volume:
-                for server, part in volume["rosites"]:
+                for s, p in volume["rosites"]:
                     vos(
                         "remove",
                         "-server",
-                        server,
+                        s,
                         "-part",
-                        part,
+                        p,
                         "-id",
                         "%s.readonly" % name_or_id,
                     )
@@ -235,9 +235,9 @@ class _VolumeKeywords:
                         )
                     )
             else:
-                for part in get_parts(server):
+                for p in get_parts(server):
                     try:
-                        vos("zap", "-id", name_or_id, "-server", server, "-part", part)
+                        vos("zap", "-id", name_or_id, "-server", server, "-part", p)
                     except NoSuchEntryError:
                         logger.info(
                             "No volume {name_or_id} to zap on server {server} part {part}".format(
@@ -292,7 +292,7 @@ class _VolumeKeywords:
         """
         try:
             volume = get_volume_entry(name_or_id)
-        except:
+        except NoSuchEntryError:
             volume = None
         if volume:
             raise AssertionError("Volume entry found in vldb for %s" % (name_or_id))

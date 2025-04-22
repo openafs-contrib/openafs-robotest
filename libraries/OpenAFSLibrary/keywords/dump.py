@@ -112,6 +112,6 @@ class _DumpKeywords:
         elif size == "empty":
             self._create_empty_dump(filename)
         elif size == "small":
-            self._create_empty_dump(filename)  # todo: create a dump file
+            self._create_empty_dump(filename)
         else:
             raise ValueError("unsupported size arg: %s" % (size))
