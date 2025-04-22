@@ -1,3 +1,7 @@
+import pytest
+
+
+@pytest.mark.order("first")
 def test_import():
     from OpenAFSLibrary import OpenAFSLibrary
 
