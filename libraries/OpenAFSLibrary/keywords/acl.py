@@ -70,7 +70,7 @@ def parse(rights):
     if w == "all":
         rights = _RIGHTS
     elif w == "none":
-        rights = list()
+        rights = []
     elif w == "read":
         rights = list("rl")
     elif w == "write":
@@ -130,8 +130,7 @@ class AccessControlList:
         """Returns true if ACL test objects have the same entries."""
         if isinstance(other, self.__class__):
             return self.__str__() == other.__str__()
-        else:
-            return False
+        return False
 
     def __ne__(self, other):
         """Returns true if ACL tests objects do not have the same entries."""
@@ -163,7 +162,7 @@ class AccessControlList:
             pos = acl[0]
             neg = "".join(normalize(rights + list(acl[1])))
         else:
-            assert "Internal error"
+            raise AssertionError("Internal error")
         if pos == "" and neg == "":
             del self.acls[name]  # cleared
         else:
@@ -181,7 +180,7 @@ class AccessControlList:
         elif sign == "-":
             current = "-%s" % acl[1]
         else:
-            assert "Internal error"
+            raise AssertionError("Internal error")
         if rights != current:
             return False
         return True

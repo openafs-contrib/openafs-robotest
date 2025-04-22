@@ -60,7 +60,7 @@ def _pag_from_groups(gids):
     pag = None
     try:
         PAG_ONEGROUP = get_bool("PAG_ONEGROUP")
-    except:
+    except ValueError:
         PAG_ONEGROUP = True
 
     if PAG_ONEGROUP:
@@ -108,7 +108,7 @@ class _PagKeywords:
         if pag is None:
             raise AssertionError("PAG is None.")
         pag = pag.rstrip()
-        if pag == "None" or pag == "":
+        if pag in ["None", ""]:
             raise AssertionError("PAG is None.")
         pag = int(pag)
         logger.info("Checking PAG value %d" % (pag))
