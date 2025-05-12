@@ -1,0 +1,12 @@
+SERVER1 = "server1"
+SERVER2 = "server2"
+SERVER3 = "server3"
+CLIENT1 = "client1"
+CLIENT2 = "client2"
+DOMAIN = "example.com"
+PORT = 8270
+# SERVER1_URL = f"http://{SERVER1}.{HOSTNAME}:{PORT}"
+# SERVER2_URL = f"http://{SERVER2}.{HOSTNAME}:{PORT}"
+# SERVER3_URL = f"http://{SERVER3}.{HOSTNAME}:{PORT}"
+# CLIENT1_URL = f"http://{CLIENT1}.{HOSTNAME}:{PORT}"
+# CLIENT2_URL = f"http://{CLIENT2}.{HOSTNAME}:{PORT}"
