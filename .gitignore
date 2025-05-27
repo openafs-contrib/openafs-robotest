@@ -2,9 +2,11 @@
 *.pyc
 *.swp
 /reports
+/output
 /docs/build/
 /robotrc
 /settings
+robocop.txt
 !.yamllint
 !.ansible-lint
 !.readthedocs.yaml
