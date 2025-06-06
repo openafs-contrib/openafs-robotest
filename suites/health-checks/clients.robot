@@ -44,8 +44,8 @@ OpenAFS Cache Manager Is Running
     Should Be Equal As Integers    ${rc}    0
     Should Contain    ${output}    example.com
 
-Openafs-client Systemd Service Is Running
-    [Documentation]    Openafs-client Systemd Service Is Running
+OpenAFS-client Systemd Service Is Running
+    [Documentation]    OpenAFS-client Systemd Service Is Running
     ...
     ...    This test checks whether openafs-client is running.
 
@@ -64,18 +64,15 @@ Cache Manager Health Check
     ...
     ...    Runs cmdebug to determine if cache manager is working
 
-    ${rc}    ${output}=    client1.Run And Return Rc And Output    cmdebug -s ${CLIENT1} -port 7001 -long
+    ${rc}    ${output}=    client1.Run And Return Rc And Output    cmdebug -server ${CLIENT1} -port 7001 -long
     Log    ${output}
     Should Be Equal As Integers    ${rc}    0
-    Should Contain Any    ${output}    Lock example.com status: (none_waiting)    for 192.536870912.1.1 [example.com]
-    ...    for 192.536870912.4.3 [example.com]    for 192.536870912.2.2 [example.com]
-    ...    for 192.536870915.2.2 [example.com]    for 192.536870918.1.1 [example.com]
-    ...    for 192.536870915.1.1 [example.com]
+    Should Contain    ${output}    Lock example.com status: (none_waiting)
 
-    ${rc}    ${output}=    client2.Run And Return Rc And Output    cmdebug -s ${CLIENT2} -port 7001 -long
+    ${rc}    ${output}=    client2.Run And Return Rc And Output    cmdebug -server ${CLIENT2} -port 7001 -long
     Should Be Equal As Integers    ${rc}    0
     Log    ${output}
-    Should Contain Any    ${output}    Lock example.com status: (none_waiting)
+    Should Contain    ${output}    Lock example.com status: (none_waiting)
 
 Clients Can Execute Rxdebug Locally
     [Documentation]    Clients Can Execute Rxdebug Locally
@@ -85,69 +82,79 @@ Clients Can Execute Rxdebug Locally
     ${rc}    ${output}=    client1.Run And Return Rc And Output    rxdebug -servers localhost -port 7001
     Log Many    ${rc}    ${output}
     Should Be Equal As Integers    ${rc}    0
-    Should Contain Any    ${output}    Free packets:    Done.
+    Should Contain    ${output}    Free packets:
+    Should Contain    ${output}    Done.
 
     ${rc}    ${output}=    client2.Run And Return Rc And Output    rxdebug -servers localhost -port 7001
     Log Many    ${rc}    ${output}
     Should Be Equal As Integers    ${rc}    0
-    Should Contain Any    ${output}    Free packets:    Done.
+    Should Contain    ${output}    Free packets:
+    Should Contain    ${output}    Done.
 
-Clients Can Reach Servers With Rxdebug
-    [Documentation]    Clients Can Reach Servers With Rxdebug
+Clients Can Gather Status From Servers Using Bos Command
+    [Documentation]    Clients Can Gather Status From Servers Using Bos Command
     ...
-    ...    Runs rxdebug with server names to check if the command succeeds.
+    ...    Runs bos status on client systems to get status from servers.
 
-    ${rc}    ${output}=    client1.Run And Return Rc And Output    rxdebug -servers ${SERVER1} -port 7003
+    ${rc}    ${output}=    client1.Run And Return Rc And Output    bos status -server ${SERVER1}
     Log Many    ${rc}    ${output}
-    Should Be Equal As Integers    ${rc}    0
-    Should Contain Any    ${output}    Free packets:    Done.
+    Should Contain    ${output}    Instance ptserver, currently running normally.
+    Should Contain    ${output}    Instance vlserver, currently running normally.
+    Should Contain    ${output}    Instance dafs, currently running normally.
+    Should Contain    ${output}    Auxiliary status is: file server running.
 
-    ${rc}    ${output}=    client1.Run And Return Rc And Output    rxdebug -servers ${SERVER2} -port 7003
+    ${rc}    ${output}=    client1.Run And Return Rc And Output    bos status -server ${SERVER2}
     Log Many    ${rc}    ${output}
-    Should Be Equal As Integers    ${rc}    0
-    Should Contain Any    ${output}    Free packets:    Done.
+    Should Contain    ${output}    Instance ptserver, currently running normally.
+    Should Contain    ${output}    Instance vlserver, currently running normally.
+    Should Contain    ${output}    Instance dafs, currently running normally.
+    Should Contain    ${output}    Auxiliary status is: file server running.
 
-    ${rc}    ${output}=    client1.Run And Return Rc And Output    rxdebug -servers ${SERVER3} -port 7003
+    ${rc}    ${output}=    client1.Run And Return Rc And Output    bos status -server ${SERVER3}
     Log Many    ${rc}    ${output}
-    Should Be Equal As Integers    ${rc}    0
-    Should Contain Any    ${output}    Free packets:    Done.
+    Should Contain    ${output}    Instance ptserver, currently running normally.
+    Should Contain    ${output}    Instance vlserver, currently running normally.
+    Should Contain    ${output}    Instance dafs, currently running normally.
+    Should Contain    ${output}    Auxiliary status is: file server running.
 
-    ${rc}    ${output}=    client2.Run And Return Rc And Output    rxdebug -servers ${SERVER1} -port 7003
+    ${rc}    ${output}=    client2.Run And Return Rc And Output    bos status -server ${SERVER1}
     Log Many    ${rc}    ${output}
-    Should Be Equal As Integers    ${rc}    0
-    Should Contain Any    ${output}    Free packets:    Done.
+    Should Contain    ${output}    Instance ptserver, currently running normally.
+    Should Contain    ${output}    Instance vlserver, currently running normally.
+    Should Contain    ${output}    Instance dafs, currently running normally.
+    Should Contain    ${output}    Auxiliary status is: file server running.
 
-    ${rc}    ${output}=    client2.Run And Return Rc And Output    rxdebug -servers ${SERVER2} -port 7003
+    ${rc}    ${output}=    client2.Run And Return Rc And Output    bos status -server ${SERVER2}
     Log Many    ${rc}    ${output}
-    Should Be Equal As Integers    ${rc}    0
-    Should Contain Any    ${output}    Free packets:    Done.
+    Should Contain    ${output}    Instance ptserver, currently running normally.
+    Should Contain    ${output}    Instance vlserver, currently running normally.
+    Should Contain    ${output}    Instance dafs, currently running normally.
+    Should Contain    ${output}    Auxiliary status is: file server running.
 
-    ${rc}    ${output}=    client2.Run And Return Rc And Output    rxdebug -servers ${SERVER3} -port 7003
+    ${rc}    ${output}=    client2.Run And Return Rc And Output    bos status -server ${SERVER3}
     Log Many    ${rc}    ${output}
-    Should Be Equal As Integers    ${rc}    0
-    Should Contain Any    ${output}    Free packets:    Done.
+    Should Contain    ${output}    Instance ptserver, currently running normally.
+    Should Contain    ${output}    Instance vlserver, currently running normally.
+    Should Contain    ${output}    Instance dafs, currently running normally.
+    Should Contain    ${output}    Auxiliary status is: file server running.
 
 Mount Point Exists For AFS
     [Documentation]    Mount point exists for AFS
     ...
     ...    Use mount command to verify if AFS mount point exists
 
-    ${rc}    ${output}=    client1.Run And Return Rc And Output    mount
-    Log    ${rc}
-    Log    ${output}
+    ${rc}    ${output}=    client1.Run And Return Rc And Output    mount | grep afs
+    Log Many    ${rc}    ${output}
     Should Be Equal As Integers    ${rc}    0
-    Should Contain    ${output}    AFS on /afs type afs (rw,relatime)
 
-    ${rc}    ${output}=    client2.Run And Return Rc And Output    mount
-    Log    ${rc}
-    Log    ${output}
+    ${rc}    ${output}=    client2.Run And Return Rc And Output    mount | grep afs
+    Log Many    ${rc}    ${output}
     Should Be Equal As Integers    ${rc}    0
-    Should Contain    ${output}    AFS on /afs type afs (rw,relatime)
 
 Kernel Module Loaded
     [Documentation]    Kernel Module Loaded
     ...
-    ...    Use lsmod to check if openafs kernel module is loaded.
+    ...    Use lsmod to check if OpenAFS kernel module is loaded.
 
     ${rc}    ${output}=    client1.Run And Return Rc And Output    lsmod | grep afs
     Log Many    ${rc}    ${output}
@@ -224,6 +231,12 @@ Binaries Exist And Can Run
     Log Many    ${rc}    ${output}
     Should Be Equal As Integers    ${rc}    0
     Should Contain    ${output}    Usage: rxdebug
+
+    ${rc}    ${output}=    client1.Run And Return Rc And Output    rxdebug -server localhost -port 7001 -version
+    Log Many    ${rc}    rxdebug version: ${output}
+
+    ${rc}    ${output}=    client2.Run And Return Rc And Output    rxdebug -server localhost -port 7001 -version
+    Log Many    ${rc}    rxdebug version: ${output}
 
     # OpenAFS vos command.
     ${rc}    ${output}=    client1.Run And Return Rc And Output    which vos

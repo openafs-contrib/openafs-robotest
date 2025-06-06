@@ -4,8 +4,9 @@ See LICENSE
 
 
 *** Settings ***
-Documentation    Health check suite has test cases that will ensure that an openafs environment is properly
-...    configured before the main openafs test cases are executed.
+Documentation    Health check suite has test cases that will ensure that an OpenAFS environment is properly
+...    configured before the main OpenAFS test cases are executed.
+
 Variables    Variables.py
 Library    Remote    http://${SERVER1}.${DOMAIN}:${PORT}    AS   server1
 Library    Remote    http://${SERVER2}.${DOMAIN}:${PORT}    AS   server2
@@ -26,79 +27,74 @@ File Servers Are Running
     [Documentation]    File Servers Are Running
     ...
     ...    Run bos status (unauthenticated) on both clients and ensure
-    ...    openafs servers are running.
+    ...    OpenAFS servers are running.
 
     ${rc}    ${output}=    client1.Run And Return Rc And Output    bos status ${SERVER1}
-    Log    ${rc}
-    Log    ${output}
+    Log Many    ${rc}    ${output}
     Should Be Equal As Integers    ${rc}    0
-    Should Contain Any    ${output}    Instance ptserver, currently running normally.
-    ...    Instance vlserver, currently running normally.
-    ...    Instance dafs, currently running normally.
-    ...    Auxiliary status is: file server running.
+    Should Contain    ${output}    Instance ptserver, currently running normally.
+    Should Contain    ${output}    Instance vlserver, currently running normally.
+    Should Contain    ${output}    Instance dafs, currently running normally.
+    Should Contain    ${output}    Auxiliary status is: file server running.
 
     ${rc}    ${output}=    client1.Run And Return Rc And Output    bos status ${SERVER2}
-    Log    ${rc}
-    Log    ${output}
+    Log Many    ${rc}    ${output}
     Should Be Equal As Integers    ${rc}    0
-    Should Contain Any    ${output}    Instance ptserver, currently running normally.
-    ...    Instance vlserver, currently running normally.
-    ...    Instance dafs, currently running normally.
-    ...    Auxiliary status is: file server running.
+    Should Contain    ${output}    Instance ptserver, currently running normally.
+    Should Contain    ${output}    Instance vlserver, currently running normally.
+    Should Contain    ${output}    Instance dafs, currently running normally.
+    Should Contain    ${output}    Auxiliary status is: file server running.
 
     ${rc}    ${output}=    client1.Run And Return Rc And Output    bos status ${SERVER3}
     Log    ${rc}
     Log    ${output}
     Should Be Equal As Integers    ${rc}    0
-    Should Contain Any    ${output}    Instance ptserver, currently running normally.
-    ...    Instance vlserver, currently running normally.
-    ...    Instance dafs, currently running normally.
-    ...    Auxiliary status is: file server running.
+    Should Contain    ${output}    Instance ptserver, currently running normally.
+    Should Contain    ${output}    Instance vlserver, currently running normally.
+    Should Contain    ${output}    Instance dafs, currently running normally.
+    Should Contain    ${output}    Auxiliary status is: file server running.
 
     ${rc}    ${output}=    client2.Run And Return Rc And Output    bos status ${SERVER1}
     Log    ${rc}
     Log    ${output}
     Should Be Equal As Integers    ${rc}    0
-    Should Contain Any    ${output}    Instance ptserver, currently running normally.
-    ...    Instance vlserver, currently running normally.
-    ...    Instance dafs, currently running normally.
-    ...    Auxiliary status is: file server running.
+    Should Contain    ${output}    Instance ptserver, currently running normally.
+    Should Contain    ${output}    Instance vlserver, currently running normally.
+    Should Contain    ${output}    Instance dafs, currently running normally.
+    Should Contain    ${output}    Auxiliary status is: file server running.
 
     ${rc}    ${output}=    client2.Run And Return Rc And Output    bos status ${SERVER2}
     Log    ${rc}
     Log    ${output}
     Should Be Equal As Integers    ${rc}    0
-    Should Contain Any    ${output}    Instance ptserver, currently running normally.
-    ...    Instance vlserver, currently running normally.
-    ...    Instance dafs, currently running normally.
-    ...    Auxiliary status is: file server running.
+    Should Contain    ${output}    Instance ptserver, currently running normally.
+    Should Contain    ${output}    Instance vlserver, currently running normally.
+    Should Contain    ${output}    Instance dafs, currently running normally.
+    Should Contain    ${output}    Auxiliary status is: file server running.
 
     ${rc}    ${output}=    client2.Run And Return Rc And Output    bos status ${SERVER3}
     Log    ${rc}
     Log    ${output}
     Should Be Equal As Integers    ${rc}    0
-    Should Contain Any    ${output}    Instance ptserver, currently running normally.
-    ...    Instance vlserver, currently running normally.
-    ...    Instance dafs, currently running normally.
-    ...    Auxiliary status is: file server running.
+    Should Contain    ${output}    Instance ptserver, currently running normally.
+    Should Contain    ${output}    Instance vlserver, currently running normally.
+    Should Contain    ${output}    Instance dafs, currently running normally.
+    Should Contain    ${output}    Auxiliary status is: file server running.
 
-Openafs-server Systemd Service Is Running
-    [Documentation]    Openafs-server Systemd Service Is Running
+OpenAFS-server Systemd Service Is Running
+    [Documentation]    OpenAFS-server Systemd Service Is Running
     ${rc}    ${output}=    server1.Run And Return Rc And Output    systemctl is-active openafs-server
-    Log    ${rc}
-    Log    ${output}
+    Log Many    ${rc}    ${output}
     Should Be Equal As Integers    ${rc}    0
     Should Contain    ${output}    active
 
     ${rc}    ${output}=    server2.Run And Return Rc And Output    systemctl is-active openafs-server
-    Log    ${rc}
-    Log    ${output}
+    Log Many    ${rc}    ${output}
     Should Be Equal As Integers    ${rc}    0
     Should Contain    ${output}    active
 
     ${rc}    ${output}=    server3.Run And Return Rc And Output    systemctl is-active openafs-server
-    Log    ${rc}
-    Log    ${output}
+    Log Many    ${rc}    ${output}
     Should Be Equal As Integers    ${rc}    0
     Should Contain    ${output}    active
 
@@ -111,7 +107,9 @@ Cell Volumes Exist And Are Online
     ${rc}    ${output}=    client1.Run And Return Rc And Output    vos examine root.afs
     Log Many    ${rc}    ${output}
     Should Be Equal As Integers    ${rc}    0
-    Should Contain Any    ${output}    On-line    root.afs    number of sites -> 4
+    Should Contain    ${output}    On-line
+    Should Contain    ${output}    root.afs
+    Should Contain    ${output}    number of sites -> 4
 
 Kerberos KDC Is Running
     [Documentation]    Kerberos KDC Is Running
@@ -120,7 +118,27 @@ Kerberos KDC Is Running
 
     ${rc}    ${output}=    server1.Run And Return Rc And Output    systemctl status krb5kdc.service
     Should Be Equal As Integers    ${rc}    0
-    Should Contain Any    ${output}    Active: active (running)    Loaded: loaded    enabled
+    Should Contain    ${output}    Active: active (running)
+    Should Contain    ${output}    Loaded: loaded
+    Should Contain    ${output}    enabled
+
     ${rc}    ${output}=    server1.Run And Return Rc And Output    systemctl status krb5kdc.service
     Should Be Equal As Integers    ${rc}    0
-    Should Contain Any    ${output}    Active: active (running)    Loaded: loaded    enabled
+    Should Contain    ${output}    Active: active (running)
+    Should Contain    ${output}    Loaded: loaded
+    Should Contain    ${output}    enabled
+
+Rxdebug version check
+    [Documentation]    Rxdebug version check
+
+    ${rc}    ${output}=    server1.Run And Return Rc And Output    rxdebug -server localhost -port 7002 -version
+    Log Many    ${rc}    rxdebug version: ${output}
+    Should Contain    ${output}    AFS version: OpenAFS 1.8.13.2 2007-12-12
+
+    ${rc}    ${output}=    server2.Run And Return Rc And Output    rxdebug -server localhost -port 7002 -version
+    Log Many    ${rc}    rxdebug version: ${output}
+    Should Contain    ${output}    AFS version: OpenAFS 1.8.13.2 2007-12-12
+
+    ${rc}    ${output}=    server3.Run And Return Rc And Output    rxdebug -server localhost -port 7002 -version
+    Log Many    ${rc}    rxdebug version: ${output}
+    Should Contain    ${output}    AFS version: OpenAFS 1.8.13.2 2007-12-12

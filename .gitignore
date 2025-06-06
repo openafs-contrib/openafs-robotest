@@ -3,7 +3,6 @@
 *.swp
 /reports
 /results
-/output
 /docs/build/
 /robotrc
 /settings
@@ -11,5 +10,3 @@ robocop.txt
 !.yamllint
 !.ansible-lint
 !.readthedocs.yaml
-output/
-robocop.txt
