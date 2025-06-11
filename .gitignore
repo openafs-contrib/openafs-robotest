@@ -2,7 +2,7 @@
 *.pyc
 *.swp
 /reports
-/output
+/results
 /docs/build/
 /robotrc
 /settings
