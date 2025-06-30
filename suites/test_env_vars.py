@@ -1,3 +1,7 @@
+AFS_USER = "robot"
+AFS_USER_KEYTAB = "/home/robot/robot.keytab"
+AFS_ADMIN = "admin"
+AFS_ADMIN_KEYTAB = "/home/robot/admin.keytab"
 SERVER1 = "server1"
 SERVER2 = "server2"
 SERVER3 = "server3"
