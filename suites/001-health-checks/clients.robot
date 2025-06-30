@@ -384,3 +384,19 @@ Binaries Exist And Can Run
     Log Many    ${rc}    ${output}
     Should Be Equal As Integers    ${rc}    2
     Should Contain    ${output}    Usage: kdestroy
+
+Robot User Account Can Acquire Token
+    [Documentation]    Robot User Account Can Acquire Token
+
+    client1.Login    ${AFS_USER}    keytab=${AFS_USER_KEYTAB}
+    ${rc}    ${output}=    client1.Run And Return Rc And Output    tokens
+    Log Many    ${rc}    ${output}
+    client1.Logout
+
+Admin User Account Can Acquire Token
+    [Documentation]    Admin User Account Can Acquire Token
+
+    client1.Login    ${AFS_ADMIN}    keytab=${AFS_ADMIN_KEYTAB}
+    ${rc}    ${output}=    client1.Run And Return Rc And Output    tokens
+    Log Many    ${rc}    ${output}
+    client1.Logout
