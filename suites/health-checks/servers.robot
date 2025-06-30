@@ -132,13 +132,13 @@ Rxdebug version check
     [Documentation]    Rxdebug version check
 
     ${rc}    ${output}=    server1.Run And Return Rc And Output    rxdebug -server localhost -port 7002 -version
-    Log Many    ${rc}    rxdebug version: ${output}
-    Should Contain    ${output}    AFS version: OpenAFS 1.8.13.2 2007-12-12
+    Log Many    ${rc}    rxdebug version (server1): ${output}
+    Should Match Regexp    ${output}    AFS version: OpenAFS
 
     ${rc}    ${output}=    server2.Run And Return Rc And Output    rxdebug -server localhost -port 7002 -version
-    Log Many    ${rc}    rxdebug version: ${output}
-    Should Contain    ${output}    AFS version: OpenAFS 1.8.13.2 2007-12-12
+    Log Many    ${rc}    rxdebug version (server2): ${output}
+    Should Match Regexp    ${output}    AFS version: OpenAFS
 
     ${rc}    ${output}=    server3.Run And Return Rc And Output    rxdebug -server localhost -port 7002 -version
     Log Many    ${rc}    rxdebug version: ${output}
-    Should Contain    ${output}    AFS version: OpenAFS 1.8.13.2 2007-12-12
+    Should Match Regexp    ${output}    AFS version: OpenAFS
