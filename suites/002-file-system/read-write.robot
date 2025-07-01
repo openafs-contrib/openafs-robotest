@@ -21,14 +21,15 @@ ${FILE_PATH}    /afs/.example.com/test/fs/testfs.txt
 Create And Remove An Empty File
     [Documentation]
     ...    Create And Remove An Empty File
-    ...
     ...    Client1 creates an empty file and both client1 and client2 check
     ...    for its existence. Client1 removes the file and both clients check
     ...    that it does not exist anymore.
+
     [Tags]    distributed
     [Setup]    Setup Test Path
 
     client1.Create File    path=${FILE_PATH}
+    client1.Wait Until Created    path=${FILE_PATH}
 
     client1.File Should Exist    path=${FILE_PATH}
     client2.File Should Exist    path=${FILE_PATH}
@@ -37,6 +38,27 @@ Create And Remove An Empty File
 
     client1.Should Not Exist    path=${FILE_PATH}
     client2.Should Not Exist    path=${FILE_PATH}
+
+    [Teardown]    Teardown Test Path
+
+One Client Writes A File And Another Can Read It
+    [Documentation]    One Client Writes A File And Another Can Read It
+    ...    Client1 creates a file and writes `Hello World!` in it and client2
+    ...    is able to read its contents successfully.
+
+    [Setup]    Setup Test Path
+
+    client1.Create File    path=${FILE_PATH}
+    client1.Wait Until Created    path=${FILE_PATH}
+    client1.Append To File    path=${FILE_PATH}    content=Hello World!
+
+    client1.File Should Exist    path=${FILE_PATH}
+    client2.File Should Exist    path=${FILE_PATH}
+
+    ${rc}    ${output}=    client2.Run And Return Rc And Output    cat ${FILE_PATH}
+    Log Many    ${rc}    ${output}
+
+    Should Match Regexp    ${output}    Hello World!
 
     [Teardown]    Teardown Test Path
 
