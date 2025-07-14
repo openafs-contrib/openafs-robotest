@@ -10,3 +10,4 @@ robocop.txt
 !.yamllint
 !.ansible-lint
 !.readthedocs.yaml
+**/*/__pycache__
