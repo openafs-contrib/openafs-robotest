@@ -15,12 +15,14 @@ Library    Remote    http://${CLIENT2}.${DOMAIN}:${PORT}    AS   client2
 ${VOLUME_NAME}    test.fs
 ${VOLUME_PATH}    /afs/.example.com/test/fs
 ${FILE_PATH}    /afs/.example.com/test/fs/test-delete.txt
+${DIR_PATH}    /afs/.example.com/test/fs/test-directory
 
 
 *** Test Cases ***
 Create And Delete A File
     [Documentation]
     ...    Create And Delete A File
+    ...
     ...    Client1 creates an file with 'Hello World' string and client2 deletes
     ...    the file.
 
@@ -35,6 +37,24 @@ Create And Delete A File
     client1.Wait Until Removed    path=${FILE_PATH}
 
     client1.Should Not Exist    path=${FILE_PATH}
+
+    [Teardown]    Teardown Test Path
+
+Create And Delete A Directory
+    [Documentation]    Create And Delete A Directory
+    ...
+    ...    Client1 creates a directory and deletes it.
+
+    [Setup]    Setup Test Path
+
+    client1.Create Directory    path=${DIR_PATH}
+    client1.Wait Until Created    path=${DIR_PATH}
+
+    client1.Directory Should Exist    path=${DIR_PATH}
+    client1.Remove Directory    path=${DIR_PATH}
+    client1.Wait Until Removed    path=${DIR_PATH}
+
+    client1.Should Not Exist    path=${DIR_PATH}
 
     [Teardown]    Teardown Test Path
 
