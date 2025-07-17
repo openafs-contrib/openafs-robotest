@@ -17,14 +17,17 @@ Library    String
 
 
 *** Test Cases ***
-Robot Servers Are Running
-    [Documentation]    Robot Servers Are Running
+Robot servers are running
+    [Documentation]    Robot servers are running
+    ...
+    ...    Runs 'true' command on each server to check if it succeeds.
+
     server1.Command Should Succeed   true
     server2.Command Should Succeed   true
     server3.Command Should Succeed   true
 
-File Servers Are Running
-    [Documentation]    File Servers Are Running
+File servers are running
+    [Documentation]    File servers are running
     ...
     ...    Run bos status (unauthenticated) on both clients and ensure
     ...    OpenAFS servers are running.
@@ -81,8 +84,8 @@ File Servers Are Running
     Should Contain    ${output}    Instance dafs, currently running normally.
     Should Contain    ${output}    Auxiliary status is: file server running.
 
-OpenAFS-server Systemd Service Is Running
-    [Documentation]    OpenAFS-server Systemd Service Is Running
+OpenAFS-server systemd service is running
+    [Documentation]    OpenAFS-server systemd service is running
     ${rc}    ${output}=    server1.Run And Return Rc And Output    systemctl is-active openafs-server
     Log Many    ${rc}    ${output}
     Should Be Equal As Integers    ${rc}    0
@@ -98,8 +101,8 @@ OpenAFS-server Systemd Service Is Running
     Should Be Equal As Integers    ${rc}    0
     Should Contain    ${output}    active
 
-Cell Volumes Exist And Are Online
-    [Documentation]    Cell Volumes Exist And Are Online
+Cell volumes exist and are online
+    [Documentation]    Cell volumes exist and are online
     ...
     ...    Calls vos listvldb and vos listvol -server localhost to ensure that
     ...    cell volumes exist in vldb.
@@ -111,8 +114,8 @@ Cell Volumes Exist And Are Online
     Should Contain    ${output}    root.afs
     Should Contain    ${output}    number of sites -> 4
 
-Kerberos KDC Is Running
-    [Documentation]    Kerberos KDC Is Running
+Kerberos KDC is running
+    [Documentation]    Kerberos KDC is running
     ...
     ...    Check status of krb5kdc service and make sure it is active and running
 

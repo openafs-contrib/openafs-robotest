@@ -19,9 +19,9 @@ ${DIR_PATH}    /afs/.example.com/test/fs/test-directory
 
 
 *** Test Cases ***
-Create And Delete A File
+Create and delete a file
     [Documentation]
-    ...    Create And Delete A File
+    ...    Create and delete a file
     ...
     ...    Client1 creates an file with 'Hello World' string and client2 deletes
     ...    the file.
@@ -37,11 +37,12 @@ Create And Delete A File
     client1.Wait Until Removed    path=${FILE_PATH}
 
     client1.Should Not Exist    path=${FILE_PATH}
+    client2.Should Not Exist    path=${FILE_PATH}
 
     [Teardown]    Teardown Test Path
 
-Create And Delete A Directory
-    [Documentation]    Create And Delete A Directory
+Create and delete a directory
+    [Documentation]    Create and delete a directory
     ...
     ...    Client1 creates a directory and deletes it.
 
@@ -55,6 +56,7 @@ Create And Delete A Directory
     client1.Wait Until Removed    path=${DIR_PATH}
 
     client1.Should Not Exist    path=${DIR_PATH}
+    client2.Should Not Exist    path=${DIR_PATH}
 
     [Teardown]    Teardown Test Path
 
