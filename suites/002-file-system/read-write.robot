@@ -112,6 +112,20 @@ One client writes a file and authorized user can append the file
 
     [Teardown]    Teardown Test Path
 
+List directory with ls
+    [Documentation]    List directory with ls
+    ...
+    ...    List directory contents using the ls command line utility.
+
+    [Setup]    Setup Test Path
+
+    client1.Create File    path=${FILE_PATH}
+    ${rc}    ${output}=    client1.Run And Return Rc And Output    ls ${FILE_PATH}
+    Log Many    ${rc}    ${output}
+    Should Contain    ${output}    testfs.txt
+
+    [Teardown]    Teardown Test Path
+
 
 *** Keywords ***
 Setup Test Path
