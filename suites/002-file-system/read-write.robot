@@ -117,12 +117,28 @@ List directory with ls
     ...
     ...    List directory contents using the ls command line utility.
 
+    [Tags]    linux-cli
     [Setup]    Setup Test Path
 
     client1.Create File    path=${FILE_PATH}
     ${rc}    ${output}=    client1.Run And Return Rc And Output    ls ${FILE_PATH}
     Log Many    ${rc}    ${output}
     Should Contain    ${output}    testfs.txt
+
+    [Teardown]    Teardown Test Path
+
+Change directory with cd
+    [Documentation]    Change directory with cd
+    ...
+    ...    Change to directory using the cd command line utility.
+
+    [Tags]    linux-cli
+    [Setup]    Setup Test Path
+
+    client1.Create File    path=${FILE_PATH}
+    ${rc}    ${output}=    client1.Run And Return Rc And Output    cd ${VOLUME_PATH}
+    Log Many    ${rc}    ${output}
+    Should Be Equal As Integers    ${rc}    0
 
     [Teardown]    Teardown Test Path
 
