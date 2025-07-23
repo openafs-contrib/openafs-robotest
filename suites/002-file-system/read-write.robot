@@ -157,7 +157,9 @@ Make and remove a new directory with mkdir and rmdir
     Should Be Equal As Integers    ${rc}    0
     client1.Directory Should Exist    ${VOLUME_PATH}/${DIRECTORY}
 
-    client1.Remove Directory    ${VOLUME_PATH}/${DIRECTORY}
+    ${rc}    ${output}=    client1.Run And Return Rc And Output    rmdir ${VOLUME_PATH}/${DIRECTORY}
+    Log Many    ${rc}    ${output}
+    Should Be Equal As Integers    ${rc}    0
     client1.Directory Should Not Exist    ${VOLUME_PATH}/${DIRECTORY}
 
     [Teardown]    Teardown Test Path
