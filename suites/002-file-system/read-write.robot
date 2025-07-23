@@ -142,6 +142,26 @@ Change directory with cd
 
     [Teardown]    Teardown Test Path
 
+Make and remove a new directory with mkdir and rmdir
+    [Documentation]    Make and remove a new directory with mkdir and rmdir
+    ...
+    ...    Use mkdir linux command to create a new directory within a volume.
+    ...    Then, use rmdir linux command to delete the newly added directory.
+
+    [Tags]    linux-cli
+    [Setup]    Setup Test Path
+
+    VAR    ${DIRECTORY}    test_dir
+    ${rc}    ${output}=    client1.Run And Return Rc And Output    mkdir ${VOLUME_PATH}/${DIRECTORY}
+    Log Many    ${rc}    ${output}
+    Should Be Equal As Integers    ${rc}    0
+    client1.Directory Should Exist    ${VOLUME_PATH}/${DIRECTORY}
+
+    client1.Remove Directory    ${VOLUME_PATH}/${DIRECTORY}
+    client1.Directory Should Not Exist    ${VOLUME_PATH}/${DIRECTORY}
+
+    [Teardown]    Teardown Test Path
+
 
 *** Keywords ***
 Setup Test Path
