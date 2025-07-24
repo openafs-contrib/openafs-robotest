@@ -70,6 +70,32 @@ Make and remove a new directory with mkdir and rmdir
 
     [Teardown]    Teardown Test Path
 
+Copy file with cp and check contents copied with cat
+    [Documentation]    Copy file with cp and check contents copied with cat
+    ...
+    ...    Use cp linux command to copy a file from one directory path to another and check if file contents are
+    ...    correct with cat command.
+
+    [Setup]    Setup Test Path
+
+    VAR    ${FILE_COPY_PATH}    ${VOLUME_PATH}/testfs.copy.txt
+    VAR    ${FILE_CONTENT}    "Hello world!\nWelcome to OpenAFS!!"
+
+    client1.Create File    path=${FILE_PATH}    content=${FILE_CONTENT}
+    client1.File Should Exist    path=${FILE_PATH}
+
+    ${rc}    ${output}=    client1.Run And Return Rc And Output    cp ${FILE_PATH} ${FILE_COPY_PATH}
+    Log Many    ${rc}    ${output}
+    Should Be Equal As Integers    ${rc}    0
+    client1.File Should Exist    path=${FILE_COPY_PATH}
+
+    ${rc}    ${output}=    client1.Run And Return Rc And Output    cat ${FILE_PATH}
+    Log Many    ${rc}    ${output}
+
+    Should Be Equal    ${output}    ${FILE_CONTENT}
+
+    [Teardown]    Teardown Test Path
+
 
 *** Keywords ***
 Setup Test Path
