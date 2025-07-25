@@ -114,6 +114,28 @@ Create a symbolic link using ln
 
     [Teardown]    Teardown Test Path
 
+Create a hard link using ln
+    [Documentation]    Create a hard link using ln
+    ...
+    ...    Create a file, and then create a hard link using ln. Check that the inode of the hard link is the same as the
+    ...    inode of the original file.
+    [Tags]    link
+    [Setup]    Setup Test Path
+
+    client1.Create File    path=${FILE_PATH}    content="Hello World!"
+    client1.File Should Exist    path=${FILE_PATH}
+
+    ${rc}    ${output}=    client1.Run And Return Rc And Output    ln ${FILE_PATH} ${VOLUME_PATH}/hardlink-testfs.txt
+    Log Many    ${rc}    ${output}
+    client1.Should Exist    ${VOLUME_PATH}/hardlink-testfs.txt
+
+    ${inode_file}=    client1.Get Inode    ${FILE_PATH}
+    ${inode_hardlink}=    client1.Get Inode    ${VOLUME_PATH}/hardlink-testfs.txt
+
+    Should Be Equal As Integers    ${inode_file}    ${inode_hardlink}
+
+    [Teardown]    Teardown Test Path
+
 
 *** Keywords ***
 Setup Test Path
