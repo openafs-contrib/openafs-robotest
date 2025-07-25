@@ -75,7 +75,7 @@ Copy file with cp and check contents copied with cat
     ...
     ...    Use cp linux command to copy a file from one directory path to another and check if file contents are
     ...    correct with cat command.
-
+    [Tags]    shell-commands
     [Setup]    Setup Test Path
 
     VAR    ${FILE_COPY_PATH}    ${VOLUME_PATH}/testfs.copy.txt
@@ -93,6 +93,24 @@ Copy file with cp and check contents copied with cat
     Log Many    ${rc}    ${output}
 
     Should Be Equal    ${output}    ${FILE_CONTENT}
+
+    [Teardown]    Teardown Test Path
+
+Create a symbolic link using ln
+    [Documentation]    Create a symbolic link using ln
+    ...
+    ...    Create a file, and then create a symbolic link using ln to make sure link is created successfully.
+    [Tags]    link
+    [Setup]    Setup Test Path
+
+    client1.Create File    path=${FILE_PATH}    content="Hello World!"
+    client1.File Should Exist    path=${FILE_PATH}
+
+    ${rc}    ${output}=    client1.Run And Return Rc And Output
+    ...    ln --symbolic ${FILE_PATH} ${VOLUME_PATH}/symlink-testfs.txt
+    Log Many    ${rc}    ${output}
+
+    client1.Should Be Symlink    ${VOLUME_PATH}/symlink-testfs.txt
 
     [Teardown]    Teardown Test Path
 
