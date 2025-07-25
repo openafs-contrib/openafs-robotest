@@ -136,6 +136,27 @@ Create a hard link using ln
 
     [Teardown]    Teardown Test Path
 
+Create an archive using tar
+    [Documentation]    Create an archive using tar
+    ...
+    ...    Create a file, and then add the file to an archive file using tar command.
+    [Tags]    shell-commands
+    [Setup]    Setup Test Path
+
+    client1.Create File    path=${FILE_PATH}    content="Hello World!"
+    client1.File Should Exist    path=${FILE_PATH}
+    ${rc}    ${output}=    client1.Run And Return Rc And Output
+    ...    tar -cvf ${VOLUME_PATH}/testfs.tar ${FILE_PATH}
+    Log Many    ${rc}    ${output}
+    client1.Should Exist    ${VOLUME_PATH}/testfs.tar
+
+    ${rc}    ${output}=    client1.Run And Return Rc And Output
+    ...    file ${VOLUME_PATH}/testfs.tar
+    Log Many    ${rc}    ${output}
+    Should Contain    ${output}    tar archive
+
+    [Teardown]    Teardown Test Path
+
 
 *** Keywords ***
 Setup Test Path
