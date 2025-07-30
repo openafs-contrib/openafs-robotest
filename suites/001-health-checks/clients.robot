@@ -18,8 +18,8 @@ Library    String
 
 
 *** Test Cases ***
-Robot Servers Are Running
-    [Documentation]    Robot Servers Are Running
+Robot servers are running
+    [Documentation]    Robot servers are running
     ...
     ...    This test calls the "Command Should Succeed" OpenAFSLibrary keyword
     ...    to determine if the robot remote server is accessible and is able to
@@ -28,8 +28,8 @@ Robot Servers Are Running
     client1.Command Should Succeed   true
     client2.Command Should Succeed   true
 
-OpenAFS Cache Manager Is Running
-    [Documentation]    OpenAFS Cache Manager Is Running
+OpenAFS cache manager is running
+    [Documentation]    OpenAFS cache manager is running
     ...
     ...    This test runs "fs wscell" to get the name of the cell to which the
     ...    system belongs.
@@ -44,8 +44,8 @@ OpenAFS Cache Manager Is Running
     Should Be Equal As Integers    ${rc}    0
     Should Contain    ${output}    example.com
 
-OpenAFS-client Systemd Service Is Running
-    [Documentation]    OpenAFS-client Systemd Service Is Running
+OpenAFS-client systemd service is running
+    [Documentation]    OpenAFS-client systemd service is running
     ...
     ...    This test checks whether openafs-client is running.
 
@@ -59,8 +59,8 @@ OpenAFS-client Systemd Service Is Running
     Should Be Equal As Integers    ${rc}    0
     Should Contain    ${output}    active
 
-Cache Manager Health Check
-    [Documentation]    Cache Manager Health Check
+Cache manager health check
+    [Documentation]    Cache manager health check
     ...
     ...    Runs cmdebug to determine if cache manager is working
 
@@ -74,8 +74,8 @@ Cache Manager Health Check
     Log    ${output}
     Should Contain    ${output}    Lock example.com status: (none_waiting)
 
-Clients Can Execute Rxdebug Locally
-    [Documentation]    Clients Can Execute Rxdebug Locally
+Clients can execute rxdebug locally
+    [Documentation]    Clients can execute rxdebug locally
     ...
     ...    Runs rxdebug with server name localhost to check if the command succeeds.
 
@@ -91,8 +91,8 @@ Clients Can Execute Rxdebug Locally
     Should Contain    ${output}    Free packets:
     Should Contain    ${output}    Done.
 
-Clients Can Gather Status From Servers Using Bos Command
-    [Documentation]    Clients Can Gather Status From Servers Using Bos Command
+Clients can gather status from servers using bos command
+    [Documentation]    Clients can gather status from servers using bos command
     ...
     ...    Runs bos status on client systems to get status from servers.
 
@@ -138,8 +138,8 @@ Clients Can Gather Status From Servers Using Bos Command
     Should Contain    ${output}    Instance dafs, currently running normally.
     Should Contain    ${output}    Auxiliary status is: file server running.
 
-Mount Point Exists For AFS
-    [Documentation]    Mount point exists for AFS
+Mount point exists for afs
+    [Documentation]    Mount point exists for afs
     ...
     ...    Use mount command to verify if AFS mount point exists
 
@@ -151,8 +151,8 @@ Mount Point Exists For AFS
     Log Many    ${rc}    ${output}
     Should Be Equal As Integers    ${rc}    0
 
-Kernel Module Loaded
-    [Documentation]    Kernel Module Loaded
+Kernel module loaded
+    [Documentation]    Kernel module loaded
     ...
     ...    Use lsmod to check if OpenAFS kernel module is loaded.
 
@@ -166,8 +166,8 @@ Kernel Module Loaded
     Should Be Equal As Integers    ${rc}    0
     Should Contain    ${output}    openafs
 
-Clients Can Get Afs Directory Listing
-    [Documentation]    Clients Can Get Afs Directory Listing
+Clients can get afs directory listing
+    [Documentation]    Clients can get afs directory listing
     ...
     ...    Calls ls command to get a directory listing from /afs/example.com
 
@@ -175,8 +175,8 @@ Clients Can Get Afs Directory Listing
     Log    ${output}
     Should Be Equal As Integers    ${rc}    0
 
-Keytabs Exist On Client Systems
-    [Documentation]    Keytabs Exist On Client Systems
+Keytabs exist on client systems
+    [Documentation]    Keytabs exist on client systems
     ...
     ...    This test checks for the existance of robot.keytab and admin.keytab
     ...    keytab files in the home directory of both client systems.
@@ -190,8 +190,8 @@ Keytabs Exist On Client Systems
     client2.File Should Exist    ${home_dir}/robot.keytab
     client2.File Should Exist    ${home_dir}/admin.keytab
 
-Binaries Exist And Can Run
-    [Documentation]    Binaries Exist And Can Run
+Binaries exist and can run
+    [Documentation]    Binaries exist and can run
     ...
     ...    This test ensures that certain binaries that other client tests rely
     ...    upon are available on the system and can run.
@@ -385,16 +385,16 @@ Binaries Exist And Can Run
     Should Be Equal As Integers    ${rc}    2
     Should Contain    ${output}    Usage: kdestroy
 
-Robot User Account Can Acquire Token
-    [Documentation]    Robot User Account Can Acquire Token
+Robot user account can acquire token
+    [Documentation]    Robot user account can acquire token
 
     client1.Login    ${AFS_USER}    keytab=${AFS_USER_KEYTAB}
     ${rc}    ${output}=    client1.Run And Return Rc And Output    tokens
     Log Many    ${rc}    ${output}
     client1.Logout
 
-Admin User Account Can Acquire Token
-    [Documentation]    Admin User Account Can Acquire Token
+Admin user account can acquire token
+    [Documentation]    Admin user account can acquire token
 
     client1.Login    ${AFS_ADMIN}    keytab=${AFS_ADMIN_KEYTAB}
     ${rc}    ${output}=    client1.Run And Return Rc And Output    tokens
