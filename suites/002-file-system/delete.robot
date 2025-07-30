@@ -4,7 +4,7 @@ See LICENSE
 
 
 *** Settings ***
-Documentation    Read and write files
+Documentation    Tests that focus on deletions of files, directories.
 
 Variables    ../test_env_vars.py
 Library    Remote    http://${CLIENT1}.${DOMAIN}:${PORT}    AS   client1
