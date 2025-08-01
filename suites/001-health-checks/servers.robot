@@ -134,14 +134,11 @@ Kerberos KDC is running
 Rxdebug version check
     [Documentation]    Rxdebug version check
 
-    ${rc}    ${output}=    server1.Run And Return Rc And Output    rxdebug -server localhost -port 7002 -version
-    Log Many    ${rc}    rxdebug version (server1): ${output}
-    Should Match Regexp    ${output}    AFS version: OpenAFS
+    ${version_server1}=    server1.Get Version    localhost    7002
+    Log    server1 rxdebug version = ${version_server1}
 
-    ${rc}    ${output}=    server2.Run And Return Rc And Output    rxdebug -server localhost -port 7002 -version
-    Log Many    ${rc}    rxdebug version (server2): ${output}
-    Should Match Regexp    ${output}    AFS version: OpenAFS
+    ${version_server2}=    server2.Get Version    localhost    7002
+    Log    server2 rxdebug version = ${version_server2}
 
-    ${rc}    ${output}=    server3.Run And Return Rc And Output    rxdebug -server localhost -port 7002 -version
-    Log Many    ${rc}    rxdebug version: ${output}
-    Should Match Regexp    ${output}    AFS version: OpenAFS
+    ${version_server3}=    server3.Get Version    localhost    7002
+    Log    server3 rxdebug version = ${version_server3}
