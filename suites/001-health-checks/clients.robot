@@ -232,11 +232,13 @@ Binaries exist and can run
     Should Be Equal As Integers    ${rc}    0
     Should Contain    ${output}    Usage: rxdebug
 
-    ${rc}    ${output}=    client1.Run And Return Rc And Output    rxdebug -server localhost -port 7001 -version
-    Log Many    ${rc}    rxdebug version: ${output}
+    ${version_client1}=    client1.Get Version    localhost    7001
+    Log    client1 rxdebug version: ${version_client1}
+    Set Suite Metadata   Client1 OpenAFS Version    ${version_client1}
 
-    ${rc}    ${output}=    client2.Run And Return Rc And Output    rxdebug -server localhost -port 7001 -version
-    Log Many    ${rc}    rxdebug version: ${output}
+    ${version_client2}=    client2.Get Version    localhost    7001
+    Log    client2 rxdebug version: ${version_client2}
+    Set Suite Metadata   Client2 OpenAFS Version    ${version_client2}
 
     # OpenAFS vos command.
     ${rc}    ${output}=    client1.Run And Return Rc And Output    which vos
