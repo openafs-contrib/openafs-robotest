@@ -136,9 +136,12 @@ Rxdebug version check
 
     ${version_server1}=    server1.Get Version    localhost    7002
     Log    server1 rxdebug version = ${version_server1}
+    Set Suite Metadata   Server1 OpenAFS Version    ${version_server1}
 
     ${version_server2}=    server2.Get Version    localhost    7002
     Log    server2 rxdebug version = ${version_server2}
+    Set Suite Metadata   Server2 OpenAFS Version    ${version_server2}
 
     ${version_server3}=    server3.Get Version    localhost    7002
     Log    server3 rxdebug version = ${version_server3}
+    Set Suite Metadata   Server3 OpenAFS Version    ${version_server3}

@@ -234,9 +234,11 @@ Binaries exist and can run
 
     ${version_client1}=    client1.Get Version    localhost    7001
     Log    client1 rxdebug version: ${version_client1}
+    Set Suite Metadata   Client1 OpenAFS Version    ${version_client1}
 
     ${version_client2}=    client2.Get Version    localhost    7001
     Log    client2 rxdebug version: ${version_client2}
+    Set Suite Metadata   Client2 OpenAFS Version    ${version_client2}
 
     # OpenAFS vos command.
     ${rc}    ${output}=    client1.Run And Return Rc And Output    which vos
