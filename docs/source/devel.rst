@@ -60,6 +60,35 @@ to control the order in which the suites and test-cases are executed.
 
 As a general rule, we should avoid using words like "check" or "verify" in suite names.
 
+Although slightly dated, the original naming convention authored by Robot
+Framework project still applies to this project:
+
+ref: `Test suite names`: https://github.com/robotframework/HowToWriteGoodTestCases/blob/master/HowToWriteGoodTestCases.rst#test-suite-names
+
+Test-case names
+~~~~~~~~~~~~~~~
+
+Test case names should describe what a test does and preferably begins with a
+verb to indicate the action being tested.
+
+In our project we use sentence case for test case names: where the first character
+for the name is upper-case, and the rest of the name is a sentence. Eg:
+
+"One client writes a file and unauthorized user cannot append the file".
+
+One thing to keep in mind while writing test cases is that they need to
+represent a specific test that is not duplicated anywhere else in the project
+and be a combination of standard keywords and project specific keywords (like
+OpenAFSLibrary).
+
+Typically test cases can be very short and also utilize the Given-When-Then
+format mentioned earlier for providing a common structure for the test case.
+
+Although slightly dated, the original naming convention authored by Robot
+Framework project still applies to this project:
+
+ref: `Test case names`: https://github.com/robotframework/HowToWriteGoodTestCases/blob/master/HowToWriteGoodTestCases.rst#test-case-names
+
 
 Verifying a new test
 --------------------
