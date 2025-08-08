@@ -11,8 +11,10 @@ General guidelines
 Test names should describe what a test proves (or disproves). Try to use clear
 and descriptive language when naming tests and test suites.
 
-Test cases must be independent. Every test case must have it's own setup and
-teardown, and tests should not rely on an order of execution.
+Test cases must be independent. Every test case can have either it's own setup
+and teardown, or a set of test cases can leverage suite level setup and teardown
+keywords (eg: suites/002-file-system/delete.robot uses suite level setup and
+teardown to create a volume).
 
 Test cases should be written in a declarative style, not imperative.
 A typical test case is in the style **Given X**, **When Y**, **Then Z**.
@@ -34,6 +36,30 @@ Tips
 * Test suite and test case names should be short, but as descriptive as possible.
 * If a test case exceeds many lines consider creating new keywords.
 * When writing tests, pay attention to the number of spaces.
+
+Naming conventions
+------------------
+
+Robot Framework does not strictly enforce naming conventions for suite names and
+test case names, but for this project we will follow consistent and descriptive
+naming conventions for both to improve readability, maintainabilty, and collaboration.
+
+Suite names (Scenario)
+~~~~~~~~~~~~~~~~~~~~~~
+
+Robot Framework allows suites to be organized by creating directories to logically
+group a set of test cases. The names of the suites being added should be able to
+convey at a glance what the test cases within are about to verify so it is expected
+that suite names are short, unique, descriptive and meaningful. An analogy here
+that would help is that the names can be similar to an author writing a book and
+selecting a heading for the book's chapters or sections.
+
+Since Robot Framework by default processes suite directories alphabetically, our
+project uses a three-digit numeric prefix for suite directories (eg: 002-file-system)
+to control the order in which the suites and test-cases are executed.
+
+As a general rule, we should avoid using words like "check" or "verify" in suite names.
+
 
 Verifying a new test
 --------------------
