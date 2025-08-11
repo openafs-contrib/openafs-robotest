@@ -40,55 +40,56 @@ Tips
 Naming conventions
 ------------------
 
-Robot Framework does not strictly enforce naming conventions for suite names and
-test case names, but for this project we will follow consistent and descriptive
-naming conventions for both to improve readability, maintainabilty, and collaboration.
+For this project we will follow consistent and descriptive naming conventions
+for both suite names and test-case names to improve readability, maintainabilty,
+and collaboration.
 
-Suite names (Scenario)
-~~~~~~~~~~~~~~~~~~~~~~
+Suite names
+~~~~~~~~~~~
 
-Robot Framework allows suites to be organized by creating directories to logically
-group a set of test cases. The names of the suites being added should be able to
-convey at a glance what the test cases within are about to verify so it is expected
-that suite names are short, unique, descriptive and meaningful. An analogy here
-that would help is that the names can be similar to an author writing a book and
-selecting a heading for the book's chapters or sections.
+Robot Framework allows suites to be organized by creating directories to
+logically group a set of test cases. The names of the suites being added should
+be able to convey at a glance what the test cases within are about to verify so
+it is expected that suite names are short, unique, descriptive and meaningful.
 
 Since Robot Framework by default processes suite directories alphabetically, our
-project uses a three-digit numeric prefix for suite directories (eg: 002-file-system)
-to control the order in which the suites and test-cases are executed.
+project uses a three-digit numeric prefix for suite directories
+(eg: 002-file-system) to control the order in which the suites and test-cases
+are executed.
 
-As a general rule, we should avoid using words like "check" or "verify" in suite names.
-
-Although slightly dated, the original naming convention authored by Robot
-Framework project still applies to this project:
-
-ref: `Test suite names`: https://github.com/robotframework/HowToWriteGoodTestCases/blob/master/HowToWriteGoodTestCases.rst#test-suite-names
+As a general rule, we should avoid using words like "check" or "verify" in
+suite names.
 
 Test-case names
 ~~~~~~~~~~~~~~~
 
-Test case names should describe what a test does and preferably begins with a
+Test case names should describe what a test does and preferably begin with a
 verb to indicate the action being tested.
 
-In our project we use sentence case for test case names: where the first character
-for the name is upper-case, and the rest of the name is a sentence. Eg:
-
-"One client writes a file and unauthorized user cannot append the file".
+In our project we use sentence case for test case names: where the first
+character for the name is upper-case, and the rest of the name is a sentence.
 
 One thing to keep in mind while writing test cases is that they need to
 represent a specific test that is not duplicated anywhere else in the project
 and be a combination of standard keywords and project specific keywords (like
 OpenAFSLibrary).
 
-Typically test cases can be very short and also utilize the Given-When-Then
-format mentioned earlier for providing a common structure for the test case.
+Test case names will commonly follow a convention like so:
 
-Although slightly dated, the original naming convention authored by Robot
-Framework project still applies to this project:
+  <action being tested>-<expected outcome>
 
-ref: `Test case names`: https://github.com/robotframework/HowToWriteGoodTestCases/blob/master/HowToWriteGoodTestCases.rst#test-case-names
+Sometimes a need may arise to further describe specific conditions for a test
+case, and the convention may look like this:
 
+  <action being tested>-<expected outcome>-<condition>
+
+Example from file system suite:
+
+.. code-block:: robotframework
+
+    Writes to a file are readable by multiple authorized clients
+    Writes to a file are writable by multiple authorized clients
+    Writes to a file are not writable by unauthorized clients
 
 Verifying a new test
 --------------------
