@@ -83,13 +83,13 @@ case, and the convention may look like this:
 
   <action being tested>-<expected outcome>-<condition>
 
-Example from file system suite:
+Examples:
 
 .. code-block:: robotframework
 
-    Writes to a file are readable by multiple authorized clients
-    Writes to a file are writable by multiple authorized clients
-    Writes to a file are not writable by unauthorized clients
+    - Cache manager is running on all clients
+    - Robot remote server works successfully on all clients
+    - Test user keytabs are present on all clients
 
 Verifying a new test
 --------------------
